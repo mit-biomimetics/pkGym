@@ -80,7 +80,7 @@ class MIT_humanoid(BaseTask):
             self.rew_scales[key] *= self.dt
 
         # * observation
-        self.cfg["env"]["numObservations"] = 102  # 6+18*2 + 18*2
+        self.cfg["env"]["numObservations"] = 102+2  # 6+18*2 + 18*2
         self.cfg["env"]["numActions"] = 18
 
         self.cfg["device_type"] = device_type
@@ -150,6 +150,14 @@ class MIT_humanoid(BaseTask):
         # action history
         self.actions_k1 = self.actions.clone()
         self.actions_k2 = self.actions.clone()
+
+        # phase
+        self.phase = torch.zeros((self.num_envs, 1), dtype=torch.float,
+                                 device=self.device, requires_grad=False)
+        # TODO pull out into cfg
+        self.base_freq = torch.ones((self.num_envs, 1), dtype=torch.float,
+                                    device=self.device, requires_grad=False)
+
         self.reset(torch.arange(self.num_envs, device=self.device))
 
     def create_sim(self):
@@ -251,6 +259,8 @@ class MIT_humanoid(BaseTask):
 
     def post_physics_step(self):
         self.progress_buf += 1
+        # self.phase = torch.fmod(self.phase + self.dt*self.base_freq, 1.)
+        self.phase = torch.fmod(self.phase + self.dt*1., 1.)
 
         env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
         if len(env_ids) > 0:
@@ -268,6 +278,7 @@ class MIT_humanoid(BaseTask):
             self.contact_forces,
             # self.knee_indices,
             self.progress_buf,
+            self.phase,
             self.actions,
             self.actions_k1,
             self.actions_k2,
@@ -291,6 +302,7 @@ class MIT_humanoid(BaseTask):
                                                         self.default_dof_pos,
                                                         self.dof_vel,
                                                         self.gravity_vec,
+                                                        self.phase,
                                                         self.actions,
                                                         self.actions_k1,
                                                         self.actions_k2,
@@ -337,6 +349,7 @@ class MIT_humanoid(BaseTask):
 
         self.progress_buf[env_ids] = 0
         self.reset_buf[env_ids] = 1
+        self.phase[env_ids] = 0
 
 #####################################################################
 ###=========================jit functions=========================###
@@ -352,6 +365,7 @@ def compute_humanoid_reward(
     contact_forces: Tensor,
     # knee_indices: Tensor,
     episode_lengths: Tensor,
+    phase: Tensor,
     actions: Tensor,
     actions_k1: Tensor,
     actions_k2: Tensor,
@@ -397,13 +411,14 @@ def compute_humanoid_reward(
     return total_reward.detach(), reset
 
 
-@torch.jit.script
+# @torch.jit.script
 def compute_humanoid_observations(root_states: Tensor,
                                 commands: Tensor,
                                 dof_pos: Tensor,
                                 default_dof_pos: Tensor,
                                 dof_vel: Tensor,
                                 gravity_vec: Tensor,
+                                phase: Tensor,
                                 actions: Tensor,
                                 actions_k1: Tensor,
                                 actions_k2: Tensor,
@@ -433,6 +448,8 @@ def compute_humanoid_observations(root_states: Tensor,
                      commands_scaled,
                      dof_pos_scaled,
                      dof_vel*dof_vel_scale,
+                     torch.sin(phase*2*np.pi),
+                     torch.cos(phase*2*np.pi),
                      actions,
                      actions_k1,
                      actions_k2
