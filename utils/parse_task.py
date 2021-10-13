@@ -10,11 +10,12 @@ from rlgpu.tasks.cartpole_y_up import CartpoleYUp
 from rlgpu.tasks.ball_balance import BallBalance
 from rlgpu.tasks.quadcopter import Quadcopter
 from rlgpu.tasks.ant import Ant
-from rlgpu.tasks.humanoid import Humanoid
+# from rlgpu.tasks.humanoid import Humanoid
 from rlgpu.tasks.franka import FrankaCabinet
 from rlgpu.tasks.shadow_hand import ShadowHand
 from rlgpu.tasks.ingenuity import Ingenuity
 from rlgpu.tasks.anymal import Anymal
+from rlgpu.tasks.mit_humanoid import MIT_humanoid
 from rlgpu.tasks.base.vec_task import VecTaskCPU, VecTaskGPU, VecTaskPython
 
 from rlgpu.utils.config import warn_task_name

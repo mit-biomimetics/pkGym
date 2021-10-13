@@ -25,7 +25,7 @@ def set_np_formatting():
 
 def warn_task_name():
     raise Exception(
-        "Unrecognized task!\nTask should be one of: [BallBalance, Cartpole, CartpoleYUp, Ant, Humanoid, Anymal, FrankaCabinet, Quadcopter, ShadowHand, ShadowHandLSTM, ShadowHandFFOpenAI, ShadowHandFFOpenAITest, ShadowHandOpenAI, ShadowHandOpenAITest, Ingenuity]")
+        "Unrecognized task!\nTask should be one of: [BallBalance, Cartpole, CartpoleYUp, Ant, Humanoid, Anymal, MIT_humanoid, FrankaCabinet, Quadcopter, ShadowHand, ShadowHandLSTM, ShadowHandFFOpenAI, ShadowHandFFOpenAITest, ShadowHandOpenAI, ShadowHandOpenAITest, Ingenuity]")
 
 
 def set_seed(seed, torch_deterministic=False):
@@ -73,6 +73,8 @@ def retrieve_cfg(args, use_rlg_config=False):
             return os.path.join(args.logdir, "quadcopter"), "cfg/train/rlg/rlg_quadcopter.yaml", "cfg/quadcopter.yaml"
         elif args.task == "Anymal":
             return os.path.join(args.logdir, "anymal"), "cfg/train/rlg/rlg_anymal.yaml", "cfg/anymal.yaml"
+        elif args.task == "MIT":
+            return os.path.join(args.logdir, "humanoid"), "cfg/train/rlg/rlg_anymal.yaml", "cfg/anymal.yaml"
         elif args.task == "ShadowHand":
             return os.path.join(args.logdir, "shadow_hand"), "cfg/train/rlg/rlg_shadow_hand.yaml", "cfg/shadow_hand.yaml"
         elif args.task == "ShadowHandLSTM":
@@ -115,6 +117,8 @@ def retrieve_cfg(args, use_rlg_config=False):
             return os.path.join(args.logdir, "quadcopter"), "cfg/train/rlpt/pytorch_ppo_quadcopter.yaml", "cfg/quadcopter.yaml"
         elif args.task == "Anymal":
             return os.path.join(args.logdir, "anymal"), "cfg/train/rlpt/pytorch_ppo_anymal.yaml", "cfg/anymal.yaml"
+        elif args.task == "MIT_humanoid":
+            return os.path.join(args.logdir, "MIT_humanoid"), "cfg/train/rlpt/pytorch_ppo_MIT_humanoid.yaml", "cfg/MIT_humanoid.yaml"
         elif args.task == "ShadowHand":
             return os.path.join(args.logdir, "shadow_hand"), "cfg/train/rlpt/pytorch_ppo_shadow_hand.yaml", "cfg/shadow_hand.yaml"
         elif args.task == "ShadowHandFFOpenAI":
