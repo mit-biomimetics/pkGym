@@ -33,6 +33,7 @@ class MIT_humanoid(BaseTask):
         self.ang_vel_scale = self.cfg["env"]["learn"]["angularVelocityScale"]
         self.dof_pos_scale = self.cfg["env"]["learn"]["dofPositionScale"]
         self.dof_vel_scale = self.cfg["env"]["learn"]["dofVelocityScale"]
+        self.height_scale = self.cfg["env"]["learn"]["heightScale"]
         self.action_scale = self.cfg["env"]["control"]["actionScale"]
 
         # reward scales
@@ -80,7 +81,7 @@ class MIT_humanoid(BaseTask):
             self.rew_scales[key] *= self.dt
 
         # * observation
-        self.cfg["env"]["numObservations"] = 102+2  # 6+18*2 + 18*2
+        self.cfg["env"]["numObservations"] = 67 + 18*2 + 2  # 6+18*2 + 18*2
         self.cfg["env"]["numActions"] = 18
 
         self.cfg["device_type"] = device_type
@@ -310,7 +311,8 @@ class MIT_humanoid(BaseTask):
                                                         self.lin_vel_scale,
                                                         self.ang_vel_scale,
                                                         self.dof_pos_scale,
-                                                        self.dof_vel_scale
+                                                        self.dof_vel_scale,
+                                                        self.height_scale
         )
 
     def reset(self, env_ids):
@@ -395,12 +397,15 @@ def compute_humanoid_reward(
         rew_scales["smooth"]
 
     # height
-    height_sq = torch.square(root_states[:, 2]-0.7)
+    height_sq = torch.square(root_states[:, 2]-0.65)
     rew_height = torch.exp(-0.1*height_sq) * rew_scales["height"]
+
+    # symmetry
+
 
     total_reward = rew_lin_vel_xy + rew_ang_vel_z + rew_torque + \
         rew_smooth + rew_height
-    total_reward = torch.clip(total_reward, 0., None)
+    # total_reward = torch.clip(total_reward, 0., None)
     # reset agents
     reset = torch.norm(contact_forces[:, base_index, :], dim=1) > 1.
     # reset = reset | torch.any(torch.norm(contact_forces[:, knee_indices, :], dim=2) > 1., dim=1)
@@ -425,10 +430,12 @@ def compute_humanoid_observations(root_states: Tensor,
                                 lin_vel_scale: float,
                                 ang_vel_scale: float,
                                 dof_pos_scale: float,
-                                dof_vel_scale: float
+                                dof_vel_scale: float,
+                                height_scale: float
                                 ) -> Tensor:
 
     # base_position = root_states[:, 0:3]
+    base_height = torch.atleast_2d(root_states[:, 2]).T * height_scale
     base_quat = root_states[:, 3:7]
     base_lin_vel = quat_rotate_inverse(base_quat, root_states[:, 7:10]) * \
         lin_vel_scale
@@ -442,7 +449,8 @@ def compute_humanoid_observations(root_states: Tensor,
                                             requires_grad=False,
                                             device=commands.device)
 
-    obs = torch.cat((base_lin_vel,
+    obs = torch.cat((base_height,
+                     base_lin_vel,
                      base_ang_vel,
                      projected_gravity,
                      commands_scaled,
