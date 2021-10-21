@@ -105,13 +105,15 @@ class BaseTask():
             self.gym.viewer_camera_look_at(
                 self.viewer, None, cam_pos, cam_target)
 
+    # TODO add conditional to skip this IF set in params
     # set gravity based on up axis and return axis index
     def set_sim_params_up_axis(self, sim_params, axis):
         if axis == 'z':
             sim_params.up_axis = gymapi.UP_AXIS_Z
-            sim_params.gravity.x = 0
-            sim_params.gravity.y = 0
-            sim_params.gravity.z = -9.81
+            if not hasattr(sim_params, 'gravity'):
+                sim_params.gravity.x = 0
+                sim_params.gravity.y = 0
+                sim_params.gravity.z = -9.81
             return 2
         return 1
 
