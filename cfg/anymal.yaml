@@ -1,5 +1,5 @@
 env:
-  numEnvs: 4000
+  numEnvs: 6000
   envSpacing: 4.  # [m]
 
   plane:
@@ -68,6 +68,7 @@ env:
     lookat: [1., 1, 3.3]  # [m]
 
 sim:
+  # dt: 0.
   substeps: 2
   gravity: [0., 0. ,-9.81]  # [m/s^2]
   up_axis: 1  # 0 is y, 1 is z
@@ -80,7 +81,7 @@ sim:
     contact_offset: 0.02
     rest_offset: 0.0
     bounce_threshold_velocity: 0.2
-    max_depenetration_velocity: 5.0
+    max_depenetration_velocity: 50000.0
 
 task:
   randomize: False

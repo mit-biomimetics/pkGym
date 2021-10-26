@@ -8,9 +8,10 @@
 import numpy as np
 import random
 
-from utils.config import set_np_formatting, set_seed, get_args, parse_sim_params, load_cfg
-from utils.parse_task import parse_task
-from utils.process_ppo import process_ppo
+from isaacgym import rlgpu
+from gpugym.utils.config import set_np_formatting, set_seed, get_args, parse_sim_params, load_cfg
+from gpugym.utils.parse_task import parse_task
+from rlgpu.utils.process_ppo import process_ppo
 
 import torch
 

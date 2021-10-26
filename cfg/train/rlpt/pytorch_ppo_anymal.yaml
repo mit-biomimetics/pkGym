@@ -7,8 +7,8 @@ seed: -1
 clip_observations: 1000.0
 clip_actions: 4.0
 policy: # only works for MlpPolicy right now
-  vf_hid_sizes: [256, 128, 64]
-  pi_hid_sizes: [256, 128, 64]
+  vf_hid_sizes: [128, 128]  # [256, 128, 64]
+  pi_hid_sizes: [128, 128]  # [256, 128, 64]
   activation: elu # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
 learn:
   agent_name: anymal_ppo
