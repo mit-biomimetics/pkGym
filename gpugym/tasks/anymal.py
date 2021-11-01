@@ -9,8 +9,8 @@ import numpy as np
 import os
 import time
 
-from rlgpu.utils.torch_jit_utils import *
-from rlgpu.tasks.base.base_task import BaseTask
+from gpugym.utils.torch_jit_utils import *
+from gpugym.tasks.base.base_task import BaseTask
 from isaacgym import gymtorch
 from isaacgym import gymapi
 
