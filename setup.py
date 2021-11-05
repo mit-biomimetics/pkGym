@@ -1,14 +1,14 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages
+from distutils.core import setup
 
-print(find_packages())
-
-setup(name='gpuGym',
-      packages=setuptools.find_packages(),
-      version='0.1.0',
-      description='MIT Humanoid',
-      author='Biomimetics Lab',
-      author_email='sheim@mit.edu',
-      python_requires='>=3.7',
-      install_requires=['isaacgym',
+setup(
+    name='gpuGym',
+    version='1.0.1',
+    author='Biomimetic Robotics Lab',
+    license="BSD-3-Clause",
+    packages=find_packages(),
+    description='Isaac Gym environments for Legged Robots',
+    install_requires=['isaacgym',
+                      'rsl-rl',
                       'matplotlib']
-      )
+)
