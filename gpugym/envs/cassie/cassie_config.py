@@ -106,7 +106,3 @@ class CassieRoughCfgPPO( LeggedRobotCfgPPO ):
 
     class algorithm( LeggedRobotCfgPPO.algorithm):
         entropy_coef = 0.01
-
-
-
-  
