@@ -68,6 +68,7 @@ The base environment `legged_robot` implements a rough terrain locomotion task. 
 
 ### Troubleshooting ###
 1. If you get the following error: `ImportError: libpython3.8m.so.1.0: cannot open shared object file: No such file or directory`, do: `sudo apt install libpython3.8`
+2. If you get the following error: `RuntimeError: Unexpected error from cudaGetDeviceCount(). Did you run some cuda functions before calling NumCudaDevices() that might have already set an error?`, try [restarting your computer](https://discuss.pytorch.org/t/solved-torch-cant-access-cuda-runtimeerror-unexpected-error-from-cudagetdevicecount-and-error-101-invalid-device-ordinal/115004).
 
 ### Known Issues ###
 1. The contact forces reported by `net_contact_force_tensor` are unreliable when simulating on GPU with a triangle mesh terrain. A workaround is to use force sensors, but the force are propagated through the sensors of consecutive bodies resulting in an undesireable behaviour. However, for a legged robot it is possible to add sensors to the feet/end effector only and get the expected results. When using the force sensors make sure to exclude gravity from trhe reported forces with `sensor_options.enable_forward_dynamics_forces`. Example:
