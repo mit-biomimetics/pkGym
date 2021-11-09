@@ -93,7 +93,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         decimation = 6  # ! substeps?
 
     class asset(LeggedRobotCfg.asset):
-        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_F_sf.urdf'
+        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_F_ht.urdf'
         foot_name = 'foot'
         penalize_contacts_on = ["upper_leg", "lower_leg", "upper_arm", "lower_arm"]
         terminate_after_contacts_on = ['base']

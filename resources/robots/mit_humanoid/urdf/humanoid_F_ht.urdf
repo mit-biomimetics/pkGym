@@ -71,7 +71,7 @@
     </visual>
   </link>
   <joint
-    name="left_hip_yaw_joint"
+    name="left_hip_yaw"
     type="continuous">
     <origin
       xyz="0 0.082 0"
@@ -117,7 +117,7 @@
     </visual>
   </link>
   <joint
-    name="left_hip_abad_joint"
+    name="left_hip_abad"
     type="continuous">
     <origin
       xyz="-0.06435 0 -.07499"
@@ -385,7 +385,7 @@
     </visual>
   </link>
   <joint
-    name="right_hip_yaw_joint"
+    name="right_hip_yaw"
     type="continuous">
     <origin
       xyz="0 -0.082 0"
@@ -432,7 +432,7 @@
     </visual>
   </link>
   <joint
-    name="right_hip_abad_joint"
+    name="right_hip_abad"
     type="continuous">
     <origin
       xyz="-0.06435 0 -.07499"
@@ -703,7 +703,7 @@
     </visual>
   </link>
   <joint
-    name="left_arm_pitch"
+    name="left_shoulder_pitch"
     type="continuous">
     <origin
       xyz="0.01911 0.17608 0.30392"
@@ -941,7 +941,7 @@
     </visual>
   </link>
   <joint
-    name="right_arm_pitch"
+    name="right_shoulder_pitch"
     type="continuous">
     <origin
       xyz="0.01911 -0.17608 0.30392"

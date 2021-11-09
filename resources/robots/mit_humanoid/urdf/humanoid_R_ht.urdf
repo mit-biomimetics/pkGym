@@ -33,9 +33,9 @@
       </material>
     </visual>
      <collision>
-            <origin rpy="0 0 0" xyz="0.023 0. 0.06"/>
+            <origin rpy="0 0 0" xyz="0.023 0. 0.08"/>
             <geometry>
-                <box size="0.15 0.3 0.4"/>
+                <box size="0.15 0.3 0.35"/>
             </geometry>
     </collision>
   </link>
@@ -66,12 +66,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="left_hip_yaw_joint"
+    name="left_hip_yaw"
     type="continuous">
     <origin
       xyz="0 0.082 0"
@@ -112,12 +112,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="left_hip_abad_joint"
+    name="left_hip_abad"
     type="continuous">
     <origin
       xyz="-0.06435 0 -.07499"
@@ -132,7 +132,7 @@
     <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
   </joint>
  <link 
-    name="leftupper">
+    name="left_upper_leg">
     <inertial>
       <origin
         xyz=" -0.001100  0.026032 -0.078842"
@@ -171,7 +171,7 @@
     <parent
       link="left_hip_abad" />
     <child
-      link="leftupper" />
+      link="left_upper_leg" />
     <axis
       xyz="0 1 0" />
           <limit effort="72" lower="-6.28" upper="6.28" velocity="50"/>
@@ -179,7 +179,7 @@
   </joint>
   
   <link
-    name="leftlower">
+    name="left_lower_leg">
     <inertial>
       <origin
         xyz="0.005232 0.000457  -0.131581"
@@ -205,7 +205,7 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
@@ -216,9 +216,9 @@
       xyz="-0.01306 0.0 -0.24916"
       rpy="0 0 0" />
     <parent
-      link="leftupper" />
+      link="left_upper_leg" />
     <child
-      link="leftlower" />
+      link="left_lower_leg" />
     <axis
       xyz="0 1 0" />
           <limit effort="144" lower="0." upper="3." velocity="50"/>
@@ -263,7 +263,7 @@
       xyz="0.0 0.0 -0.2785"
       rpy="0 0 0" />
     <parent
-      link="leftlower" />
+      link="left_lower_leg" />
     <child
       link="left_foot" />
     <axis
@@ -368,12 +368,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="right_hip_yaw_joint"
+    name="right_hip_yaw"
     type="continuous">
     <origin
       xyz="0 -0.082 0"
@@ -415,12 +415,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="right_hip_abad_joint"
+    name="right_hip_abad"
     type="continuous">
     <origin
       xyz="-0.06435 0 -.07499"
@@ -436,7 +436,7 @@
   </joint>
   
  <link
-    name="rightupper">
+    name="right_upper_leg">
     <inertial>
       <origin
         xyz=" -0.001100  -0.026032 -0.078842"
@@ -462,7 +462,7 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
@@ -475,7 +475,7 @@
     <parent
       link="right_hip_abad" />
     <child
-      link="rightupper" />
+      link="right_upper_leg" />
     <axis
       xyz="0 1 0" />
           <limit effort="72" lower="-6.28" upper="6.28" velocity="50"/>
@@ -483,7 +483,7 @@
   </joint>
   
   <link
-    name="rightlower">
+    name="right_lower_leg">
     <inertial>
       <origin
         xyz="0.005232 -0.000457  -0.131581"
@@ -509,7 +509,7 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
@@ -520,9 +520,9 @@
       xyz="-0.01306 0.0 -0.24916"
       rpy="0 0 0" />
     <parent
-      link="rightupper" />
+      link="right_upper_leg" />
     <child
-      link="rightlower" />
+      link="right_lower_leg" />
     <axis
       xyz="0 1 0" />
           <limit effort="144" lower="0." upper="3.0" velocity="50"/>
@@ -556,7 +556,7 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
@@ -567,7 +567,7 @@
       xyz="0.0 0.0 -0.2785"
       rpy="0 0 0" />
     <parent
-      link="rightlower" />
+      link="right_lower_leg" />
     <child
       link="right_foot" />
     <axis
@@ -674,12 +674,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="left_arm_pitch"
+    name="left_shoulder_pitch"
     type="continuous">
     <origin
       xyz="0.01911 0.17608 0.30392"
@@ -721,7 +721,7 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
@@ -769,7 +769,7 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
@@ -817,7 +817,7 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
@@ -855,7 +855,7 @@
       <collision>
         <origin rpy="1.57079 0 0" xyz="0.0 0.0 0."/>
         <geometry>
-            <cylinder radius="0.025" length="0.025"/>
+            <cylinder radius="0.025" length="0.015"/>
         </geometry>
     </collision>
   </link>
@@ -899,12 +899,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="right_arm_pitch"
+    name="right_shoulder_pitch"
     type="continuous">
     <origin
       xyz="0.01911 -0.17608 0.30392"
@@ -946,7 +946,7 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
@@ -994,7 +994,7 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
@@ -1042,7 +1042,7 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
         <!-- <collision>
@@ -1086,7 +1086,7 @@
       <collision>
         <origin rpy="1.57079 0 0" xyz="0.0 0.0 0."/>
         <geometry>
-            <cylinder radius="0.025" length="0.025"/>
+            <cylinder radius="0.025" length="0.015"/>
         </geometry>
     </collision>
   </link>
