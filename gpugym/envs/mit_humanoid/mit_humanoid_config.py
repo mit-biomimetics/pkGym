@@ -34,15 +34,15 @@ from gpugym.envs.base.legged_robot_config import LeggedRobotCfgPPO
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 409
-        num_observations = 66 # 187  # ! why? should be 66...
+        num_envs = 4096
+        num_observations = 67 # 187  # ! why? should be 66...
         num_actions = 18
 
     class terrain(LeggedRobotCfg.terrain):
         curriculum = False
         mesh_type = 'plane'
         measure_heights = False
-        # ! What's this?
+        # ! What's this? states where to measure terrain height
         # measured_points_x = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]  # 1mx1m rectangle (without center line)
         # measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
         # terrain_types: [smooth slope, stairs up, stairs down]
@@ -55,18 +55,19 @@ class MITHumanoidCfg(LeggedRobotCfg):
         resampling_time = 10. # time before command are changed[s]
         heading_command = True # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [1.0, 5.0] # min max [m/s]
+            lin_vel_x = [3.0, 4.0] # min max [m/s]
             lin_vel_y = [-0., 0.]   # min max [m/s]
-            ang_vel_yaw = [-1, 1]    # min max [rad/s]
-            heading = [-3.14, 3.14]
+            ang_vel_yaw = [0., 0.]    # min max [rad/s]
+            heading = [-1.14, 1.14]
 
     class init_state(LeggedRobotCfg.init_state):
         pos = [0.0, 0.0, 0.72]  # x,y,z [m]
-        default_joint_angles = {  # = target angles [rad] when action = 0.0
+        
+        default_joint_angles = {
             'left_hip_yaw': 0.,
             'left_hip_abad': 0.,
             'left_hip_pitch': 0.,
-            'left_knee': 0.,
+            'left_knee': 0.,  # 0.785,
             'left_ankle': 0.,
             'left_shoulder_pitch': 0.,
             'left_shoulder_abad': 0.,
@@ -75,7 +76,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             'right_hip_yaw': 0.,
             'right_hip_abad': 0.,
             'right_hip_pitch': 0.,
-            'right_knee': 0.,
+            'right_knee': 0.,  # 0.785,
             'right_ankle': 0.,
             'right_shoulder_pitch': 0.,
             'right_shoulder_abad': 0.,
@@ -86,7 +87,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
         stiffness = {'hip_yaw': 40.,
-                     'hip_abad': 40.,
+                     'hip_abad': 80.,
                      'hip_pitch': 40.,
                      'knee': 40.,
                      'ankle': 40.,
@@ -108,7 +109,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 3.5
         # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 6  # ! substeps?
+        decimation = 4  # ! substeps?
 
     class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_friction = False
@@ -122,62 +123,78 @@ class MITHumanoidCfg(LeggedRobotCfg):
     class asset(LeggedRobotCfg.asset):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_sf.urdf'
         foot_name = 'foot'
-        penalize_contacts_on = ["upper_leg", "lower_leg", "upper_arm", "lower_arm"]
+        penalize_contacts_on = []
         terminate_after_contacts_on = ['base']
         flip_visual_attachments = False
-        self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
+        self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
+        # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
+        default_dof_drive_mode = 1
+        disable_gravity = False
 
     class rewards(LeggedRobotCfg.rewards):
         # soft_dof_pos_limit = 0.95
         # soft_dof_vel_limit = 0.9
         # soft_torque_limit = 0.9
         max_contact_force = 600.
-        only_positive_rewards = False  # if true negative total rewards are clipped at zero (avoids early termination problems)
 
+        # if true negative total rewards are clipped at zero (avoids early termination problems)
+        only_positive_rewards = False
+        base_height_target = 0.95
+        tracking_sigma = 0.25
         class scales(LeggedRobotCfg.rewards.scales):
-            termination = -20.
-            tracking_lin_vel = 1.0
+            termination = -100.
+            tracking_lin_vel = 5.0
             tracking_ang_vel = 1.0
-            lin_vel_z = -0.05
+            lin_vel_z = -1.0
             ang_vel_xy = -0.0
-            orientation = 0.
-            torques = -5.e-5
-            dof_vel = -0.
+            orientation = -1.25
+            torques = -5.e-6
+            dof_vel = -0.1
             dof_acc = 0.
             base_height = 0.
-            feet_air_time = 1.  # rewards keeping feet in the air
+            feet_air_time = 0.5  # rewards keeping feet in the air
             collision = -1.
             feet_stumble = -0.
             action_rate = -0.01
             stand_still = -0.
             dof_pos_limits = -1.
-            no_fly = 0.25
+            no_fly = 0.0
             feet_contact_forces = -0.
 
-        class normalization(LeggedRobotCfg.normalization):
-            class obs_scales(LeggedRobotCfg.normalization.obs_scales):
-                lin_vel = 1.0
-                ang_vel = 1.0
-                dof_pos = 1.0
-                dof_vel = 1.0
-                height_measurements = 1.0
-            clip_observations = 100000000000000.
-            clip_actions = 100000000000000.
 
-        class noise(LeggedRobotCfg.noise):
-            add_noise = False
-            noise_level = 1.0 # scales other values
-            class noise_scales(LeggedRobotCfg.noise.noise_scales):
-                dof_pos = 0.01
-                dof_vel = 1.5
-                lin_vel = 0.1
-                ang_vel = 0.2
-                gravity = 0.05
-                height_measurements = 0.1
+    class normalization(LeggedRobotCfg.normalization):
+        class obs_scales(LeggedRobotCfg.normalization.obs_scales):
+            # * helper fcts
+            # * dimensionless time: sqrt(L/g) or sqrt(I/[mgL]), with I=I0+mL^2
+            dimless_time = (0.7/9.81)**0.5
+            v_leg = 0.72
+            # lin_vel = 1/v_leg*dimless_time
+            base_z = 1./0.72
+            lin_vel =  1./v_leg  # virtual leg lengths per second
+            # ang_vel = 0.25
+            ang_vel = 1./3.14*dimless_time
+            dof_pos = 1./3.14
+            dof_vel = 0.05  # ought to be roughly max expected speed.
 
-        class sim(LeggedRobotCfg.sim):
-            dt = 0.005
-            substeps = 4
+            height_measurements = 1./0.72
+        clip_observations = 100.
+        clip_actions = 1000.
+
+    class noise(LeggedRobotCfg.noise):
+        add_noise = True
+        noise_level = 0.1  # scales other values
+        class noise_scales(LeggedRobotCfg.noise.noise_scales):
+            dof_pos = 0.01
+            dof_vel = 0.01
+            lin_vel = 0.1
+            ang_vel = 0.2
+            gravity = 0.05
+            height_measurements = 0.1
+
+    class sim(LeggedRobotCfg.sim):
+        dt = 0.0025
+        substeps = 1
+        gravity = [0., 0., -9.81]
 
 
 class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
@@ -190,7 +207,7 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
         entropy_coef = 0.01
 
     class runner(LeggedRobotCfgPPO.runner):
-        num_steps_per_env = 48
+        num_steps_per_env = 100
         max_iterations = 15000
 
-        save_interval = 500
+        save_interval = 100
