@@ -880,8 +880,9 @@ class LeggedRobot(BaseTask):
     # todo this is wrong, exponential is not linear
     def _reward_tracking_lin_vel(self):
         # Tracking of linear velocity commands (xy axes)
-        lin_vel_error = torch.sum(torch.square(self.commands[:, :2] - self.base_lin_vel[:, :2]), dim=1)
-        return torch.exp(-lin_vel_error/self.cfg.rewards.tracking_sigma)
+        error = torch.square(self.commands[:, :2] - self.base_lin_vel[:, :2])
+        error = torch.exp(-error/self.cfg.rewards.tracking_sigma)
+        return torch.sum(error, dim=1)
 
     def _reward_tracking_ang_vel(self):
         # Tracking of angular velocity commands (yaw)
