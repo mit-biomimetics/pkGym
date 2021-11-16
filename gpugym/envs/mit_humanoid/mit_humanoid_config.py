@@ -35,7 +35,7 @@ from gpugym.envs.base.legged_robot_config import LeggedRobotCfgPPO
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         num_envs = 4096
-        num_observations = 67 # 187  # ! why? should be 66...
+        num_observations = 67+2  # 187  # ! why? should be 66...
         num_actions = 18
 
     class terrain(LeggedRobotCfg.terrain):
@@ -123,7 +123,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
     class asset(LeggedRobotCfg.asset):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_sf.urdf'
         foot_name = 'foot'
-        penalize_contacts_on = []
+        penalize_contacts_on = ['base']
         terminate_after_contacts_on = ['base']
         flip_visual_attachments = False
         self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
@@ -149,9 +149,9 @@ class MITHumanoidCfg(LeggedRobotCfg):
             ang_vel_xy = -0.0
             orientation = -1.25
             torques = -5.e-6
-            dof_vel = -0.1
+            dof_vel = 0.0
             dof_acc = 0.
-            base_height = 0.
+            base_height = 0.1
             feet_air_time = 0.5  # rewards keeping feet in the air
             collision = -1.
             feet_stumble = -0.

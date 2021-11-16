@@ -920,7 +920,6 @@ class LeggedRobot(BaseTask):
         # penalize torques too close to the limit
         return torch.sum((torch.abs(self.torques) - self.torque_limits*self.cfg.rewards.soft_torque_limit).clip(min=0.), dim=1)
 
-    # todo this is wrong, exponential is not linear
     def _reward_tracking_lin_vel(self):
         # Tracking of linear velocity commands (xy axes)
         error = torch.square(self.commands[:, :2] - self.base_lin_vel[:, :2])
