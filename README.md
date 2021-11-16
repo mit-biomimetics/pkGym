@@ -1,9 +1,6 @@
 # gpuGym - a clone of legged_gym #
 This repository is a port of legged_gym from the good folk over at RSL.
-It includes all components needed for sim-to-real transfer: actuator network, friction & mass randomization, noisy observations and random pushes during training.  
-**Maintainer**: Nikita Rudin  
-**Affiliation**: Robotic Systems Lab, ETH Zurich  
-**Contact**: rudinn@ethz.ch  
+It includes all components needed for sim-to-real transfer: actuator network, friction & mass randomization, noisy observations and random pushes during training.
 
 ### Useful Links ###
 Project website: https://leggedrobotics.github.io/legged_gym/
@@ -20,10 +17,10 @@ Paper: https://arxiv.org/abs/2109.11978
    - For troubleshooting check docs `isaacgym/docs/index.html`)
 4. Install rsl_rl (PPO implementation)
    - Clone https://github.com/leggedrobotics/rsl_rl
-   -  `cd rsl_rl && git checkout develop && pip install -e .` 
+   -  `cd rsl_rl && pip install -e .` 
 5. Install legged_gym
     - Clone this repository
-   - `cd legged_gym && git checkout develop && pip install -e .`
+   - `cd legged_gym && pip install -e .`
 
 ### CODE STRUCTURE ###
 1. Each environment is defined by an env file (`legged_robot.py`) and a config file (`legged_robot_config.py`). The config file contains two classes: one conatianing all the environment parameters (`LeggedRobotCfg`) and one for the training parameters (`LeggedRobotCfgPPo`).  
@@ -31,7 +28,7 @@ Paper: https://arxiv.org/abs/2109.11978
 3. Each non-zero reward scale specified in `cfg` will add a function with a corresponding name to the list of elements which will be summed to get the total reward.  
 4. Tasks must be registered using `task_registry.register(name, EnvClass, EnvConfig, TrainConfig)`. This is done in `envs/__init__.py`, but can also be done from outside of this repository.  
 
-### Usage ###
+### Use ###
 1. Train:  
   ```python issacgym_anymal/scripts/train.py --task=anymal_c_flat```
     -  To run on CPU add following arguments: `--sim_device=cpu`, `--rl_device=cpu` (sim on CPU and rl on GPU is possible).

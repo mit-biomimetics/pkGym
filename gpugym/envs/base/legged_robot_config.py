@@ -211,7 +211,7 @@ class LeggedRobotCfgPPO(BaseConfig):
         # rnn_type = 'lstm'
         # rnn_hidden_size = 512
         # rnn_num_layers = 1
-        
+
     class algorithm:
         # training params
         value_loss_coef = 1.0

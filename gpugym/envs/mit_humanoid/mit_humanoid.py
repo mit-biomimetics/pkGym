@@ -142,7 +142,15 @@ class MIT_Humanoid(LeggedRobot):
     def _reward_base_height(self):
         """ Squared exponential saturating at base_height target
         """
-        base_height = self.root_states[:,2].unsqueeze(1)*self.obs_scales.base_z
-        error = torch.clamp(base_height - self.cfg.rewards.base_height_target,
-                            max=0, min=None).flatten()
+        base_height = self.root_states[:,2].unsqueeze(1)
+        error = (base_height-self.cfg.rewards.base_height_target)
+        error *= self.obs_scales.base_z
+        error = torch.clamp(error, max=0, min=None).flatten()
         return torch.exp(-torch.square(error)/self.cfg.rewards.tracking_sigma)
+
+    def _reward_tracking_lin_vel(self):
+        # Tracking of linear velocity commands (xy axes)
+        error = self.commands[:, :2] - self.base_lin_vel[:, :2]
+        error *= self.obs_scales.lin_vel
+        error = torch.sum(torch.square(error), dim=1)
+        return torch.exp(-error/self.cfg.rewards.tracking_sigma)
