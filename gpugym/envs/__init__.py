@@ -40,7 +40,6 @@ from .cassie.cassie_config import CassieRoughCfg, CassieRoughCfgPPO
 from .mit_humanoid.mit_humanoid import MIT_Humanoid
 from .mit_humanoid.mit_humanoid_config import MITHumanoidCfg, MITHumanoidCfgPPO
 
-
 import os
 
 from gpugym.utils.task_registry import task_registry
