@@ -66,12 +66,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="HIP_yL"
+    name="left_hip_yaw"
     type="continuous">
     <origin
       xyz="0 0.082 0"
@@ -112,12 +112,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="HIP_aaL"
+    name="left_hip_abad"
     type="continuous">
     <origin
       xyz="-0.06435 0 -.07499"
@@ -163,7 +163,7 @@
     </visual>
   </link>
   <joint
-    name="HIP_pL"
+    name="left_hip_pitch"
     type="continuous">
     <origin
       xyz="0.08837 -0.00284 -0.01385"
@@ -205,12 +205,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="KNEE_L"
+    name="left_knee"
     type="continuous">
     <origin
       xyz="-0.01306 0.0 -0.24916"
@@ -263,7 +263,7 @@
     </collision>
   </link>
   <joint
-    name="ANKLE_L"
+    name="left_ankle"
     type="continuous">
     <origin
       xyz="0.0 0.0 -0.2785"
@@ -374,12 +374,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="HIP_yR"
+    name="right_hip_yaw"
     type="continuous">
     <origin
       xyz="0 -0.082 0"
@@ -421,12 +421,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="HIP_aaR"
+    name="right_hip_abad"
     type="continuous">
     <origin
       xyz="-0.06435 0 -.07499"
@@ -468,12 +468,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="HIP_pR"
+    name="right_hip_pitch"
     type="continuous">
     <origin
       xyz="0.08837 0.00284 -0.01385"
@@ -487,7 +487,7 @@
           <limit effort="72" lower="-6.28" upper="6.28" velocity="50"/>
     <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/>
   </joint>
-
+  
   <link
     name="right_lower_leg">
     <inertial>
@@ -515,12 +515,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="KNEE_R"
+    name="right_knee"
     type="continuous">
     <origin
       xyz="-0.01306 0.0 -0.24916"
@@ -562,7 +562,7 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
     <collision>
@@ -573,7 +573,7 @@
     </collision>
   </link>
   <joint
-    name="ANKLE_R"
+    name="right_ankle"
     type="continuous">
     <origin
       xyz="0.0 0.0 -0.2785"
@@ -686,12 +686,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="SHOULDER_pL"
+    name="left_shoulder_pitch"
     type="continuous">
     <origin
       xyz="0.01911 0.17608 0.30392"
@@ -733,12 +733,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="SHOULDER_aaL"
+    name="left_shoulder_abad"
     type="continuous">
     <origin
       xyz="0 .05760 0"
@@ -781,12 +781,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="SHOULDER_yL"
+    name="left_shoulder_yaw"
     type="continuous">
     <origin
       xyz="0 0 -.10250"
@@ -829,12 +829,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="ELBOW_L"
+    name="left_elbow"
     type="continuous">
     <origin
       xyz="0 0 -.15750"
@@ -867,12 +867,12 @@
       <collision>
         <origin rpy="1.57079 0 0" xyz="0.0 0.0 0."/>
         <geometry>
-            <cylinder radius="0.025" length="0.025"/>
+            <cylinder radius="0.025" length="0.015"/>
         </geometry>
     </collision>
   </link>
   <joint
-    name="HAND_L"
+    name="left_hand_link"
     type="fixed">
     <origin
       xyz="0 0 -0.27"
@@ -911,12 +911,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="SHOULDER_pR"
+    name="right_shoulder_pitch"
     type="continuous">
     <origin
       xyz="0.01911 -0.17608 0.30392"
@@ -958,12 +958,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="SHOULDER_aaR"
+    name="right_shoulder_abad"
     type="continuous">
     <origin
       xyz="0 -.05760 0"
@@ -1006,12 +1006,12 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
   <joint
-    name="SHOULDER_yR"
+    name="right_shoulder_yaw"
     type="continuous">
     <origin
       xyz="0 0 -.10250"
@@ -1054,7 +1054,7 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
         <!-- <collision>
@@ -1065,7 +1065,7 @@
         </collision> -->
   </link>
   <joint
-    name="ELBOW_R"
+    name="right_elbow"
     type="continuous">
     <origin
       xyz="0 0 -.15750"
@@ -1098,12 +1098,12 @@
       <collision>
         <origin rpy="1.57079 0 0" xyz="0.0 0.0 0."/>
         <geometry>
-            <cylinder radius="0.025" length="0.025"/>
+            <cylinder radius="0.025" length="0.015"/>
         </geometry>
     </collision>
   </link>
   <joint
-    name="HAND_R"
+    name="right_hand_link"
     type="fixed">
     <origin
       xyz="0 0 -0.27"
