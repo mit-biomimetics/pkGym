@@ -83,7 +83,7 @@ class LeggedRobotCfg(BaseConfig):
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
         default_joint_angles = { # target angles when action = 0.0
-            "joint_a": 0., 
+            "joint_a": 0.,
             "joint_b": 0.}
 
     class control:

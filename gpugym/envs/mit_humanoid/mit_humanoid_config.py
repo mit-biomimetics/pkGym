@@ -61,41 +61,84 @@ class MITHumanoidCfg(LeggedRobotCfg):
             heading = [-1.14, 1.14]
 
     class init_state(LeggedRobotCfg.init_state):
-        pos = [0.0, 0.0, 0.72]  # x,y,z [m]
-        lin_vel = [1.5, 0.0, 0.0] 
-        
+        pos = [0.0, 0.0, 0.82]  # x,y,z [m]
+        lin_vel = [0., 0.0, 0.0]
+
+        # default_joint_angles = {
+        #     'left_hip_yaw': 0.,
+        #     'left_hip_abad': 0., #-0.5,
+        #     'left_hip_pitch': 0., #-0.9,
+        #     'left_knee':  0.0,  # 785,
+        #     'left_ankle': 0.,
+        #     'left_shoulder_pitch': 0., #-1.5,
+        #     'left_shoulder_abad': 0.,
+        #     'left_shoulder_yaw': 0.,
+        #     'left_elbow': 0.,
+        #     'right_hip_yaw': 0.,
+        #     'right_hip_abad': 0.,  #0.5,
+        #     'right_hip_pitch': 0., #0.9,
+        #     'right_knee': 0.0,
+        #     'right_ankle': 0.,
+        #     'right_shoulder_pitch': 0.,  #1.5,
+        #     'right_shoulder_abad': 0.,
+        #     'right_shoulder_yaw': 0.,
+        #     'right_elbow': 0.
+        # }
+
         default_joint_angles = {
-            'left_hip_yaw': 0.,
-            'left_hip_abad': 0.,
-            'left_hip_pitch': 0.,
-            'left_knee': 0.,  # 0.785,
-            'left_ankle': 0.,
-            'left_shoulder_pitch': 0.,
-            'left_shoulder_abad': 0.,
-            'left_shoulder_yaw': 0.,
-            'left_elbow': 0.,
-            'right_hip_yaw': 0.,
-            'right_hip_abad': 0.,
-            'right_hip_pitch': 0.,
-            'right_knee': 0.,  # 0.785,
-            'right_ankle': 0.,
-            'right_shoulder_pitch': 0.,
-            'right_shoulder_abad': 0.,
-            'right_shoulder_yaw': 0.,
-            'right_elbow': 0.
+            'left_hip_yaw': 0.,  # * -6.28 | 6.28
+            'left_hip_abad': 0.,  # * -6.28 | 6.28
+            'left_hip_pitch': 0.75,  # * -6.28 | 6.28
+            'left_knee':  0.5,  # * 0. | 3.
+            'left_ankle': 0.,  # * -1.5 | 1.5
+            'left_shoulder_pitch': 1.5,  # * -6.28 | 6.28
+            'left_shoulder_abad': 0.,  # * -6.28 | 6.28
+            'left_shoulder_yaw': 0.,  # * -6.28 | 6.28
+            'left_elbow': 0.,  # * -6.28 | 6.28
+
+            'right_hip_yaw': 0.,  # * -6.28 | 6.28
+            'right_hip_abad': 0.,  # * -6.28 | 6.28
+            'right_hip_pitch': -0.75,  # * -6.28 | 6.28
+            'right_knee': 0.0,  # * 0. | 3.
+            'right_ankle': 0.,  # * -1.5 | 1.5
+            'right_shoulder_pitch': -1.5,  # * -6.28 | 6.28
+            'right_shoulder_abad': 0.,  # * -6.28 | 6.28
+            'right_shoulder_yaw': 0.,  # * -6.28 | 6.28
+            'right_elbow': 0.  # * -6.28 | 6.28
         }
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
+        # stiffness = {'hip_yaw': 0.,
+        #              'hip_abad': 0.,
+        #              'hip_pitch': 0.,
+        #              'knee': 0.,
+        #              'ankle': 0.,
+        #              'shoulder_pitch': 0.,
+        #              'shoulder_abad': 0.,
+        #              'shoulder_yaw': 0.,
+        #              'elbow': 0.,
+        #             }  # [N*m/rad]
+        # damping = {'hip_yaw': 0.,
+        #            'hip_abad': 0.,
+        #            'hip_pitch': 0.,
+        #            'knee': 0.,
+        #            'ankle': 0.,
+        #            'shoulder_pitch': 0.,
+        #            'shoulder_abad': 0.,
+        #            'shoulder_yaw': 0.,
+        #            'elbow': 0.,
+        #             }  # [N*m*s/rad]     # [N*m*s/rad]
+        # PD Drive parameters:
         stiffness = {'hip_yaw': 40.,
-                     'hip_abad': 80.,
+                     'hip_abad': 40.,
                      'hip_pitch': 40.,
                      'knee': 40.,
                      'ankle': 40.,
-                     'shoulder_pitch': 20.,
-                     'shoulder_abad': 20.,
-                     'shoulder_yaw': 20.,
-                     'elbow': 20.,
+                     'shoulder_pitch': 40.,
+                     'shoulder_abad': 40.,
+                     'shoulder_yaw': 40.,
+                     'elbow': 40.,
                     }  # [N*m/rad]
         damping = {'hip_yaw': 1.,
                    'hip_abad': 1.,
@@ -107,10 +150,14 @@ class MITHumanoidCfg(LeggedRobotCfg):
                    'shoulder_yaw': 1.,
                    'elbow': 1.,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
+        # stiffness = {}
+        # damping = {}
         # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = 10.
+        control_type = 'P' # P: position, V: velocity, T: torques
+        # PD Drive parameters:
+        action_scale = 1.
         # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 10  # ! substeps?
+        decimation = 1  # ! substeps?
 
     class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_friction = False
@@ -130,7 +177,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 1
-        disable_gravity = False
+        disable_gravity = True
 
     class rewards(LeggedRobotCfg.rewards):
         # soft_dof_pos_limit = 0.95
@@ -178,24 +225,24 @@ class MITHumanoidCfg(LeggedRobotCfg):
             dof_vel = 0.05  # ought to be roughly max expected speed.
 
             height_measurements = 1./0.72
-        clip_observations = 100.
-        clip_actions = 1000.
+        # clip_observations = 100.
+        clip_actions = 0.
 
     class noise(LeggedRobotCfg.noise):
-        add_noise = True
+        add_noise = False
         noise_level = 0.1  # scales other values
         class noise_scales(LeggedRobotCfg.noise.noise_scales):
-            dof_pos = 0.01
-            dof_vel = 0.01
-            lin_vel = 0.1
-            ang_vel = 0.2
-            gravity = 0.05
-            height_measurements = 0.1
+            dof_pos = 0.0  # 0.01
+            dof_vel = 0.0  # 0.01
+            lin_vel = 0.0  # 0.1
+            ang_vel = 0.0  # 0.2
+            gravity = 0.0  # 0.05
+            height_measurements = 0.0  # 0.1
 
     class sim(LeggedRobotCfg.sim):
         dt = 0.001
         substeps = 1
-        gravity = [0., 0., -9.81]
+        gravity = [0., 0., 0.] #-9.81]
 
 
 class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
@@ -204,9 +251,6 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
         run_name = ''
         experiment_name = 'MIT_Humanoid'
 
-    class algorithm(LeggedRobotCfgPPO.algorithm):
-        entropy_coef = 0.01
-
     class runner(LeggedRobotCfgPPO.runner):
         num_steps_per_env = 50
         max_iterations = 15000
@@ -214,6 +258,6 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
         save_interval = 100
 
     class policy( LeggedRobotCfgPPO.policy ):
-        actor_hidden_dims = [512, 256, 128]
-        critic_hidden_dims = [512, 256, 128]
+        actor_hidden_dims = [256, 256, 128]
+        critic_hidden_dims = [256, 256, 128]
         activation = 'elu' # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid

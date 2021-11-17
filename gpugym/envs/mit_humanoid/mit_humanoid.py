@@ -46,6 +46,19 @@ class MIT_Humanoid(LeggedRobot):
         # * init buffer for phase variable
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
+        # self.default_dof_pos = torch.zeros(self.num_dof, dtype=torch.float,
+        #                                    device=self.device,
+        #                                    requires_grad=False)
+
+
+
+        # def pre_physics_step(self):
+        # """
+        # adjust actions
+        # """
+
+        # return 0
+
 
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
