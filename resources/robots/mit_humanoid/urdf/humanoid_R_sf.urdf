@@ -72,7 +72,7 @@
   </link>
   <joint
     name="left_hip_yaw"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 0.082 0"
       rpy="0 -0.174533 0" />
@@ -82,7 +82,7 @@
       link="left_hip_yaw" />
     <axis
       xyz="0 0 -1" />
-    <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
+    <limit effort="34" lower="-3" upper="3" velocity="50"/>
     <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
   <link
@@ -118,7 +118,7 @@
   </link>
   <joint
     name="left_hip_abad"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="-0.06435 0 -.07499"
       rpy="0.0 0.436332 0.0"/>
@@ -128,7 +128,7 @@
       link="left_hip_abad" />
     <axis
       xyz="1 0 0" />
-          <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
+          <limit effort="34" lower="-3" upper="3" velocity="50"/>
     <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
  <link 
@@ -164,7 +164,7 @@
   </link>
   <joint
     name="left_hip_pitch"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.08837 -0.00284 -0.01385"
       rpy="0 -0.261799 0" />
@@ -174,7 +174,7 @@
       link="left_upper_leg" />
     <axis
       xyz="0 1 0" />
-          <limit effort="72" lower="-6.28" upper="6.28" velocity="50"/>
+          <limit effort="72" lower="-3" upper="3" velocity="50"/>
     <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/> -->
   </joint>
   
@@ -211,7 +211,7 @@
   </link>
   <joint
     name="left_knee"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="-0.01306 0.0 -0.24916"
       rpy="0 0 0" />
@@ -264,7 +264,7 @@
   </link>
   <joint
     name="left_ankle"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.0 0.0 -0.2785"
       rpy="0 0 0" />
@@ -380,7 +380,7 @@
   </link>
   <joint
     name="right_hip_yaw"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 -0.082 0"
       rpy="0 -0.174533 0" />
@@ -390,7 +390,7 @@
       link="right_hip_yaw" />
     <axis
       xyz="0 0 1" />
-    <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
+    <limit effort="34" lower="-3" upper="3" velocity="50"/>
     <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
   
@@ -427,7 +427,7 @@
   </link>
   <joint
     name="right_hip_abad"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="-0.06435 0 -.07499"
       rpy="0.0 0.436332 0.0"/>
@@ -437,7 +437,7 @@
       link="right_hip_abad" />
     <axis
       xyz="-1 0 0" />
-          <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
+          <limit effort="34" lower="-3" upper="3" velocity="50"/>
     <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
   
@@ -474,7 +474,7 @@
   </link>
   <joint
     name="right_hip_pitch"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.08837 0.00284 -0.01385"
       rpy="0 -0.261799 0" />
@@ -484,7 +484,7 @@
       link="right_upper_leg" />
     <axis
       xyz="0 1 0" />
-          <limit effort="72" lower="-6.28" upper="6.28" velocity="50"/>
+          <limit effort="72" lower="-3" upper="3" velocity="50"/>
     <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/> -->
   </joint>
   
@@ -521,7 +521,7 @@
   </link>
   <joint
     name="right_knee"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="-0.01306 0.0 -0.24916"
       rpy="0 0 0" />
@@ -574,7 +574,7 @@
   </link>
   <joint
     name="right_ankle"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.0 0.0 -0.2785"
       rpy="0 0 0" />
@@ -692,7 +692,7 @@
   </link>
   <joint
     name="left_shoulder_pitch"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.01911 0.17608 0.30392"
       rpy="0 0 0" />
@@ -702,7 +702,7 @@
       link="left_shoulder" />
     <axis
       xyz="0 1 0" />
-          <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
+          <limit effort="34" lower="-3" upper="3" velocity="50"/>
     <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
   
@@ -739,7 +739,7 @@
   </link>
   <joint
     name="left_shoulder_abad"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 .05760 0"
       rpy="0.0 0 0" />
@@ -749,7 +749,7 @@
       link="left_shoulder_2" />
     <axis
       xyz="1 0 0" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
+        <limit effort="34" lower="-3" upper="3" velocity="50"/>
     <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
   <!--  -->
@@ -787,7 +787,7 @@
   </link>
   <joint
     name="left_shoulder_yaw"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 0 -.10250"
       rpy="0.0 0 0" />
@@ -797,7 +797,7 @@
       link="left_upper_arm" />
     <axis
       xyz="0 0 -1" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
+        <limit effort="34" lower="-3" upper="3" velocity="50"/>
     <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
 
@@ -835,7 +835,7 @@
   </link>
   <joint
     name="left_elbow"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 0 -.15750"
       rpy="0 0 0.0" />
@@ -845,7 +845,7 @@
       link="left_lower_arm" />
     <axis
       xyz="0 1 0" />
-        <limit effort="55" lower="-6.28" upper="6.28" velocity="50"/>
+        <limit effort="55" lower="-3" upper="3" velocity="50"/>
     <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0304"/> -->
   </joint>
   <link
@@ -917,7 +917,7 @@
   </link>
   <joint
     name="right_shoulder_pitch"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.01911 -0.17608 0.30392"
       rpy="0 0 0" />
@@ -927,7 +927,7 @@
       link="right_shoulder" />
     <axis
       xyz="0 1 0" />
-          <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
+          <limit effort="34" lower="-3" upper="3" velocity="50"/>
     <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
   
@@ -964,7 +964,7 @@
   </link>
   <joint
     name="right_shoulder_abad"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 -.05760 0"
       rpy="0.0 0 0" />
@@ -974,7 +974,7 @@
       link="right_shoulder_2" />
     <axis
       xyz="-1 0 0" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
+        <limit effort="34" lower="-3" upper="3" velocity="50"/>
     <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
   <!--  -->
@@ -1012,7 +1012,7 @@
   </link>
   <joint
     name="right_shoulder_yaw"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 0 -.10250"
       rpy="0.0 0 0" />
@@ -1022,7 +1022,7 @@
       link="right_upper_arm" />
     <axis
       xyz="0 0 1" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
+        <limit effort="34" lower="-3" upper="3" velocity="50"/>
     <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
 
@@ -1066,7 +1066,7 @@
   </link>
   <joint
     name="right_elbow"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 0 -.15750"
       rpy="0 0 0.0" />
@@ -1076,7 +1076,7 @@
       link="right_lower_arm" />
     <axis
       xyz="0 1 0" />
-        <limit effort="55" lower="-6.28" upper="6.28" velocity="50"/>
+        <limit effort="55" lower="-3" upper="3" velocity="50"/>
     <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0304"/> -->
   </joint>
     <link
