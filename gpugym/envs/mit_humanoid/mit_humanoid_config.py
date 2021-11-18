@@ -173,7 +173,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         flip_visual_attachments = False
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         disable_gravity = True
-        #default_dof_drive_mode = 1
+        #default_dof_drive_mode = 3
 
 
 
@@ -250,6 +250,11 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
         max_iterations = 15000
 
         save_interval = 100
+    
+    class algorithm(LeggedRobotCfgPPO.algorithm):
+        entropy_coef = 0.01
 
-    #class algorithm( LeggedRobotCfgPPO.algorithm):
-        #entropy_coef = 0.01
+    class policy( LeggedRobotCfgPPO.policy ):
+        actor_hidden_dims = [512, 256, 128]
+        critic_hidden_dims = [512, 256, 128]
+        activation = 'elu' # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
