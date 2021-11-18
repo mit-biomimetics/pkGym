@@ -142,4 +142,4 @@ class BaseTask():
                     self.gym.sync_frame_time(self.sim)
             else:
                 self.gym.poll_viewer_events(self.viewer)
-                self.gym.draw_viewer(self.viewer, self.sim, True)
+                # self.gym.draw_viewer(self.viewer, self.sim, True)
