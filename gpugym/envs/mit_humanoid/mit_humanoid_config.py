@@ -177,23 +177,34 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
 
 
-    class rewards( LeggedRobotCfg.rewards ):
-        soft_dof_pos_limit = 0.95
-        soft_dof_vel_limit = 0.9
-        soft_torque_limit = 0.9
-        max_contact_force = 300.
+    class rewards(LeggedRobotCfg.rewards):
+        # soft_dof_pos_limit = 0.95
+        # soft_dof_vel_limit = 0.9
+        # soft_torque_limit = 0.9
+        max_contact_force = 600.
+
+        # if true negative total rewards are clipped at zero (avoids early termination problems)
         only_positive_rewards = False
-        class scales( LeggedRobotCfg.rewards.scales ):
-            termination = -200.
-            tracking_ang_vel = 1.0
-            torques = -5.e-6
-            dof_acc = -2.e-7
-            lin_vel_z = -0.5
-            feet_air_time = 5.
-            dof_pos_limits = -1.
-            no_fly = 0.25
-            dof_vel = -0.0
+        base_height_target = 0.55
+        tracking_sigma = 0.25
+        class scales(LeggedRobotCfg.rewards.scales):
+            termination = -10.
+            tracking_lin_vel = 5.0
+            tracking_ang_vel = 0.0
+            lin_vel_z = -1.0
             ang_vel_xy = -0.0
+            orientation = -1.25
+            torques = -5.e-8
+            dof_vel = 0.0
+            dof_acc = 0.
+            base_height = 1.5
+            feet_air_time = 0.0  # rewards keeping feet in the air
+            collision = -0.
+            feet_stumble = -0.
+            action_rate = 0.  # -0.01
+            stand_still = -0.
+            dof_pos_limits = -1.
+            no_fly = 0.0
             feet_contact_forces = -0.
 
     class normalization(LeggedRobotCfg.normalization):
