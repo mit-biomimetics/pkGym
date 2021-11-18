@@ -34,7 +34,7 @@ from gpugym.envs.base.legged_robot_config import LeggedRobotCfgPPO
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 4096
+        num_envs = 10
         num_observations = 67+2  # 187  # ! why? should be 66...
         num_actions = 18
 
@@ -61,19 +61,12 @@ class MITHumanoidCfg(LeggedRobotCfg):
             heading = [-1.14, 1.14]
 
     class init_state(LeggedRobotCfg.init_state):
-<<<<<<< HEAD
-        pos = [0.0, 0.0, 0.71]  # x,y,z [m]
+        pos = [0.0, 0.0, 1.]  # x,y,z [m]
         default_joint_angles = {  # = target angles [rad] when action = 0.0
-=======
-        pos = [0.0, 0.0, 0.72]  # x,y,z [m]
-        lin_vel = [1.5, 0.0, 0.0] 
-        
-        default_joint_angles = {
->>>>>>> origin/dev
             'left_hip_yaw': 0.,
             'left_hip_abad': 0.,
             'left_hip_pitch': 0.,
-            'left_knee': 0.,  # 0.785,
+            'left_knee': 0.75,  # 0.785,
             'left_ankle': 0.,
             'left_shoulder_pitch': 0.,
             'left_shoulder_abad': 0.,
@@ -82,7 +75,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             'right_hip_yaw': 0.,
             'right_hip_abad': 0.,
             'right_hip_pitch': 0.,
-            'right_knee': 0.,  # 0.785,
+            'right_knee': 0.75,  # 0.785,
             'right_ankle': 0.,
             'right_shoulder_pitch': 0.,
             'right_shoulder_abad': 0.,
@@ -113,9 +106,9 @@ class MITHumanoidCfg(LeggedRobotCfg):
                    'elbow': 1.,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
         # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = 10.
+        action_scale = 1.
         # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 10  # ! substeps?
+        decimation = 1  # ! substeps?
 
     class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_friction = False
@@ -132,10 +125,10 @@ class MITHumanoidCfg(LeggedRobotCfg):
         penalize_contacts_on = ['base']
         terminate_after_contacts_on = ['base']
         flip_visual_attachments = False
-        self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
+        self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
-        default_dof_drive_mode = 1
-        disable_gravity = False
+        default_dof_drive_mode = 3
+        disable_gravity = True
 
     class rewards(LeggedRobotCfg.rewards):
         # soft_dof_pos_limit = 0.95
@@ -187,7 +180,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         clip_actions = 1000.
 
     class noise(LeggedRobotCfg.noise):
-        add_noise = True
+        add_noise = False
         noise_level = 0.1  # scales other values
         class noise_scales(LeggedRobotCfg.noise.noise_scales):
             dof_pos = 0.01
@@ -200,7 +193,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
     class sim(LeggedRobotCfg.sim):
         dt = 0.001
         substeps = 1
-        gravity = [0., 0., -9.81]
+        gravity = [0., 0., 0.]
 
 
 class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
