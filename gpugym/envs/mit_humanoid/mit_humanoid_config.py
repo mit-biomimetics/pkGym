@@ -50,8 +50,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
         resampling_time = 10. # time before command are changed[s]
         heading_command = True # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [3.0, 5.0] # min max [m/s]
-            lin_vel_y = [-0., 0.]   # min max [m/s]
+            lin_vel_x = [-1, 5.0] # min max [m/s]
+            lin_vel_y = [-1., 1.]   # min max [m/s]
             ang_vel_yaw = [0., 0.]    # min max [rad/s]
             heading = [-1.14, 1.14]
 
@@ -119,7 +119,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         friction_range = [0.5, 1.25]
         randomize_base_mass = False
         added_mass_range = [-1., 1.]
-        push_robots = False
+        push_robots = True
         push_interval_s = 15
         max_push_vel_xy = 1.
 
@@ -133,35 +133,39 @@ class MITHumanoidCfg(LeggedRobotCfg):
         disable_gravity = False
 
     class rewards(LeggedRobotCfg.rewards):
-        # soft_dof_pos_limit = 0.95
-        # soft_dof_vel_limit = 0.9
-        # soft_torque_limit = 0.9
-        max_contact_force = 600.
+
+        # * percentage of urdf limits, values above this limit are penalized
+        soft_dof_pos_limit = 0.9
+        soft_dof_vel_limit = 0.95
+        soft_torque_limit = 0.95
+        max_contact_force = 300.
 
         # if true negative total rewards are clipped at zero
         only_positive_rewards = False
-        base_height_target = 0.55
+        base_height_target = 0.7
         tracking_sigma = 0.25
 
         class scales(LeggedRobotCfg.rewards.scales):
-            termination = -10.
-            tracking_lin_vel = 25.0
-            tracking_ang_vel = 0.0
-            lin_vel_z = -1.0
-            ang_vel_xy = -0.0
-            orientation = -1.25
-            torques = -5.e-8
+            termination = -1.
+            tracking_lin_vel = 3.0
+            tracking_ang_vel = 1.0
+            lin_vel_z = 0.1
+            ang_vel_xy = 0.5
+            orientation = 0.5  # -1.25
+            torques = -1.e-7
             dof_vel = 0.0
             dof_acc = 0.
-            base_height = 0.5
+            base_height = 2.0
             feet_air_time = 0.0  # rewards keeping feet in the air
             collision = -0.
             feet_stumble = -0.
-            action_rate = -1.e-4 # -0.01
+            action_rate = -5.e-5 # -0.01
             stand_still = -0.
-            dof_pos_limits = -1.
+            dof_pos_limits = -3.
             no_fly = 0.0
             feet_contact_forces = -0.
+            symm_legs = 0.01
+            symm_arms = 0.01
 
     class normalization(LeggedRobotCfg.normalization):
             class obs_scales(LeggedRobotCfg.normalization.obs_scales):
@@ -182,7 +186,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             clip_actions = 1000.
 
     class noise(LeggedRobotCfg.noise):
-        add_noise = False
+        add_noise = True
         noise_level = 0.1  # scales other values
 
         class noise_scales(LeggedRobotCfg.noise.noise_scales):
@@ -205,13 +209,13 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
     class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
         experiment_name = 'MIT_Humanoid'
-        num_steps_per_env = 50
-        max_iterations = 15000
+        num_steps_per_env = 24
+        max_iterations = 1500
 
         save_interval = 100
     
     class algorithm(LeggedRobotCfgPPO.algorithm):
-        entropy_coef = 0.01
+        entropy_coef = 0.02
 
     class policy( LeggedRobotCfgPPO.policy ):
         actor_hidden_dims = [512, 256, 128]

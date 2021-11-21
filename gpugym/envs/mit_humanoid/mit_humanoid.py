@@ -156,15 +156,37 @@ class MIT_Humanoid(LeggedRobot):
                                 * self.obs_scales.height_measurements
         return noise_vec
 
+    def sqrdexp(self, x):
+        """ shorthand helper for squared exponential
+        """
+        return torch.exp(-torch.square(x)/self.cfg.rewards.tracking_sigma)
+
     def _reward_no_fly(self):
         contacts = self.contact_forces[:, self.feet_indices, 2] > 0.1
         single_contact = torch.sum(1.*contacts, dim=1) == 1
         return 1.*single_contact
 
+    def _reward_lin_vel_z(self):
+        # Penalize z axis base linear velocity w. squared exp
+        return self.sqrdexp(self.base_lin_vel[:, 2]  \
+                            * self.cfg.normalization.obs_scales.lin_vel)
+
+    def _reward_ang_vel_xy(self):
+        # Penalize xy axes base angular velocity
+        error = self.sqrdexp(self.base_ang_vel[:, :2] \
+                             * self.cfg.normalization.obs_scales.ang_vel)
+        return torch.sum(error, dim=1)
+
+    def _reward_orientation(self):
+        # Penalize non flat base orientation
+        error = torch.sum(torch.square(self.projected_gravity[:, :2]), dim=1)
+        return torch.exp(-error/self.cfg.rewards.tracking_sigma)
+        # return self.sqrdexp(self.projected_gravity[:, 2]+1.)
+
     def _reward_base_height(self):
         """ Squared exponential saturating at base_height target
         """
-        base_height = self.root_states[:,2].unsqueeze(1)
+        base_height = self.root_states[:, 2].unsqueeze(1)
         error = (base_height-self.cfg.rewards.base_height_target)
         error *= self.obs_scales.base_z
         error = torch.clamp(error, max=0, min=None).flatten()
@@ -172,8 +194,10 @@ class MIT_Humanoid(LeggedRobot):
 
     def _reward_tracking_lin_vel(self):
         # Tracking of linear velocity commands (xy axes)
+        # just use lin_vel?
         error = self.commands[:, :2] - self.base_lin_vel[:, :2]
-        error *= self.obs_scales.lin_vel
+        # * scale by (1+|cmd|): if cmd=0, no scaling.
+        error *= 1./(1. + torch.abs(self.commands[:, :2]))
         error = torch.sum(torch.square(error), dim=1)
         return torch.exp(-error/self.cfg.rewards.tracking_sigma)
 
@@ -187,3 +211,30 @@ class MIT_Humanoid(LeggedRobot):
         # todo this tracking_sigma is not scaled (check)
         # error = torch.exp(-error/self.cfg.rewards.tracking_sigma)
         return torch.sum(error, dim=1)
+
+    def _reward_dof_vel(self):
+        # Penalize dof velocities
+        return self.sqrdexp(self.dof_vel  \
+                            / self.cfg.normalization.obs_scales.dof_vel)
+
+    def _reward_symm_legs(self):
+        error = 0.
+        for i in range(2, 5):
+            error += self.sqrdexp((self.dof_pos[:, i]+self.dof_pos[:, i+9]) \
+                        / self.cfg.normalization.obs_scales.dof_pos)
+        for i in range(0, 2):
+            error += self.sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
+                        / self.cfg.normalization.obs_scales.dof_pos)
+        return error
+
+    def _reward_symm_arms(self):
+        error = 0.
+        for i in range(6, 8):
+            error += self.sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
+                        / self.cfg.normalization.obs_scales.dof_pos)
+        error += self.sqrdexp((self.dof_pos[:, 5]+self.dof_pos[:, 14]) \
+                        / self.cfg.normalization.obs_scales.dof_pos)
+        error += self.sqrdexp((self.dof_pos[:, 8]+self.dof_pos[:, 17]) \
+                        / self.cfg.normalization.obs_scales.dof_pos)
+        return error
+
