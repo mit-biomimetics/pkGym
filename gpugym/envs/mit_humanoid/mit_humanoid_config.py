@@ -93,19 +93,20 @@ class MITHumanoidCfg(LeggedRobotCfg):
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
 
         #initialization for random range setup
-        dof_pos_high = [0.,0.,0.,0.75, 0., 0., 0.,0.,0.75, 0., 0., 0., 0.,0., 0., 0., 0., 0. ] #DOF dimensions
+        dof_pos_high = [0.,0.,0.,0.75, 0., 0., 0.,0.,0., 0., 0., 0., 0.,0., 0., 0., 0., 0. ] #DOF dimensions
         dof_pos_low =  [0.,0.,0.,0.,   0., 0., 0.,0.,0.,   0., 0., 0., 0.,0., 0., 0., 0., 0. ]
         dof_vel_high = [0.,0.,0.,0.0, 0., 0., 0.,0.,0.0, 0., 0., 0., 0.,0., 0., 0., 0., 0. ]
         dof_vel_low = [0.,0.,0.,0.0, 0., 0., 0.,0.,0.0, 0., 0., 0., 0.,0., 0., 0., 0., 0. ]
-        com_pos_high = [0.,0.,1., 0., 0., 0., 1.] #COM dimensions
-        com_pos_low = [0.,0.,1., 0., 0., 0., 1.]
-        com_vel_high = [0.,0.,0., 0., 0., 0.]
+
+        com_pos_high = [0.,0.,1., 0., 0.5, 0.] #COM dimensions, in euler angles because randomizing in quat is confusing
+        com_pos_low = [0.,0.,1., 0., -0.5, 0.] #x, y ,z, roll, pitch, yaw
+        com_vel_high = [0.,0.,0., 0., 0.5, 0.]
         com_vel_low = [0.,0.,0.,0.,0.,0.]
 
         #initialization for traj random range setup
         state_pos_trajectory = [[0.,0.,0.],[0.,0.,0.]] #state dimensions x trajectory time step dimension
         state_vel_trajectory = [[0.,0.,0.],[0.,0.,0.]]
-        
+
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
         stiffness = {'hip_yaw': 40.,
@@ -229,7 +230,7 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
         entropy_coef = 0.01
 
     class runner(LeggedRobotCfgPPO.runner):
-        num_steps_per_env = 50
+        num_steps_per_env = 20
         max_iterations = 15000
 
         save_interval = 100

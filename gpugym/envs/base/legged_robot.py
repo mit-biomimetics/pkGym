@@ -48,6 +48,8 @@ from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
 from gpugym.utils.helpers import class_to_dict
 from .legged_robot_config import LeggedRobotCfg
 
+
+
 class LeggedRobot(BaseTask):
     def __init__(self, cfg: LeggedRobotCfg, sim_params, physics_engine, sim_device, headless):
         """ Parses the provided config file,
@@ -393,6 +395,12 @@ class LeggedRobot(BaseTask):
         torques[:] = 0.
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
 
+    def random_sample(self, env_ids, high, low):
+        rand_pos = torch_rand_float(0, 1, (len(env_ids), len(low)), device=self.device)
+        diff_pos = (high - low).repeat(len(env_ids),1)
+        random_dof_pos = rand_pos*diff_pos + low.repeat(len(env_ids),1)
+        return random_dof_pos 
+
     def _reset_system(self, env_ids):
         """ Resets DOF position and velocities of selected environmments
         Positions are randomly selected within 0.5:1.5 x default positions.
@@ -414,22 +422,28 @@ class LeggedRobot(BaseTask):
             dof_pos_low = to_torch(self.cfg.init_state.dof_pos_low)
             dof_vel_high = to_torch(self.cfg.init_state.dof_vel_high)
             dof_vel_low = to_torch(self.cfg.init_state.dof_vel_high)
-
-            rand_pos = torch_rand_float(0, 1, (len(env_ids), len(dof_pos_low)), device=self.device)
-            diff_pos = (dof_pos_high - dof_pos_low).repeat(len(env_ids),1)
-            random_dof_pos = rand_pos*diff_pos + dof_pos_low.repeat(len(env_ids),1)\
-
-            rand_vel = torch_rand_float(0, 1, (len(env_ids), len(dof_pos_low)), device=self.device)
-            diff_vel = (dof_vel_high - dof_vel_low).repeat(len(env_ids),1)
-            random_dof_vel = rand_vel*diff_vel + dof_vel_low.repeat(len(env_ids),1)
             
-            self.dof_pos[env_ids] = random_dof_pos
-            self.dof_vel[env_ids] = random_dof_vel
+            self.dof_pos[env_ids] = self.random_sample(env_ids,dof_pos_high,dof_pos_low)
+            self.dof_vel[env_ids] = self.random_sample(env_ids,dof_vel_high,dof_vel_low)
 
             #base state
-            self.root_states[env_ids] = self.base_init_state
-            self.root_states[env_ids, 7:13] = 0.0
+            com_pos_high = to_torch(self.cfg.init_state.com_pos_high)
+            com_pos_low = to_torch(self.cfg.init_state.com_pos_low)
+            com_vel_high = to_torch(self.cfg.init_state.com_vel_high)
+            com_vel_low = to_torch(self.cfg.init_state.com_vel_high)
+
+            random_com_pos = self.random_sample(env_ids,com_pos_high,com_pos_low)
+            random_com_vel = self.random_sample(env_ids,com_vel_high,com_vel_low)
+            quat = torch.zeros(len(env_ids), 4, device=self.device)
+            for i in range(len(env_ids)):
+                quat[i,:] = quat_from_euler_xyz(random_com_pos[i,3],random_com_pos[i,4],random_com_pos[i,5]) 
+
+            random_root_state = torch.cat((random_com_pos[:,0:3], quat), 1)
             
+            ## TODO: CHECK PENETRATION
+            self.root_states[env_ids, 0:7] = random_root_state
+            self.root_states[env_ids, 7:13] = random_com_vel
+
 
 
         elif self.cfg.init_state.default_setup == "Trajectory":
@@ -441,20 +455,20 @@ class LeggedRobot(BaseTask):
             self.root_states[env_ids] = self.base_init_state
             self.root_states[env_ids, 7:13] = 0.0
 
+
+
         env_ids_int32 = env_ids.to(dtype=torch.int32)
         self.gym.set_dof_state_tensor_indexed(self.sim,
                                               gymtorch.unwrap_tensor(self.dof_state),
                                               gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
 
         
-        # RESET BASE 
-
         # base position
         if self.custom_origins:
             self.root_states[env_ids, :3] += self.env_origins[env_ids]
             self.root_states[env_ids, :2] += torch_rand_float(-1., 1., (len(env_ids), 2), device=self.device) # xy position within 1m of the center
         else:
-            self.root_states[env_ids] = self.base_init_state
+            self.root_states[env_ids] = self.root_states[env_ids]
             self.root_states[env_ids, :3] += self.env_origins[env_ids]
         
         self.gym.set_actor_root_state_tensor_indexed(self.sim,
