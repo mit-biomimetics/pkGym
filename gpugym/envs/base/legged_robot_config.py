@@ -82,6 +82,17 @@ class LeggedRobotCfg(BaseConfig):
         rot = [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
+
+        default_setup = "Basic" #default setup chooses how the initial conditions are chosen. 
+                                #"Basic" = a single position with some randomized noise on top. "Range" = a range of joint positions and velocities. "Trajectory" = feed in a trajectory to sample from. 
+
+        default_dof_pos_high = [0.,0.,0.] #dof dimensions
+        default_dof_pos_low = [0.,0.,0.]
+        default_dof_vel_high = [0.,0.,0.]
+        default_dof_vel_low = [0.,0.,0.]
+        default_dof_trajectory = [[0.,0.,0.],[0.,0.,0.]] #dof dimensions x trajectory time step dimension
+        default_dof_vel_trajectory = [[0.,0.,0.],[0.,0.,0.]]
+
         default_joint_angles = { # target angles when action = 0.0
             "joint_a": 0., 
             "joint_b": 0.}
