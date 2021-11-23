@@ -173,8 +173,7 @@ class LeggedRobot(BaseTask):
             self.update_command_curriculum(env_ids)
 
         # reset robot states
-        self._reset_dofs(env_ids)
-        self._reset_root_states(env_ids)
+        self._reset_system(env_ids)
 
         self._resample_commands(env_ids)
 
@@ -394,7 +393,7 @@ class LeggedRobot(BaseTask):
         torques[:] = 0.
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
 
-    def _reset_dofs(self, env_ids):
+    def _reset_system(self, env_ids):
         """ Resets DOF position and velocities of selected environmments
         Positions are randomly selected within 0.5:1.5 x default positions.
         Velocities are set to zero.
@@ -403,44 +402,52 @@ class LeggedRobot(BaseTask):
             env_ids (List[int]): Environemnt ids
         """
         if self.cfg.init_state.default_setup == "Basic":
-            self.dof_pos[env_ids] = 0
-            self.dof_vel[env_ids] = 0 
-        elif self.cfg.init_state.default_setup == "Range":
-            self.dof_pos[env_ids] = 0
-            self.dof_vel[env_ids] = 0 
-        elif self.cfg.init_state.default_setup == "Trajectory":
-            self.dof_pos[env_ids] = 0
-            self.dof_vel[env_ids] = 0 
-        else:
-            #this just sets the value to the zero value of the system. 
+            #dof 
             self.dof_pos[env_ids] = self.default_dof_pos  #* torch_rand_float(0.5, 1.5, (len(env_ids), self.num_dof), device=self.device)
-            self.dof_vel[env_ids] = 0.
+            self.dof_vel[env_ids] = 0 
+
+            self.root_states[env_ids] = self.base_init_state
+            self.root_states[env_ids, 7:13] = 0.0 #torch_rand_float(-0.5, 0.5, (len(env_ids), 6), device=self.device) # [7:10]: lin vel, [10:13]: ang vel
+        elif self.cfg.init_state.default_setup == "Range":
+            #dof
+            dof_pos_high = to_torch(self.cfg.init_state.dof_pos_high)
+            dof_pos_low = to_torch(self.cfg.init_state.dof_pos_low)
+            dof_vel_high = to_torch(self.cfg.init_state.dof_vel_high)
+            dof_vel_low = to_torch(self.cfg.init_state.dof_vel_high)
+
+            rand_pos = torch_rand_float(0, 1, (len(env_ids), len(dof_pos_low)), device=self.device)
+            diff_pos = (dof_pos_high - dof_pos_low).repeat(len(env_ids),1)
+            random_dof_pos = rand_pos*diff_pos + dof_pos_low.repeat(len(env_ids),1)\
+
+            rand_vel = torch_rand_float(0, 1, (len(env_ids), len(dof_pos_low)), device=self.device)
+            diff_vel = (dof_vel_high - dof_vel_low).repeat(len(env_ids),1)
+            random_dof_vel = rand_vel*diff_vel + dof_vel_low.repeat(len(env_ids),1)
+            
+            self.dof_pos[env_ids] = random_dof_pos
+            self.dof_vel[env_ids] = random_dof_vel
+
+            #base state
+            self.root_states[env_ids] = self.base_init_state
+            self.root_states[env_ids, 7:13] = 0.0
+            
+
+
+        elif self.cfg.init_state.default_setup == "Trajectory":
+            #dof
+            self.dof_pos[env_ids] = 0
+            self.dof_vel[env_ids] = 0 
+
+            #base state
+            self.root_states[env_ids] = self.base_init_state
+            self.root_states[env_ids, 7:13] = 0.0
 
         env_ids_int32 = env_ids.to(dtype=torch.int32)
         self.gym.set_dof_state_tensor_indexed(self.sim,
                                               gymtorch.unwrap_tensor(self.dof_state),
                                               gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
-    def _reset_root_states(self, env_ids):
-        """ Resets ROOT states position and velocities of selected environmments
-            Sets base position based on the curriculum
-            Selects randomized base velocities within -0.5:0.5 [m/s, rad/s]
-        Args:
-            env_ids (List[int]): Environemnt ids
-        """
 
-        if self.cfg.init_state.default_setup == "Basic":
-            self.root_states[env_ids] = self.base_init_state
-            self.root_states[env_ids, 7:13] = 0.0 #torch_rand_float(-0.5, 0.5, (len(env_ids), 6), device=self.device) # [7:10]: lin vel, [10:13]: ang vel
-        elif self.cfg.init_state.default_setup == "Range":
-            self.root_states[env_ids] = self.base_init_state
-            self.root_states[env_ids, 7:13] = 0.0
-        elif self.cfg.init_state.default_setup == "Trajectory":
-            self.root_states[env_ids] = self.base_init_state
-            self.root_states[env_ids, 7:13] = 0.0
-        else:
-            #this just sets the value to the zero value of the system. 
-            self.root_states[env_ids] = self.base_init_state
-            self.root_states[env_ids, 7:13] = 0.0
+        
+        # RESET BASE 
 
         # base position
         if self.custom_origins:
@@ -449,8 +456,7 @@ class LeggedRobot(BaseTask):
         else:
             self.root_states[env_ids] = self.base_init_state
             self.root_states[env_ids, :3] += self.env_origins[env_ids]
-        # base velocities
-        env_ids_int32 = env_ids.to(dtype=torch.int32)
+        
         self.gym.set_actor_root_state_tensor_indexed(self.sim,
                                                      gymtorch.unwrap_tensor(self.root_states),
                                                      gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))

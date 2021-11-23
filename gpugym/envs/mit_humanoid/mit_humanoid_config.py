@@ -61,7 +61,10 @@ class MITHumanoidCfg(LeggedRobotCfg):
             heading = [-1.14, 1.14]
 
     class init_state(LeggedRobotCfg.init_state):
-        pos = [0.0, 0.0, 1.]  # x,y,z [m]
+        default_setup = "Range" #default setup chooses how the initial conditions are chosen. 
+                                #"Basic" = a single position with some randomized noise on top. "Range" = a range of joint positions and velocities. "Trajectory" = feed in a trajectory to sample from. 
+
+        #default for normalization and basic initialization 
         default_joint_angles = {  # = target angles [rad] when action = 0.0
             'left_hip_yaw': 0.,
             'left_hip_abad': 0.,
@@ -83,6 +86,26 @@ class MITHumanoidCfg(LeggedRobotCfg):
             'right_elbow': 0.
         }
 
+        #default COM for basic initialization 
+        pos = [0.0, 0.0, 1.]  # x,y,z [m]
+        rot = [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
+        lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
+        ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
+
+        #initialization for random range setup
+        dof_pos_high = [0.,0.,0.,0.75, 0., 0., 0.,0.,0.75, 0., 0., 0., 0.,0., 0., 0., 0., 0. ] #DOF dimensions
+        dof_pos_low =  [0.,0.,0.,0.,   0., 0., 0.,0.,0.,   0., 0., 0., 0.,0., 0., 0., 0., 0. ]
+        dof_vel_high = [0.,0.,0.,0.0, 0., 0., 0.,0.,0.0, 0., 0., 0., 0.,0., 0., 0., 0., 0. ]
+        dof_vel_low = [0.,0.,0.,0.0, 0., 0., 0.,0.,0.0, 0., 0., 0., 0.,0., 0., 0., 0., 0. ]
+        com_pos_high = [0.,0.,1., 0., 0., 0., 1.] #COM dimensions
+        com_pos_low = [0.,0.,1., 0., 0., 0., 1.]
+        com_vel_high = [0.,0.,0., 0., 0., 0.]
+        com_vel_low = [0.,0.,0.,0.,0.,0.]
+
+        #initialization for traj random range setup
+        state_pos_trajectory = [[0.,0.,0.],[0.,0.,0.]] #state dimensions x trajectory time step dimension
+        state_vel_trajectory = [[0.,0.,0.],[0.,0.,0.]]
+        
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
         stiffness = {'hip_yaw': 40.,

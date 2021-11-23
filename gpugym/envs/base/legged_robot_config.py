@@ -86,12 +86,19 @@ class LeggedRobotCfg(BaseConfig):
         default_setup = "Basic" #default setup chooses how the initial conditions are chosen. 
                                 #"Basic" = a single position with some randomized noise on top. "Range" = a range of joint positions and velocities. "Trajectory" = feed in a trajectory to sample from. 
 
-        default_dof_pos_high = [0.,0.,0.] #dof dimensions
-        default_dof_pos_low = [0.,0.,0.]
-        default_dof_vel_high = [0.,0.,0.]
-        default_dof_vel_low = [0.,0.,0.]
-        default_dof_trajectory = [[0.,0.,0.],[0.,0.,0.]] #dof dimensions x trajectory time step dimension
-        default_dof_vel_trajectory = [[0.,0.,0.],[0.,0.,0.]]
+        dof_pos_high = [0.,0.,0.] #DOF dimensions
+        dof_pos_low = [0.,0.,0.]
+        dof_vel_high = [0.,0.,0.]
+        dof_vel_low = [0.,0.,0.]
+
+        com_pos_high = [0.,0.,0.] #COM dimensions
+        com_pos_low = [0.,0.,0.]
+        com_vel_high = [0.,0.,0.]
+        com_vel_low = [0.,0.,0.]
+
+
+        state_pos_trajectory = [[0.,0.,0.],[0.,0.,0.]] #state dimensions x trajectory time step dimension
+        state_vel_trajectory = [[0.,0.,0.],[0.,0.,0.]]
 
         default_joint_angles = { # target angles when action = 0.0
             "joint_a": 0., 
