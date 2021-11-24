@@ -113,8 +113,8 @@ class MIT_Humanoid(LeggedRobot):
                                   self.dof_vel*self.obs_scales.dof_vel,
                                   self.actions,
                                   self.ctrl_hist,
-                                  torch.cos(self.phase),
-                                  torch.sin(self.phase)),
+                                  torch.cos(self.phase*2*torch.pi),
+                                  torch.sin(self.phase*2*torch.pi)),
                                  dim=-1)
         # * add perceptive inputs if not blind
         if self.cfg.terrain.measure_heights:
