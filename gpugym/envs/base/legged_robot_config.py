@@ -96,9 +96,7 @@ class LeggedRobotCfg(BaseConfig):
         com_vel_high = [0.,0.,0.]
         com_vel_low = [0.,0.,0.]
 
-
-        state_pos_trajectory = [[0.,0.,0.],[0.,0.,0.]] #state dimensions x trajectory time step dimension
-        state_vel_trajectory = [[0.,0.,0.],[0.,0.,0.]]
+        ref_traj = "" #file location for reference trajectory 
 
         default_joint_angles = { # target angles when action = 0.0
             "joint_a": 0., 
