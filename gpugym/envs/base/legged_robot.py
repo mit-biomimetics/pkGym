@@ -411,11 +411,12 @@ class LeggedRobot(BaseTask):
         """
         if self.cfg.init_state.default_setup == "Basic":
             #dof 
-            self.dof_pos[env_ids] = self.default_dof_pos  #* torch_rand_float(0.5, 1.5, (len(env_ids), self.num_dof), device=self.device)
+            self.dof_pos[env_ids] = self.default_dof_pos  #torch_rand_float(0.5, 1.5, (len(env_ids), self.num_dof), device=self.device)
             self.dof_vel[env_ids] = 0 
 
             self.root_states[env_ids] = self.base_init_state
             self.root_states[env_ids, 7:13] = 0.0 #torch_rand_float(-0.5, 0.5, (len(env_ids), 6), device=self.device) # [7:10]: lin vel, [10:13]: ang vel
+        
         elif self.cfg.init_state.default_setup == "Range":
             #dof
             dof_pos_high = to_torch(self.cfg.init_state.dof_pos_high)
@@ -435,33 +436,38 @@ class LeggedRobot(BaseTask):
             random_com_pos = self.random_sample(env_ids,com_pos_high,com_pos_low)
             random_com_vel = self.random_sample(env_ids,com_vel_high,com_vel_low)
             quat = torch.zeros(len(env_ids), 4, device=self.device)
-            for i in range(len(env_ids)):
+            for i in range(len(env_ids)): #if someone knows how to do this without the for loop please fix
                 quat[i,:] = quat_from_euler_xyz(random_com_pos[i,3],random_com_pos[i,4],random_com_pos[i,5]) 
 
             random_root_state = torch.cat((random_com_pos[:,0:3], quat), 1)
             
-            ## TODO: CHECK PENETRATION
+            ## TODO: CHECK PENETRATION AND ADJUST Z HEIGHT
             self.root_states[env_ids, 0:7] = random_root_state
             self.root_states[env_ids, 7:13] = random_com_vel
 
-
-
         elif self.cfg.init_state.default_setup == "Trajectory":
+            traj_pos = to_torch(self.cfg.init_state.state_pos_trajectory).T
+            traj_vel = to_torch(self.cfg.init_state.state_vel_trajectory).T
+            rand_timestamp = torch.randint(0, traj_pos.size(dim=1), (len(env_ids), 1), device=self.device)
+            random_pos = torch.zeros(len(env_ids), len(traj_pos), device=self.device)
+            random_vel = torch.zeros(len(env_ids), len(traj_vel), device=self.device)
+
+            for i in range(len(env_ids)): #if someone knows how to do this without the for loop please fix
+                random_pos[i,:] = traj_pos[:,int(rand_timestamp[i])]
+                random_vel[i,:] = traj_vel[:,int(rand_timestamp[i])]
+
             #dof
-            self.dof_pos[env_ids] = 0
-            self.dof_vel[env_ids] = 0 
+            self.dof_pos[env_ids] = random_pos[:,7:]
+            self.dof_vel[env_ids] = random_vel[:,6:]
 
             #base state
-            self.root_states[env_ids] = self.base_init_state
-            self.root_states[env_ids, 7:13] = 0.0
-
-
+            self.root_states[env_ids, 0:7] = random_pos[:,:7]
+            self.root_states[env_ids, 7:13] = random_vel[:,:6]
 
         env_ids_int32 = env_ids.to(dtype=torch.int32)
         self.gym.set_dof_state_tensor_indexed(self.sim,
                                               gymtorch.unwrap_tensor(self.dof_state),
                                               gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
-
         
         # base position
         if self.custom_origins:

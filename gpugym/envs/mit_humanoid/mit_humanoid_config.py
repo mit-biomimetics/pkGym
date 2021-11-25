@@ -61,7 +61,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             heading = [-1.14, 1.14]
 
     class init_state(LeggedRobotCfg.init_state):
-        default_setup = "Range" #default setup chooses how the initial conditions are chosen. 
+        default_setup = "Trajectory" #default setup chooses how the initial conditions are chosen. 
                                 #"Basic" = a single position with some randomized noise on top. "Range" = a range of joint positions and velocities. "Trajectory" = feed in a trajectory to sample from. 
 
         #default for normalization and basic initialization 
@@ -100,12 +100,18 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         com_pos_high = [0.,0.,1., 0., 0.5, 0.] #COM dimensions, in euler angles because randomizing in quat is confusing
         com_pos_low = [0.,0.,1., 0., -0.5, 0.] #x, y ,z, roll, pitch, yaw
-        com_vel_high = [0.,0.,0., 0., 0.5, 0.]
+        com_vel_high = [0.,0.,0., 0., 0.0, 0.]
         com_vel_low = [0.,0.,0.,0.,0.,0.]
 
-        #initialization for traj random range setup
-        state_pos_trajectory = [[0.,0.,0.],[0.,0.,0.]] #state dimensions x trajectory time step dimension
-        state_vel_trajectory = [[0.,0.,0.],[0.,0.,0.]]
+        #initialization for traj sampling setup
+        state_pos_trajectory = [[0.,0.,1.,0.,0.,0.,1.,  0.,0.,0.,0.75,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.], #state dimensions x trajectory time step dimension
+                                [0.,0.,1.,0.,0.,0.,1.,  0.,0.,0.,0.,  0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.],
+                                [0.,0.,1.,0.,0.,0.,1.,  0.,0.,0.,0.5, 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.],
+                                [0.,0.,1.,0.,0.,0.,1.,  0.,0.,0.,1.0, 0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]] 
+        state_vel_trajectory = [[0.,0.,0.,0.,0.,0.,  0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.],
+                                [0.,0.,0.,0.,0.,0.,  0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.],
+                                [0.,0.,0.,0.,0.,0.,  0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.],
+                                [0.,0.,0.,0.,0.,0.,  0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,0.]]
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
