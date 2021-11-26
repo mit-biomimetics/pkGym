@@ -105,7 +105,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         #initialization for traj sampling setup
         ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_walk.csv"
-
+        include_velocity = False
+        
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
         stiffness = {'hip_yaw': 40.,

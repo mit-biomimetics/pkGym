@@ -658,12 +658,13 @@ class LeggedRobot(BaseTask):
             except Exception:
                 print("Missing: " + name)
 
-        for i in range(len(state_vel_list)): #iterate through velocity
-            name = state_vel_list[i]
-            try:
-                self.vel_traj[:,i] = to_torch(referenceTraj[name])
-            except Exception:
-                print("Missing: " + name)
+        if (self.cfg.init_state.include_velocity):
+            for i in range(len(state_vel_list)): #iterate through velocity
+                name = state_vel_list[i]
+                try:
+                    self.vel_traj[:,i] = to_torch(referenceTraj[name])
+                except Exception:
+                    print("Missing: " + name)
 
 
     def _prepare_reward_function(self):
