@@ -161,6 +161,11 @@ class MIT_Humanoid(LeggedRobot):
 
     def _pos_reward_reference_traj(self):
         #tracking the reference trajectory
-        self.phase 
-        self.pos_traj
-        self.total_ref_time
+        ref_traj_idx = round(self.phase*self.pos_traj.size(dim=0))
+        pos_ref_frame = self.pos_traj[ref_traj_idx]
+
+
+        if (self.cfg.init_state.include_velocity):
+            vel_ref_frame = self.vel_traj[ref_traj_idx]
+
+        

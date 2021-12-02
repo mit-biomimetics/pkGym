@@ -396,9 +396,9 @@ class LeggedRobot(BaseTask):
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
 
     def random_sample(self, env_ids, high, low):
-        rand_pos = torch_rand_float(0, 1, (len(env_ids), len(low)), device=self.device)
-        diff_pos = (high - low).repeat(len(env_ids),1)
-        random_dof_pos = rand_pos*diff_pos + low.repeat(len(env_ids),1)
+        rand_pos = torch_rand_float(0, 1, (self.num_envs, len(low)), device=self.device)
+        diff_pos = (high - low).repeat(self.num_envs,1)
+        random_dof_pos = rand_pos*diff_pos + low.repeat(self.num_envs,1)
         return random_dof_pos 
 
     def _reset_system(self, env_ids):
@@ -424,8 +424,8 @@ class LeggedRobot(BaseTask):
             dof_vel_high = to_torch(self.cfg.init_state.dof_vel_high)
             dof_vel_low = to_torch(self.cfg.init_state.dof_vel_high)
             
-            self.dof_pos[env_ids] = self.random_sample(env_ids,dof_pos_high,dof_pos_low)
-            self.dof_vel[env_ids] = self.random_sample(env_ids,dof_vel_high,dof_vel_low)
+            self.dof_pos[env_ids] = self.random_sample(env_ids,dof_pos_high,dof_pos_low)[env_ids]
+            self.dof_vel[env_ids] = self.random_sample(env_ids,dof_vel_high,dof_vel_low)[env_ids]
 
             #base state
             com_pos_high = to_torch(self.cfg.init_state.com_pos_high)
@@ -433,17 +433,17 @@ class LeggedRobot(BaseTask):
             com_vel_high = to_torch(self.cfg.init_state.com_vel_high)
             com_vel_low = to_torch(self.cfg.init_state.com_vel_high)
 
-            random_com_pos = self.random_sample(env_ids,com_pos_high,com_pos_low)
-            random_com_vel = self.random_sample(env_ids,com_vel_high,com_vel_low)
-            quat = torch.zeros(len(env_ids), 4, device=self.device)
-            for i in range(len(env_ids)): # TODO: if someone knows how to do this without the for loop please fix
+            random_com_pos = self.random_sample(env_ids,com_pos_high,com_pos_low)[env_ids]
+            random_com_vel = self.random_sample(env_ids,com_vel_high,com_vel_low)[env_ids]
+            quat = torch.zeros(self.num_envs, 4, device=self.device)
+            for i in env_ids: # TODO: if someone knows how to do this without the for loop please fix
                 quat[i,:] = quat_from_euler_xyz(random_com_pos[i,3],random_com_pos[i,4],random_com_pos[i,5]) 
 
             random_root_state = torch.cat((random_com_pos[:,0:3], quat), 1)
             
             ## TODO: CHECK PENETRATION AND ADJUST Z HEIGHT
-            self.root_states[env_ids, 0:7] = random_root_state
-            self.root_states[env_ids, 7:13] = random_com_vel
+            self.root_states[env_ids, 0:7] = random_root_state[env_ids,:]
+            self.root_states[env_ids, 7:13] = random_com_vel[env_ids, :]
 
         elif self.cfg.init_state.default_setup == "Trajectory":
 
