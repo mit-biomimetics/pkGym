@@ -161,7 +161,7 @@ class MIT_Humanoid(LeggedRobot):
 
     def _reward_reference_traj(self):
         #tracking the reference trajectory
-        ref_traj_idx = torch.round(self.phase*self.pos_traj.size(dim=0))
+        ref_traj_idx = torch.round(self.phase*self.pos_traj.size(dim=0)).squeeze(1)
         print(ref_traj_idx)
 
         pos_ref_frame = self.pos_traj.repeat(self.num_envs,1)[ref_traj_idx,:]
