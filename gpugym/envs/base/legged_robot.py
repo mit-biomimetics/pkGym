@@ -643,7 +643,7 @@ class LeggedRobot(BaseTask):
 
         #retrieve reference trajectory
         referenceTraj = pd.read_csv(self.cfg.init_state.ref_traj)
-        state_list = ["t","x","y","z","quat1","quat2","quat3","quat4"] + self.dof_names
+        state_list = ["t","x","y","z","qx","qy","qz","qw"] + self.dof_names
         state_vel_list = ["t","x_v","y_v","z_v","roll_v","pitch_v","yaw_v"]+ [x+"_v" for x in self.dof_names]
         self.total_ref_time = referenceTraj['t'].iloc[-1]
         # Scale times [sec] to standard phase 0->1
