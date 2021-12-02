@@ -652,8 +652,8 @@ class LeggedRobot(BaseTask):
             # Scale times [sec] to standard phase 0->1
             referenceTraj['t'] /= self.total_ref_time
 
-            self.pos_traj = torch.zeros(len(referenceTraj["t"]), len(state_list))
-            self.vel_traj = torch.zeros(len(referenceTraj["t"]), len(state_vel_list))
+            self.pos_traj = torch.zeros(len(referenceTraj["t"]), len(state_list), device=self.device)
+            self.vel_traj = torch.zeros(len(referenceTraj["t"]), len(state_vel_list), device=self.device)
             for i in range(len(state_list)): #iterate through positions
                 name = state_list[i]
                 try:
