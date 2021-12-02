@@ -82,8 +82,8 @@
       link="left_hip_yaw" />
     <axis
       xyz="0 0 -1" />
-    <!-- <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/> -->
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+    <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
   <link
     name="left_hip_abad">
@@ -128,8 +128,8 @@
       link="left_hip_abad" />
     <axis
       xyz="1 0 0" />
-          <!-- <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/> -->
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+          <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
  <link 
     name="left_upper_leg">
@@ -174,8 +174,8 @@
       link="left_upper_leg" />
     <axis
       xyz="0 1 0" />
-          <limit effort="72" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/>
+          <limit effort="72" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/> -->
   </joint>
   
   <link
@@ -222,7 +222,7 @@
     <axis
       xyz="0 1 0" />
           <limit effort="144" lower="0." upper="3." velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0792"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0792"/> -->
   </joint>
   
    <link
@@ -275,7 +275,7 @@
     <axis
       xyz="0 1 0" />
           <limit effort="68" lower="-1.5" upper="1.5" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.04752"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.04752"/> -->
   </joint>
 
   <!-- <link
@@ -390,8 +390,8 @@
       link="right_hip_yaw" />
     <axis
       xyz="0 0 1" />
-    <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+    <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
   
   <link
@@ -437,8 +437,8 @@
       link="right_hip_abad" />
     <axis
       xyz="-1 0 0" />
-          <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+          <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
   
  <link
@@ -484,8 +484,8 @@
       link="right_upper_leg" />
     <axis
       xyz="0 1 0" />
-          <limit effort="72" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/>
+          <limit effort="72" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/> -->
   </joint>
   
   <link
@@ -532,7 +532,7 @@
     <axis
       xyz="0 1 0" />
           <limit effort="144" lower="0." upper="3.0" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0792"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0792"/> -->
   </joint>
   
    <link
@@ -585,7 +585,7 @@
     <axis
       xyz="0 1 0" />
           <limit effort="68" lower="-1.5" upper="1.5" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.04752"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.04752"/> -->
   </joint>
 
   <!-- <link
@@ -702,8 +702,8 @@
       link="left_shoulder" />
     <axis
       xyz="0 1 0" />
-          <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+          <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
   
   <link
@@ -749,8 +749,8 @@
       link="left_shoulder_2" />
     <axis
       xyz="1 0 0" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+        <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
   <!--  -->
   
@@ -797,8 +797,8 @@
       link="left_upper_arm" />
     <axis
       xyz="0 0 -1" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+        <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
 
   
@@ -845,8 +845,8 @@
       link="left_lower_arm" />
     <axis
       xyz="0 1 0" />
-        <limit effort="55" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0304"/>
+        <limit effort="55" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0304"/> -->
   </joint>
   <link
     name="left_hand">
@@ -927,8 +927,8 @@
       link="right_shoulder" />
     <axis
       xyz="0 1 0" />
-          <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+          <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
   
   <link
@@ -974,8 +974,8 @@
       link="right_shoulder_2" />
     <axis
       xyz="-1 0 0" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+        <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
   <!--  -->
   
@@ -1022,8 +1022,8 @@
       link="right_upper_arm" />
     <axis
       xyz="0 0 1" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+        <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
 
   
@@ -1076,8 +1076,8 @@
       link="right_lower_arm" />
     <axis
       xyz="0 1 0" />
-        <limit effort="55" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0304"/>
+        <limit effort="55" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0304"/> -->
   </joint>
     <link
     name="right_hand">

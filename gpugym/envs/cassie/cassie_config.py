@@ -33,30 +33,33 @@ from gpugym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgP
 class CassieRoughCfg( LeggedRobotCfg ):
     class env( LeggedRobotCfg.env):
         num_envs = 4096
-        num_observations = 169
+        num_observations = 48  # 169
         num_actions = 12
 
-    
-    class terrain( LeggedRobotCfg.terrain):
-        measured_points_x = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5] # 1mx1m rectangle (without center line)
-        measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
+    class terrain(LeggedRobotCfg.terrain):
+        mesh_type = 'plane'
+        measure_heights = False
+
+    # class terrain( LeggedRobotCfg.terrain):
+    #     measured_points_x = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5] # 1mx1m rectangle (without center line)
+    #     measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
 
     class init_state( LeggedRobotCfg.init_state ):
-        pos = [0.0, 0.0, 1.] # x,y,z [m]
+        pos = [0.0, 0.0, 1.5] # x,y,z [m]
         default_joint_angles = { # = target angles [rad] when action = 0.0
-            'hip_abduction_left': 0.1,
-            'hip_rotation_left': 0.,
-            'hip_flexion_left': 1.,
-            'thigh_joint_left': -1.8,
-            'ankle_joint_left': 1.57,
-            'toe_joint_left': -1.57,
+            'hip_abduction_left': 0.2,  # -0.3927 : 0.2618
+            'hip_rotation_left': 0.3,  # -0.3927 : 0.3927"
+            'hip_flexion_left': 1.,  # -0.8727 : 1.3963
+            'thigh_joint_left': -0.8,  # -2.8623 : -0.6458
+            'ankle_joint_left': 1.57,  # 0.6458  : 2.8623
+            'toe_joint_left': -0.57,  # -2.4435  : -0.5236
 
-            'hip_abduction_right': -0.1,
-            'hip_rotation_right': 0.,
+            'hip_abduction_right': -0.3,
+            'hip_rotation_right': -0.25,
             'hip_flexion_right': 1.,
-            'thigh_joint_right': -1.8,
+            'thigh_joint_right': -2.8,
             'ankle_joint_right': 1.57,
-            'toe_joint_right': -1.57
+            'toe_joint_right': -2.17
         }
 
     class control( LeggedRobotCfg.control ):
@@ -77,6 +80,7 @@ class CassieRoughCfg( LeggedRobotCfg ):
         foot_name = 'toe'
         terminate_after_contacts_on = ['pelvis']
         flip_visual_attachments = False
+        disable_gravity = True
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
   
     class rewards( LeggedRobotCfg.rewards ):
@@ -99,7 +103,7 @@ class CassieRoughCfg( LeggedRobotCfg ):
             feet_contact_forces = -0.
 
 class CassieRoughCfgPPO( LeggedRobotCfgPPO ):
-    
+
     class runner( LeggedRobotCfgPPO.runner ):
         run_name = ''
         experiment_name = 'rough_cassie'

@@ -100,7 +100,7 @@ class LeggedRobotCfg(BaseConfig):
         ref_type = "Pos"
 
         default_joint_angles = { # target angles when action = 0.0
-            "joint_a": 0., 
+            "joint_a": 0.,
             "joint_b": 0.}
 
     class control:
@@ -118,7 +118,7 @@ class LeggedRobotCfg(BaseConfig):
         foot_name = "None" # name of the feet bodies, used to index body state and contact force tensors
         penalize_contacts_on = []
         terminate_after_contacts_on = []
-        disable_gravity = False
+        disable_gravity = True
         collapse_fixed_joints = True # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
         fix_base_link = False # fixe the base of the robot
         default_dof_drive_mode = 3 # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
@@ -135,7 +135,7 @@ class LeggedRobotCfg(BaseConfig):
         thickness = 0.01
 
     class domain_rand:
-        randomize_friction = True
+        randomize_friction = False
         friction_range = [0.5, 1.25]
         randomize_base_mass = False
         added_mass_range = [-1., 1.]
@@ -225,7 +225,7 @@ class LeggedRobotCfg(BaseConfig):
             contact_collection = 2 # 0: never, 1: last sub-step, 2: all sub-steps (default=2)
 
 class LeggedRobotCfgPPO(BaseConfig):
-    seed = 1
+    seed = 2
     runner_class_name = 'OnPolicyRunner'
     class policy:
         init_noise_std = 1.0
