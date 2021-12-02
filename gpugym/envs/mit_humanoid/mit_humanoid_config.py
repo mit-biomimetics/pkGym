@@ -33,15 +33,9 @@ from gpugym.envs.base.legged_robot_config import LeggedRobotCfgPPO
 
 
 class MITHumanoidCfg(LeggedRobotCfg):
-<<<<<<< HEAD
     class env(LeggedRobotCfg.env):
         num_envs = 10
         num_observations = 67+2  # 187  # ! why? should be 66...
-=======
-    class env( LeggedRobotCfg.env):
-        num_envs = 4096
-        num_observations = 67+2  # 169
->>>>>>> dev
         num_actions = 18
 
     class terrain(LeggedRobotCfg.terrain):
@@ -62,7 +56,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
             heading = [-1.14, 1.14]
 
     class init_state(LeggedRobotCfg.init_state):
-<<<<<<< HEAD
         default_setup = "Trajectory" #default setup chooses how the initial conditions are chosen. 
                                 #"Basic" = a single position with some randomized noise on top. "Range" = a range of joint positions and velocities. "Trajectory" = feed in a trajectory to sample from. 
 
@@ -86,33 +79,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
             'right_shoulder_abad': 0.,
             'right_shoulder_yaw': 0.,
             'right_elbow': 0.
-=======
-        pos = [0.0, 0.0, 0.71]  # x,y,z [m]
-        #rot = [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
-
-        lin_vel = [0., 0.0, 0.0]
-
-        default_joint_angles = {
-            'left_hip_yaw': 0.,  # * -6.28 | 6.28
-            'left_hip_abad': 0.,  # * -6.28 | 6.28
-            'left_hip_pitch': 0.,  # * -6.28 | 6.28
-            'left_knee':  0.0,  # * 0. | 3.
-            'left_ankle': 0.,  # * -1.5 | 1.5
-            'left_shoulder_pitch': 0.,  # * -6.28 | 6.28
-            'left_shoulder_abad': 0.,  # * -6.28 | 6.28
-            'left_shoulder_yaw': 0.,  # * -6.28 | 6.28
-            'left_elbow': 0.,  # * -6.28 | 6.28
-
-            'right_hip_yaw': 0.,  # * -6.28 | 6.28
-            'right_hip_abad': 0.,  # * -6.28 | 6.28
-            'right_hip_pitch': 0.,  # * -6.28 | 6.28
-            'right_knee': 0.0,  # * 0. | 3.
-            'right_ankle': 0.,  # * -1.5 | 1.5
-            'right_shoulder_pitch': 0.0,  # * -6.28 | 6.28
-            'right_shoulder_abad': 0.,  # * -6.28 | 6.28
-            'right_shoulder_yaw': 0.,  # * -6.28 | 6.28
-            'right_elbow': 0.  # * -6.28 | 6.28
->>>>>>> dev
         }
 
         #default COM for basic initialization 
