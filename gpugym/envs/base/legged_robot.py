@@ -76,8 +76,8 @@ class LeggedRobot(BaseTask):
             self.set_camera(self.cfg.viewer.pos, self.cfg.viewer.lookat)
         self._init_buffers()
         self._prepare_reward_function()
-        if hasattr(self, "custom_init"):
-            self.custom_init(cfg)
+        if hasattr(self, "_custom_init"):
+            self._custom_init(cfg)
         self.init_done = True
 
     def step(self, actions):
@@ -1023,7 +1023,7 @@ class LeggedRobot(BaseTask):
         contact_filt = torch.logical_or(contact, self.last_contacts) 
         self.last_contacts = contact
         first_contact = (self.feet_air_time > 0.) * contact_filt
-        self.feet_air_time += self.dt
+        self.feet_air_time += self.dt  # todo: pull this out into post-physics
         rew_airTime = torch.sum((self.feet_air_time - 0.5) * first_contact, dim=1) # reward only on first contact with the ground
         rew_airTime *= torch.norm(self.commands[:, :2], dim=1) > 0.1 #no reward for zero command
         self.feet_air_time *= ~contact_filt

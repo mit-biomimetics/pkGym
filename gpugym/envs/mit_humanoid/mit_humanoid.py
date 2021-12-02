@@ -42,13 +42,15 @@ from gpugym.envs import LeggedRobot
 
 class MIT_Humanoid(LeggedRobot):
 
-    def custom_init(self, cfg):
+    def _custom_init(self, cfg):
         # * init buffer for phase variable
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
-        # self.default_dof_pos = torch.zeros(self.num_dof, dtype=torch.float,
-        #                                    device=self.device,
-        #                                    requires_grad=False)
+
+        # * additional buffer for last ctrl: whatever is actually used for PD control (which can be shifted compared to action)
+        self.ctrl_hist = torch.zeros(self.num_envs, self.num_actions*3,
+                                         dtype=torch.float, device=self.device,
+                                         requires_grad=False)
 
 
 
@@ -95,10 +97,16 @@ class MIT_Humanoid(LeggedRobot):
         # joint pos
         # joint vel
         # actions
-        # ! actions (n-1, n-2)
+        # actions (n-1, n-2)
         # phase
         base_z = self.root_states[:, 2].unsqueeze(1)*self.obs_scales.base_z
         dof_pos = (self.dof_pos-self.default_dof_pos)*self.obs_scales.dof_pos
+
+        # * update commanded action history buffer
+        nact = self.num_actions
+        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
+        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
+        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale  + self.default_dof_pos
 
         self.obs_buf = torch.cat((base_z,
                                   self.base_lin_vel*self.obs_scales.lin_vel,
@@ -108,16 +116,17 @@ class MIT_Humanoid(LeggedRobot):
                                   dof_pos,
                                   self.dof_vel*self.obs_scales.dof_vel,
                                   self.actions,
-                                  torch.cos(self.phase),
-                                  torch.sin(self.phase)),
+                                  self.ctrl_hist,
+                                  torch.cos(self.phase*2*torch.pi),
+                                  torch.sin(self.phase*2*torch.pi)),
                                  dim=-1)
-        # add perceptive inputs if not blind
+        # * add perceptive inputs if not blind
         if self.cfg.terrain.measure_heights:
             heights = torch.clip(self.root_states[:, 2].unsqueeze(1) - 0.5 - self.measured_heights, -1, 1.)*self.obs_scales.height_measurements
             self.obs_buf = torch.cat((self.obs_buf, heights), dim=-1)
 
         # ! noise_scale_vec must be of correct order! Check def below
-        # add noise if needed
+        # * add noise if needed
         if self.add_noise:
             self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
                             * self.noise_scale_vec
@@ -151,15 +160,37 @@ class MIT_Humanoid(LeggedRobot):
                                 * self.obs_scales.height_measurements
         return noise_vec
 
+    def sqrdexp(self, x):
+        """ shorthand helper for squared exponential
+        """
+        return torch.exp(-torch.square(x)/self.cfg.rewards.tracking_sigma)
+
     def _reward_no_fly(self):
         contacts = self.contact_forces[:, self.feet_indices, 2] > 0.1
         single_contact = torch.sum(1.*contacts, dim=1) == 1
         return 1.*single_contact
 
+    def _reward_lin_vel_z(self):
+        # Penalize z axis base linear velocity w. squared exp
+        return self.sqrdexp(self.base_lin_vel[:, 2]  \
+                            * self.cfg.normalization.obs_scales.lin_vel)
+
+    def _reward_ang_vel_xy(self):
+        # Penalize xy axes base angular velocity
+        error = self.sqrdexp(self.base_ang_vel[:, :2] \
+                             * self.cfg.normalization.obs_scales.ang_vel)
+        return torch.sum(error, dim=1)
+
+    def _reward_orientation(self):
+        # Penalize non flat base orientation
+        error = torch.sum(torch.square(self.projected_gravity[:, :2]), dim=1)
+        return torch.exp(-error/self.cfg.rewards.tracking_sigma)
+        # return self.sqrdexp(self.projected_gravity[:, 2]+1.)
+
     def _reward_base_height(self):
         """ Squared exponential saturating at base_height target
         """
-        base_height = self.root_states[:,2].unsqueeze(1)
+        base_height = self.root_states[:, 2].unsqueeze(1)
         error = (base_height-self.cfg.rewards.base_height_target)
         error *= self.obs_scales.base_z
         error = torch.clamp(error, max=0, min=None).flatten()
@@ -167,8 +198,10 @@ class MIT_Humanoid(LeggedRobot):
 
     def _reward_tracking_lin_vel(self):
         # Tracking of linear velocity commands (xy axes)
+        # just use lin_vel?
         error = self.commands[:, :2] - self.base_lin_vel[:, :2]
-        error *= self.obs_scales.lin_vel
+        # * scale by (1+|cmd|): if cmd=0, no scaling.
+        error *= 1./(1. + torch.abs(self.commands[:, :2]))
         error = torch.sum(torch.square(error), dim=1)
         return torch.exp(-error/self.cfg.rewards.tracking_sigma)
 
@@ -202,3 +235,41 @@ class MIT_Humanoid(LeggedRobot):
         error = base_pos_reward + base_vel_reward + dof_pos_reward + dof_vel_reward
 
         return error
+        
+    def _reward_action_rate(self):
+        # Penalize changes in actions
+        nact = self.num_actions
+        dt2 = (self.dt*self.cfg.control.decimation)**2
+        error = torch.square(self.ctrl_hist[:, :nact]  \
+                             - 2*self.ctrl_hist[:, nact:2*nact]  \
+                             + self.ctrl_hist[:, 2*nact:])/dt2
+        # todo this tracking_sigma is not scaled (check)
+        # error = torch.exp(-error/self.cfg.rewards.tracking_sigma)
+        return torch.sum(error, dim=1)
+
+    def _reward_dof_vel(self):
+        # Penalize dof velocities
+        return self.sqrdexp(self.dof_vel  \
+                            / self.cfg.normalization.obs_scales.dof_vel)
+
+    def _reward_symm_legs(self):
+        error = 0.
+        for i in range(2, 5):
+            error += self.sqrdexp((self.dof_pos[:, i]+self.dof_pos[:, i+9]) \
+                        / self.cfg.normalization.obs_scales.dof_pos)
+        for i in range(0, 2):
+            error += self.sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
+                        / self.cfg.normalization.obs_scales.dof_pos)
+        return error
+
+    def _reward_symm_arms(self):
+        error = 0.
+        for i in range(6, 8):
+            error += self.sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
+                        / self.cfg.normalization.obs_scales.dof_pos)
+        error += self.sqrdexp((self.dof_pos[:, 5]+self.dof_pos[:, 14]) \
+                        / self.cfg.normalization.obs_scales.dof_pos)
+        error += self.sqrdexp((self.dof_pos[:, 8]+self.dof_pos[:, 17]) \
+                        / self.cfg.normalization.obs_scales.dof_pos)
+        return error
+
