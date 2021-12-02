@@ -105,7 +105,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         #initialization for traj sampling setup
         ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_roll.csv"
-        ref_type = "PosVel" #Pos, PosVel
+        ref_type = "Pos" #Pos, PosVel
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
@@ -170,7 +170,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         base_vel_tracking = 0.1
         dof_pos_tracking = 0.1
         dof_vel_tracking = 0.1
-        
+
         class scales(LeggedRobotCfg.rewards.scales):
             reference_traj = 1.0
             termination = -10.
