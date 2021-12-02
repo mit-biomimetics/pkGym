@@ -453,7 +453,8 @@ class LeggedRobot(BaseTask):
 
             for i in env_ids: #if someone knows how to do this without the for loop please fix
                 random_pos[i,:] = self.pos_traj[int(rand_timestamp[i]),:]
-                random_vel[i,:] = self.vel_traj[int(rand_timestamp[i]),:]
+                if (self.cfg.init_state.ref_type == "PosVel"):
+                    random_vel[i,:] = self.vel_traj[int(rand_timestamp[i]),:]
                 self.phase[i,:] = float(rand_timestamp[i])/float(self.pos_traj.size(dim=0)) #initialize phase to right step
 
             #dof

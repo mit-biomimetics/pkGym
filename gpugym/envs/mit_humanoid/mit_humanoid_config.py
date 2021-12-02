@@ -164,6 +164,13 @@ class MITHumanoidCfg(LeggedRobotCfg):
         only_positive_rewards = False
         base_height_target = 0.55
         tracking_sigma = 0.25
+
+        #reference traj tracking
+        base_pos_tracking = 0.0
+        base_vel_tracking = 0.1
+        dof_pos_tracking = 0.1
+        dof_vel_tracking = 0.1
+        
         class scales(LeggedRobotCfg.rewards.scales):
             reference_traj = 1.0
             termination = -10.

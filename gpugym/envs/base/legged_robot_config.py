@@ -162,6 +162,8 @@ class LeggedRobotCfg(BaseConfig):
             stand_still = -0.
             dof_pos_limits = -1.
 
+            reference_traj = 0.0 
+
         only_positive_rewards = True # if true negative total rewards are clipped at zero (avoids early termination problems)
         tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
         soft_dof_pos_limit = 1. # percentage of urdf limits, values above this limit are penalized
@@ -169,6 +171,12 @@ class LeggedRobotCfg(BaseConfig):
         soft_torque_limit = 1.  # ! may want to turn this off
         base_height_target = 1.
         max_contact_force = 100. # forces above this value are penalized
+
+        #ref traj tracking       
+        base_pos_tracking = 0.0
+        base_vel_tracking = 0.0
+        dof_pos_tracking = 0.0
+        dof_vel_tracking = 0.0
 
     class normalization:
         class obs_scales:
