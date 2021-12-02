@@ -97,7 +97,7 @@ class LeggedRobotCfg(BaseConfig):
         com_vel_low = [0.,0.,0.]
 
         ref_traj = "" #file location for reference trajectory 
-        include_velocity = False
+        ref_type = "Pos"
 
         default_joint_angles = { # target angles when action = 0.0
             "joint_a": 0., 

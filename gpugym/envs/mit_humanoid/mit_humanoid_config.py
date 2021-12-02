@@ -69,7 +69,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             'left_hip_yaw': 0.,
             'left_hip_abad': 0.,
             'left_hip_pitch': 0.,
-            'left_knee': 0.75,  # 0.785,
+            'left_knee': 0.,  # 0.785,
             'left_ankle': 0.,
             'left_shoulder_pitch': 0.,
             'left_shoulder_abad': 0.,
@@ -78,7 +78,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             'right_hip_yaw': 0.,
             'right_hip_abad': 0.,
             'right_hip_pitch': 0.,
-            'right_knee': 0.75,  # 0.785,
+            'right_knee': 0.,  # 0.785,
             'right_ankle': 0.,
             'right_shoulder_pitch': 0.,
             'right_shoulder_abad': 0.,
@@ -105,7 +105,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         #initialization for traj sampling setup
         ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_roll.csv"
-        include_velocity = False
+        ref_type = "PosVel" #Pos, PosVel
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:

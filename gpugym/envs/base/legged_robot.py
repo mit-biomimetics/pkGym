@@ -647,7 +647,7 @@ class LeggedRobot(BaseTask):
         if (self.cfg.init_state.ref_traj != ""):
             referenceTraj = pd.read_csv(self.cfg.init_state.ref_traj)
             state_list = ["t","x","y","z","qx","qy","qz","qw"] + self.dof_names
-            state_vel_list = ["t","x_v","y_v","z_v","roll_v","pitch_v","yaw_v"]+ [x+"_v" for x in self.dof_names]
+            state_vel_list = ["t","x_v","y_v","z_v","wx","wy","wz"]+ [x+"_v" for x in self.dof_names]
             self.total_ref_time = referenceTraj['t'].iloc[-1]
             # Scale times [sec] to standard phase 0->1
             referenceTraj['t'] /= self.total_ref_time
@@ -663,7 +663,7 @@ class LeggedRobot(BaseTask):
 
             self.pos_traj[:,3] += 0.07 #increase z height to avoid penetration 
 
-            if (self.cfg.init_state.include_velocity):
+            if (self.cfg.init_state.ref_type == "PosVel"):
                 for i in range(len(state_vel_list)): #iterate through velocity
                     name = state_vel_list[i]
                     try:

@@ -166,9 +166,10 @@ class MIT_Humanoid(LeggedRobot):
         base_pos_error = self.root_states[:,0:7] - pos_ref_frame[:, 1:8]
         dof_pos_error = self.dof_pos - pos_ref_frame[:,8:]
 
-        if (self.cfg.init_state.include_velocity):
-            vel_ref_frame = self.vel_traj.repeat(self.num_envs,1)[ref_traj_idx.long(),:]
-            base_vel_error = self.root_states[:,7:] - vel_ref_frame[:,1:7]
-            dof_vel_error = self.dof_vel - vel_ref_frame[:,7:]
+        vel_ref_frame = self.vel_traj.repeat(self.num_envs,1)[ref_traj_idx.long(),:]
+        base_vel_error = self.root_states[:,7:] - vel_ref_frame[:,1:7]
+        dof_vel_error = self.dof_vel - vel_ref_frame[:,7:]
+
+        
 
         return 0 
