@@ -159,12 +159,13 @@ class MIT_Humanoid(LeggedRobot):
         error = torch.sum(torch.square(error), dim=1)
         return torch.exp(-error/self.cfg.rewards.tracking_sigma)
 
-    def _pos_reward_reference_traj(self):
+    def _reward_reference_traj(self):
         #tracking the reference trajectory
-        ref_traj_idx = round(self.phase*self.pos_traj.size(dim=0))
-        pos_ref_frame = self.pos_traj[ref_traj_idx]
+        ref_traj_idx = torch.round(self.phase*self.pos_traj.size(dim=0))
+        print(ref_traj_idx)
 
-
+        pos_ref_frame = self.pos_traj.repeat(self.num_envs,1)[ref_traj_idx,:]
+        print(pos_ref_frame)
         if (self.cfg.init_state.include_velocity):
             vel_ref_frame = self.vel_traj[ref_traj_idx]
 

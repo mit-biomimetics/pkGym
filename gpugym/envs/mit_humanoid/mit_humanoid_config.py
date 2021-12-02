@@ -159,12 +159,13 @@ class MITHumanoidCfg(LeggedRobotCfg):
         # soft_dof_vel_limit = 0.9
         # soft_torque_limit = 0.9
         max_contact_force = 600.
-
+        
         # if true negative total rewards are clipped at zero (avoids early termination problems)
         only_positive_rewards = False
         base_height_target = 0.55
         tracking_sigma = 0.25
         class scales(LeggedRobotCfg.rewards.scales):
+            reference_traj = 1.0
             termination = -10.
             tracking_lin_vel = 5.0
             tracking_ang_vel = 0.0
