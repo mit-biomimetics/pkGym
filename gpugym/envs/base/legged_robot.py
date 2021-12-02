@@ -436,7 +436,7 @@ class LeggedRobot(BaseTask):
             random_com_pos = self.random_sample(env_ids,com_pos_high,com_pos_low)
             random_com_vel = self.random_sample(env_ids,com_vel_high,com_vel_low)
             quat = torch.zeros(len(env_ids), 4, device=self.device)
-            for i in range(len(env_ids)): #if someone knows how to do this without the for loop please fix
+            for i in range(len(env_ids)): # TODO: if someone knows how to do this without the for loop please fix
                 quat[i,:] = quat_from_euler_xyz(random_com_pos[i,3],random_com_pos[i,4],random_com_pos[i,5]) 
 
             random_root_state = torch.cat((random_com_pos[:,0:3], quat), 1)
@@ -447,21 +447,23 @@ class LeggedRobot(BaseTask):
 
         elif self.cfg.init_state.default_setup == "Trajectory":
 
-            rand_timestamp = torch.randint(0, self.pos_traj.size(dim=0), (len(env_ids), 1), device=self.device)
-            random_pos = torch.zeros(len(env_ids), self.pos_traj.size(dim=1), device=self.device)
-            random_vel = torch.zeros(len(env_ids), self.vel_traj.size(dim=1), device=self.device)
+            rand_timestamp = torch.randint(0, self.pos_traj.size(dim=0), (self.num_envs, 1), device=self.device)
+            random_pos = torch.zeros(self.num_envs, self.pos_traj.size(dim=1), device=self.device)
+            random_vel = torch.zeros(self.num_envs, self.vel_traj.size(dim=1), device=self.device)
 
-            for i in range(len(env_ids)): #if someone knows how to do this without the for loop please fix
+            for i in env_ids: #if someone knows how to do this without the for loop please fix
                 random_pos[i,:] = self.pos_traj[int(rand_timestamp[i]),:]
                 random_vel[i,:] = self.vel_traj[int(rand_timestamp[i]),:]
+                self.phase[i,:] = float(rand_timestamp[i])/float(self.pos_traj.size(dim=0)) #initialize phase to right step
 
             #dof
-            self.dof_pos[env_ids] = random_pos[:,8:]
-            self.dof_vel[env_ids] = random_vel[:,7:]
+            self.dof_pos[env_ids] = random_pos[env_ids,8:]
+            self.dof_vel[env_ids] = random_vel[env_ids,7:]
 
             #base state
-            self.root_states[env_ids, 0:7] = random_pos[:,1:8]
-            self.root_states[env_ids, 7:13] = random_vel[:,1:7]
+            self.root_states[env_ids, 0:7] = random_pos[env_ids,1:8]
+            self.root_states[env_ids, 7:13] = random_vel[env_ids,1:7]
+
 
         env_ids_int32 = env_ids.to(dtype=torch.int32)
         self.gym.set_dof_state_tensor_indexed(self.sim,
@@ -471,10 +473,10 @@ class LeggedRobot(BaseTask):
         # base position
         if self.custom_origins:
             self.root_states[env_ids, :3] += self.env_origins[env_ids]
-            self.root_states[env_ids, :2] += torch_rand_float(-1., 1., (len(env_ids), 2), device=self.device) # xy position within 1m of the center
+            #self.root_states[env_ids, :2] += torch_rand_float(-1., 1., (len(env_ids), 2), device=self.device) # xy position within 1m of the center
         else:
             self.root_states[env_ids] = self.root_states[env_ids]
-            self.root_states[env_ids, :3] += self.env_origins[env_ids]
+            self.root_states[env_ids, :3] += self.env_origins[env_ids] 
         
         self.gym.set_actor_root_state_tensor_indexed(self.sim,
                                                      gymtorch.unwrap_tensor(self.root_states),
@@ -642,30 +644,34 @@ class LeggedRobot(BaseTask):
         self.default_dof_pos = self.default_dof_pos.unsqueeze(0)
 
         #retrieve reference trajectory
-        referenceTraj = pd.read_csv(self.cfg.init_state.ref_traj)
-        state_list = ["t","x","y","z","qx","qy","qz","qw"] + self.dof_names
-        state_vel_list = ["t","x_v","y_v","z_v","roll_v","pitch_v","yaw_v"]+ [x+"_v" for x in self.dof_names]
-        self.total_ref_time = referenceTraj['t'].iloc[-1]
-        # Scale times [sec] to standard phase 0->1
-        referenceTraj['t'] /= self.total_ref_time
+        if (self.cfg.init_state.ref_traj != ""):
+            referenceTraj = pd.read_csv(self.cfg.init_state.ref_traj)
+            state_list = ["t","x","y","z","qx","qy","qz","qw"] + self.dof_names
+            state_vel_list = ["t","x_v","y_v","z_v","roll_v","pitch_v","yaw_v"]+ [x+"_v" for x in self.dof_names]
+            self.total_ref_time = referenceTraj['t'].iloc[-1]
+            # Scale times [sec] to standard phase 0->1
+            referenceTraj['t'] /= self.total_ref_time
 
-        self.pos_traj = torch.zeros(len(referenceTraj["t"]), len(state_list))
-        self.vel_traj = torch.zeros(len(referenceTraj["t"]), len(state_vel_list))
-        for i in range(len(state_list)): #iterate through positions
-            name = state_list[i]
-            try:
-                self.pos_traj[:,i] = to_torch(referenceTraj[name])
-            except Exception:
-                print("Missing: " + name)
-
-        if (self.cfg.init_state.include_velocity):
-            for i in range(len(state_vel_list)): #iterate through velocity
-                name = state_vel_list[i]
+            self.pos_traj = torch.zeros(len(referenceTraj["t"]), len(state_list))
+            self.vel_traj = torch.zeros(len(referenceTraj["t"]), len(state_vel_list))
+            for i in range(len(state_list)): #iterate through positions
+                name = state_list[i]
                 try:
-                    self.vel_traj[:,i] = to_torch(referenceTraj[name])
+                    self.pos_traj[:,i] = to_torch(referenceTraj[name])
                 except Exception:
                     print("Missing: " + name)
 
+            self.pos_traj[:,3] += 0.07 #increase z height to avoid penetration 
+
+            if (self.cfg.init_state.include_velocity):
+                for i in range(len(state_vel_list)): #iterate through velocity
+                    name = state_vel_list[i]
+                    try:
+                        self.vel_traj[:,i] = to_torch(referenceTraj[name])
+                    except Exception:
+                        print("Missing: " + name)
+        else:
+            self.total_ref_time = 0 
 
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, whcih will be called to compute the total reward.

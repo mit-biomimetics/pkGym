@@ -52,7 +52,11 @@ class MIT_Humanoid(LeggedRobot):
             Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
         """
 
-        self.phase = torch.fmod(self.phase+self.dt, 1.)
+        if (self.total_ref_time > 0.0):
+            self.phase = torch.fmod(self.phase + self.dt/self.total_ref_time, 1)
+        else:
+            self.phase = torch.fmod(self.phase+self.dt, 1.)
+
         env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
         self._resample_commands(env_ids)
         if self.cfg.commands.heading_command:
@@ -154,3 +158,9 @@ class MIT_Humanoid(LeggedRobot):
         error *= self.obs_scales.lin_vel
         error = torch.sum(torch.square(error), dim=1)
         return torch.exp(-error/self.cfg.rewards.tracking_sigma)
+
+    def _pos_reward_reference_traj(self):
+        #tracking the reference trajectory
+        self.phase 
+        self.pos_traj
+        self.total_ref_time

@@ -104,7 +104,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         com_vel_low = [0.,0.,0.,0.,0.,0.]
 
         #initialization for traj sampling setup
-        ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_spinkick.csv"
+        ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_roll.csv"
         include_velocity = False
 
     class control(LeggedRobotCfg.control):
