@@ -99,7 +99,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         com_vel_low = [0.,0.,0.,0.,0.,0.]
 
         #initialization for traj sampling setup
-        ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_roll.csv"
+        ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_run.csv"
         ref_type = "Pos" #Pos, PosVel
 
     class control(LeggedRobotCfg.control):
@@ -156,7 +156,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         # soft_dof_vel_limit = 0.9
         # soft_torque_limit = 0.9
         max_contact_force = 600.
-        
+
         # if true negative total rewards are clipped at zero (avoids early termination problems)
         only_positive_rewards = False
         base_height_target = 0.7
@@ -164,29 +164,29 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         #reference traj tracking
         base_pos_tracking = 0.0
-        base_vel_tracking = 0.1
-        dof_pos_tracking = 0.1
-        dof_vel_tracking = 0.1
+        base_vel_tracking = 0.0
+        dof_pos_tracking = 1.
+        dof_vel_tracking = 0.0
 
         class scales(LeggedRobotCfg.rewards.scales):
-            reference_traj = 1.0
+            reference_traj = 5.0
             termination = -10.
-            tracking_lin_vel = 5.0
+            tracking_lin_vel = 1.0
             tracking_ang_vel = 0.0
             lin_vel_z = -1.0
-            ang_vel_xy = -0.0
+            # ang_vel_xy = -0.0
             orientation = -1.25
             torques = -5.e-8
-            dof_vel = 0.0
-            dof_acc = 0.
+            # dof_vel = 0.0
+            # dof_acc = 0.0
             base_height = 2.0
-            feet_air_time = 0.0  # rewards keeping feet in the air
+            # feet_air_time = 0.0  # rewards keeping feet in the air
             collision = -0.
             feet_stumble = -0.
-            action_rate = -5.e-5 # -0.01
+            action_rate = -1.e-4 # -0.01
             stand_still = -0.
             dof_pos_limits = -3.
-            no_fly = 0.0
+            # no_fly = 0.0
             feet_contact_forces = -0.
             symm_legs = 0.01
             symm_arms = 0.01
@@ -222,10 +222,9 @@ class MITHumanoidCfg(LeggedRobotCfg):
             height_measurements = 0.1
 
     class sim(LeggedRobotCfg.sim):
-        dt = 0.005
-        substeps = 1
-        gravity = [0., 0., 0.]
-
+        dt = 0.01
+        substeps = 4
+        gravity = [0., 0., -9.81]
 
 
 class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
@@ -238,13 +237,13 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
         entropy_coef = 0.01
 
     class runner(LeggedRobotCfgPPO.runner):
-        num_steps_per_env = 20
+        num_steps_per_env = 50
         max_iterations = 15000
 
         save_interval = 100
-    
+
     class algorithm(LeggedRobotCfgPPO.algorithm):
-        entropy_coef = 0.02
+        entropy_coef = 0.01
 
     class policy( LeggedRobotCfgPPO.policy ):
         actor_hidden_dims = [512, 256, 128]

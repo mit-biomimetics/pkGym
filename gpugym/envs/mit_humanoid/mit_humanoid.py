@@ -210,32 +210,38 @@ class MIT_Humanoid(LeggedRobot):
         ref_traj_idx = (torch.round(self.phase*self.pos_traj.size(dim=0)).squeeze(1)).long()
         pos_ref_frame = self.pos_traj.repeat(self.num_envs,1)[ref_traj_idx,:]
         vel_ref_frame = self.vel_traj.repeat(self.num_envs,1)[ref_traj_idx.long(),:]
+        reward = 0.
 
-        #base position error
-        base_pos_error = self.root_states[:,0:7] - pos_ref_frame[:, 1:8]
-        base_pos_error = torch.exp(-torch.sum(torch.square(base_pos_error), dim=1))
-
+        # todo needs to be redone: metrics in quaternion space are crap
+        # base position error
+        # base_pos_error = self.root_states[:,0:7] - pos_ref_frame[:, 1:8]
+        # base_pos_error = torch.exp(-torch.sum(torch.square(base_pos_error), dim=1))
+        # base_pos_error[:, 0:3] *= self.cfg.normalization.obs_scales.base_z
+        # reward += self.sqrdexp(base_pos_error)
         #dof position error
-        dof_pos_error = self.dof_pos - pos_ref_frame[:,8:]
-        dof_pos_error = torch.exp(-torch.sum(torch.square(dof_pos_error), dim=1))
+        dof_pos_err = self.dof_pos - pos_ref_frame[:,8:]
+        dof_pos_err *= self.cfg.normalization.obs_scales.dof_pos
+        reward += torch.sum(self.sqrdexp(dof_pos_err), dim=1) \
+                  * self.cfg.rewards.dof_pos_tracking
 
-        #base velocity error
-        base_vel_error = self.root_states[:,7:] - vel_ref_frame[:,1:7]
-        base_vel_error = torch.exp(-torch.sum(torch.square(base_vel_error),dim=1))
+        # base velocity error
+        # * might want this to be vector instead of element-wise
+        base_vel_err = self.root_states[:,7:] - vel_ref_frame[:,1:7]
+        base_vel_err[:, 1:4] *= self.cfg.normalization.obs_scales.lin_vel
+        base_vel_err[:, 4:] *= self.cfg.normalization.obs_scales.ang_vel
+        reward += torch.sum(self.sqrdexp(base_vel_err), dim=1) \
+                  * self.cfg.rewards.base_vel_tracking
 
-        #dof velocity error
-        dof_vel_error = self.dof_vel - vel_ref_frame[:,7:]
-        dof_vel_error =  torch.exp(-torch.sum(torch.square(dof_vel_error),dim=1))
+        # dof velocity error
+        dof_vel_err = self.dof_pos - vel_ref_frame[:,7:]
+        dof_vel_err *= self.cfg.normalization.obs_scales.dof_vel
+        reward += torch.sum(self.sqrdexp(dof_vel_err), dim=1) \
+                  * self.cfg.rewards.dof_vel_tracking
+        # dof_vel_error =  torch.exp(-torch.sum(torch.square(dof_vel_error),dim=1))
 
-        base_pos_reward = self.cfg.rewards.base_pos_tracking * base_pos_error 
-        base_vel_reward = self.cfg.rewards.base_vel_tracking * base_vel_error
-        dof_pos_reward = self.cfg.rewards.dof_pos_tracking * dof_pos_error
-        dof_vel_reward = self.cfg.rewards.dof_vel_tracking * dof_vel_error
+        return reward
 
-        error = base_pos_reward + base_vel_reward + dof_pos_reward + dof_vel_reward
 
-        return error
-        
     def _reward_action_rate(self):
         # Penalize changes in actions
         nact = self.num_actions

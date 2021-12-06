@@ -392,7 +392,7 @@ class LeggedRobot(BaseTask):
         else:
             raise NameError(f"Unknown controller type: {control_type}")
 
-        torques[:] = 0.
+        # torques[:] = 0.
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
 
     def random_sample(self, env_ids, high, low):
@@ -663,7 +663,7 @@ class LeggedRobot(BaseTask):
                 except Exception:
                     print("Missing: " + name)
 
-            self.pos_traj[:,3] += 0.07 #increase z height to avoid penetration 
+            self.pos_traj[:,3] += 0.5 #increase z height to avoid penetration 
 
             if (self.cfg.init_state.ref_type == "PosVel"):
                 for i in range(len(state_vel_list)): #iterate through velocity
