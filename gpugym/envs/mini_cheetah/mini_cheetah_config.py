@@ -28,47 +28,69 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from gpugym.envs import AnymalCRoughCfg, AnymalCRoughCfgPPO
+from gpugym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
-class AnymalCFlatCfg( AnymalCRoughCfg ):
-    class env( AnymalCRoughCfg.env ):
-        num_observations = 48
-  
-    class terrain( AnymalCRoughCfg.terrain ):
-        mesh_type = 'plane'
-        measure_heights = False
-  
-    class asset( AnymalCRoughCfg.asset ):
-        self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
 
-    class rewards( AnymalCRoughCfg.rewards ):
-        max_contact_force = 350.
-        class scales ( AnymalCRoughCfg.rewards.scales ):
-            orientation = -5.0
-            torques = -0.000025
-            feet_air_time = 2.
-            # feet_contact_forces = -0.01
-    
-    class commands( AnymalCRoughCfg.commands ):
-        heading_command = False
-        resampling_time = 4.
-        class ranges( AnymalCRoughCfg.commands.ranges ):
-            ang_vel_yaw = [-1.5, 1.5]
+class AnymalCRoughCfg(LeggedRobotCfg):
+    class env(LeggedRobotCfg.env):
+        num_envs = 4096
+        num_actions = 12
 
-    class domain_rand( AnymalCRoughCfg.domain_rand ):
-        friction_range = [0., 1.5] # on ground planes the friction combination mode is averaging, i.e total friction = (foot_friction + 1.)/2.
+    class terrain(LeggedRobotCfg.terrain):
+        mesh_type = 'trimesh'
 
-class AnymalCFlatCfgPPO( AnymalCRoughCfgPPO ):
-    class policy( AnymalCRoughCfgPPO.policy ):
-        actor_hidden_dims = [128, 64, 32]
-        critic_hidden_dims = [128, 64, 32]
-        activation = 'elu' # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+    class init_state(LeggedRobotCfg.init_state):
+        pos = [0.0, 0.0, 0.6]  # x,y,z [m]
+        default_joint_angles = {  # = target angles [rad] when action = 0.0
+            "LF_HAA": 0.0,
+            "LH_HAA": 0.0,
+            "RF_HAA": -0.0,
+            "RH_HAA": -0.0,
 
-    class algorithm( AnymalCRoughCfgPPO.algorithm):
-        entropy_coef = 0.01
+            "LF_HFE": 0.4,
+            "LH_HFE": -0.4,
+            "RF_HFE": 0.4,
+            "RH_HFE": -0.4,
 
-    class runner ( AnymalCRoughCfgPPO.runner):
+            "LF_KFE": -0.8,
+            "LH_KFE": 0.8,
+            "RF_KFE": -0.8,
+            "RH_KFE": 0.8,
+        }
+
+    class control(LeggedRobotCfg.control):
+        # PD Drive parameters:
+        stiffness = {'HAA': 80., 'HFE': 80., 'KFE': 80.}  # [N*m/rad]
+        damping = {'HAA': 2., 'HFE': 2., 'KFE': 2.}  # [N*m*s/rad]
+        # action scale: target angle = actionScale * action + defaultAngle
+        action_scale = 0.5
+        # decimation: Number of control action updates @ sim DT per policy DT
+        decimation = 4
+        use_actuator_network = True
+        actuator_net_file = "{LEGGED_GYM_ROOT_DIR}/resources/actuator_nets/anydrive_v3_lstm.pt"
+
+    class asset(LeggedRobotCfg.asset):
+        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/anymal_c/urdf/anymal_c.urdf"
+        foot_name = "FOOT"
+        penalize_contacts_on = ["SHANK", "THIGH"]
+        terminate_after_contacts_on = ["base"]
+        self_collisions = 1  # 1 to disable, 0 to enable...bitwise filter
+
+    class domain_rand(LeggedRobotCfg.domain_rand):
+        randomize_base_mass = True
+        added_mass_range = [-5., 5.]
+
+    class rewards(LeggedRobotCfg.rewards):
+        base_height_target = 0.5
+        max_contact_force = 500.
+        only_positive_rewards = True
+
+        class scales(LeggedRobotCfg.rewards.scales):
+            pass
+
+
+class AnymalCRoughCfgPPO(LeggedRobotCfgPPO):
+    class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
-        experiment_name = 'flat_anymal_c'
+        experiment_name = 'rough_anymal_c'
         load_run = -1
-        max_iterations = 300
