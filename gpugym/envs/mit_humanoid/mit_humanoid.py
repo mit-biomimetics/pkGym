@@ -188,7 +188,8 @@ class MIT_Humanoid(LeggedRobot):
         # return self.sqrdexp(self.projected_gravity[:, 2]+1.)
 
     def _reward_base_height(self):
-        """ Squared exponential saturating at base_height target
+        """
+        Squared exponential saturating at base_height target
         """
         base_height = self.root_states[:, 2].unsqueeze(1)
         error = (base_height-self.cfg.rewards.base_height_target)

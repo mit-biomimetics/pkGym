@@ -99,8 +99,9 @@ class MITHumanoidCfg(LeggedRobotCfg):
         com_vel_low = [0.,0.,0.,0.,0.,0.]
 
         #initialization for traj sampling setup
-        ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_run.csv"
-        ref_type = "Pos" #Pos, PosVel
+        ref_traj = "../../resources/robots/mit_humanoid/trajectories/across_back10/JSM_across_back_2_RESAMPLED10.csv"
+        # ref_traj = "../../resources/robots/mit_humanoid/trajectories/SH_standing_roll_2021_11_1_OUTPUT_1.csv"
+        ref_type = "PosVel" #Pos, PosVel
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
@@ -149,7 +150,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
-        disable_gravity = True
+        disable_gravity = False
+        disable_motors = False
 
     class rewards(LeggedRobotCfg.rewards):
         # soft_dof_pos_limit = 0.95

@@ -392,7 +392,8 @@ class LeggedRobot(BaseTask):
         else:
             raise NameError(f"Unknown controller type: {control_type}")
 
-        # torques[:] = 0.
+        if self.cfg.asset.disable_motors:
+            torques[:] = 0.
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
 
     def random_sample(self, env_ids, high, low):
@@ -433,14 +434,16 @@ class LeggedRobot(BaseTask):
             com_vel_high = to_torch(self.cfg.init_state.com_vel_high)
             com_vel_low = to_torch(self.cfg.init_state.com_vel_high)
 
-            random_com_pos = self.random_sample(env_ids,com_pos_high,com_pos_low)[env_ids]
-            random_com_vel = self.random_sample(env_ids,com_vel_high,com_vel_low)[env_ids]
+            random_com_pos = self.random_sample(env_ids,com_pos_high,
+                                                com_pos_low)
+            random_com_vel = self.random_sample(env_ids,com_vel_high,
+                                                com_vel_low)
             quat = torch.zeros(self.num_envs, 4, device=self.device)
             for i in env_ids: # TODO: if someone knows how to do this without the for loop please fix
                 quat[i,:] = quat_from_euler_xyz(random_com_pos[i,3],random_com_pos[i,4],random_com_pos[i,5]) 
 
             random_root_state = torch.cat((random_com_pos[:,0:3], quat), 1)
-            
+
             ## TODO: CHECK PENETRATION AND ADJUST Z HEIGHT
             self.root_states[env_ids, 0:7] = random_root_state[env_ids,:]
             self.root_states[env_ids, 7:13] = random_com_vel[env_ids, :]
@@ -654,7 +657,8 @@ class LeggedRobot(BaseTask):
             # Scale times [sec] to standard phase 0->1
             referenceTraj['t'] /= self.total_ref_time
 
-            self.pos_traj = torch.zeros(len(referenceTraj["t"]), len(state_list), device=self.device)
+            self.pos_traj = torch.zeros(len(referenceTraj["t"]),
+                                        len(state_list), device=self.device)
             self.vel_traj = torch.zeros(len(referenceTraj["t"]), len(state_vel_list), device=self.device)
             for i in range(len(state_list)): #iterate through positions
                 name = state_list[i]
@@ -663,7 +667,7 @@ class LeggedRobot(BaseTask):
                 except Exception:
                     print("Missing: " + name)
 
-            self.pos_traj[:,3] += 0.5 #increase z height to avoid penetration 
+            self.pos_traj[:,3] += 0.05 #increase z height to avoid penetration 
 
             if (self.cfg.init_state.ref_type == "PosVel"):
                 for i in range(len(state_vel_list)): #iterate through velocity
