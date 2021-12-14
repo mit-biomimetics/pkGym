@@ -34,7 +34,7 @@ from gpugym.envs.base.legged_robot_config import LeggedRobotCfgPPO
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 1000
+        num_envs = 3000
         num_observations = 67+2+3*18 # 187  # ! why? should be 66...
         num_actions = 18
 
@@ -50,10 +50,10 @@ class MITHumanoidCfg(LeggedRobotCfg):
         resampling_time = 10. # time before command are changed[s]
         heading_command = True # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [-1, 5.0] # min max [m/s]
-            lin_vel_y = [-1., 1.]   # min max [m/s]
+            lin_vel_x = [0.5, 1.0] # min max [m/s]
+            lin_vel_y = [0., 0]   # min max [m/s]
             ang_vel_yaw = [0., 0.]    # min max [rad/s]
-            heading = [-1.14, 1.14]
+            heading = [0, 0]
 
     class init_state(LeggedRobotCfg.init_state):
         default_setup = "Trajectory" #default setup chooses how the initial conditions are chosen. 
@@ -82,7 +82,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         }
 
         #default COM for basic initialization 
-        pos = [0.0, 0.0, 1.]  # x,y,z [m]
+        pos = [0.0, 0.0, 0.68]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
@@ -102,29 +102,29 @@ class MITHumanoidCfg(LeggedRobotCfg):
         #ref_traj = "../../resources/robots/mit_humanoid/trajectories/across_back10/JSM_across_back_2_RESAMPLED10.csv"
         # ref_traj = "../../resources/robots/mit_humanoid/trajectories/SH_standing_roll_2021_11_1_OUTPUT_1.csv"
         ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_walk.csv"
-        ref_type = "Pos" #Pos, PosVel
+        ref_type = "PosVel" #Pos, PosVel
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
-        stiffness = {'hip_yaw': 40.,
-                     'hip_abad': 40.,
-                     'hip_pitch': 60.,
-                     'knee': 60.,
-                     'ankle': 40.,
-                     'shoulder_pitch': 20.,
-                     'shoulder_abad': 20.,
-                     'shoulder_yaw': 20.,
-                     'elbow': 20.,
+        stiffness = {'hip_yaw': 20.,
+                     'hip_abad': 20.,
+                     'hip_pitch': 30.,
+                     'knee': 30.,
+                     'ankle': 20.,
+                     'shoulder_pitch': 10.,
+                     'shoulder_abad': 10.,
+                     'shoulder_yaw': 10.,
+                     'elbow': 10.,
                     }  # [N*m/rad]
         damping = {'hip_yaw': 1,
                    'hip_abad': 1,
                    'hip_pitch': 1,
                    'knee': 1,
-                   'ankle': 1,
-                   'shoulder_pitch': 1,
-                   'shoulder_abad': 1,
-                   'shoulder_yaw': 1,
-                   'elbow': 1,
+                   'ankle': 0.2,
+                   'shoulder_pitch': 0.5,
+                   'shoulder_abad': 0.5,
+                   'shoulder_yaw': 0.5,
+                   'elbow': 0.05,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
         # stiffness = {}
         # damping = {}
@@ -151,8 +151,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
-        disable_gravity = True
-        disable_motors = True
+        disable_gravity = False
+        disable_motors = False
 
     class rewards(LeggedRobotCfg.rewards):
         # soft_dof_pos_limit = 0.95
@@ -167,16 +167,16 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         #reference traj tracking
         base_pos_tracking = 0.0
-        base_vel_tracking = 0.0
+        base_vel_tracking = 0.2
         dof_pos_tracking = 1.
-        dof_vel_tracking = 0.0
+        dof_vel_tracking = 0.2
 
         class scales(LeggedRobotCfg.rewards.scales):
-            reference_traj = 5.0
+            reference_traj = 3.0
             termination = -10.
-            tracking_lin_vel = 2.0
+            tracking_lin_vel = 0.3
             tracking_ang_vel = 0.0
-            lin_vel_z = -1.0
+            lin_vel_z = -.002
             # ang_vel_xy = -0.0
             orientation = -1.25
             torques = -5.e-6
