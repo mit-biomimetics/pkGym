@@ -34,7 +34,7 @@ from gpugym.envs.base.legged_robot_config import LeggedRobotCfgPPO
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 3
+        num_envs = 1000
         num_observations = 67+2+3*18 # 187  # ! why? should be 66...
         num_actions = 18
 
@@ -174,15 +174,15 @@ class MITHumanoidCfg(LeggedRobotCfg):
         class scales(LeggedRobotCfg.rewards.scales):
             reference_traj = 5.0
             termination = -10.
-            tracking_lin_vel = 1.0
+            tracking_lin_vel = 2.0
             tracking_ang_vel = 0.0
             lin_vel_z = -1.0
             # ang_vel_xy = -0.0
             orientation = -1.25
-            torques = -5.e-8
+            torques = -5.e-6
             # dof_vel = 0.0
             # dof_acc = 0.0
-            base_height = 2.0
+            base_height = 0.1
             # feet_air_time = 0.0  # rewards keeping feet in the air
             collision = -0.
             feet_stumble = -0.
