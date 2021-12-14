@@ -260,8 +260,9 @@ class LeggedRobotCfgPPO(BaseConfig):
 
         # logging
         save_interval = 50 # check for potential saves every this many iterations
-        experiment_name = 'test'
         run_name = ''
+        experiment_name = 'legged_robot'
+
         # load and resume
         resume = False
         load_run = -1 # -1 = last run

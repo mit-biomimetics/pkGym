@@ -34,7 +34,7 @@ from gpugym.envs.base.legged_robot_config import LeggedRobotCfgPPO
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 10
+        num_envs = 3
         num_observations = 67+2+3*18 # 187  # ! why? should be 66...
         num_actions = 18
 
@@ -99,9 +99,10 @@ class MITHumanoidCfg(LeggedRobotCfg):
         com_vel_low = [0.,0.,0.,0.,0.,0.]
 
         #initialization for traj sampling setup
-        ref_traj = "../../resources/robots/mit_humanoid/trajectories/across_back10/JSM_across_back_2_RESAMPLED10.csv"
+        #ref_traj = "../../resources/robots/mit_humanoid/trajectories/across_back10/JSM_across_back_2_RESAMPLED10.csv"
         # ref_traj = "../../resources/robots/mit_humanoid/trajectories/SH_standing_roll_2021_11_1_OUTPUT_1.csv"
-        ref_type = "PosVel" #Pos, PosVel
+        ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_walk.csv"
+        ref_type = "Pos" #Pos, PosVel
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
@@ -137,7 +138,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         friction_range = [0.5, 1.25]
         randomize_base_mass = False
         added_mass_range = [-1., 1.]
-        push_robots = True
+        push_robots = False
         push_interval_s = 15
         max_push_vel_xy = 1.
 
@@ -150,8 +151,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
-        disable_gravity = False
-        disable_motors = False
+        disable_gravity = True
+        disable_motors = True
 
     class rewards(LeggedRobotCfg.rewards):
         # soft_dof_pos_limit = 0.95
@@ -231,9 +232,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
 class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
 
-    class runner(LeggedRobotCfgPPO.runner):
-        run_name = ''
-        experiment_name = 'MIT_Humanoid'
 
     class algorithm(LeggedRobotCfgPPO.algorithm):
         entropy_coef = 0.01
@@ -241,11 +239,9 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
     class runner(LeggedRobotCfgPPO.runner):
         num_steps_per_env = 50
         max_iterations = 15000
-
-        save_interval = 100
-
-    class algorithm(LeggedRobotCfgPPO.algorithm):
-        entropy_coef = 0.01
+        run_name = 'Reference_Traj_Walking'
+        experiment_name = 'MIT_Humanoid'
+        save_interval = 10
 
     class policy( LeggedRobotCfgPPO.policy ):
         actor_hidden_dims = [512, 256, 128]

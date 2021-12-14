@@ -444,7 +444,6 @@ class LeggedRobot(BaseTask):
 
             random_root_state = torch.cat((random_com_pos[:,0:3], quat), 1)
 
-            ## TODO: CHECK PENETRATION AND ADJUST Z HEIGHT
             self.root_states[env_ids, 0:7] = random_root_state[env_ids,:]
             self.root_states[env_ids, 7:13] = random_com_vel[env_ids, :]
 
@@ -481,10 +480,40 @@ class LeggedRobot(BaseTask):
         else:
             self.root_states[env_ids] = self.root_states[env_ids]
             self.root_states[env_ids, :3] += self.env_origins[env_ids] 
-        
+
         self.gym.set_actor_root_state_tensor_indexed(self.sim,
                                                      gymtorch.unwrap_tensor(self.root_states),
                                                      gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
+
+        self.gym.simulate(self.sim) #Need to one step the simulation to update dof !!THIS MAY BE A TERRIBLE IDEA!!
+        
+        #retrieve body states of every link in every environment. 
+        self.gym.refresh_rigid_body_state_tensor(self.sim)
+        body_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
+        rb_states = gymtorch.wrap_tensor(body_states)
+
+        num_links = int(len(rb_states[:,0])/self.num_envs)
+
+        #iterate through the env ids that are being reset (and only the ones being reset)
+        for i in env_ids:
+            max_penetration = 0 
+            for j in range(num_links):
+                #check each body position 
+                link_height = rb_states[i*num_links + j, 2]
+                if (link_height < 0.1): #check if COM of rigid link is to close to ground 
+                    #TODO: replace with exact measurement of toe/heel height
+                    if (0.1 - link_height > max_penetration):
+                        max_penetration = -link_height + 0.1
+        
+            #find max penetration and shift root state by that amount. 
+            self.root_states[i, 2] += max_penetration
+        
+        self.gym.set_actor_root_state_tensor_indexed(self.sim,
+                                                gymtorch.unwrap_tensor(self.root_states),
+                                                gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
+        self.gym.set_dof_state_tensor_indexed(self.sim,
+                                              gymtorch.unwrap_tensor(self.dof_state),
+                                              gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))       
 
     def _push_robots(self):
         """ Random pushes the robots. Emulates an impulse by setting a randomized base velocity. 
@@ -666,8 +695,6 @@ class LeggedRobot(BaseTask):
                     self.pos_traj[:,i] = to_torch(referenceTraj[name])
                 except Exception:
                     print("Missing: " + name)
-
-            self.pos_traj[:,3] += 0.05 #increase z height to avoid penetration 
 
             if (self.cfg.init_state.ref_type == "PosVel"):
                 for i in range(len(state_vel_list)): #iterate through velocity
