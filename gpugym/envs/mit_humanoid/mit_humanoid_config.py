@@ -104,7 +104,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         #ref_traj = "../../resources/robots/mit_humanoid/trajectories/across_back10/JSM_across_back_2_RESAMPLED10.csv"
         # ref_traj = "../../resources/robots/mit_humanoid/trajectories/SH_standing_roll_2021_11_1_OUTPUT_1.csv"
         ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_walk.csv"
-        ref_type = "PosVel" #Pos, PosVel
+        ref_type = "Pos" #Pos, PosVel
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
@@ -128,6 +128,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
                    'shoulder_yaw': 0.5,
                    'elbow': 0.5,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
+        nominal_pos = True  # use ref traj as nominal traj
+        nominal_vel = False
         # stiffness = {}
         # damping = {}
         # action scale: target angle = actionScale * action + defaultAngle
@@ -153,14 +155,14 @@ class MITHumanoidCfg(LeggedRobotCfg):
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
-        disable_gravity = False
+        disable_gravity = True
         disable_actions = False
         disable_motors = False
 
     class rewards(LeggedRobotCfg.rewards):
-        # soft_dof_pos_limit = 0.95
-        # soft_dof_vel_limit = 0.9
-        # soft_torque_limit = 0.9
+        soft_dof_pos_limit = 0.9
+        soft_dof_vel_limit = 0.9
+        soft_torque_limit = 0.9
         max_contact_force = 600.
 
         # if true negative total rewards are clipped at zero (avoids early termination problems)
@@ -176,26 +178,27 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         class scales(LeggedRobotCfg.rewards.scales):
             reference_traj = 3.0
-            termination = -10.
-            tracking_lin_vel = 0.3
+            termination = -0.
+            tracking_lin_vel = 0.
             tracking_ang_vel = 0.0
-            lin_vel_z = -.002
-            # ang_vel_xy = -0.0
-            orientation = -1.25
+            lin_vel_z = -.00
+            ang_vel_xy = -0.0
+            orientation = -0.
             torques = -5.e-6
-            # dof_vel = 0.0
-            # dof_acc = 0.0
-            base_height = 0.1
-            # feet_air_time = 0.0  # rewards keeping feet in the air
+            dof_vel = 0.0
+            dof_acc = 0.0
+            base_height = 0.
+            feet_air_time = 0.0  # rewards keeping feet in the air
             collision = -0.
             feet_stumble = -0.
-            action_rate = -1.e-4 # -0.01
+            action_rate = -0.01 # -0.01
+            action_rate2 = -0.001
             stand_still = -0.
-            dof_pos_limits = -3.
-            # no_fly = 0.0
+            dof_pos_limits = -0.25
+            no_fly = 0.0
             feet_contact_forces = -0.
-            symm_legs = 0.01
-            symm_arms = 0.01
+            symm_legs = 0.0
+            symm_arms = 0.0
 
     class normalization(LeggedRobotCfg.normalization):
             class obs_scales(LeggedRobotCfg.normalization.obs_scales):

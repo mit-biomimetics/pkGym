@@ -243,7 +243,7 @@ class MIT_Humanoid(LeggedRobot):
         return reward
 
 
-    def _reward_action_rate(self):
+    def _reward_action_rate2(self):
         # Penalize changes in actions
         nact = self.num_actions
         dt2 = (self.dt*self.cfg.control.decimation)**2

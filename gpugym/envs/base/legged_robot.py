@@ -386,10 +386,19 @@ class LeggedRobot(BaseTask):
         #pd controller
         actions_scaled = actions * self.cfg.control.action_scale 
         control_type = self.cfg.control.control_type
+
+        offset_pos = torch.zeros_like(self.torques) + self.default_dof_pos
+        offset_vel = torch.zeros_like(self.torques)
+
+        if self.cfg.control.nominal_pos:
+            ref_traj_idx = (torch.round(self.phase*self.pos_traj.size(dim=0)).squeeze(1)).long()
+            pos_ref_frame = self.pos_traj.repeat(self.num_envs,1)[ref_traj_idx,:]
+            offset_pos += pos_ref_frame[:,8:]
+
         if control_type=="P":
-            torques = self.p_gains*(actions_scaled + self.default_dof_pos - self.dof_pos) - self.d_gains*self.dof_vel
+            torques = self.p_gains*(actions_scaled + offset_pos - self.dof_pos) - self.d_gains*self.dof_vel
         elif control_type=="V":
-            torques = self.p_gains*(actions_scaled - self.dof_vel) - self.d_gains*(self.dof_vel - self.last_dof_vel)/self.sim_params.dt
+            torques = self.p_gains*(actions_scaled + offset_vel - self.dof_vel) - self.d_gains*(self.dof_vel - self.last_dof_vel)/self.sim_params.dt
         elif control_type=="T":
             torques = actions_scaled
         else:
@@ -456,17 +465,17 @@ class LeggedRobot(BaseTask):
             random_pos = torch.zeros(self.num_envs, self.pos_traj.size(dim=1), device=self.device)
             random_vel = torch.zeros(self.num_envs, self.vel_traj.size(dim=1), device=self.device)
 
-            for i in env_ids: #if someone knows how to do this without the for loop please fix
+            for i in env_ids: # todo if someone knows how to do this without the for loop please fix
                 random_pos[i,:] = self.pos_traj[int(rand_timestamp[i]),:]
                 if (self.cfg.init_state.ref_type == "PosVel"):
                     random_vel[i,:] = self.vel_traj[int(rand_timestamp[i]),:]
                 self.phase[i,:] = float(rand_timestamp[i])/float(self.pos_traj.size(dim=0)) #initialize phase to right step
 
-            #dof
+            # dof
             self.dof_pos[env_ids] = random_pos[env_ids,8:]
             self.dof_vel[env_ids] = random_vel[env_ids,7:]
 
-            #base state
+            # base state
             self.root_states[env_ids, 0:7] = random_pos[env_ids,1:8]
             self.root_states[env_ids, 7:13] = random_vel[env_ids,1:7]
 
@@ -683,7 +692,9 @@ class LeggedRobot(BaseTask):
                     print(f"PD gain of joint {name} were not defined, setting them to zero")
         self.default_dof_pos = self.default_dof_pos.unsqueeze(0)
 
-        #retrieve reference trajectory
+        # retrieve reference trajectory
+        # todo only the buffer should be initialized here
+        # todo split up buffers of floating base from joints
         if (self.cfg.init_state.ref_traj != ""):
             referenceTraj = pd.read_csv(self.cfg.init_state.ref_traj)
             state_list = ["t","x","y","z","qx","qy","qz","qw"] + self.dof_names
@@ -710,7 +721,7 @@ class LeggedRobot(BaseTask):
                     except Exception:
                         print("Missing: " + name)
         else:
-            self.total_ref_time = 0 
+            self.total_ref_time = 0
 
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, whcih will be called to compute the total reward.
