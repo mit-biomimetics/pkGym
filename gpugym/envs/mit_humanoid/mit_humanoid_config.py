@@ -50,7 +50,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         resampling_time = 10. # time before command are changed[s]
         heading_command = True # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [0.5, 1.0] # min max [m/s]
+            lin_vel_x = [0.5, 2.0] # min max [m/s]
             lin_vel_y = [0., 0]   # min max [m/s]
             ang_vel_yaw = [0., 0.]    # min max [rad/s]
             heading = [0, 0]
@@ -129,7 +129,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
                    'elbow': 0.5,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
         nominal_pos = True  # use ref traj as nominal traj
-        nominal_vel = False
+        nominal_vel = False # ! not yet implemented
         # stiffness = {}
         # damping = {}
         # action scale: target angle = actionScale * action + defaultAngle
@@ -149,13 +149,14 @@ class MITHumanoidCfg(LeggedRobotCfg):
     class asset(LeggedRobotCfg.asset):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_sf.urdf'
         foot_name = 'foot'
-        penalize_contacts_on = ['base']
+        penalize_contacts_on = ['base', 'hand']
         terminate_after_contacts_on = ['base']
+        collapse_fixed_joints = False # merge bodies connected by fixed joints. 
         flip_visual_attachments = False
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
-        disable_gravity = True
+        disable_gravity = False
         disable_actions = False
         disable_motors = False
 
@@ -167,7 +168,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         # if true negative total rewards are clipped at zero (avoids early termination problems)
         only_positive_rewards = False
-        base_height_target = 0.7
+        base_height_target = 0.65
         tracking_sigma = 0.25
 
         #reference traj tracking
@@ -178,18 +179,18 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         class scales(LeggedRobotCfg.rewards.scales):
             reference_traj = 3.0
-            termination = -0.
-            tracking_lin_vel = 0.
+            termination = -1.
+            tracking_lin_vel = 3.
             tracking_ang_vel = 0.0
-            lin_vel_z = -.00
+            lin_vel_z = -0.
             ang_vel_xy = -0.0
-            orientation = -0.
-            torques = -5.e-6
+            orientation = 0.1
+            torques = -5.e-7
             dof_vel = 0.0
             dof_acc = 0.0
-            base_height = 0.
+            base_height = 0.25
             feet_air_time = 0.0  # rewards keeping feet in the air
-            collision = -0.
+            collision = -1.
             feet_stumble = -0.
             action_rate = -0.01 # -0.01
             action_rate2 = -0.001
@@ -243,11 +244,11 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
         entropy_coef = 0.01
 
     class runner(LeggedRobotCfgPPO.runner):
-        num_steps_per_env = 50
+        num_steps_per_env = 25
         max_iterations = 15000
         run_name = 'Reference_Traj_Walking'
         experiment_name = 'MIT_Humanoid'
-        save_interval = 10
+        save_interval = 50
 
     class policy( LeggedRobotCfgPPO.policy ):
         actor_hidden_dims = [512, 256, 128]
