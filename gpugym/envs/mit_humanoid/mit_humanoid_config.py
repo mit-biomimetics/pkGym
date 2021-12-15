@@ -142,16 +142,15 @@ class MITHumanoidCfg(LeggedRobotCfg):
         friction_range = [0.5, 1.25]
         randomize_base_mass = False
         added_mass_range = [-1., 1.]
-        push_robots = False
+        push_robots = True
         push_interval_s = 15
         max_push_vel_xy = 1.
 
     class asset(LeggedRobotCfg.asset):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_sf.urdf'
         foot_name = 'foot'
-        penalize_contacts_on = ['base', 'hand']
-        terminate_after_contacts_on = ['base']
-        collapse_fixed_joints = False # merge bodies connected by fixed joints. 
+        penalize_contacts_on = ['base', 'arm']
+        terminate_after_contacts_on = ['base', 'arm' ]
         flip_visual_attachments = False
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
@@ -173,29 +172,29 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         #reference traj tracking
         base_pos_tracking = 0.0
-        base_vel_tracking = 0.2
-        dof_pos_tracking = 1.
-        dof_vel_tracking = 0.2
+        base_vel_tracking = 6.
+        dof_pos_tracking = 6.
+        dof_vel_tracking = 3.
 
         class scales(LeggedRobotCfg.rewards.scales):
             reference_traj = 3.0
-            termination = -1.
-            tracking_lin_vel = 3.
-            tracking_ang_vel = 0.0
-            lin_vel_z = -0.
+            termination = -10.
+            tracking_lin_vel = 0.0
+            tracking_ang_vel = 25.0
+            lin_vel_z = -.002
             ang_vel_xy = -0.0
-            orientation = 0.1
-            torques = -5.e-7
+            orientation = 0.0
+            torques = -5.e-8
             dof_vel = 0.0
             dof_acc = 0.0
-            base_height = 0.25
-            feet_air_time = 0.0  # rewards keeping feet in the air
-            collision = -1.
+            base_height = 2.0
+            feet_air_time = 10.0  # rewards keeping feet in the air
+            collision = -0.
             feet_stumble = -0.
             action_rate = -0.01 # -0.01
             action_rate2 = -0.001
             stand_still = -0.
-            dof_pos_limits = -0.25
+            dof_pos_limits = -3.
             no_fly = 0.0
             feet_contact_forces = -0.
             symm_legs = 0.0
