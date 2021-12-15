@@ -129,7 +129,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
                    'elbow': 0.5,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
         nominal_pos = True  # use ref traj as nominal traj
-        nominal_vel = False # ! not yet implemented
+        nominal_vel = False  # requires "PosVel" for ref_type
         # stiffness = {}
         # damping = {}
         # action scale: target angle = actionScale * action + defaultAngle
@@ -156,8 +156,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
-        disable_gravity = False
-        disable_actions = False
+        disable_gravity = True
+        disable_actions = True
         disable_motors = False
 
     class rewards(LeggedRobotCfg.rewards):
