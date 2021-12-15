@@ -33,11 +33,11 @@ from gpugym.envs import AnymalCRoughCfg, AnymalCRoughCfgPPO
 class AnymalCFlatCfg( AnymalCRoughCfg ):
     class env( AnymalCRoughCfg.env ):
         num_observations = 48
-  
+
     class terrain( AnymalCRoughCfg.terrain ):
         mesh_type = 'plane'
         measure_heights = False
-  
+
     class asset( AnymalCRoughCfg.asset ):
         self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
 
@@ -48,7 +48,7 @@ class AnymalCFlatCfg( AnymalCRoughCfg ):
             torques = -0.000025
             feet_air_time = 2.
             # feet_contact_forces = -0.01
-    
+
     class commands( AnymalCRoughCfg.commands ):
         heading_command = False
         resampling_time = 4.

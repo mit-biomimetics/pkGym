@@ -56,8 +56,10 @@ class MITHumanoidCfg(LeggedRobotCfg):
             heading = [0, 0]
 
     class init_state(LeggedRobotCfg.init_state):
-        default_setup = "Trajectory" #default setup chooses how the initial conditions are chosen. 
-                                #"Basic" = a single position with some randomized noise on top. "Range" = a range of joint positions and velocities. "Trajectory" = feed in a trajectory to sample from. 
+        default_setup = "Trajectory" # default setup chooses how the initial conditions are chosen. 
+                                # "Basic" = a single position with some randomized noise on top. 
+                                # "Range" = a range of joint positions and velocities.
+                                #  "Trajectory" = feed in a trajectory to sample from. 
 
         #default for normalization and basic initialization 
         default_joint_angles = {  # = target angles [rad] when action = 0.0
@@ -82,7 +84,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         }
 
         #default COM for basic initialization 
-        pos = [0.0, 0.0, 0.68]  # x,y,z [m]
+        pos = [0.0, 0.0, 0.78]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
@@ -110,28 +112,28 @@ class MITHumanoidCfg(LeggedRobotCfg):
                      'hip_abad': 20.,
                      'hip_pitch': 30.,
                      'knee': 30.,
-                     'ankle': 20.,
+                     'ankle': 10.,
                      'shoulder_pitch': 10.,
                      'shoulder_abad': 10.,
                      'shoulder_yaw': 10.,
                      'elbow': 10.,
                     }  # [N*m/rad]
-        damping = {'hip_yaw': 1,
-                   'hip_abad': 1,
-                   'hip_pitch': 1,
-                   'knee': 1,
-                   'ankle': 0.2,
+        damping = {'hip_yaw': 1.,
+                   'hip_abad': 1.,
+                   'hip_pitch': 1.,
+                   'knee': 1.,
+                   'ankle': 0.25,
                    'shoulder_pitch': 0.5,
                    'shoulder_abad': 0.5,
                    'shoulder_yaw': 0.5,
-                   'elbow': 0.05,
+                   'elbow': 0.5,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
         # stiffness = {}
         # damping = {}
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 1.
         # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 1  # ! substeps?
+        decimation = 5  # ! substeps?
 
     class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_friction = False
@@ -152,6 +154,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
         disable_gravity = False
+        disable_actions = False
         disable_motors = False
 
     class rewards(LeggedRobotCfg.rewards):
@@ -225,8 +228,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
             height_measurements = 0.1
 
     class sim(LeggedRobotCfg.sim):
-        dt = 0.01
-        substeps = 4
+        dt = 0.002
+        substeps = 1
         gravity = [0., 0., -9.81]
 
 
