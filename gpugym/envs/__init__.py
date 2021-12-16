@@ -39,7 +39,8 @@ from .cassie.cassie import Cassie
 from .cassie.cassie_config import CassieRoughCfg, CassieRoughCfgPPO
 from .mit_humanoid.mit_humanoid import MIT_Humanoid
 from .mit_humanoid.mit_humanoid_config import MITHumanoidCfg, MITHumanoidCfgPPO
-
+from .mini_cheetah.mini_cheetah import MiniCheetah
+from .mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahCfgPPO
 import os
 
 from gpugym.utils.task_registry import task_registry
