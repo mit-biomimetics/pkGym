@@ -41,10 +41,10 @@ from typing import Tuple, Dict
 
 from gpugym.envs import LeggedRobot
 from gpugym import LEGGED_GYM_ROOT_DIR
-from .mixed_terrains.anymal_c_rough_config import AnymalCRoughCfg
+from .mini_cheetah_config import MiniCheetahCfg
 
-class Anymal(LeggedRobot):
-    cfg : AnymalCRoughCfg
+class MiniCheetah(LeggedRobot):
+    cfg : MiniCheetahCfg
     def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
         super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
 
