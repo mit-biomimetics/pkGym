@@ -31,10 +31,11 @@
 from gpugym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
 
-class AnymalCRoughCfg(LeggedRobotCfg):
+class MiniCheetahCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         num_envs = 4096
-        num_actions = 12
+        num_actions = 12  # 12 for the 12 actuated DoFs of the mini cheetah
+        num_observations = 48  # added blindly from the AnymalCFlatCFG
 
     class terrain(LeggedRobotCfg.terrain):
         mesh_type = 'trimesh'
@@ -66,19 +67,24 @@ class AnymalCRoughCfg(LeggedRobotCfg):
         action_scale = 0.5
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 4
-        use_actuator_network = True
-        actuator_net_file = "{LEGGED_GYM_ROOT_DIR}/resources/actuator_nets/anydrive_v3_lstm.pt"
+        use_actuator_network = False
+        # actuator_net_file = "{LEGGED_GYM_ROOT_DIR}/resources/actuator_nets/anydrive_v3_lstm.pt"
 
     class asset(LeggedRobotCfg.asset):
-        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/anymal_c/urdf/anymal_c.urdf"
-        foot_name = "FOOT"
-        penalize_contacts_on = ["SHANK", "THIGH"]
+        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah.urdf"
+        foot_name = "FOOT"  # TODO: fix this!
+        penalize_contacts_on = ["SHANK", "THIGH"]  # TODO: fix this!
+        # penalize_contacts_on = ['base']
         terminate_after_contacts_on = ["base"]
-        self_collisions = 1  # 1 to disable, 0 to enable...bitwise filter
+        self_collisions = 1   # added blindly from the AnymalCFlatCFG.  1 to disable, 0 to enable...bitwise filter
+        flip_visual_attachments = False
+        disable_gravity = False # False means there is gravity
 
     class domain_rand(LeggedRobotCfg.domain_rand):
-        randomize_base_mass = True
+        randomize_base_mass = False
         added_mass_range = [-5., 5.]
+        friction_range = [0., 1.5] # on ground planes the friction combination mode is averaging, i.e total friction = (foot_friction + 1.)/2.
+        push_robots = False
 
     class rewards(LeggedRobotCfg.rewards):
         base_height_target = 0.5
@@ -86,11 +92,30 @@ class AnymalCRoughCfg(LeggedRobotCfg):
         only_positive_rewards = True
 
         class scales(LeggedRobotCfg.rewards.scales):
-            pass
+            orientation = -5.0
+            torques = -0.000025
+            feet_air_time = 2.
+            # feet_contact_forces = -0.01
 
+    # added from AnymalCRoughCfg
+    class commands(LeggedRobotCfg.commands):
+        heading_command = False
+        resampling_time = 4.
+        class ranges(LeggedRobotCfg.commands.ranges):
+            ang_vel_yaw = [-1.5, 1.5]
 
-class AnymalCRoughCfgPPO(LeggedRobotCfgPPO):
+class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
+    class policy( LeggedRobotCfgPPO.policy ):
+        actor_hidden_dims = [128, 64, 32]
+        critic_hidden_dims = [128, 64, 32]
+        activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+
+    class algorithm( LeggedRobotCfgPPO.algorithm):
+        entropy_coef = 0.01
+
     class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
-        experiment_name = 'rough_anymal_c'
+        experiment_name = 'mini_cheetah'
         load_run = -1
+        max_iterations = 1500
+        save_interval = 100
