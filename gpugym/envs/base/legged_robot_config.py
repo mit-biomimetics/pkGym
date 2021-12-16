@@ -179,6 +179,7 @@ class LeggedRobotCfg(BaseConfig):
         base_vel_tracking = 0.0
         dof_pos_tracking = 0.0
         dof_vel_tracking = 0.0
+        joint_level_scaling = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
     class normalization:
         class obs_scales:

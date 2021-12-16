@@ -220,22 +220,24 @@ class MIT_Humanoid(LeggedRobot):
         # base_pos_error[:, 0:3] *= self.cfg.normalization.obs_scales.base_z
         # reward += self.sqrdexp(base_pos_error)
         #dof position error
-        dof_pos_err = self.dof_pos - pos_ref_frame[:,8:]
-        dof_pos_err *= self.cfg.normalization.obs_scales.dof_pos
+        dof_pos_err = (self.dof_pos - pos_ref_frame[:,8:])
+        dof_pos_err *= self.cfg.rewards.dof_pos_scaling #self.cfg.normalization.obs_scales.dof_pos
+        dof_pos_err *= torch.tensor(self.cfg.rewards.joint_level_scaling, device=self.device)
         reward += torch.sum(self.sqrdexp(dof_pos_err), dim=1) \
                   * self.cfg.rewards.dof_pos_tracking
 
         # base velocity error
         # * might want this to be vector instead of element-wise
         base_vel_err = self.root_states[:,7:] - vel_ref_frame[:,1:7]
-        base_vel_err[:, 1:4] *= self.cfg.normalization.obs_scales.lin_vel
-        base_vel_err[:, 4:] *= self.cfg.normalization.obs_scales.ang_vel
+        base_vel_err[:, 1:4] *= self.cfg.rewards.base_vel_scaling #self.cfg.normalization.obs_scales.lin_vel
+        base_vel_err[:, 4:] *= self.cfg.rewards.base_vel_scaling  #self.cfg.normalization.obs_scales.ang_vel
         reward += torch.sum(self.sqrdexp(base_vel_err), dim=1) \
                   * self.cfg.rewards.base_vel_tracking
 
         # dof velocity error
         dof_vel_err = self.dof_pos - vel_ref_frame[:,7:]
-        dof_vel_err *= self.cfg.normalization.obs_scales.dof_vel
+        dof_vel_err *= self.cfg.rewards.dof_vel_scaling #self.cfg.normalization.obs_scales.dof_vel
+        dof_vel_err *= torch.tensor(self.cfg.rewards.joint_level_scaling, device=self.device)
         reward += torch.sum(self.sqrdexp(dof_vel_err), dim=1) \
                   * self.cfg.rewards.dof_vel_tracking
         # dof_vel_error =  torch.exp(-torch.sum(torch.square(dof_vel_error),dim=1))

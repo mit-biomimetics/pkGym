@@ -104,32 +104,32 @@ class MITHumanoidCfg(LeggedRobotCfg):
         #ref_traj = "../../resources/robots/mit_humanoid/trajectories/across_back10/JSM_across_back_2_RESAMPLED10.csv"
         # ref_traj = "../../resources/robots/mit_humanoid/trajectories/SH_standing_roll_2021_11_1_OUTPUT_1.csv"
         ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_walk.csv"
-        ref_type = "Pos" #Pos, PosVel
+        ref_type = "PosVel" #Pos, PosVel
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
-        stiffness = {'hip_yaw': 20.,
-                     'hip_abad': 20.,
-                     'hip_pitch': 30.,
-                     'knee': 30.,
-                     'ankle': 10.,
+        stiffness = {'hip_yaw': 100.,
+                     'hip_abad': 100.,
+                     'hip_pitch': 100.,
+                     'knee': 100.,
+                     'ankle': 100.,
                      'shoulder_pitch': 10.,
                      'shoulder_abad': 10.,
                      'shoulder_yaw': 10.,
                      'elbow': 10.,
                     }  # [N*m/rad]
-        damping = {'hip_yaw': 1.,
-                   'hip_abad': 1.,
-                   'hip_pitch': 1.,
-                   'knee': 1.,
-                   'ankle': 0.25,
+        damping = {'hip_yaw': 2.,
+                   'hip_abad': 2.,
+                   'hip_pitch': 2.,
+                   'knee': 2.,
+                   'ankle': 1.0,
                    'shoulder_pitch': 0.5,
                    'shoulder_abad': 0.5,
                    'shoulder_yaw': 0.5,
-                   'elbow': 0.5,
+                   'elbow': 5,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
         nominal_pos = True  # use ref traj as nominal traj
-        nominal_vel = False  # requires "PosVel" for ref_type
+        nominal_vel = True  # requires "PosVel" for ref_type
         # stiffness = {}
         # damping = {}
         # action scale: target angle = actionScale * action + defaultAngle
@@ -142,12 +142,12 @@ class MITHumanoidCfg(LeggedRobotCfg):
         friction_range = [0.5, 1.25]
         randomize_base_mass = False
         added_mass_range = [-1., 1.]
-        push_robots = True
+        push_robots = False
         push_interval_s = 15
         max_push_vel_xy = 1.
 
     class asset(LeggedRobotCfg.asset):
-        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_sf.urdf'
+        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_ht.urdf'
         foot_name = 'foot'
         penalize_contacts_on = ['base', 'arm']
         terminate_after_contacts_on = ['base', 'arm' ]
@@ -155,15 +155,15 @@ class MITHumanoidCfg(LeggedRobotCfg):
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
-        disable_gravity = True
-        disable_actions = True
+        disable_gravity = False
+        disable_actions = False
         disable_motors = False
 
     class rewards(LeggedRobotCfg.rewards):
         soft_dof_pos_limit = 0.9
         soft_dof_vel_limit = 0.9
         soft_torque_limit = 0.9
-        max_contact_force = 600.
+        max_contact_force = 1000.
 
         # if true negative total rewards are clipped at zero (avoids early termination problems)
         only_positive_rewards = False
@@ -172,29 +172,54 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         #reference traj tracking
         base_pos_tracking = 0.0
-        base_vel_tracking = 6.
-        dof_pos_tracking = 6.
-        dof_vel_tracking = 3.
+        base_vel_tracking = 0.15
+        dof_pos_tracking = 0.7
+        dof_vel_tracking = 0.15
 
+        base_vel_scaling = 10
+        dof_pos_scaling = 2
+        dof_vel_scaling = 0.1
+
+        joint_level_scaling = [0.3, 0.3, 1, 1, 1, 0.1, 0.1, 0.1, 0.1, 0.3, 0.3, 1, 1, 1, 0.1, 0.1, 0.1, 0.1]
+        '''
+        left_hip_yaw
+        left_hip_abad
+        left_hip_pitch
+        left_knee
+        left_ankle
+        left_shoulder_pitch
+        left_shoulder_abad
+        left_shoulder_yaw
+        left_elbow
+        right_hip_yaw
+        right_hip_abad
+        right_hip_pitch
+        right_knee
+        right_ankle
+        right_shoulder_pitch
+        right_shoulder_abad
+        right_shoulder_yaw
+        right_elbow
+        '''
         class scales(LeggedRobotCfg.rewards.scales):
-            reference_traj = 3.0
-            termination = -10.
-            tracking_lin_vel = 0.0
-            tracking_ang_vel = 25.0
-            lin_vel_z = -.002
+            reference_traj = 1.0
+            termination = -1.
+            tracking_lin_vel = 0.
+            tracking_ang_vel = 1.0
+            lin_vel_z = -0.
             ang_vel_xy = -0.0
-            orientation = 0.0
-            torques = -5.e-8
+            orientation = 0.1
+            torques = -5.e-7
             dof_vel = 0.0
             dof_acc = 0.0
-            base_height = 2.0
-            feet_air_time = 10.0  # rewards keeping feet in the air
-            collision = -0.
+            base_height = 0.0
+            feet_air_time = 0.0  # rewards keeping feet in the air
+            collision = -1.
             feet_stumble = -0.
             action_rate = -0.01 # -0.01
             action_rate2 = -0.001
             stand_still = -0.
-            dof_pos_limits = -3.
+            dof_pos_limits = -0.0
             no_fly = 0.0
             feet_contact_forces = -0.
             symm_legs = 0.0
