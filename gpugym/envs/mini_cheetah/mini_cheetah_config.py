@@ -1,46 +1,24 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-# 
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-# list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-# this list of conditions and the following disclaimer in the documentation
-# and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
 from gpugym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
 
 class MiniCheetahCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 4096
         num_actions = 12  # 12 for the 12 actuated DoFs of the mini cheetah
-        num_observations = 48  # added blindly from the AnymalCFlatCFG
+        num_observations = 48  # added blindly from the AnymalCFlatCFG TODO: why this number?
 
     class terrain(LeggedRobotCfg.terrain):
-        mesh_type = 'trimesh'
+        mesh_type = 'plane'  # added blindly from the AnymalCFlatCFG.
+        # 'trimesh' # from Nikita: use a triangle mesh instead of a height field
+        measure_heights = False  # added blindly from the AnymalCFlatCFG TODO: why this?
 
     class init_state(LeggedRobotCfg.init_state):
+        """
+        Initial States of the Mini Cheetah
+        From Robot-Software/systems/quadruped/state_machine/FSM_State_RecoveryStand.cpp, line 38
+        Ab/ad: 0˚, hip: -45˚, knee: 91.5˚
+        Default pose is around 0.3
+        """
         pos = [0.0, 0.0, 0.32]  # x,y,z [m]
         default_joint_angles = {  # = target angles [rad] when action = 0.0
             "LF_HAA": 0.0,
@@ -116,6 +94,3 @@ class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
     class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
         experiment_name = 'mini_cheetah'
-        load_run = -1
-        max_iterations = 1500
-        save_interval = 100
