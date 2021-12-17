@@ -139,7 +139,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         decimation = 5  # ! substeps?
 
     class domain_rand(LeggedRobotCfg.domain_rand):
-        randomize_friction = True
+        randomize_friction = False
         friction_range = [0.5, 1.25]
         randomize_base_mass = False
         added_mass_range = [-1., 1.]
@@ -158,7 +158,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
         default_dof_drive_mode = 3
         disable_gravity = False
         disable_actions = False
-        disable_motors = False
+        disable_motors = False 
+        initial_penetration_check = True #disable to not check for penetration on initial conds. 
 
     class rewards(LeggedRobotCfg.rewards):
         soft_dof_pos_limit = 0.9

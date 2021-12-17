@@ -121,6 +121,7 @@ class LeggedRobotCfg(BaseConfig):
         disable_gravity = False
         disable_actions = False
         disable_motors = False
+        initial_penetration_check = True
         collapse_fixed_joints = True # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
         fix_base_link = False # fixe the base of the robot
         default_dof_drive_mode = 3 # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)

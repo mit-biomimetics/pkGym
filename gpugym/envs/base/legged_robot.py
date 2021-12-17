@@ -501,38 +501,39 @@ class LeggedRobot(BaseTask):
                                                      gymtorch.unwrap_tensor(self.root_states),
                                                      gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
 
-        temp_root_state = torch.clone(self.root_states)
-        temp_dof_state = torch.clone(self.dof_state)
+        if self.cfg.asset.initial_penetration_check:
+            temp_root_state = torch.clone(self.root_states)
+            temp_dof_state = torch.clone(self.dof_state)
 
-        self.gym.simulate(self.sim) #Need to one step the simulation to update dof !!THIS MAY BE A TERRIBLE IDEA!!
+            self.gym.simulate(self.sim) #Need to one step the simulation to update dof !!THIS MAY BE A TERRIBLE IDEA!!
 
-        #retrieve body states of every link in every environment. 
-        self.gym.refresh_rigid_body_state_tensor(self.sim)
-        body_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
-        rb_states = gymtorch.wrap_tensor(body_states)
+            #retrieve body states of every link in every environment. 
+            self.gym.refresh_rigid_body_state_tensor(self.sim)
+            body_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
+            rb_states = gymtorch.wrap_tensor(body_states)
 
-        num_links = int(len(rb_states[:,0])/self.num_envs)
+            num_links = int(len(rb_states[:,0])/self.num_envs)
 
-        #iterate through the env ids that are being reset (and only the ones being reset)
-        for i in env_ids:
-            max_penetration = 0 
-            for j in range(num_links):
-                #check each body position 
-                link_height = rb_states[i*num_links + j, 2]
-                if (link_height < 0.1): #check if COM of rigid link is to close to ground 
-                    #TODO: replace with exact measurement of toe/heel height
-                    if (0.1 - link_height > max_penetration):
-                        max_penetration = -link_height + 0.1
-        
-            #find max penetration and shift root state by that amount. 
-            temp_root_state[i, 2] += max_penetration
-        
-        self.gym.set_actor_root_state_tensor_indexed(self.sim,
-                                                gymtorch.unwrap_tensor(temp_root_state),
-                                                gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
-        self.gym.set_dof_state_tensor_indexed(self.sim,
-                                              gymtorch.unwrap_tensor(temp_dof_state),
-                                              gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))       
+            #iterate through the env ids that are being reset (and only the ones being reset)
+            for i in env_ids:
+                max_penetration = 0 
+                for j in range(num_links):
+                    #check each body position 
+                    link_height = rb_states[i*num_links + j, 2]
+                    if (link_height < 0.1): #check if COM of rigid link is to close to ground 
+                        #TODO: replace with exact measurement of toe/heel height
+                        if (0.1 - link_height > max_penetration):
+                            max_penetration = -link_height + 0.1
+            
+                #find max penetration and shift root state by that amount. 
+                temp_root_state[i, 2] += max_penetration
+            
+            self.gym.set_actor_root_state_tensor_indexed(self.sim,
+                                                    gymtorch.unwrap_tensor(temp_root_state),
+                                                    gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
+            self.gym.set_dof_state_tensor_indexed(self.sim,
+                                                gymtorch.unwrap_tensor(temp_dof_state),
+                                                gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))       
 
     def _push_robots(self):
         """ Random pushes the robots. Emulates an impulse by setting a randomized base velocity. 
