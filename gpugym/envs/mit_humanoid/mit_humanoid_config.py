@@ -105,6 +105,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         # ref_traj = "../../resources/robots/mit_humanoid/trajectories/SH_standing_roll_2021_11_1_OUTPUT_1.csv"
         ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_walk.csv"
         ref_type = "PosVel" #Pos, PosVel
+        is_single_traj = False #if the trajectory should only be run once 
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
@@ -138,11 +139,11 @@ class MITHumanoidCfg(LeggedRobotCfg):
         decimation = 5  # ! substeps?
 
     class domain_rand(LeggedRobotCfg.domain_rand):
-        randomize_friction = False
+        randomize_friction = True
         friction_range = [0.5, 1.25]
         randomize_base_mass = False
         added_mass_range = [-1., 1.]
-        push_robots = False
+        push_robots = True
         push_interval_s = 15
         max_push_vel_xy = 1.
 
@@ -213,7 +214,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             dof_vel = 0.0
             dof_acc = 0.0
             base_height = 0.0
-            feet_air_time = 0.0  # rewards keeping feet in the air
+            feet_air_time = 1.0  # rewards keeping feet in the air
             collision = -1.
             feet_stumble = -0.
             action_rate = -0.01 # -0.01

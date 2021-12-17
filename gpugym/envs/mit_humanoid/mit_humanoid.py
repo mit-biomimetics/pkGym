@@ -66,11 +66,15 @@ class MIT_Humanoid(LeggedRobot):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
             Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
         """
-
-        if (self.total_ref_time > 0.0):
-            self.phase = torch.fmod(self.phase + self.dt/self.total_ref_time, 1)
+        if self.cfg.init_state.is_single_traj:
+            self.phase = torch.minimum(self.phase + self.dt/self.total_ref_time, torch.tensor(1))
         else:
-            self.phase = torch.fmod(self.phase+self.dt, 1.)
+            if (self.total_ref_time > 0.0):
+                self.phase = torch.fmod(self.phase + self.dt/self.total_ref_time, 1)
+            else:
+                self.phase = torch.fmod(self.phase+self.dt, 1.)
+
+        
 
         env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
         self._resample_commands(env_ids)
