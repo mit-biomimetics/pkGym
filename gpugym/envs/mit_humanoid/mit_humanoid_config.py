@@ -89,7 +89,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
 
-        #initialization for random range setup
+        # initialization for random range setup
         dof_pos_high = [0.,0.,0.,0.75, 0., 0., 0.,0.,0., 0., 0., 0., 0.,0., 0., 0., 0., 0. ] #DOF dimensions
         dof_pos_low =  [0.,0.,0.,0.,   0., 0., 0.,0.,0.,   0., 0., 0., 0.,0., 0., 0., 0., 0. ]
         dof_vel_high = [0.,0.,0.,0.0, 0., 0., 0.,0.,0.0, 0., 0., 0., 0.,0., 0., 0., 0., 0. ]
@@ -130,8 +130,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
                     }  # [N*m*s/rad]     # [N*m*s/rad]
         nominal_pos = True  # use ref traj as nominal traj
         nominal_vel = False  # requires "PosVel" for ref_type
-        # stiffness = {}
-        # damping = {}
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 1.
         # decimation: Number of control action updates @ sim DT per policy DT
@@ -147,7 +145,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         max_push_vel_xy = 1.
 
     class asset(LeggedRobotCfg.asset):
-        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_sf.urdf'
+        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_F_sf.urdf'
         foot_name = 'foot'
         penalize_contacts_on = ['base', 'hand']
         terminate_after_contacts_on = ['base']
@@ -155,9 +153,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
         flip_visual_attachments = False
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
-        default_dof_drive_mode = 3
-        disable_gravity = True
-        disable_actions = True
+        disable_gravity = False
+        disable_actions = False
         disable_motors = False
 
     class rewards(LeggedRobotCfg.rewards):

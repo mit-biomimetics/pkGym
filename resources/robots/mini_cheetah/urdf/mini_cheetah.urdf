@@ -46,17 +46,17 @@
         <visual><geometry><mesh filename="meshes/lower_leg.dae"/></geometry><origin rpy="0.0 0.0 3.141592" xyz="0.0 0.0 0.0"/></visual>
         <collision><geometry><mesh filename="meshes/lower_leg.dae"/></geometry><origin rpy="0 0 3.141592" xyz="0 0 0"/></collision>
     </link>
-    
-    <!-- LF FOOT -->
-    <joint name="LF_SHANK_TO_FOOT" type="fixed" dont_collapse="true">    
-        <parent link="LF_SHANK"/><child link="LF_FOOT"/>    
-        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.22"/>
-    </joint>  
 
-    <link name="LF_FOOT">    
+    <!-- LF FOOT -->
+    <joint name="LF_SHANK_TO_FOOT" type="fixed" dont_collapse="true">
+        <parent link="LF_SHANK"/><child link="LF_FOOT"/>
+        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.22"/>
+    </joint>
+
+    <link name="LF_FOOT">
         <collision><origin xyz="0 0 0.0"/><geometry><sphere radius="0.02"/></geometry></collision>
         <inertial><origin rpy="0 0 0" xyz="0 0 0.0"/><mass value="0.01"/><inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/></inertial>
-    </link>  
+    </link>
 
     <!-- RF Leg -->
     <!-- RF Hip and HAA -->
@@ -99,17 +99,16 @@
     </link>
 
     <!-- RF FOOT -->
-    <joint name="RF_SHANK_TO_FOOT" type="fixed" dont_collapse="true">    
-        <parent link="RF_SHANK"/><child link="RF_FOOT"/>    
+    <joint name="RF_SHANK_TO_FOOT" type="fixed" dont_collapse="true">
+        <parent link="RF_SHANK"/><child link="RF_FOOT"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.22"/>
-    </joint>  
+    </joint>
 
-    <link name="RF_FOOT">    
+    <link name="RF_FOOT">
         <collision><origin xyz="0 0 0.0"/><geometry><sphere radius="0.02"/></geometry></collision>
         <inertial><origin rpy="0 0 0" xyz="0 0 0.0"/><mass value="0.01"/><inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/></inertial>
-    </link>  
+    </link>
 
-    
     <!-- LH Leg -->
     <!-- LH Hip and HAA -->
     <joint name="LH_HAA" type="revolute"><axis xyz="-1 0 0"/><origin rpy="0 3.141592 0" xyz="-0.14775 0.049 0.0"/>
@@ -150,12 +149,12 @@
     </link>
 
     <!-- LH FOOT -->
-    <joint name="LH_SHANK_TO_FOOT" type="fixed" dont_collapse="true">    
-        <parent link="LH_SHANK"/><child link="LH_FOOT"/>    
+    <joint name="LH_SHANK_TO_FOOT" type="fixed" dont_collapse="true">
+        <parent link="LH_SHANK"/><child link="LH_FOOT"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.22"/>
-    </joint>  
+    </joint>
 
-    <link name="LH_FOOT">    
+    <link name="LH_FOOT">
         <collision><origin xyz="0 0 0.0"/><geometry><sphere radius="0.02"/></geometry></collision>
         <inertial><origin rpy="0 0 0" xyz="0 0 0.0"/><mass value="0.01"/><inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/></inertial>
     </link>
@@ -201,12 +200,12 @@
     </link>
 
     <!-- RH FOOT -->
-    <joint name="RH_SHANK_TO_FOOT" type="fixed" dont_collapse="true">    
-        <parent link="RH_SHANK"/><child link="RH_FOOT"/>    
+    <joint name="RH_SHANK_TO_FOOT" type="fixed" dont_collapse="true">
+        <parent link="RH_SHANK"/><child link="RH_FOOT"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 -0.22"/>
-    </joint>  
+    </joint>
 
-    <link name="RH_FOOT">    
+    <link name="RH_FOOT">
         <collision><origin xyz="0 0 0.0"/><geometry><sphere radius="0.02"/></geometry></collision>
         <inertial><origin rpy="0 0 0" xyz="0 0 0.0"/><mass value="0.01"/><inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/></inertial>
     </link>
