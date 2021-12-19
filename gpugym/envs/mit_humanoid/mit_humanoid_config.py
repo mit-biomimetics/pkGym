@@ -151,7 +151,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_ht.urdf'
         foot_name = 'foot'
         penalize_contacts_on = ['base', 'arm']
-        terminate_after_contacts_on = ['base', 'arm' ]
+        terminate_after_contacts_on = ['base' ]
         flip_visual_attachments = False
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)

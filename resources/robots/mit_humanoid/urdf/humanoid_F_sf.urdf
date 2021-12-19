@@ -72,7 +72,7 @@
   </link>
   <joint
     name="left_hip_yaw"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 0.082 0"
       rpy="0 -0.174533 0" />
@@ -118,7 +118,7 @@
   </link>
   <joint
     name="left_hip_abad"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="-0.06435 0 -.07499"
       rpy="0.0 0.436332 0.0"/>
@@ -170,7 +170,7 @@
   </link>
   <joint
     name="left_hip_pitch"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.08837 -0.00284 -0.01385"
       rpy="0 -0.261799 0" />
@@ -223,7 +223,7 @@
   </link>
   <joint
     name="left_knee"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="-0.01306 0.0 -0.24916"
       rpy="0 0 0" />
@@ -276,7 +276,7 @@
   </link>
   <joint
     name="left_ankle"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.0 0.0 -0.2785"
       rpy="0 0 0" />
@@ -392,7 +392,7 @@
   </link>
   <joint
     name="right_hip_yaw"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 -0.082 0"
       rpy="0 -0.174533 0" />
@@ -439,7 +439,7 @@
   </link>
   <joint
     name="right_hip_abad"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="-0.06435 0 -.07499"
       rpy="0.0 0.436332 0.0"/>
@@ -492,7 +492,7 @@
   </link>
   <joint
     name="right_hip_pitch"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.08837 0.00284 -0.01385"
       rpy="0 -0.261799 0" />
@@ -545,7 +545,7 @@
   </link>
   <joint
     name="right_knee"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="-0.01306 0.0 -0.24916"
       rpy="0 0 0" />
@@ -598,7 +598,7 @@
   </link>
   <joint
     name="right_ankle"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.0 0.0 -0.2785"
       rpy="0 0 0" />
@@ -716,7 +716,7 @@
   </link>
   <joint
     name="left_shoulder_pitch"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.01911 0.17608 0.30392"
       rpy="0 0 0" />
@@ -763,7 +763,7 @@
   </link>
   <joint
     name="left_shoulder_abad"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 .05760 0"
       rpy="0.0 0 0" />
@@ -818,7 +818,7 @@
   </link>
   <joint
     name="left_shoulder_yaw"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 0 -.10250"
       rpy="0.0 0 0" />
@@ -872,7 +872,7 @@
   </link>
   <joint
     name="left_elbow"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 0 -.15750"
       rpy="0 0 0.0" />
@@ -954,7 +954,7 @@
   </link>
   <joint
     name="right_shoulder_pitch"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0.01911 -0.17608 0.30392"
       rpy="0 0 0" />
@@ -1001,7 +1001,7 @@
   </link>
   <joint
     name="right_shoulder_abad"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 -.05760 0"
       rpy="0.0 0 0" />
@@ -1056,7 +1056,7 @@
   </link>
   <joint
     name="right_shoulder_yaw"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 0 -.10250"
       rpy="0.0 0 0" />
@@ -1110,7 +1110,7 @@
   </link>
   <joint
     name="right_elbow"
-    type="continuous">
+    type="revolute">
     <origin
       xyz="0 0 -.15750"
       rpy="0 0 0.0" />

@@ -29,9 +29,15 @@
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
+         <collision>
+            <origin rpy="0 0 0" xyz="0.023 0. 0.08"/>
+            <geometry>
+                <box size="0.15 0.3 0.35"/>
+            </geometry>
+    </collision>
   </link>
   
   
@@ -65,13 +71,13 @@
           rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
       </material>
     </visual>
-    <!-- <collision>
+    <collision>
         <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
         <geometry>
             <mesh
               filename="meshes_v3/back.stl" scale="0.001 0.001 0.001" />
         </geometry>
-    </collision> -->
+    </collision>
   </link>
   <joint
     name="back"
