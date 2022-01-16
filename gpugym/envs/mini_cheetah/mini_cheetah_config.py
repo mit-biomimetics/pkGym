@@ -43,7 +43,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         }
 
         # * default COM for basic initialization 
-        pos = [0.0, 0.0, 0.25]  # x,y,z [m]
+        pos = [0.0, 0.0, 0.33]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
@@ -96,6 +96,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         foot_name = "FOOT"  # TODO: fix this!
         penalize_contacts_on = ["SHANK", "THIGH"]  # TODO: fix this!
         terminate_after_contacts_on = ["base"]
+        initial_penetration_check = False
         collapse_fixed_joints = False # merge bodies connected by fixed joints. 
         self_collisions = 1   # added blindly from the AnymalCFlatCFG.  1 to disable, 0 to enable...bitwise filter
         flip_visual_attachments = False
@@ -111,7 +112,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
         # if true negative total rewards are clipped at zero (avoids early termination problems)
         only_positive_rewards = False
-        base_height_target = 0.25
+        base_height_target = 0.33
         tracking_sigma = 0.25
 
         #reference traj tracking
@@ -155,17 +156,17 @@ class MiniCheetahCfg(LeggedRobotCfg):
             class obs_scales(LeggedRobotCfg.normalization.obs_scales):
                 # * helper fcts
                 # * dimensionless time: sqrt(L/g) or sqrt(I/[mgL]), with I=I0+mL^2
-                dimless_time = (0.25/9.81)**0.5
-                v_leg = 0.25
+                v_leg = 0.33
+                dimless_time = (v_leg/9.81)**0.5
                 # lin_vel = 1/v_leg*dimless_time
-                base_z = 1./0.25
+                base_z = 1./v_leg
                 lin_vel =  1./v_leg  # virtual leg lengths per second
                 # ang_vel = 0.25
                 ang_vel = 1./3.14*dimless_time
                 dof_pos = 1./3.14
                 dof_vel = 0.05  # ought to be roughly max expected speed.
 
-                height_measurements = 1./0.25
+                height_measurements = 1./v_leg
             # clip_observations = 100.
             clip_actions = 1000.
 
