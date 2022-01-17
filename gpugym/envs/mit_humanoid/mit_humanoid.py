@@ -239,8 +239,8 @@ class MIT_Humanoid(LeggedRobot):
                   * self.cfg.rewards.base_vel_tracking
 
         # dof velocity error
-        dof_vel_err = self.dof_pos - vel_ref_frame[:,7:]
-        dof_vel_err *= self.cfg.rewards.dof_vel_scaling #self.cfg.normalization.obs_scales.dof_vel
+        dof_vel_err = self.dof_vel - vel_ref_frame[:, 7:]
+        dof_vel_err *= self.cfg.rewards.dof_vel_scaling  # self.cfg.normalization.obs_scales.dof_vel
         dof_vel_err *= torch.tensor(self.cfg.rewards.joint_level_scaling, device=self.device)
         reward += torch.sum(self.sqrdexp(dof_vel_err), dim=1) \
                   * self.cfg.rewards.dof_vel_tracking
