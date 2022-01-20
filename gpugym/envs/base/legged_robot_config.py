@@ -32,7 +32,7 @@ from .base_config import BaseConfig
 
 class LeggedRobotCfg(BaseConfig):
     class env:
-        num_envs = 4096
+        num_envs = 4096  # (n_robots in Rudin 2021 paper - batch_size = n_steps * n_robots)
         num_observations = 235
         num_privileged_obs = None # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
         num_actions = 12
@@ -259,7 +259,7 @@ class LeggedRobotCfgPPO(BaseConfig):
     class runner:
         policy_class_name = 'ActorCritic'
         algorithm_class_name = 'PPO'
-        num_steps_per_env = 24 # per iteration
+        num_steps_per_env = 24 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)
         max_iterations = 1500 # number of policy updates
 
         # logging
