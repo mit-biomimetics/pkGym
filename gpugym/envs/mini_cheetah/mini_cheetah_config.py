@@ -201,3 +201,4 @@ class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
     class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
         experiment_name = 'mini_cheetah'
+        max_iterations = 1500  # number of policy updates
