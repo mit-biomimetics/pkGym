@@ -98,8 +98,8 @@ class MiniCheetahCfg(LeggedRobotCfg):
         foot_name = "foot"
         penalize_contacts_on = ["shank", "thigh"]
         terminate_after_contacts_on = ["base"]
-        initial_penetration_check = False
-        collapse_fixed_joints = False # merge bodies connected by fixed joints. 
+        initial_penetration_check = False  # this is turned only for MIT Humanoid.
+        collapse_fixed_joints = False  # merge bodies connected by fixed joints.
         self_collisions = 1   # added blindly from the AnymalCFlatCFG.  1 to disable, 0 to enable...bitwise filter
         flip_visual_attachments = False
         disable_gravity = False
