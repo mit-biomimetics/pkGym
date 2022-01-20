@@ -1,6 +1,8 @@
 
 from gpugym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
+# BASE_HEIGHT_REF = 0.25
+BASE_HEIGHT_REF = 0.33
 
 class MiniCheetahCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
@@ -43,7 +45,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         }
 
         # * default COM for basic initialization 
-        pos = [0.0, 0.0, 0.33]  # x,y,z [m]
+        pos = [0.0, 0.0, BASE_HEIGHT_REF]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
@@ -112,7 +114,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
         # if true negative total rewards are clipped at zero (avoids early termination problems)
         only_positive_rewards = False
-        base_height_target = 0.33
+        base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.25
 
         #reference traj tracking
@@ -156,11 +158,11 @@ class MiniCheetahCfg(LeggedRobotCfg):
             class obs_scales(LeggedRobotCfg.normalization.obs_scales):
                 # * helper fcts
                 # * dimensionless time: sqrt(L/g) or sqrt(I/[mgL]), with I=I0+mL^2
-                v_leg = 0.33
+                v_leg = BASE_HEIGHT_REF
                 dimless_time = (v_leg/9.81)**0.5
                 # lin_vel = 1/v_leg*dimless_time
                 base_z = 1./v_leg
-                lin_vel =  1./v_leg  # virtual leg lengths per second
+                lin_vel = 1./v_leg  # virtual leg lengths per second
                 # ang_vel = 0.25
                 ang_vel = 1./3.14*dimless_time
                 dof_pos = 1./3.14
