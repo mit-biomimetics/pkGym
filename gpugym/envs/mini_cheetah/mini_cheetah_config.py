@@ -26,20 +26,20 @@ class MiniCheetahCfg(LeggedRobotCfg):
                                 #  "Trajectory" = feed in a trajectory to sample from.
 
         default_joint_angles = {
-            "LF_HAA": 0.0,
-            "LH_HAA": 0.0,
-            "RF_HAA": 0.0,
-            "RH_HAA": 0.0,
+            "lf_haa": 0.0,
+            "lh_haa": 0.0,
+            "rf_haa": 0.0,
+            "rh_haa": 0.0,
 
-            "LF_HFE": -0.785398,
-            "LH_HFE": -0.785398,
-            "RF_HFE": -0.785398,
-            "RH_HFE": -0.785398,
+            "lf_hfe": -0.785398,
+            "lh_hfe": -0.785398,
+            "rf_hfe": -0.785398,
+            "rh_hfe": -0.785398,
 
-            "LF_KFE": 1.596976,
-            "LH_KFE": 1.596976,
-            "RF_KFE": 1.596976,
-            "RH_KFE": 1.596976,
+            "lf_kfe": 1.596976,
+            "lh_kfe": 1.596976,
+            "rf_kfe": 1.596976,
+            "rh_kfe": 1.596976,
         }
 
         # * default COM for basic initialization 
@@ -64,8 +64,8 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
-        stiffness = {'HAA': 80., 'HFE': 80., 'KFE': 80.}  # [N*m/rad]
-        damping = {'HAA': 2., 'HFE': 2., 'KFE': 2.}  # [N*m*s/rad]
+        stiffness = {'haa': 80., 'hfe': 80., 'kfe': 80.}  # [N*m/rad]
+        damping = {'haa': 2., 'hfe': 2., 'kfe': 2}  # [N*m*s/rad]
 
         # requires reference trajectory to be loaded
         # TODO: ignore if no ref traj is loaded
@@ -93,8 +93,8 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
     class asset(LeggedRobotCfg.asset):
         file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah.urdf"
-        foot_name = "FOOT"  # TODO: fix this!
-        penalize_contacts_on = ["SHANK", "THIGH"]  # TODO: fix this!
+        foot_name = "foot"
+        penalize_contacts_on = ["shank", "thigh"]
         terminate_after_contacts_on = ["base"]
         initial_penetration_check = False
         collapse_fixed_joints = False # merge bodies connected by fixed joints. 
