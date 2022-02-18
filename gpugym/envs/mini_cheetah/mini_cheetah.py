@@ -9,6 +9,8 @@ import torch
 # from torch.tensor import Tensor
 from typing import Tuple, Dict
 
+from gpugym.utils.augmentor import Augmentor
+
 from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
 from gpugym.envs import LeggedRobot
 
@@ -24,6 +26,7 @@ class MiniCheetah(LeggedRobot):
                                          dtype=torch.float, device=self.device,
                                          requires_grad=False)
 
+        self.augmentor = Augmentor(cfg)
 
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
@@ -85,6 +88,19 @@ class MiniCheetah(LeggedRobot):
         if self.add_noise:
             self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
                             * self.noise_scale_vec
+
+        # Add augmentations to the buffer - the method of adding noise required me to grab dof info from obs_buf
+        noisy_body_lin_vel = self.obs_buf[:, 1:4] / self.obs_scales.lin_vel
+        noisy_body_ang_vel = self.obs_buf[:, 4:7] / self.obs_scales.ang_vel
+        noisy_dof_pos = self.obs_buf[:, 13:25]  # based on calculation that the dof pos stuff happens at these indices
+        noisy_dof_vel_unscaled = self.obs_buf[:, 25:37] / self.obs_scales.dof_vel
+        augmented_dofs_list = self.augmentor.apply_augmentations(noisy_body_lin_vel, noisy_body_ang_vel, noisy_dof_pos, noisy_dof_vel_unscaled)
+        if len(augmented_dofs_list) > 0:
+            augmented_dofs_tensor = torch.cat(augmented_dofs_list, dim=-1)
+            # mins = torch.min(augmented_dofs_tensor, dim=0)
+            # maxs = torch.max(augmented_dofs_tensor, dim=0)
+            # When to start scaling stuff: (maxs.values > torch.ones_like(maxs.values)).any() evaluates to true
+            self.obs_buf = torch.cat([self.obs_buf] + augmented_dofs_list, dim=-1)
 
     def _get_noise_scale_vec(self, cfg):
         '''

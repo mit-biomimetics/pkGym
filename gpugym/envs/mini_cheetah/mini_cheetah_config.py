@@ -1,13 +1,26 @@
 
 from gpugym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
+import torch
+
 # BASE_HEIGHT_REF = 0.25
 BASE_HEIGHT_REF = 0.33
+
+class obs_augmentations:
+    add_kinematics_augmentations  = True
+    add_jacobian_augmentations    = True
+    add_centripetal_augmentations = True
+    add_coriolis_augmentations    = False
 
 class MiniCheetahCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         num_actions = 12  # 12 for the 12 actuated DoFs of the mini cheetah
-        num_observations = 87  # added blindly from the AnymalCFlatCFG TODO: why this number?
+        num_observations = 87 + obs_augmentations.add_kinematics_augmentations * 24 + \
+                           obs_augmentations.add_jacobian_augmentations    * 24 + \
+                           obs_augmentations.add_centripetal_augmentations * 18 + \
+                           obs_augmentations.add_coriolis_augmentations    * 0
+
+        obs_augmentations = obs_augmentations
 
     class terrain(LeggedRobotCfg.terrain):
         curriculum = False
@@ -85,10 +98,10 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
     class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_friction = False
-        friction_range = [0.5, 1.25]
+        friction_range = [0.75, 1.05]
         randomize_base_mass = False
-        added_mass_range = [-5., 5.]
-        friction_range = [0., 1.5] # on ground planes the friction combination mode is averaging, i.e total friction = (foot_friction + 1.)/2.
+        added_mass_range = [-2., 2.]
+        friction_range = [0., 1.0] # on ground planes the friction combination mode is averaging, i.e total friction = (foot_friction + 1.)/2.
         push_robots = False
         push_interval_s = 15
         max_push_vel_xy = 1.
@@ -97,7 +110,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah.urdf"
         foot_name = "foot"
         penalize_contacts_on = ["shank", "thigh"]
-        terminate_after_contacts_on = ["base"]
+        terminate_after_contacts_on = ["base"] + penalize_contacts_on
         initial_penetration_check = False  # this is turned only for MIT Humanoid.
         collapse_fixed_joints = False  # merge bodies connected by fixed joints.
         self_collisions = 1   # added blindly from the AnymalCFlatCFG.  1 to disable, 0 to enable...bitwise filter
@@ -120,18 +133,18 @@ class MiniCheetahCfg(LeggedRobotCfg):
         #reference traj tracking
         base_pos_tracking = 0.
         base_vel_tracking = 0.
-        dof_pos_tracking = 1.
+        dof_pos_tracking = 0.
         dof_vel_tracking = 0.
 
         class scales(LeggedRobotCfg.rewards.scales):
             reference_traj = 0.0
-            termination = -1.
-            tracking_lin_vel = 1.
-            tracking_ang_vel = 0.1
+            termination = -5.
+            tracking_lin_vel = 1.1
+            tracking_ang_vel = 1.1
             lin_vel_z = -0.
             ang_vel_xy = -0.0
-            orientation = 0.1
-            torques = -5.e-7
+            orientation = 0.5
+            torques = -5.e-5
             dof_vel = 0.0
             dof_acc = 0.0
             base_height = 0.25
@@ -141,7 +154,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
             action_rate2 = -0.001
             stand_still = -0.
             dof_pos_limits = -0.25
-            feet_contact_forces = -0.15
+            feet_contact_forces = -0.05
             # symm_legs = 0.0
             # symm_arms = 0.0
 
@@ -149,9 +162,9 @@ class MiniCheetahCfg(LeggedRobotCfg):
         heading_command = True
         resampling_time = 4.
         class ranges(LeggedRobotCfg.commands.ranges):
-            lin_vel_x = [0.5, 2.0] # min max [m/s]
+            lin_vel_x = [0.15, 4.0] # min max [m/s]
             lin_vel_y = [0., 0]   # min max [m/s]
-            ang_vel_yaw = [0., 0.]    # min max [rad/s]
+            ang_vel_yaw = [-0.2, 0.2]    # min max [rad/s]
             heading = [-0.5, 0.5]
 
     class normalization(LeggedRobotCfg.normalization):
@@ -190,9 +203,10 @@ class MiniCheetahCfg(LeggedRobotCfg):
         gravity = [0., 0. , -9.81]  # [m/s^2]
 
 class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
+    seed = -1
     class policy( LeggedRobotCfgPPO.policy ):
-        actor_hidden_dims = [256, 256, 256]
-        critic_hidden_dims = [256, 256, 256]
+        actor_hidden_dims = [8, 8] # [256, 256, 256]
+        critic_hidden_dims = [8, 8] # [256, 256, 256]
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
 
     class algorithm( LeggedRobotCfgPPO.algorithm):
@@ -201,4 +215,4 @@ class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
     class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
         experiment_name = 'mini_cheetah'
-        max_iterations = 1500  # number of policy updates
+        max_iterations = 1000  # number of policy updates
