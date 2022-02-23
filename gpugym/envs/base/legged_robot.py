@@ -66,6 +66,7 @@ class LeggedRobot(BaseTask):
         """
         self.cfg = cfg
         self.sim_params = sim_params
+        self.sim_params.up_axis = gymapi.UpAxis.UP_AXIS_Z
         self.height_samples = None
         self.debug_viz = False
         self.init_done = False
