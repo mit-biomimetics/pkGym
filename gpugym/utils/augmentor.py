@@ -21,6 +21,8 @@ class Augmentor:
                               'd_rh_haa', 'd_rh_hfe', 'd_rh_hke',
                               'd_lh_haa', 'd_lh_hfe', 'd_lh_hke']
 
+        self.legs = ['rf_', 'lf_', 'rh_', 'lh_']
+
         self.all_dof_names = self.dof_pos_names + self.body_lin_vel_names + self.body_ang_vel_names + self.dof_vel_names
 
     def _get_augmentations_from_cfg(self, cfg):
@@ -120,7 +122,7 @@ class Augmentor:
             applied_augmentations_list.append((d_pitch * d_pitch * sqr_scaling).unsqueeze(dim=-1))
             applied_augmentations_list.append((d_yaw * d_yaw * sqr_scaling).unsqueeze(dim=-1))
 
-            for leg in ['rf_', 'lf_', 'rh_', 'lh_']:
+            for leg in self.legs:
                 idx_of_abad = self.dof_vel_names.index(f'd_{leg}haa')
                 idx_of_hip = self.dof_vel_names.index(f'd_{leg}hfe')
                 idx_of_knee = self.dof_vel_names.index(f'd_{leg}hke')
@@ -132,6 +134,31 @@ class Augmentor:
                 applied_augmentations_list.append((d_abad * d_abad * sqr_scaling).unsqueeze(dim=-1))
                 applied_augmentations_list.append((d_hip * d_hip * sqr_scaling).unsqueeze(dim=-1))
                 applied_augmentations_list.append((d_knee * d_knee * sqr_scaling).unsqueeze(dim=-1))
+
+        if self.do_cor:
+            # Official number of augmentations: 6 + 3*4 = 18
+            d_x = body_lin_vel[:, 0]
+            d_y = body_lin_vel[:, 1]
+            d_z = body_lin_vel[:, 2]
+            d_roll = body_ang_vel[:, 0]
+            d_pitch = body_ang_vel[:, 1]
+            d_yaw = body_ang_vel[:, 2]
+            all_velocities = [d_x, d_y, d_z, d_roll, d_pitch, d_yaw]
+
+            for leg in self.legs:
+                idx_of_abad = self.dof_vel_names.index(f'd_{leg}haa')
+                idx_of_hip = self.dof_vel_names.index(f'd_{leg}hfe')
+                idx_of_knee = self.dof_vel_names.index(f'd_{leg}hke')
+                all_velocities.append(dof_vel[:, idx_of_abad])
+                all_velocities.append(dof_vel[:, idx_of_hip])
+                all_velocities.append(dof_vel[:, idx_of_knee])
+
+            cross_scaling = 1e-3 / 2
+
+            for idx in range(len(all_velocities)):
+                for jdx in range(idx, len(all_velocities)):
+                    if idx != jdx:
+                        applied_augmentations_list.append((all_velocities[idx] * all_velocities[jdx] * cross_scaling).unsqueeze(dim=-1))
 
         return applied_augmentations_list
 
