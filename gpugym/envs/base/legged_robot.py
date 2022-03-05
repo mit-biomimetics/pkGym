@@ -406,6 +406,8 @@ class LeggedRobot(BaseTask):
             torques = self.p_gains*(actions_scaled + offset_vel - self.dof_vel) - self.d_gains*(self.dof_vel - self.last_dof_vel)/self.sim_params.dt
         elif control_type=="T":
             torques = actions_scaled
+        elif control_type=="Td":
+            torques = actions_scaled - self.d_gains*self.dof_vel
         else:
             raise NameError(f"Unknown controller type: {control_type}")
 
