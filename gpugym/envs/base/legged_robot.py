@@ -396,11 +396,11 @@ class LeggedRobot(BaseTask):
             offset_pos += pos_ref_frame[:,8:]
 
         if self.cfg.control.nominal_vel:
-            vel_ref_frame = self.vel_traj.repeat(self.num_envs,1)[ref_traj_idx.long(),:]
+            vel_ref_frame = self.vel_traj.repeat(self.num_envs,1)[ref_traj_idx,:]
             offset_vel += vel_ref_frame[:,7:]
 
         if control_type=="P":
-            torques = self.p_gains*(actions_scaled + offset_pos - self.dof_pos) - self.d_gains*self.dof_vel
+            torques = self.p_gains*(actions_scaled + offset_pos - self.dof_pos) + (offset_vel - self.d_gains*self.dof_vel)
         elif control_type=="V":
             torques = self.p_gains*(actions_scaled + offset_vel - self.dof_vel) - self.d_gains*(self.dof_vel - self.last_dof_vel)/self.sim_params.dt
         elif control_type=="T":

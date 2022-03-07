@@ -68,6 +68,7 @@ class MIT_Humanoid(LeggedRobot):
         dof_pos = (self.dof_pos-self.default_dof_pos)*self.obs_scales.dof_pos
 
         # * update commanded action history buffer
+        # todo move this to compute_torques, so you actually do it properly
         nact = self.num_actions
         self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
         self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
@@ -83,7 +84,8 @@ class MIT_Humanoid(LeggedRobot):
                                   self.actions,
                                   self.ctrl_hist,
                                   torch.cos(self.phase*2*torch.pi),
-                                  torch.sin(self.phase*2*torch.pi)),
+                                  torch.sin(self.phase*2*torch.pi)
+                                  ),
                                  dim=-1)
         # * add perceptive inputs if not blind
         if self.cfg.terrain.measure_heights:
@@ -200,8 +202,8 @@ class MIT_Humanoid(LeggedRobot):
                   * self.cfg.rewards.base_vel_tracking
 
         # dof velocity error
-        dof_vel_err = self.dof_pos - vel_ref_frame[:,7:]
-        dof_vel_err *= self.cfg.rewards.dof_vel_scaling #self.cfg.normalization.obs_scales.dof_vel
+        dof_vel_err = self.dof_vel - vel_ref_frame[:, 7:]
+        dof_vel_err *= self.cfg.rewards.dof_vel_scaling  # self.cfg.normalization.obs_scales.dof_vel
         dof_vel_err *= torch.tensor(self.cfg.rewards.joint_level_scaling, device=self.device)
         reward += torch.sum(self.sqrdexp(dof_vel_err), dim=1) \
                   * self.cfg.rewards.dof_vel_tracking

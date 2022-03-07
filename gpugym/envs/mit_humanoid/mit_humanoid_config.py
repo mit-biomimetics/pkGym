@@ -35,7 +35,7 @@ from gpugym.envs.base.legged_robot_config import LeggedRobotCfgPPO
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         num_envs = 3000
-        num_observations = 67+2+3*18 # 187  # ! why? should be 66...
+        num_observations = 67+2+3*18 # 187
         num_actions = 18
 
     class terrain(LeggedRobotCfg.terrain):
@@ -91,7 +91,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         # initialization for random range setup
         dof_pos_high = [0.,0.,0.,0.75, 0., 0., 0.,0.,0., 0., 0., 0., 0.,0., 0., 0., 0., 0. ] #DOF dimensions
-        dof_pos_low =  [0.,0.,0.,0.,   0., 0., 0.,0.,0.,   0., 0., 0., 0.,0., 0., 0., 0., 0. ]
+        dof_pos_low =  [0.,0.,0.,0., 0., 0., 0.,0.,0.,   0., 0., 0., 0.,0., 0., 0., 0., 0. ]
         dof_vel_high = [0.,0.,0.,0.0, 0., 0., 0.,0.,0.0, 0., 0., 0., 0.,0., 0., 0., 0., 0. ]
         dof_vel_low = [0.,0.,0.,0.0, 0., 0., 0.,0.,0.0, 0., 0., 0., 0.,0., 0., 0., 0., 0. ]
 
@@ -130,7 +130,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
                    'elbow': 5,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
         nominal_pos = True  # use ref traj as nominal traj
-        nominal_vel = True  # requires "PosVel" for ref_type
+        nominal_vel = False  # requires "PosVel" for ref_type
         # stiffness = {}
         # damping = {}
         # action scale: target angle = actionScale * action + defaultAngle
@@ -178,36 +178,35 @@ class MITHumanoidCfg(LeggedRobotCfg):
         dof_pos_tracking = 0.7
         dof_vel_tracking = 0.15
 
+        # this is scaling sqrd-exp width
         base_vel_scaling = 10
         dof_pos_scaling = 2
         dof_vel_scaling = 0.1
 
-        joint_level_scaling = [0.3, 0.3, 1, 1, 1, 0.1, 0.1, 0.1, 0.1, 0.3, 0.3, 1, 1, 1, 0.1, 0.1, 0.1, 0.1]
-        '''
-        left_hip_yaw
-        left_hip_abad
-        left_hip_pitch
-        left_knee
-        left_ankle
-        left_shoulder_pitch
-        left_shoulder_abad
-        left_shoulder_yaw
-        left_elbow
-        right_hip_yaw
-        right_hip_abad
-        right_hip_pitch
-        right_knee
-        right_ankle
-        right_shoulder_pitch
-        right_shoulder_abad
-        right_shoulder_yaw
-        right_elbow
-        '''
+        joint_level_scaling = [0.3,  # left_hip_yaw
+                               0.3,  # left_hip_abad
+                               1,  # left_hip_pitch
+                               100,  # left_knee
+                               1,  # left_ankle
+                               0.1,  # left_shoulder_pitch
+                               0.1,  # left_shoulder_abad
+                               0.1,  # left_shoulder_yaw
+                               0.1,  # left_elbow
+                               0.3,  # right_hip_yaw
+                               0.3,  # right_hip_abad
+                               1,  # right_hip_pitch
+                               100,  # right_knee
+                               1,  # right_ankle
+                               0.1,  # right_shoulder_pitch
+                               0.1,  # right_shoulder_abad
+                               0.1,  # right_shoulder_yaw
+                               0.1]  # right_elbow
+
         class scales(LeggedRobotCfg.rewards.scales):
             reference_traj = 1.0
             termination = -1.
             tracking_lin_vel = 0.
-            tracking_ang_vel = 1.0
+            tracking_ang_vel = 1.
             lin_vel_z = -0.
             ang_vel_xy = -0.0
             orientation = 0.1
@@ -271,7 +270,7 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
 
     class runner(LeggedRobotCfgPPO.runner):
         num_steps_per_env = 25
-        max_iterations = 15000
+        max_iterations = 1000
         run_name = 'Reference_Traj_Walking'
         experiment_name = 'MIT_Humanoid'
         save_interval = 50
