@@ -62,6 +62,9 @@ The base environment `legged_robot` implements a rough terrain locomotion task. 
 4. Register your env in `isaacgym_anymal/envs/__init__.py`.
 5. Modify/Tune other parameters in your `cfg`, `cfg_train` as needed. To remove a reward set its scale to zero. Do not modify parameters of other envs!
 
+### Jenny's gpuGym Weights crash course ###
+https://hackmd.io/@yHrQmxajTZOYt87bbz6YRg/SJbscyN3t
+
 
 ### Troubleshooting ###
 1. If you get the following error: `ImportError: libpython3.8m.so.1.0: cannot open shared object file: No such file or directory`, do: `sudo apt install libpython3.8`
