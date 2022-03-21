@@ -33,7 +33,7 @@ class FixedRobot(BaseTask):
         """
         self.cfg = cfg
         self.sim_params = sim_params
-        self.height_samples = None
+        # self.height_samples = None
         self.debug_viz = False
         self.init_done = False
         self._parse_cfg(self.cfg)
@@ -144,7 +144,7 @@ class FixedRobot(BaseTask):
 
         # reset robot states
         self._reset_system(env_ids)
-        self._resample_commands(env_ids)
+        # self._resample_commands(env_ids)  # todo remove
 
         # reset buffers
         self.last_actions[env_ids] = 0.
@@ -260,8 +260,16 @@ class FixedRobot(BaseTask):
         return props
 
     def _process_dof_props(self, props, env_id):
-        """
-        Process dof properties.
+        """ Callback allowing to store/change/randomize the DOF properties of each environment.
+            Called During environment creation.
+            Base behavior: stores position, velocity and torques limits defined in the URDF
+
+        Args:
+            props (numpy.array): Properties of each DOF of the asset
+            env_id (int): Environment id
+
+        Returns:
+            [numpy.array]: Modified DOF properties
         """
         if env_id == 0:  # ? why only for env_id == 0?
             self.dof_pos_limits = torch.zeros(self.num_dof, 2,

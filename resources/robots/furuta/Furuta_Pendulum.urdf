@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="Furuta_Pendulum">
+  <link
+    name="link">
+    <inertial>
+      <origin
+        xyz="0.00018243 0.00751 0.00086176"
+        rpy="0 0 0" />
+      <mass
+        value="0.4578" />
+      <inertia
+        ixx="0.0005706"
+        ixy="-2.2124E-06"
+        ixz="7.1959E-08"
+        iyy="0.00099633"
+        iyz="4.8556E-06"
+        izz="0.0005857" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/meshes/base.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.91765 0.92941 1" />
+      </material>
+    </visual>
+  </link>
+  <link
+    name="susan">
+    <inertial>
+      <origin
+        xyz="0.0051279 -2.3523E-05 -0.014193"
+        rpy="0 0 0" />
+      <mass
+        value="0.15543" />
+      <inertia
+        ixx="7.3967E-05"
+        ixy="-9.7684E-10"
+        ixz="9.6441E-08"
+        iyy="7.2012E-05"
+        iyz="-3.857E-11"
+        izz="0.00011766" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/meshes/susan.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.89804 0.91765 0.92941 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="motor"
+    type="revolute">
+    <origin
+      xyz="0 0 0.088517"
+      rpy="0 0 1.5708" />
+    <parent
+      link="link" />
+    <child
+      link="susan" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-12.5"
+      upper="12.5"
+      effort="3"
+      velocity="0" />
+  </joint>
+  <link
+    name="pendulum">
+    <inertial>
+      <origin
+        xyz="-0.012054 6.5614E-06 0.018465"
+        rpy="0 0 0" />
+      <mass
+        value="0.035985" />
+      <inertia
+        ixx="1.4173E-05"
+        ixy="-1.8317E-12"
+        ixz="-6.294E-07"
+        iyy="1.3833E-05"
+        iyz="9.645E-12"
+        izz="1.9142E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/meshes/pendulum.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.75294 0.75294 0.75294 1" />
+      </material>
+    </visual>
+  </link>
+  <joint
+    name="pendulum"
+    type="revolute">
+    <origin
+      xyz="0.050697 -9.9439E-05 0"
+      rpy="-0.0032701 0 0" />
+    <parent
+      link="susan" />
+    <child
+      link="pendulum" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-12.5"
+      upper="12.5"
+      effort="0"
+      velocity="0" />
+  </joint>
+</robot>
