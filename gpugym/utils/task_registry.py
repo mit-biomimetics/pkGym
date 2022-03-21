@@ -40,6 +40,7 @@ from rsl_rl.runners import OnPolicyRunner
 from gpugym import LEGGED_GYM_ROOT_DIR, LEGGED_GYM_ENVS_DIR
 from .helpers import get_args, update_cfg_from_args, class_to_dict, get_load_path, set_seed, parse_sim_params
 from gpugym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
+from gpugym.envs.base.base_config import BaseConfig
 
 class TaskRegistry():
     def __init__(self):
@@ -47,7 +48,7 @@ class TaskRegistry():
         self.env_cfgs = {}
         self.train_cfgs = {}
     
-    def register(self, name: str, task_class: VecEnv, env_cfg: LeggedRobotCfg, train_cfg: LeggedRobotCfgPPO):
+    def register(self, name: str, task_class: VecEnv, env_cfg: BaseConfig, train_cfg: LeggedRobotCfgPPO):
         self.task_classes[name] = task_class
         self.env_cfgs[name] = env_cfg
         self.train_cfgs[name] = train_cfg
