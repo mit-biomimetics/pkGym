@@ -3,27 +3,44 @@ from gpugym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgP
 
 import torch
 
+from ...utils.augmentor import Augmentor
+
 # BASE_HEIGHT_REF = 0.25
 BASE_HEIGHT_REF = 0.33
 
 class obs_augmentations:
-    add_kinematics_augmentations  = False
-    add_jacobian_augmentations    = False
-    add_centripetal_augmentations = False
-    add_coriolis_augmentations    = False
+    add_kinematics = False
+    add_mass_matrix = False
+    add_coriolis_matrix = False
+    # add_kinematics_augmentations  = False
+    # add_jacobian_augmentations    = False
+    # add_centripetal_augmentations = False
+    # add_coriolis_augmentations    = False
+
+    augmentation_toggles = {'kinematics' * add_kinematics,
+                            'mass_matrix' * add_mass_matrix,
+                            'coriolis_matrix' * add_coriolis_matrix}
+
+    augmentor = Augmentor(augmentation_toggles)
 
 class MiniCheetahCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         num_envs = 2**12  # (n_robots in Rudin 2021 paper - batch_size = n_steps * n_robots)
         num_actions = 12  # 12 for the 12 actuated DoFs of the mini cheetah
-        num_observations = 87 + \
-                           12 + \
-                           obs_augmentations.add_kinematics_augmentations * 24 + \
-                           obs_augmentations.add_jacobian_augmentations    * 24 + \
-                           obs_augmentations.add_centripetal_augmentations * 18 + \
-                           obs_augmentations.add_coriolis_augmentations    * (306 - 153)
+        num_observations = 87 + 12
+                           # obs_augmentations.add_kinematics_augmentations * 24 + \
+                           # obs_augmentations.add_jacobian_augmentations    * 24 + \
+                           # obs_augmentations.add_centripetal_augmentations * 18 + \
+                           # obs_augmentations.add_coriolis_augmentations    * (306 - 153)
+
 
         obs_augmentations = obs_augmentations
+
+        augmentor = obs_augmentations.augmentor
+
+        augmentor.set_first_idx_in_obs_buf(num_observations)
+
+        num_observations += augmentor.num_augmentations
 
     class terrain(LeggedRobotCfg.terrain):
         curriculum = False

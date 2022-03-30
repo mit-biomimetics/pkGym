@@ -44,10 +44,10 @@ def train(args):
     env, env_cfg = task_registry.make_env(name=args.task, args=args)
     ppo_runner, train_cfg = task_registry.make_alg_runner(env=env, name=args.task, args=args)
 
-    do_kin = env_cfg.env.obs_augmentations.add_kinematics_augmentations
-    do_jac = env_cfg.env.obs_augmentations.add_jacobian_augmentations
-    do_cen = env_cfg.env.obs_augmentations.add_centripetal_augmentations
-    do_cor = env_cfg.env.obs_augmentations.add_coriolis_augmentations
+    do_kin = False#env_cfg.env.obs_augmentations.add_kinematics_augmentations
+    do_jac = False#env_cfg.env.obs_augmentations.add_jacobian_augmentations
+    do_cen = False#env_cfg.env.obs_augmentations.add_centripetal_augmentations
+    do_cor = False#env_cfg.env.obs_augmentations.add_coriolis_augmentations
 
     wandb.config = {
               'num+observations': env_cfg.env.num_observations,

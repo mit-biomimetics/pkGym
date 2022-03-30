@@ -78,9 +78,9 @@ class MiniCheetah(LeggedRobot):
             self.ctrl_hist[:, nact:2 * nact] = self.ctrl_hist[:, :nact]
             self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale + self.default_dof_pos
 
+        local_default_dof_pos = torch.ones_like(dof_pos) * torch.squeeze(self.default_dof_pos.T)
 
         # Use these in a debugger to ensure none are larger than 1.0
-        # local_default_dof_pos = torch.ones_like(dof_pos) * torch.squeeze(self.default_dof_pos.T)
         # base_z_max = torch.max(base_z, dim=0).values
         # lin_vel = torch.max(self.base_lin_vel * self.obs_scales.lin_vel, dim=0).values
         # ang_vel = torch.max(self.base_ang_vel * self.obs_scales.ang_vel, dim=0).values
@@ -94,19 +94,38 @@ class MiniCheetah(LeggedRobot):
         # phase_cos = torch.max(torch.cos(self.phase * 2 * torch.pi), dim=0).values
         # phase_sin = torch.max(torch.sin(self.phase * 2 * torch.pi), dim=0).values
 
-        self.obs_buf = torch.cat((base_z,
-                                  self.base_lin_vel*self.obs_scales.lin_vel,
-                                  self.base_ang_vel*self.obs_scales.ang_vel,
-                                  self.projected_gravity,
-                                  self.commands[:, :3]*self.commands_scale,
-                                  dof_pos,
-                                  local_default_dof_pos,
-                                  self.dof_vel*self.obs_scales.dof_vel,
-                                  self.actions*self.obs_scales.action_scale,
-                                  self.ctrl_hist,
-                                  torch.cos(self.phase*2*torch.pi),
-                                  torch.sin(self.phase*2*torch.pi)),
-                                 dim=-1)
+        # self.obs_buf = torch.cat((base_z,
+        #                           self.base_lin_vel*self.obs_scales.lin_vel,
+        #                           self.base_ang_vel*self.obs_scales.ang_vel,
+        #                           self.projected_gravity,
+        #                           self.commands[:, :3]*self.commands_scale,
+        #                           dof_pos,
+        #                           local_default_dof_pos,
+        #                           self.dof_vel*self.obs_scales.dof_vel,
+        #                           self.actions*self.obs_scales.action_scale,
+        #                           self.ctrl_hist,
+        #                           torch.cos(self.phase*2*torch.pi),
+        #                           torch.sin(self.phase*2*torch.pi)),
+        #                          dim=-1)
+
+        base_observations = [base_z,
+                              self.base_lin_vel*self.obs_scales.lin_vel,
+                              self.base_ang_vel*self.obs_scales.ang_vel,
+                              self.projected_gravity,
+                              self.commands[:, :3]*self.commands_scale,
+                              dof_pos,
+                              local_default_dof_pos,
+                              self.dof_vel*self.obs_scales.dof_vel,
+                              self.actions*self.obs_scales.action_scale,
+                              self.ctrl_hist,
+                              torch.cos(self.phase*2*torch.pi),
+                              torch.sin(self.phase*2*torch.pi)]
+
+        cur_idx = 0
+        for observation_data in base_observations:
+            obs_length = observation_data.shape[1]
+            self.obs_buf[cur_idx:obs_length + 1] = observation_data
+            cur_idx += obs_length
 
         # ! noise_scale_vec must be of correct order! Check def below
         # * add noise if needed
@@ -114,15 +133,20 @@ class MiniCheetah(LeggedRobot):
             self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
                             * self.noise_scale_vec
 
-        # Add augmentations to the buffer - the method of adding noise required me to grab dof info from obs_buf
+        # Get the noisy - but unscaled - state observations
         noisy_body_lin_vel = self.obs_buf[:, 1:4] / self.obs_scales.lin_vel
         noisy_body_ang_vel = self.obs_buf[:, 4:7] / self.obs_scales.ang_vel
         noisy_dof_pos = self.obs_buf[:, 13:25]  # based on calculation that the dof pos stuff happens at these indices
-        noisy_dof_vel_unscaled = self.obs_buf[:, 25:37] / self.obs_scales.dof_vel
-        augmented_dofs_list = self.augmentor.apply_augmentations(noisy_body_lin_vel, noisy_body_ang_vel, noisy_dof_pos, noisy_dof_vel_unscaled)
-        if len(augmented_dofs_list) > 0:
-            # When to start scaling stuff: (maxs.values > torch.ones_like(maxs.values)).any() evaluates to true
-            self.obs_buf = torch.cat([self.obs_buf] + augmented_dofs_list, dim=-1)
+        noisy_dof_vel = self.obs_buf[:, 25:37] / self.obs_scales.dof_vel
+
+        self.augmentor.apply_augmentations(self.obs_buf, noisy_body_lin_vel, noisy_body_ang_vel, noisy_dof_pos, noisy_dof_vel)
+
+        # augmented_dofs_list = self.augmentor.apply_augmentations(noisy_body_lin_vel, noisy_body_ang_vel, noisy_dof_pos, noisy_dof_vel)
+        # if len(augmented_dofs_list) > 0:
+        #     # When to start scaling stuff: (maxs.values > torch.ones_like(maxs.values)).any() evaluates to true
+        #     self.obs_buf = torch.cat([self.obs_buf] + augmented_dofs_list, dim=-1)
+
+
 
     def _get_noise_scale_vec(self, cfg):
         '''
