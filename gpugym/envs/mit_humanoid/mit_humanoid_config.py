@@ -31,12 +31,35 @@
 from gpugym.envs.base.legged_robot_config import LeggedRobotCfg
 from gpugym.envs.base.legged_robot_config import LeggedRobotCfgPPO
 
+# from ...utils.augmentor import Augmentor
+
+class obs_augmentations:
+    add_kinematics = False
+    add_mass_matrix = False
+    add_coriolis_matrix = False
+    # add_jacobian_augmentations    = False
+    # add_centripetal_augmentations = False
+    # add_coriolis_augmentations    = False
+
+    augmentation_toggles = {'kinematics'*add_kinematics,
+                           'mass_matrix'*add_mass_matrix,
+                           'coriolis_matrix'*add_coriolis_matrix}
+
+    # augmentor = Augmentor(augmentation_toggles)
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         num_envs = 3000
-        num_observations = 67+2+3*18 # 187
         num_actions = 18
+
+        obs_augmentations = obs_augmentations
+        # augmentor = obs_augmentations.augmentor
+
+        num_observations = 67 + 2 + 3 * 18  # 187  # ! why? should be 66...
+
+        # augmentor.set_first_idx_in_obs_buf(num_observations)
+        #
+        # num_observations += augmentor.num_augmentations
 
     class terrain(LeggedRobotCfg.terrain):
         curriculum = False
@@ -56,7 +79,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             heading = [0, 0]
 
     class init_state(LeggedRobotCfg.init_state):
-        default_setup = "Trajectory" # default setup chooses how the initial conditions are chosen. 
+        default_setup = "Trajectory" # default setup chooses how the initial conditions are chosen.
                                 # "Basic" = a single position with some randomized noise on top. 
                                 # "Range" = a range of joint positions and velocities.
                                 #  "Trajectory" = feed in a trajectory to sample from. 
@@ -143,7 +166,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         friction_range = [0.5, 1.25]
         randomize_base_mass = False
         added_mass_range = [-1., 1.]
-        push_robots = True
+        push_robots = False
         push_interval_s = 15
         max_push_vel_xy = 1.
 
@@ -159,7 +182,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         disable_gravity = False
         disable_actions = False
         disable_motors = False 
-        initial_penetration_check = True #disable to not check for penetration on initial conds. 
+        initial_penetration_check = True #disable to not check for penetration on initial conds.
 
     class rewards(LeggedRobotCfg.rewards):
         soft_dof_pos_limit = 0.9

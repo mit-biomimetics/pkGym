@@ -66,6 +66,7 @@ class LeggedRobot(BaseTask):
         """
         self.cfg = cfg
         self.sim_params = sim_params
+        self.sim_params.up_axis = gymapi.UpAxis.UP_AXIS_Z
         self.height_samples = None
         self.debug_viz = False
         self.init_done = False
@@ -405,6 +406,8 @@ class LeggedRobot(BaseTask):
             torques = self.p_gains*(actions_scaled + offset_vel - self.dof_vel) - self.d_gains*(self.dof_vel - self.last_dof_vel)/self.sim_params.dt
         elif control_type=="T":
             torques = actions_scaled
+        elif control_type=="Td":
+            torques = actions_scaled - self.d_gains*self.dof_vel
         else:
             raise NameError(f"Unknown controller type: {control_type}")
 
