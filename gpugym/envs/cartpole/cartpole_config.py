@@ -1,76 +1,69 @@
-from gpugym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
+from gpugym.envs.base.fixed_robot_config import FixedRobotCfg, FixedRobotCfgPPO
+import torch
+
+class obs_augmentations:
+
+    SIN = torch.sin
+    COS = torch.cos
+    SINSQR = lambda x: torch.square(torch.sin(x))
+    COSSQR = lambda x: torch.square(torch.cos(x))
+    SQR = torch.square
+    CUB = lambda x: x**3
+
+    do_dynamics_augmentation = False
+    do_controls_augmentation = False
+
+    dynamics_augmentations = {(SIN, "pole angle", 1.0),
+                              (COS, "pole angle", 1.0),
+                              (SQR, "pole velocity", 0.01)}
+
+    controls_augmentations = {(COS, "pole angle", 1.0),
+                              (COSSQR, "pole angle", 1.0),
+                              (CUB, "pole velocity", 0.005)}
+
+    final_augmentations = set()
+    final_augmentations |= dynamics_augmentations if do_dynamics_augmentation else set()
+    final_augmentations |= controls_augmentations if do_controls_augmentation else set()
+    augmentations_list = list(final_augmentations) # todone: Ensure this always happens in the same order - done in Pyconsole
+
+class CartpoleCfg(FixedRobotCfg):
+
+    class env(FixedRobotCfg.env):
+        num_actions = 1  # 1 for the cart force
+        max_effort = 10.0
+        reset_dist = 3.0
+        augmentations = obs_augmentations.augmentations_list
+        num_observations = 4 + len(augmentations)
 
 
-class CartpoleCfg(LeggedRobotCfg):
-    class env(LeggedRobotCfg.env):
-        num_actions = 12  # 12 for the 12 actuated DoFs of the mini cheetah
-        num_observations = 87  # added blindly from the AnymalCFlatCFG TODO: why this number?
+    class terrain(FixedRobotCfg.terrain):
+        # curriculum = False
+        # mesh_type = 'plane'
+        # measure_heights = False
+        pass
 
-    class terrain(LeggedRobotCfg.terrain):
-        curriculum = False
-        mesh_type = 'plane'  # added blindly from the AnymalCFlatCFG.
-        # 'trimesh' # from Nikita: use a triangle mesh instead of a height field
-        measure_heights = False  # added blindly from the AnymalCFlatCFG TODO: why this?
-
-    class init_state(LeggedRobotCfg.init_state):
+    class init_state(FixedRobotCfg.init_state):
         """
-        Initial States of the Mini Cheetah
-        From Robot-Software/systems/quadruped/state_machine/FSM_State_RecoveryStand.cpp, line 38
-        Ab/ad: 0˚, hip: -45˚, knee: 91.5˚
-        Default pose is around 0.27
+        Initial States of the Cartpole where the middle is cart 0 and up is pole 0
         """
         default_setup = "Basic"  # default setup chooses how the initial conditions are chosen.
         # "Basic" = a single position with some randomized noise on top.
         # "Range" = a range of joint positions and velocities.
         #  "Trajectory" = feed in a trajectory to sample from.
 
-        default_joint_angles = {
-            "LF_HAA": 0.0,
-            "LH_HAA": 0.0,
-            "RF_HAA": 0.0,
-            "RH_HAA": 0.0,
+        dof_pos_high = [0., 0.]  # DOF dimensions
+        dof_pos_low = [0., 0.]
+        dof_vel_high = [0., 0.]
+        dof_vel_low = [0., 0.]
 
-            "LF_HFE": -0.785398,
-            "LH_HFE": -0.785398,
-            "RF_HFE": -0.785398,
-            "RH_HFE": -0.785398,
+        default_joint_angles = {  # target angles when action = 0.0
+            "cart": 0.,
+            "pole": 0.}
 
-            "LF_KFE": 1.596976,
-            "LH_KFE": 1.596976,
-            "RF_KFE": 1.596976,
-            "RH_KFE": 1.596976,
-        }
-
-        # * default COM for basic initialization
-        pos = [0.0, 0.0, 0.33]  # x,y,z [m]
-        rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
-        lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
-        ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
-
-        # * initialization for random range setup
-        dof_pos_high = [0., 0., 0., 0.75, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]  # DOF dimensions
-        dof_pos_low = [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]
-        dof_vel_high = [0., 0., 0., 0.0, 0., 0., 0., 0., 0.0, 0., 0., 0., 0., 0., 0., 0., 0., 0.]
-        dof_vel_low = [0., 0., 0., 0.0, 0., 0., 0., 0., 0.0, 0., 0., 0., 0., 0., 0., 0., 0., 0.]
-        com_pos_high = [0., 0., 1., 0., 0.5,
-                        0.]  # COM dimensions, in euler angles because randomizing in quat is confusing
-        com_pos_low = [0., 0., 1., 0., -0.5, 0.]  # x, y ,z, roll, pitch, yaw
-        com_vel_high = [0., 0., 0., 0., 0.0, 0.]
-        com_vel_low = [0., 0., 0., 0., 0., 0.]
-
-        # * initialization for trajectory (needs trajectory)
-        # ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_walk.csv"
-        # ref_type = "Pos" #Pos, PosVel
-
-    class control(LeggedRobotCfg.control):
+    class control(FixedRobotCfg.control):
         # PD Drive parameters:
-        stiffness = {'HAA': 80., 'HFE': 80., 'KFE': 80.}  # [N*m/rad]
-        damping = {'HAA': 2., 'HFE': 2., 'KFE': 2.}  # [N*m*s/rad]
-
-        # requires reference trajectory to be loaded
-        # TODO: ignore if no ref traj is loaded
-        nominal_pos = False
-        nominal_vel = False
+        stiffness = {'cart': 10.}  # [N*m/rad]
+        damping = {'cart': 0.5}  # [N*m*s/rad]
 
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.5
@@ -78,128 +71,145 @@ class CartpoleCfg(LeggedRobotCfg):
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 5
 
-        use_actuator_network = False
-        # actuator_net_file = "{LEGGED_GYM_ROOT_DIR}/resources/actuator_nets/anydrive_v3_lstm.pt"
 
-    class domain_rand(LeggedRobotCfg.domain_rand):
-        randomize_friction = False
-        friction_range = [0.5, 1.25]
-        randomize_base_mass = False
-        added_mass_range = [-5., 5.]
-        friction_range = [0.,
-                          1.5]  # on ground planes the friction combination mode is averaging, i.e total friction = (foot_friction + 1.)/2.
-        push_robots = False
-        push_interval_s = 15
-        max_push_vel_xy = 1.
+    class domain_rand(FixedRobotCfg.domain_rand):
+        pass
 
-    class asset(LeggedRobotCfg.asset):
-        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah.urdf"
-        foot_name = "FOOT"  # TODO: fix this!
-        penalize_contacts_on = ["SHANK", "THIGH"]  # TODO: fix this!
-        terminate_after_contacts_on = ["base"]
-        initial_penetration_check = False
-        collapse_fixed_joints = False  # merge bodies connected by fixed joints.
-        self_collisions = 1  # added blindly from the AnymalCFlatCFG.  1 to disable, 0 to enable...bitwise filter
+    class asset(FixedRobotCfg.asset):
+        # Things that differ
+        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/cartpole/urdf/cartpole.urdf"
         flip_visual_attachments = False
+
+        # Toggles to keep
         disable_gravity = False
         disable_actions = False  # disable neural networks
         disable_motors = False  # all torques set to 0
 
-    class rewards(LeggedRobotCfg.rewards):
-        soft_dof_pos_limit = 0.9
-        soft_dof_vel_limit = 0.9
-        soft_torque_limit = 0.9
-        max_contact_force = 600.
+    class rewards(FixedRobotCfg.rewards):
+        hierarchy = {'pole position': {'cart position'}, 'pole velocity': None, 'actuation': None}
 
-        # if true negative total rewards are clipped at zero (avoids early termination problems)
-        only_positive_rewards = False
-        base_height_target = 0.33
-        tracking_sigma = 0.25
+        # Space, sub_space
+        pole_position = (torch.pi, 0.1*torch.pi)
+        pole_velocity = (14.0, None)
+        cart_position = (3.0, None)
+        cart_velocity = None  # (None, None, None)
+        actuation = (10.0, None)  # Assuming max effort is 10.0
+        termination = (3.0, None)
 
-        # reference traj tracking
-        base_pos_tracking = 0.
-        base_vel_tracking = 0.
-        dof_pos_tracking = 1.
-        dof_vel_tracking = 0.
+        class scales:
+            termination = -20.0
+            pole_position = 1.0
+            pole_velocity = 0.01
+            cart_position = 1.0
+            actuation = 1e-5
 
-        class scales(LeggedRobotCfg.rewards.scales):
-            reference_traj = 0.0
-            termination = -1.
-            tracking_lin_vel = 1.
-            tracking_ang_vel = 0.1
-            lin_vel_z = -0.
-            ang_vel_xy = -0.0
-            orientation = 0.1
-            torques = -5.e-7
+            # Unused rewards
+            torques = 0.0
             dof_vel = 0.0
             dof_acc = 0.0
-            base_height = 0.25
-            feet_air_time = 2.5  # rewards keeping feet in the air
-            collision = -1.
-            action_rate = -0.01  # -0.01
-            action_rate2 = -0.001
-            stand_still = -0.
-            dof_pos_limits = -0.25
-            feet_contact_forces = -0.15
-            # symm_legs = 0.0
-            # symm_arms = 0.0
+            collision = 0.0
+            action_rate = 0.0
+            dof_pos_limits = 0.0
 
-    class commands(LeggedRobotCfg.commands):
-        heading_command = True
-        resampling_time = 4.
+    class normalization(FixedRobotCfg.normalization):
+        clip_observations = 5.0
+        clip_actions = 1.0
 
-        class ranges(LeggedRobotCfg.commands.ranges):
-            lin_vel_x = [0.5, 2.0]  # min max [m/s]
-            lin_vel_y = [0., 0]  # min max [m/s]
-            ang_vel_yaw = [0., 0.]  # min max [rad/s]
-            heading = [-0.5, 0.5]
+        class obs_scales:
+            # Used to be...
+            dof_pos = 1/3
+            dof_vel = 0.1
+            # cart_pos = 1.0
+            # pole_pos = 1.0
+            # cart_vel = 1.0
+            # pole_vel = 1.0
+            # sin_pole_pos = 1.0
+            # cos_pole_pos = 1.0
+            # sqr_pole_vel = 0.01
+            # cos_sqr_pole_pos = 1.0
+            # cub_pole_vel = 0.005
 
-    class normalization(LeggedRobotCfg.normalization):
-        class obs_scales(LeggedRobotCfg.normalization.obs_scales):
-            # * helper fcts
-            # * dimensionless time: sqrt(L/g) or sqrt(I/[mgL]), with I=I0+mL^2
-            v_leg = 0.33
-            dimless_time = (v_leg / 9.81) ** 0.5
-            # lin_vel = 1/v_leg*dimless_time
-            base_z = 1. / v_leg
-            lin_vel = 1. / v_leg  # virtual leg lengths per second
-            # ang_vel = 0.25
-            ang_vel = 1. / 3.14 * dimless_time
-            dof_pos = 1. / 3.14
-            dof_vel = 0.05  # ought to be roughly max expected speed.
 
-            height_measurements = 1. / v_leg
+    class noise(FixedRobotCfg.noise):
+        # add_noise = False
+        # noise_level = 0.1  # scales other values
+        #
+        # class noise_scales(FixedRobotCfg.noise.noise_scales):
+        #     dof_pos = 0.01
+        #     dof_vel = 0.01
+        #     lin_vel = 0.1
+        #     ang_vel = 0.2
+        #     gravity = 0.05
+        #     height_measurements = 0.1
 
-        # clip_observations = 100.
-        clip_actions = 1000.
-
-    class noise(LeggedRobotCfg.noise):
         add_noise = False
-        noise_level = 0.1  # scales other values
+        noise_level = 1.0  # scales other values
 
-        class noise_scales(LeggedRobotCfg.noise.noise_scales):
-            dof_pos = 0.01
-            dof_vel = 0.01
-            lin_vel = 0.1
-            ang_vel = 0.2
-            gravity = 0.05
-            height_measurements = 0.1
+        class noise_scales:
+            noise = 0.1  # implement as needed, also in your robot class
 
     class sim:
-        dt = 0.002
-        substeps = 1
+        # These values now match the original cartpole example experiment when using RL_games
+        dt = 0.0166 # 1/60 s
+        substeps = 2
         gravity = [0., 0., -9.81]  # [m/s^2]
+        up_axis = 1  # 0 is y, 1 is z
+
+        class physx:
+            num_threads = 4  # 10
+            solver_type = 1  # 0: pgs, 1: tgs
+            num_position_iterations = 4
+            num_velocity_iterations = 0
+            contact_offset = 0.02  # 0.01  # [m]
+            rest_offset = 0.001  # 0.0  # [m]
+            bounce_threshold_velocity = 0.2  # 0.5  # 0.5 [m/s]
+            max_depenetration_velocity = 100.0  # 10.0
+            max_gpu_contact_pairs = 1024*1024  # 2 ** 23  # 2**24 -> needed for 8000 envs and more
+            default_buffer_size_multiplier = 2.0  # 5
+            contact_collection = 0  # 2  # 0: never, 1: last sub-step, 2: all sub-steps (default=2)
 
 
-class CartpoleCfgPPO(LeggedRobotCfgPPO):
-    class policy(LeggedRobotCfgPPO.policy):
-        actor_hidden_dims = [256, 256, 256]
-        critic_hidden_dims = [256, 256, 256]
+class CartpoleCfgPPO(FixedRobotCfgPPO):
+    # We need random experiments to run
+    seed = -1
+    runner_class_name = 'OnPolicyRunner'
+
+
+    # TODO COME BACK TO THIS AND MAKE SURE VALUES ARE THE SAME AS BEFORE IF ITS NOT WORKING
+    class policy(FixedRobotCfgPPO.policy):
+        init_noise_std = 1.0
+        actor_hidden_dims = [64, 64, 64]
+        critic_hidden_dims = [64, 64, 64]
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
 
-    class algorithm(LeggedRobotCfgPPO.algorithm):
+    class algorithm(FixedRobotCfgPPO.algorithm):
+        # training params
+        value_loss_coef = 1.0
+        use_clipped_value_loss = True
+        clip_param = 0.2
         entropy_coef = 0.01
+        num_learning_epochs = 5
+        num_mini_batches = 4  # mini batch size = num_envs*nsteps / nminibatches
+        learning_rate = 1.e-3  # 5.e-4
+        schedule = 'adaptive'  # could be adaptive, fixed
+        gamma = 0.99
+        lam = 0.95
+        desired_kl = 0.01
+        max_grad_norm = 1.
 
-    class runner(LeggedRobotCfgPPO.runner):
+    class runner(FixedRobotCfgPPO.runner):
+        policy_class_name = 'ActorCritic'
+        algorithm_class_name = 'PPO'
+        num_steps_per_env = 24  # per iteration
+        max_iterations = 500  # number of policy updates
+
+        # logging
+        save_interval = 50  # check for potential saves every this many iterations
         run_name = ''
-        experiment_name = 'mini_cheetah'
+        experiment_name = 'cartpole'
+
+        # load and resume
+        resume = False
+        load_run = -1  # -1 = last run
+        checkpoint = -1  # -1 = last saved model
+        resume_path = None  # updated from load_run and chkpt
