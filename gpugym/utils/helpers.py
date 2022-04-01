@@ -164,8 +164,8 @@ def get_args():
         {"name": "--num_envs", "type": int, "help": "Number of environments to create. Overrides config file if provided."},
         {"name": "--seed", "type": int, "help": "Random seed. Overrides config file if provided."},
         {"name": "--max_iterations", "type": int, "help": "Maximum number of training iterations. Overrides config file if provided."},
-        {"name": "--wandb_project", "type": str, "help": "Enter the name of your project for better WandB tracking."},
-        {"name": "--wandb_entity", "type": str, "help": "Enter your wandb entity username to track your experiment on your account."},
+        {"name": "--wandb_project", "default": 'dont', "type": str, "help": "Enter the name of your project for better WandB tracking."},
+        {"name": "--wandb_entity", "default": 'dont',  "type": str, "help": "Enter your wandb entity username to track your experiment on your account."},
     ]
     # parse arguments
     args = gymutil.parse_arguments(

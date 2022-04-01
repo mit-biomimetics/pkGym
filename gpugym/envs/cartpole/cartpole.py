@@ -34,8 +34,6 @@ from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
 
 import torch
-from typing import Tuple, Dict
-from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
 from gpugym.envs.base.fixed_robot import FixedRobot
 
 class Cartpole(FixedRobot):
@@ -63,110 +61,86 @@ class Cartpole(FixedRobot):
             Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
         """
 
-        env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt) == 0).nonzero(
-            as_tuple=False).flatten()
+        # env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt) == 0).nonzero(
+        #     as_tuple=False).flatten()
 
         # if self.cfg.domain_rand.push_robots and (self.common_step_counter % self.cfg.domain_rand.push_interval == 0):
         #     self._push_robots()
+        pass
+
+    def _custom_termination(self):
+        reset_indices = torch.absolute(self.dof_pos[:, 0]) > self.cfg.env.reset_dist
+        self.reset_buf[:] = torch.where(reset_indices,
+                                        torch.ones_like(self.reset_buf, device=self.device),
+                                        torch.zeros_like(self.reset_buf, device=self.device))
 
     def sqrdexp(self, value, space):
         """ shorthand helper for squared exponential
         """
         return torch.exp(-torch.square(value)/(space))
 
-    def _reward_pole_position(self):
-        # retrieve environment observations from buffer
-        pole_pos = self.obs_buf[:, 2]
-        return 0
+    def _reward_pole_pos(self):
+        pole_pos = self.dof_pos[:, 1]
 
-        # reward = torch.zeros_like(self.rew_buf)
-        #
-        # # POLE POSITION REWARD
-        # pole_pos_raw_reward = reward_info['pole_position']['weight'] * self.sqrdexp(pole_pos,
-        #                                                                             reward_info['pole_position'][
-        #                                                                                 'sqrdexp_space'])
-        # pole_pos_reward = pole_pos_raw_reward
-        #
-        # # ACCUMULATE REWARDS
-        # reward += pole_pos_reward
-        # self.cumulative_rewards[:, 1] += pole_pos_reward
-        #
-        # return reward
+        pole_pos_raw = self.sqrdexp(pole_pos, self.cfg.rewards.spaces.pole_pos)
 
-    def _reward_pole_velocity(self):
-        # retrieve environment observations from buffer
-        pole_vel = self.obs_buf[:, 3]
-        return 0
-        # reward = torch.zeros_like(self.rew_buf)
-        #
-        #
-        # # POLE VELOCITY REWARD
-        # pole_vel_raw_reward = reward_info['pole_velocity']['weight'] * self.sqrdexp(pole_vel,
-        #                                                                             reward_info['pole_velocity'][
-        #                                                                                 'sqrdexp_space'])
-        # pole_vel_reward = pole_vel_raw_reward
-        #
-        # # ACCUMULATE REWARDS
-        # reward += pole_vel_reward
-        # self.cumulative_rewards[:, 2] += pole_vel_reward
-        #
-        # return reward
+        pole_pos_reward = self.cfg.rewards.scales.pole_pos * pole_pos_raw
 
-    def _reward_cart_position(self):
-        # retrieve environment observations from buffer
-        pole_pos = self.obs_buf[:, 2]
-        cart_pos = self.obs_buf[:, 0]
+        return pole_pos_reward.squeeze(dim=-1)
 
-        cos_pole_pos = torch.cos(pole_pos)
-        return 0
-        # reward = torch.zeros_like(self.rew_buf)
-        #
-        # # CART POSITION REWARD
-        # parent_info = reward_info['pole_position']
-        # reward_activation = self.sqrdexp(cos_pole_pos, parent_info['sub_reward_activation_space'])
-        # cart_pos_raw_reward = parent_info['sub_reward']['cart_position']['weight'] * self.sqrdexp(cart_pos, parent_info[
-        #     'sub_reward']['cart_position']['sqrdexp_space'])
-        # cart_pos_reward = reward_activation * cart_pos_raw_reward
-        #
-        # reward += cart_pos_reward
-        # self.cumulative_rewards[:, 3] += cart_pos_reward
-        #
-        # return reward
+    def _reward_pole_vel(self):
+        pole_vel = self.dof_vel[:, 1]
+
+        pole_vel_raw = self.sqrdexp(pole_vel, self.cfg.rewards.spaces.pole_vel)
+
+        pole_vel_reward = self.cfg.rewards.scales.pole_vel * pole_vel_raw
+
+        return pole_vel_reward.squeeze(dim=-1)
+
+    def _reward_cart_pos(self):
+        cart_pos = self.dof_pos[:, 0]
+        pole_pos = self.dof_pos[:, 1]
+
+        pole_pos_activation = self.sqrdexp(pole_pos, self.cfg.rewards.sub_spaces.pole_pos)
+
+        pole_cart_raw = self.sqrdexp(cart_pos, self.cfg.rewards.spaces.cart_pos)
+
+        cart_pos_reward = self.cfg.rewards.scales.cart_pos * pole_pos_activation * pole_cart_raw
+
+        return cart_pos_reward.squeeze(dim=-1)
 
     def _reward_actuation(self):
-        # retrieve environment observations from buffer
-        return 0
-        # reward = torch.zeros_like(self.rew_buf)
-        # # ACTUATION PENALTIES
-        # actuation_penalty_raw_reward = self.sqrdexp(self.actions_buf, self.cfg['env']['maxEffort'])
-        # actuation_penalty_reward = self.hierarchical_reward_scaling['actuation'][
-        #                                'weight'] * actuation_penalty_raw_reward
-        # reward += actuation_penalty_reward
-        #
-        # return reward
+        actuation = self.actions
 
-    def _reward_termination(self):
-        # retrieve environment observations from buffer
-        cart_pos = self.obs_buf[:, 0]
-        return 0
-        # reward = torch.zeros_like(self.rew_buf)
-        #
-        # # HANDLE AGENT RESETS
-        # reward = torch.where(torch.abs(cart_pos) > self.reset_dist,
-        #                      torch.ones_like(reward) * self.reward_scaling['reset']['weight'], reward)
-        #
-        # self.cumulative_rewards[:, 0] += reward
-        #
-        # return reward
+        actuation_raw = self.sqrdexp(actuation, self.cfg.rewards.spaces.actuation)
+
+        actuation_reward = self.cfg.rewards.scales.actuation * actuation_raw
+
+        return actuation_reward.squeeze(dim=-1)
 
     def compute_observations(self, env_ids=None):
 
-        base_observations = [self.dof_pos * self.obs_scales.dof_pos,
-                             self.dof_vel * self.obs_scales.dof_vel,
+        cart_pos = self.dof_pos[:, 0].unsqueeze(dim=-1)
+        pole_pos = self.dof_pos[:, 1].unsqueeze(dim=-1)
+        cart_vel = self.dof_vel[:, 0].unsqueeze(dim=-1)
+        pole_vel = self.dof_vel[:, 1].unsqueeze(dim=-1)
+
+        add_noise = self.cfg.noise.add_noise
+        if add_noise:
+            cart_pos += torch.normal(size=(self.num_envs,), mean=0.0, std=self.cfg.noise.noise_scales.cart_pos, device=self.device).unsqueeze(dim=-1)
+            pole_pos += torch.normal(size=(self.num_envs,), mean=0.0, std=self.cfg.noise.noise_scales.pole_pos, device=self.device).unsqueeze(dim=-1)
+            cart_vel += torch.normal(size=(self.num_envs,), mean=0.0, std=self.cfg.noise.noise_scales.cart_vel, device=self.device).unsqueeze(dim=-1)
+            pole_vel += torch.normal(size=(self.num_envs,), mean=0.0, std=self.cfg.noise.noise_scales.pole_vel, device=self.device).unsqueeze(dim=-1)
+
+        base_observations = [cart_pos * self.cfg.normalization.obs_scales.cart_pos,
+                             pole_pos * self.cfg.normalization.obs_scales.pole_pos,
+                             cart_vel * self.cfg.normalization.obs_scales.cart_vel,
+                             pole_vel * self.cfg.normalization.obs_scales.pole_vel,
                              self.actions]
 
         cur_idx = 0
-        for observation_data in base_observations:
+        self.obs_buf = torch.zeros(size=(self.num_envs, self.num_obs), device=self.device)
+        for obs_idx, observation_data in enumerate(base_observations):
             obs_length = observation_data.shape[1]
             self.obs_buf[:, cur_idx: cur_idx + obs_length] = observation_data[:]
             cur_idx += obs_length

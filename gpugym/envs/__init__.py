@@ -41,8 +41,8 @@ from .mit_humanoid.mit_humanoid import MIT_Humanoid
 from .mit_humanoid.mit_humanoid_config import MITHumanoidCfg, MITHumanoidCfgPPO
 from .mini_cheetah.mini_cheetah import MiniCheetah
 from .mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahCfgPPO
-from .furuta.furuta import Furuta
-from .furuta.furuta_config import FurutaCfg, FurutaCfgPPO
+# from .furuta.furuta import Furuta
+# from .furuta.furuta_config import FurutaCfg, FurutaCfgPPO
 from .cartpole.cartpole import Cartpole
 from .cartpole.cartpole_config import CartpoleCfg, CartpoleCfgPPO
 import os
@@ -60,5 +60,5 @@ task_registry.register("cassie", Cassie, CassieRoughCfg(), CassieRoughCfgPPO())
 task_registry.register("mit_humanoid", MIT_Humanoid, MITHumanoidCfg(),
                        MITHumanoidCfgPPO())
 task_registry.register("mini_cheetah", MiniCheetah, MiniCheetahCfg(),MiniCheetahCfgPPO())
-task_registry.register("furuta", Furuta, FurutaCfg(), FurutaCfgPPO())
-# task_registry.register("cartpole", Cartpole, CartpoleCfg(), CartpoleCfgPPO())
+# task_registry.register("furuta", Furuta, FurutaCfg(), FurutaCfgPPO())
+task_registry.register("cartpole", Cartpole, CartpoleCfg(), CartpoleCfgPPO())

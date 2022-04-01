@@ -29,11 +29,12 @@ class obs_augmentations:
 class CartpoleCfg(FixedRobotCfg):
 
     class env(FixedRobotCfg.env):
+        num_envs = 4096 # 1096
         num_actions = 1  # 1 for the cart force
         max_effort = 10.0
         reset_dist = 3.0
         augmentations = obs_augmentations.augmentations_list
-        num_observations = 4 + len(augmentations)
+        num_observations = 5 + len(augmentations)
 
 
     class terrain(FixedRobotCfg.terrain):
@@ -46,27 +47,35 @@ class CartpoleCfg(FixedRobotCfg):
         """
         Initial States of the Cartpole where the middle is cart 0 and up is pole 0
         """
-        default_setup = "Basic"  # default setup chooses how the initial conditions are chosen.
+        default_setup = "Range"  # default setup chooses how the initial conditions are chosen.
         # "Basic" = a single position with some randomized noise on top.
         # "Range" = a range of joint positions and velocities.
         #  "Trajectory" = feed in a trajectory to sample from.
 
-        dof_pos_high = [0., 0.]  # DOF dimensions
-        dof_pos_low = [0., 0.]
-        dof_vel_high = [0., 0.]
-        dof_vel_low = [0., 0.]
+        dof_pos_high = [2.5, torch.pi]  # DOF dimensionspp
+        dof_pos_low = [-2.5, -torch.pi]
+        dof_vel_high = [0.1, 0.1]
+        dof_vel_low = [-0.1, -0.1]
 
         default_joint_angles = {  # target angles when action = 0.0
-            "cart": 0.,
-            "pole": 0.}
+            "slider_to_cart": 0.,
+            "cart_to_pole": 0.}
 
     class control(FixedRobotCfg.control):
         # PD Drive parameters:
-        stiffness = {'cart': 10.}  # [N*m/rad]
-        damping = {'cart': 0.5}  # [N*m*s/rad]
+        stiffness = {'slider_to_cart': 10.}  # [N*m/rad]
+        damping = {'slider_to_cart': 0.5}  # [N*m*s/rad]
+
+        control_type = "T"
+
+        # for each dof: 1 if actuated, 0 if passive
+        # Empty implies no chance in the _compute_torques step
+        actuated_joints_mask = [1,  # slider_to_cart
+                                 0]  # cart_to_pole
+
 
         # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = 0.5
+        action_scale = 10.0
 
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 5
@@ -75,10 +84,12 @@ class CartpoleCfg(FixedRobotCfg):
     class domain_rand(FixedRobotCfg.domain_rand):
         pass
 
+
     class asset(FixedRobotCfg.asset):
         # Things that differ
         file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/cartpole/urdf/cartpole.urdf"
         flip_visual_attachments = False
+        fix_base_link = True
 
         # Toggles to keep
         disable_gravity = False
@@ -88,19 +99,28 @@ class CartpoleCfg(FixedRobotCfg):
     class rewards(FixedRobotCfg.rewards):
         hierarchy = {'pole position': {'cart position'}, 'pole velocity': None, 'actuation': None}
 
-        # Space, sub_space
-        pole_position = (torch.pi, 0.1*torch.pi)
-        pole_velocity = (14.0, None)
-        cart_position = (3.0, None)
-        cart_velocity = None  # (None, None, None)
-        actuation = (10.0, None)  # Assuming max effort is 10.0
-        termination = (3.0, None)
+        class spaces:
+            # Space, sub_space
+            pole_pos = torch.pi
+            pole_vel = 14.0
+            cart_pos = 3.0
+            cart_vel = None  # (None, None, None)
+            actuation = 10.0  # Assuming max effort is 10.0
+            termination = 3.0
+
+        class sub_spaces:
+            pole_pos = 0.1 * torch.pi
+            pole_vel = None
+            cart_pos = None
+            cart_vel = None  # (None, None, None)
+            actuation = None  # Assuming max effort is 10.0
+            termination = None
 
         class scales:
             termination = -20.0
-            pole_position = 1.0
-            pole_velocity = 0.01
-            cart_position = 1.0
+            pole_pos = 1.0
+            pole_vel = 0.01
+            cart_pos = 1.0
             actuation = 1e-5
 
             # Unused rewards
@@ -109,7 +129,9 @@ class CartpoleCfg(FixedRobotCfg):
             dof_acc = 0.0
             collision = 0.0
             action_rate = 0.0
+            action_rate2 = 0.0
             dof_pos_limits = 0.0
+            dof_vel_limits = 0.0
 
     class normalization(FixedRobotCfg.normalization):
         clip_observations = 5.0
@@ -117,12 +139,10 @@ class CartpoleCfg(FixedRobotCfg):
 
         class obs_scales:
             # Used to be...
-            dof_pos = 1/3
-            dof_vel = 0.1
-            # cart_pos = 1.0
-            # pole_pos = 1.0
-            # cart_vel = 1.0
-            # pole_vel = 1.0
+            cart_pos = 1/torch.pi
+            pole_pos = 1/3.0
+            cart_vel = 1/20.0
+            pole_vel = 1/(4*torch.pi)
             # sin_pole_pos = 1.0
             # cos_pole_pos = 1.0
             # sqr_pole_vel = 0.01
@@ -131,22 +151,16 @@ class CartpoleCfg(FixedRobotCfg):
 
 
     class noise(FixedRobotCfg.noise):
-        # add_noise = False
-        # noise_level = 0.1  # scales other values
-        #
-        # class noise_scales(FixedRobotCfg.noise.noise_scales):
-        #     dof_pos = 0.01
-        #     dof_vel = 0.01
-        #     lin_vel = 0.1
-        #     ang_vel = 0.2
-        #     gravity = 0.05
-        #     height_measurements = 0.1
-
-        add_noise = False
+        add_noise = True
         noise_level = 1.0  # scales other values
 
         class noise_scales:
             noise = 0.1  # implement as needed, also in your robot class
+            cart_pos = 0.001
+            pole_pos = 0.001
+            cart_vel = 0.010
+            pole_vel = 0.010
+            actuation = 0.00
 
     class sim:
         # These values now match the original cartpole example experiment when using RL_games

@@ -7,7 +7,8 @@ class FixedRobotCfg(BaseConfig):
         num_observations = 7
         num_privileged_obs = None # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
         num_actions = 1
-        env_spacing = 1.  # not used with heightfields/trimeshes 
+        env_spacing = 4.  # not used with heightfields/trimeshes
+        root_height = 2.
         send_timeouts = True # send time out information to the algorithm
         episode_length_s = 20 # episode length in seconds
 
@@ -56,6 +57,9 @@ class FixedRobotCfg(BaseConfig):
         action_scale = 0.5
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 4
+
+        actuated_joints_mask = []  # for each dof: 1 if actuated, 0 if passive
+        # Empty implies no chance in the _compute_torques step
 
     class asset:
         file = ""

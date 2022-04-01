@@ -69,8 +69,20 @@ class FixedRobot(BaseTask):
         self.render()
         for _ in range(self.cfg.control.decimation):
             self.torques = self._compute_torques(self.actions).view(self.torques.shape)
+
+            # Deals with passive joints that IsaacGym thinks are active...
+            torques_to_gym_tensor = torch.zeros(size=(self.num_envs, self.num_dof), device=self.device)
+            next_torques_idx = 0
+            for dof_idx in range(self.num_dof):
+                if self.cfg.control.actuated_joints_mask[dof_idx]:
+                    torques_to_gym_tensor[:, dof_idx] = self.torques[:, next_torques_idx]
+                    next_torques_idx += 1
+                else:
+                    torques_to_gym_tensor[:, dof_idx] = torch.zeros(size=(self.num_envs,), device=self.device)
+
+
             self.gym.set_dof_actuation_force_tensor(self.sim,
-                                        gymtorch.unwrap_tensor(self.torques))
+                                        gymtorch.unwrap_tensor(torques_to_gym_tensor))
             self.gym.simulate(self.sim)
             if self.device == 'cpu':
                 self.gym.fetch_results(self.sim, True)
@@ -116,7 +128,7 @@ class FixedRobot(BaseTask):
         self.compute_reward()
         env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
         self.reset_idx(env_ids)
-        self.compute_observations() # in some cases a simulation step might be required to refresh some obs (for example body positions)
+        self.compute_observations()  # in some cases a simulation step might be required to refresh some obs (for example body positions)
 
         self.last_dof_vel[:] = self.dof_vel[:]
 
@@ -128,6 +140,8 @@ class FixedRobot(BaseTask):
         Check if the task has been terminated.
         """
         self.time_out_buf = self.episode_length_buf > self.max_episode_length # no terminal reward for time-outs
+        if hasattr(self, "_custom_termination"):
+            self._custom_termination()
         self.reset_buf |= self.time_out_buf
 
     def reset_idx(self, env_ids):
@@ -150,7 +164,7 @@ class FixedRobot(BaseTask):
         self.last_actions[env_ids] = 0.
         self.last_dof_vel[env_ids] = 0.
         self.episode_length_buf[env_ids] = 0
-        self.reset_buf[env_ids] = 1
+        self.reset_buf[env_ids] = 0  # This was set to 1 for some reason -> needs to be zero
         # fill extras
         self.extras["episode"] = {}
         for key in self.episode_sums.keys():
@@ -598,16 +612,15 @@ class FixedRobot(BaseTask):
             env_handle = self.gym.create_env(self.sim, env_lower, env_upper,
                                              int(np.sqrt(self.num_envs)))
             pos = self.env_origins[i].clone()
-            # * random initial position...?
-            pos[:2] += torch_rand_float(-1., 1., (2, 1),
-                                        device=self.device).squeeze(1)
+            # * random initial position...? -> never really
+            # pos[:2] += torch_rand_float(-1., 1., (2, 1),
+            #                             device=self.device).squeeze(1)
             start_pose.p = gymapi.Vec3(*pos)
 
             rigid_shape_props = self._process_rigid_shape_props(rigid_shape_props_asset, i)
             self.gym.set_asset_rigid_shape_properties(robot_asset, rigid_shape_props)
-            # todo: use filename for robot handle
             robot_handle = self.gym.create_actor(env_handle, robot_asset,
-                                                 start_pose, "robo", i,
+                                                 start_pose, self.cfg.asset.file.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), i,
                                                  self.cfg.asset.self_collisions,
                                                  0)
             dof_props = self._process_dof_props(dof_props_asset, i)
@@ -649,7 +662,7 @@ class FixedRobot(BaseTask):
         spacing = self.cfg.env.env_spacing
         self.env_origins[:, 0] = spacing * xx.flatten()[:self.num_envs]
         self.env_origins[:, 1] = spacing * yy.flatten()[:self.num_envs]
-        self.env_origins[:, 2] = 0.
+        self.env_origins[:, 2] = self.cfg.env.root_height
 
     def _parse_cfg(self, cfg):
         self.dt = self.cfg.control.decimation * self.sim_params.dt
