@@ -34,6 +34,7 @@ from collections import deque
 import statistics
 
 from torch.utils.tensorboard import SummaryWriter
+import wandb
 import torch
 
 from rsl_rl.algorithms import PPO
@@ -73,14 +74,36 @@ class OnPolicyRunner:
 
         # Log
         self.log_dir = log_dir
+        self.wandb = None
+        self.do_wandb = False
         self.writer = None
         self.tot_timesteps = 0
         self.tot_time = 0
         self.current_learning_iteration = 0
 
+        # Grabbed from cfg
+        self.num_learning_iterations = None
+        self.init_at_random_ep_len = None
+
         _, _ = self.env.reset()
-    
-    def learn(self, num_learning_iterations, init_at_random_ep_len=False):
+
+    def configure_wandb(self, wandb):
+        self.wandb = wandb
+        self.do_wandb = True
+        self.wandb.watch((self.alg.actor_critic.actor, self.alg.actor_critic.critic), log_freq=100, log_graph=True)
+
+    def configure_learn(self, num_learning_iterations, init_at_random_ep_len):
+        self.num_learning_iterations = num_learning_iterations
+        self.init_at_random_ep_len = init_at_random_ep_len
+
+    def reset_learn(self):
+        self.current_learning_iteration = 0
+
+    def learn(self, num_learning_iterations=None, init_at_random_ep_len=False):
+        if self.num_learning_iterations is not None:
+            num_learning_iterations = self.num_learning_iterations
+        if self.init_at_random_ep_len is not None:
+            init_at_random_ep_len = self.init_at_random_ep_len
         # initialize writer
         if self.log_dir is not None and self.writer is None:
             self.writer = SummaryWriter(log_dir=self.log_dir, flush_secs=10)
@@ -146,6 +169,9 @@ class OnPolicyRunner:
         self.tot_time += locs['collection_time'] + locs['learn_time']
         iteration_time = locs['collection_time'] + locs['learn_time']
 
+        # Craft logging info database
+        wandb_to_log = {}
+
         ep_string = f''
         if locs['ep_infos']:
             for key in locs['ep_infos'][0]:
@@ -159,6 +185,7 @@ class OnPolicyRunner:
                     infotensor = torch.cat((infotensor, ep_info[key].to(self.device)))
                 value = torch.mean(infotensor)
                 self.writer.add_scalar('Episode/' + key, value, locs['it'])
+                wandb_to_log['Episode/' + key] = value
                 ep_string += f"""{f'Mean episode {key}:':>{pad}} {value:.4f}\n"""
         mean_std = self.alg.actor_critic.std.mean()
         fps = int(self.num_steps_per_env * self.env.num_envs / (locs['collection_time'] + locs['learn_time']))
@@ -175,6 +202,16 @@ class OnPolicyRunner:
             self.writer.add_scalar('Train/mean_episode_length', statistics.mean(locs['lenbuffer']), locs['it'])
             self.writer.add_scalar('Train/mean_reward/time', statistics.mean(locs['rewbuffer']), self.tot_time)
             self.writer.add_scalar('Train/mean_episode_length/time', statistics.mean(locs['lenbuffer']), self.tot_time)
+
+        if self.do_wandb:
+            wandb_to_log['Loss/value_function'] = locs['mean_value_loss']
+            wandb_to_log['Loss/surrogate'] = locs['mean_surrogate_loss']
+            wandb_to_log['Loss/learning_rate'] = self.alg.learning_rate
+            wandb_to_log['Policy/mean_noise_std'] = mean_std.item()
+            wandb_to_log['Perf/total_fps'] = fps
+            wandb_to_log['Perf/collection time'] = locs['collection_time']
+            wandb_to_log['Perf/learning_time'] = locs['learn_time']
+            self.wandb.log(wandb_to_log, step=locs['it'])
 
         str = f" \033[1m Learning iteration {locs['it']}/{self.current_learning_iteration + locs['num_learning_iterations']} \033[0m "
 
