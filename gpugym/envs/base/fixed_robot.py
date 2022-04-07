@@ -302,7 +302,7 @@ class FixedRobot(BaseTask):
                 self.dof_pos_limits[i, 1] = props["upper"][i].item()
                 self.dof_vel_limits[i] = props["velocity"][i].item()
                 try:  # todo handle properly
-                    self.torque_limits[i] = props["effort"][i].item()
+                    self.torque_limits[i] = self.cfg.env.max_effort
                 except:
                     pass
                 # soft limits

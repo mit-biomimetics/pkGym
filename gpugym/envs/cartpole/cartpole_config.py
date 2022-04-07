@@ -26,12 +26,15 @@ class obs_augmentations:
     final_augmentations |= controls_augmentations if do_controls_augmentation else set()
     augmentations_list = list(final_augmentations) # todone: Ensure this always happens in the same order - done in Pyconsole
 
+class underactuation:
+    max_effort = 4.0
+
 class CartpoleCfg(FixedRobotCfg):
 
     class env(FixedRobotCfg.env):
         num_envs = 4096 # 1096
         num_actions = 1  # 1 for the cart force
-        max_effort = 10.0
+        max_effort = underactuation.max_effort
         reset_dist = 3.0
         augmentations = obs_augmentations.augmentations_list
         num_observations = 5 + len(augmentations)
@@ -75,10 +78,10 @@ class CartpoleCfg(FixedRobotCfg):
 
 
         # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = 10.0
+        action_scale = underactuation.max_effort
 
         # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 5
+        decimation = 1
 
 
     class domain_rand(FixedRobotCfg.domain_rand):
@@ -105,11 +108,11 @@ class CartpoleCfg(FixedRobotCfg):
             pole_vel = 14.0
             cart_pos = 3.0
             cart_vel = None  # (None, None, None)
-            actuation = 10.0  # Assuming max effort is 10.0
+            actuation = underactuation.max_effort
             termination = 3.0
 
         class sub_spaces:
-            pole_pos = 0.1 * torch.pi
+            pole_pos = 0.5 * torch.pi
             pole_vel = None
             cart_pos = None
             cart_vel = None  # (None, None, None)
@@ -118,9 +121,9 @@ class CartpoleCfg(FixedRobotCfg):
 
         class scales:
             termination = -20.0
-            pole_pos = 1.0
+            pole_pos = 5
             pole_vel = 0.01
-            cart_pos = 1.0
+            cart_pos = 5
             actuation = 1e-5
 
             # Unused rewards
@@ -188,12 +191,15 @@ class CartpoleCfgPPO(FixedRobotCfgPPO):
     seed = -1
     runner_class_name = 'OnPolicyRunner'
 
+    do_wandb = True
 
     # TODO COME BACK TO THIS AND MAKE SURE VALUES ARE THE SAME AS BEFORE IF ITS NOT WORKING
     class policy(FixedRobotCfgPPO.policy):
         init_noise_std = 1.0
-        actor_hidden_dims = [64, 64, 64]
-        critic_hidden_dims = [64, 64, 64]
+        num_layers = 3
+        num_units = 64
+        actor_hidden_dims = [num_units] * num_layers
+        critic_hidden_dims = [num_units] * num_layers
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
 
     class algorithm(FixedRobotCfgPPO.algorithm):
