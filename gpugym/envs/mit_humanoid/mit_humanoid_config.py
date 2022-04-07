@@ -287,6 +287,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
 class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
 
+    do_wandb = False
 
     class algorithm(LeggedRobotCfgPPO.algorithm):
         entropy_coef = 0.01

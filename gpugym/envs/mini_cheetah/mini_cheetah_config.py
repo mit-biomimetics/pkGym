@@ -235,6 +235,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
 class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
     seed = -1
+    do_wandb = False
     class policy( LeggedRobotCfgPPO.policy ):
         actor_hidden_dims = [18, 18] # [256, 256, 256]
         critic_hidden_dims = [18, 18] # [256, 256, 256]

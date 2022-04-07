@@ -50,7 +50,7 @@ def train(args):
     log_dir = os.path.join(log_root, datetime.now().strftime('%b%d_%H-%M-%S') + '_' + train_cfg.runner.run_name)
 
     # Check if we specified that we want to use wandb
-    do_wandb = train_cfg.do_wandb if hasattr(train_cfg.policy, 'do_wandb') else False
+    do_wandb = train_cfg.do_wandb if hasattr(train_cfg, 'do_wandb') else False
     # Do the logging only if wandb requirements have been fully specified
     do_wandb = do_wandb and None not in (args.wandb_project, args.wandb_entity)
 
