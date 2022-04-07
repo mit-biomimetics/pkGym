@@ -49,24 +49,32 @@ def train(args):
     log_root = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name)
     log_dir = os.path.join(log_root, datetime.now().strftime('%b%d_%H-%M-%S') + '_' + train_cfg.runner.run_name)
 
-    do_wandb = not (args.wandb_project == 'dont' or args.wandb_entity == 'dont')
+    # Check if we specified that we want to use wandb
+    do_wandb = train_cfg.do_wandb if hasattr(train_cfg.policy, 'do_wandb') else False
+    # Do the logging only if wandb requirements have been fully specified
+    do_wandb = do_wandb and None not in (args.wandb_project, args.wandb_entity)
+
     if do_wandb:
-        wandb.config = {
-                  'num+observations': env_cfg.env.num_observations,
-                  'nn_shape': train_cfg.policy.actor_hidden_dims
-            }
+        wandb.config = {}
+
+        if hasattr(train_cfg.policy, 'num_layers'):
+            wandb.config['num_layers'] = train_cfg.policy.num_layers
+        if hasattr(train_cfg.policy, 'num_units'):
+            wandb.config['num_units'] = train_cfg.policy.num_units
+
+        print(f'Received WandB project name: {args.wandb_project}\nReceived WandB entitiy name: {args.wandb_entity}\n')
         wandb.init(project=args.wandb_project,
-                    entity=args.wandb_entity,
-                    config=wandb.config,
-                    name=experiment_name)
-        wandb.tensorboard.patch(root_logdir=log_dir)
-    else:
-        print('Missing either WANDB project or username [entity]')
+                   entity=args.wandb_entity,
+                   config=wandb.config,
+                   name=experiment_name)
 
-    ppo_runner.learn(num_learning_iterations=train_cfg.runner.max_iterations, init_at_random_ep_len=True)
+        ppo_runner.configure_wandb(wandb)
+        ppo_runner.configure_learn(train_cfg.runner.max_iterations, True)
+        ppo_runner.learn()
 
-    if do_wandb:
         wandb.finish()
+    else:
+        ppo_runner.learn(num_learning_iterations=train_cfg.runner.max_iterations, init_at_random_ep_len=True)
 
 if __name__ == '__main__':
     args = get_args()
