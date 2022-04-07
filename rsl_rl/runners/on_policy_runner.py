@@ -170,7 +170,7 @@ class OnPolicyRunner:
         iteration_time = locs['collection_time'] + locs['learn_time']
 
         # Craft logging info database
-        wandb_to_log = {}
+        wandb_to_log = {'Episode/Total_reward': 0.0}
 
         ep_string = f''
         if locs['ep_infos']:
@@ -186,6 +186,7 @@ class OnPolicyRunner:
                 value = torch.mean(infotensor)
                 self.writer.add_scalar('Episode/' + key, value, locs['it'])
                 wandb_to_log['Episode/' + key] = value
+                wandb_to_log['Episode/Total_reward'] += value
                 ep_string += f"""{f'Mean episode {key}:':>{pad}} {value:.4f}\n"""
         mean_std = self.alg.actor_critic.std.mean()
         fps = int(self.num_steps_per_env * self.env.num_envs / (locs['collection_time'] + locs['learn_time']))
