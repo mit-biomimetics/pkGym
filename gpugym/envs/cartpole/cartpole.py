@@ -101,11 +101,15 @@ class Cartpole(FixedRobot):
         cart_pos = self.dof_pos[:, 0]
         pole_pos = self.dof_pos[:, 1]
 
-        pole_pos_activation = self.sqrdexp(pole_pos, self.cfg.rewards.sub_spaces.pole_pos)
-
         pole_cart_raw = self.sqrdexp(cart_pos, self.cfg.rewards.spaces.cart_pos)
 
-        cart_pos_reward = self.cfg.rewards.scales.cart_pos * pole_pos_activation * pole_cart_raw
+        if self.cfg.rewards.sub_spaces.pole_pos is not None:
+            pole_pos_activation = self.sqrdexp(pole_pos, self.cfg.rewards.sub_spaces.pole_pos)
+
+            cart_pos_reward = self.cfg.rewards.scales.cart_pos * pole_pos_activation * pole_cart_raw
+
+        else:
+            cart_pos_reward = self.cfg.rewards.scales.cart_pos * pole_cart_raw
 
         return cart_pos_reward.squeeze(dim=-1)
 

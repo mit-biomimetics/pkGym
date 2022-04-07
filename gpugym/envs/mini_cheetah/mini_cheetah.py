@@ -26,7 +26,7 @@ class MiniCheetah(LeggedRobot):
                                          dtype=torch.float, device=self.device,
                                          requires_grad=False)
 
-        self.augmentor = Augmentor(cfg)
+        self.augmentor = cfg.env.augmentor
 
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
@@ -124,7 +124,7 @@ class MiniCheetah(LeggedRobot):
         cur_idx = 0
         for observation_data in base_observations:
             obs_length = observation_data.shape[1]
-            self.obs_buf[cur_idx:obs_length + 1] = observation_data
+            self.obs_buf[:, cur_idx:cur_idx + obs_length] = observation_data
             cur_idx += obs_length
 
         # ! noise_scale_vec must be of correct order! Check def below
