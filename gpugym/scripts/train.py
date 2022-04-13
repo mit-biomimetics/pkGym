@@ -34,7 +34,7 @@ from datetime import datetime
 
 import isaacgym
 from gpugym.envs import *
-from gpugym.utils import get_args, task_registry
+from gpugym.utils import get_args, task_registry, wandb_helper
 from gpugym import LEGGED_GYM_ROOT_DIR
 import torch
 
@@ -57,10 +57,9 @@ def train(args):
     if do_wandb:
         wandb.config = {}
 
-        if hasattr(train_cfg.policy, 'num_layers'):
-            wandb.config['num_layers'] = train_cfg.policy.num_layers
-        if hasattr(train_cfg.policy, 'num_units'):
-            wandb.config['num_units'] = train_cfg.policy.num_units
+        if hasattr(train_cfg, 'wandb'):
+            what_to_log = train_cfg.wandb.what_to_log
+            wandb_helper.craft_log_config(env_cfg, train_cfg, wandb.config, what_to_log)
 
         print(f'Received WandB project name: {args.wandb_project}\nReceived WandB entitiy name: {args.wandb_entity}\n')
         wandb.init(project=args.wandb_project,
