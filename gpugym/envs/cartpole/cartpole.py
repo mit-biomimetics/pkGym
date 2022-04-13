@@ -48,9 +48,6 @@ class Cartpole(FixedRobot):
 
         # HANDLE AUGMENTATIONS
         self.augmentations = self.cfg.env.augmentations
-        self.augmentation_names = [augmentation[1] for augmentation in self.augmentations]
-        self.augmentation_scales = [augmentation[2] for augmentation in self.augmentations]
-        self.num_augmentations = len(self.augmentations)
 
         # HANDLE HIERARCHICAL REWARDS
         self.reward_hierarchy = cfg.rewards.hierarchy
@@ -136,15 +133,23 @@ class Cartpole(FixedRobot):
             cart_vel += torch.normal(size=(self.num_envs,), mean=0.0, std=self.cfg.noise.noise_scales.cart_vel, device=self.device).unsqueeze(dim=-1)
             pole_vel += torch.normal(size=(self.num_envs,), mean=0.0, std=self.cfg.noise.noise_scales.pole_vel, device=self.device).unsqueeze(dim=-1)
 
-        base_observations = [cart_pos * self.cfg.normalization.obs_scales.cart_pos,
-                             pole_pos * self.cfg.normalization.obs_scales.pole_pos,
-                             cart_vel * self.cfg.normalization.obs_scales.cart_vel,
-                             pole_vel * self.cfg.normalization.obs_scales.pole_vel,
-                             self.actions]
+        observations = [cart_pos * self.cfg.normalization.obs_scales.cart_pos,
+                        pole_pos * self.cfg.normalization.obs_scales.pole_pos,
+                        cart_vel * self.cfg.normalization.obs_scales.cart_vel,
+                        pole_vel * self.cfg.normalization.obs_scales.pole_vel,
+                        self.actions]
+
+        dof = {'cart_pos': cart_pos, 'pole_pos': pole_pos,
+               'cart_vel': cart_vel, 'pole_vel': pole_vel}
+
+        for func, name, scale in self.augmentations:
+            new_ob = func(dof[name])
+            scaled_ob = scale * new_ob
+            observations.append(scaled_ob)
 
         cur_idx = 0
         self.obs_buf = torch.zeros(size=(self.num_envs, self.num_obs), device=self.device)
-        for obs_idx, observation_data in enumerate(base_observations):
+        for obs_idx, observation_data in enumerate(observations):
             obs_length = observation_data.shape[1]
             self.obs_buf[:, cur_idx: cur_idx + obs_length] = observation_data[:]
             cur_idx += obs_length
