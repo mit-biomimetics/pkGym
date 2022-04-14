@@ -151,6 +151,12 @@ class CartpoleCfg(FixedRobotCfg):
             dof_pos_limits = 0.0
             dof_vel_limits = 0.0
 
+    class success_metrics:
+        class thresholds:
+            pole_pos = 0.2 * torch.pi  # [rad] - pole should be centered about the top of its range
+            pole_vel = 0.3 * torch.pi  # [rad/s] - the pole should not be moving
+            cart_pos = 0.3  # [m] - the cart should be centered in its range
+
     class normalization(FixedRobotCfg.normalization):
         clip_observations = 5.0
         clip_actions = 1.0

@@ -71,6 +71,34 @@ class Cartpole(FixedRobot):
                                         torch.ones_like(self.reset_buf, device=self.device),
                                         torch.zeros_like(self.reset_buf, device=self.device))
 
+    def _custom_reset_logging(self, env_ids):
+        # Collect all relevant information to the success metric
+        # Note: if you need trajectories of states, store that in a new state trajectories buffer for processing here
+        cart_pos = self.dof_pos[env_ids, 0].unsqueeze(dim=-1)
+        pole_pos = self.dof_pos[env_ids, 1].unsqueeze(dim=-1)
+        pole_vel = self.dof_vel[env_ids, 1].unsqueeze(dim=-1)
+
+        # Collect success metrics that you define in env_config
+        pole_pos_threshold = self.cfg.success_metrics.thresholds.pole_pos
+        pole_vel_threshold = self.cfg.success_metrics.thresholds.pole_vel
+        cart_pos_threshold = self.cfg.success_metrics.thresholds.cart_pos
+
+        # Pole Stable ::= the pole is within some threshold of vertical and it is not moving
+        pole_stable_success = torch.where(torch.absolute(pole_pos) < pole_pos_threshold, torch.ones_like(pole_pos), torch.zeros_like(pole_pos))
+        pole_stable_success = torch.where(torch.absolute(pole_vel) < pole_vel_threshold, pole_stable_success, torch.zeros_like(pole_pos))
+
+        # Cart Center ::= the cart is within some threshold of the origin and the pole is stable
+        cart_center_success = torch.where(torch.absolute(cart_pos) < cart_pos_threshold, pole_stable_success, torch.zeros_like(cart_pos))
+
+        # Count all successes
+        pole_stable_count = torch.sum(pole_stable_success)
+        cart_center_count = torch.sum(cart_center_success)
+
+        # Add these successes to the central logging area for GPU_rl to process
+        self.extras["success counts"]['pole_stable'] = pole_stable_count
+        self.extras["success counts"]['cart_center'] = cart_center_count
+        self.extras["episode counts"]['total_reset'] =  env_ids.shape[0]
+
     def sqrdexp(self, value, space):
         """ shorthand helper for squared exponential
         """
