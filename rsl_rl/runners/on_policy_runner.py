@@ -116,6 +116,8 @@ class OnPolicyRunner:
         self.alg.actor_critic.train() # switch to train mode (for dropout for example)
 
         ep_infos = []
+        success_counts_infos = []
+        episode_counts_infos = []
         rewbuffer = deque(maxlen=100)
         lenbuffer = deque(maxlen=100)
         cur_reward_sum = torch.zeros(self.env.num_envs, dtype=torch.float, device=self.device)
@@ -137,6 +139,9 @@ class OnPolicyRunner:
                         # Book keeping
                         if 'episode' in infos:
                             ep_infos.append(infos['episode'])
+                        if 'success counts' in infos and 'episode counts' in infos:
+                            success_counts_infos.append(infos['success counts'])
+                            episode_counts_infos.append(infos['episode counts'])
                         cur_reward_sum += rewards
                         cur_episode_length += 1
                         new_ids = (dones > 0).nonzero(as_tuple=False)
@@ -190,6 +195,24 @@ class OnPolicyRunner:
                 ep_string += f"""{f'Mean episode {key}:':>{pad}} {value:.4f}\n"""
         mean_std = self.alg.actor_critic.std.mean()
         fps = int(self.num_steps_per_env * self.env.num_envs / (locs['collection_time'] + locs['learn_time']))
+
+        if locs['success_counts_infos'] and locs['episode_counts_infos']:
+            # This counts all the agent resets that occurred during the logging period
+            total_tries = torch.sum(torch.tensor([logged_info['total_reset'] for logged_info in locs['episode_counts_infos']]))
+            for key in locs['success_counts_infos'][0]:
+                infotensor = torch.tensor([], device=self.device)
+                for success_counts_info in locs['success_counts_infos']:
+                    # handle scalar and zero dimensional tensor infos
+                    if not isinstance(success_counts_info[key], torch.Tensor):
+                        success_counts_info[key] = torch.Tensor([success_counts_info[key]])
+                    if len(success_counts_info[key].shape) == 0:
+                        success_counts_info[key] = success_counts_info[key].unsqueeze(0)
+                    infotensor = torch.cat((infotensor, success_counts_info[key].to(self.device)))
+                success_count = torch.sum(infotensor)
+                success_rate = success_count / total_tries
+                self.writer.add_scalar('Success Rates/' + key, success_rate, locs['it'])
+                wandb_to_log['Success Rates/' + key] = success_rate
+                ep_string += f"""{f'Mean Success Rate {key}:':>{pad}} {success_rate*100:.1f}%\n"""
 
         self.writer.add_scalar('Loss/value_function', locs['mean_value_loss'], locs['it'])
         self.writer.add_scalar('Loss/surrogate', locs['mean_surrogate_loss'], locs['it'])
