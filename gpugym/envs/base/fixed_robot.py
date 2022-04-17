@@ -156,6 +156,12 @@ class FixedRobot(BaseTask):
         if len(env_ids) == 0:
             return
 
+        # At reset time, we may choose to count some reset information
+        self.extras["success counts"] = {}  # Use this to count named reset values
+        self.extras["episode counts"] = {}  # Use this to count all the agent resets that happened
+        if hasattr(self, "_custom_reset_logging"):
+            self._custom_reset_logging(env_ids)  # Define success according to your environment
+
         # reset robot states
         self._reset_system(env_ids)
         # self._resample_commands(env_ids)  # todo remove

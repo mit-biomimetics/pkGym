@@ -10,21 +10,33 @@ class obs_augmentations:
     SQR = torch.square
     CUB = lambda x: x**3
 
-    do_dynamics_augmentation = False
-    do_controls_augmentation = False
+    do_dynamics_augmentation = True
+    do_controls_augmentation = True
+    # do_dynamics_augmentation = False
+    # do_controls_augmentation = False
 
-    dynamics_augmentations = {(SIN, "pole angle", 1.0),
-                              (COS, "pole angle", 1.0),
-                              (SQR, "pole velocity", 0.01)}
+    dynamics_augmentations = [(SIN, "pole_pos", 1.0),
+                              (COS, "pole_pos", 1.0),
+                              (SQR, "pole_vel", 0.01)]
 
-    controls_augmentations = {(COS, "pole angle", 1.0),
-                              (COSSQR, "pole angle", 1.0),
-                              (CUB, "pole velocity", 0.005)}
+    controls_augmentations = [(COS,    "pole_pos", 1.0),
+                              (COSSQR, "pole_pos", 1.0),
+                              (CUB,    "pole_vel", 0.005)]
 
-    final_augmentations = set()
-    final_augmentations |= dynamics_augmentations if do_dynamics_augmentation else set()
-    final_augmentations |= controls_augmentations if do_controls_augmentation else set()
-    augmentations_list = list(final_augmentations) # todone: Ensure this always happens in the same order - done in Pyconsole
+    combined_augmentations = [(SIN,    "pole_pos", 1.0),
+                              (COS,    "pole_pos", 1.0),
+                              (COSSQR, "pole_pos", 1.0),
+                              (SQR,    "pole_vel", 0.01),
+                              (CUB,    "pole_vel", 0.005)]
+
+    if do_dynamics_augmentation and do_controls_augmentation:
+        augmentations_list = combined_augmentations
+    elif do_dynamics_augmentation:
+        augmentations_list = dynamics_augmentations
+    elif do_controls_augmentation:
+        augmentations_list = controls_augmentations
+    else:
+        augmentations_list = []
 
 class underactuation:
     max_effort = 4.0
@@ -36,6 +48,9 @@ class CartpoleCfg(FixedRobotCfg):
         num_actions = 1  # 1 for the cart force
         max_effort = underactuation.max_effort
         reset_dist = 3.0
+
+        do_dynamics_augmentation = obs_augmentations.do_dynamics_augmentation
+        do_controls_augmentation = obs_augmentations.do_controls_augmentation
         augmentations = obs_augmentations.augmentations_list
         num_observations = 5 + len(augmentations)
 
@@ -136,6 +151,12 @@ class CartpoleCfg(FixedRobotCfg):
             dof_pos_limits = 0.0
             dof_vel_limits = 0.0
 
+    class success_metrics:
+        class thresholds:
+            pole_pos = 0.2 * torch.pi  # [rad] - pole should be centered about the top of its range
+            pole_vel = 0.3 * torch.pi  # [rad/s] - the pole should not be moving
+            cart_pos = 0.3  # [m] - the cart should be centered in its range
+
     class normalization(FixedRobotCfg.normalization):
         clip_observations = 5.0
         clip_actions = 1.0
@@ -192,12 +213,23 @@ class CartpoleCfgPPO(FixedRobotCfgPPO):
     runner_class_name = 'OnPolicyRunner'
 
     do_wandb = True
+    class wandb:
+        what_to_log = {}
+        what_to_log['num_layers'] = ['train_cfg', 'policy', 'num_layers']
+        what_to_log['num_units'] = ['train_cfg', 'policy', 'num_layers']
+
+        what_to_log['activation_sub_space'] = ['env_cfg', 'rewards', 'sub_spaces', 'pole_pos']
+        what_to_log['pole_pos_rew'] = ['env_cfg', 'rewards', 'scales', 'pole_pos']
+
+        what_to_log['cart_pos_rew'] = ['env_cfg', 'rewards', 'scales', 'cart_pos']
+        what_to_log['do_dynamics_augmentation'] = ['env_cfg', 'env', 'do_dynamics_augmentation']
+        what_to_log['do_controls_augmentation'] = ['env_cfg', 'env', 'do_controls_augmentation']
 
     # TODO COME BACK TO THIS AND MAKE SURE VALUES ARE THE SAME AS BEFORE IF ITS NOT WORKING
     class policy(FixedRobotCfgPPO.policy):
         init_noise_std = 1.0
-        num_layers = 3
-        num_units = 64
+        num_layers = 1
+        num_units = 10
         actor_hidden_dims = [num_units] * num_layers
         critic_hidden_dims = [num_units] * num_layers
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
