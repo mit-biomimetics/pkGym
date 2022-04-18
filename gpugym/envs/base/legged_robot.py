@@ -683,7 +683,7 @@ class LeggedRobot(BaseTask):
         self.default_dof_pos = torch.zeros(self.num_dof, dtype=torch.float,
                                            device=self.device,
                                            requires_grad=False)
-        for i in range(self.num_dofs):
+        for i in range(self.num_dof):
             name = self.dof_names[i]
             angle = self.cfg.init_state.default_joint_angles[name]
             self.default_dof_pos[i] = angle
@@ -841,7 +841,7 @@ class LeggedRobot(BaseTask):
         body_names = self.gym.get_asset_rigid_body_names(robot_asset)
         self.dof_names = self.gym.get_asset_dof_names(robot_asset)
         self.num_bodies = len(body_names)
-        self.num_dofs = len(self.dof_names)
+        # self.num_dofs = len(self.dof_names)  # ! replaced with num_dof
         feet_names = [s for s in body_names if self.cfg.asset.foot_name in s]
         penalized_contact_names = []
         for name in self.cfg.asset.penalize_contacts_on:

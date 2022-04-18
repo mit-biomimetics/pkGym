@@ -477,7 +477,7 @@ class FixedRobot(BaseTask):
                                            device=self.device,
                                            requires_grad=False)
         actuated_idx = []  # temp
-        for i in range(self.num_dofs):
+        for i in range(self.num_dof):
             name = self.dof_names[i]
             angle = self.cfg.init_state.default_joint_angles[name]
             self.default_dof_pos[i] = angle
@@ -583,7 +583,6 @@ class FixedRobot(BaseTask):
         body_names = self.gym.get_asset_rigid_body_names(robot_asset)
         self.dof_names = self.gym.get_asset_dof_names(robot_asset)
         self.num_bodies = len(body_names)
-        self.num_dofs = len(self.dof_names)
         # * removed feet names
         penalized_contact_names = []
         for name in self.cfg.asset.penalize_contacts_on:
