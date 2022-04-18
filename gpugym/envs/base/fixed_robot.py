@@ -378,9 +378,9 @@ class FixedRobot(BaseTask):
         """
         Sample random actions.
         """
-        rand_pos = torch_rand_float(0, 1, (self.num_envs, len(low)), device=self.device)
-        diff_pos = (high - low).repeat(self.num_envs,1)
-        random_dof_pos = rand_pos*diff_pos + low.repeat(self.num_envs,1)
+        rand_pos = torch_rand_float(0, 1, (len(env_ids), len(low)), device=self.device)
+        diff_pos = (high - low).repeat(len(env_ids),1)
+        random_dof_pos = rand_pos*diff_pos + low.repeat(len(env_ids),1)
         return random_dof_pos
 
     def _reset_system(self, env_ids):
@@ -399,9 +399,9 @@ class FixedRobot(BaseTask):
             dof_vel_high = to_torch(self.cfg.init_state.dof_vel_high)
             dof_vel_low = to_torch(self.cfg.init_state.dof_vel_high)
             self.dof_pos[env_ids] = self.random_sample(env_ids, dof_pos_high,
-                                                        dof_pos_low)[env_ids]
+                                                        dof_pos_low)
             self.dof_vel[env_ids] = self.random_sample(env_ids, dof_vel_high,
-                                                        dof_vel_low)[env_ids]
+                                                        dof_vel_low)
         else:
             print("WARNING: unknown default setup")
 

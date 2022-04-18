@@ -79,7 +79,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             heading = [0, 0]
 
     class init_state(LeggedRobotCfg.init_state):
-        default_setup = "Trajectory" # default setup chooses how the initial conditions are chosen.
+        default_setup = "Range" # default setup chooses how the initial conditions are chosen.
                                 # "Basic" = a single position with some randomized noise on top. 
                                 # "Range" = a range of joint positions and velocities.
                                 #  "Trajectory" = feed in a trajectory to sample from. 

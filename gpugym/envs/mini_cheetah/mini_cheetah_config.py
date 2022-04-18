@@ -55,7 +55,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         Ab/ad: 0˚, hip: -45˚, knee: 91.5˚
         Default pose is around 0.27
         """
-        default_setup = "Basic" # default setup chooses how the initial conditions are chosen. 
+        default_setup = "Range" # default setup chooses how the initial conditions are chosen. 
                                 # "Basic" = a single position with some randomized noise on top. 
                                 # "Range" = a range of joint positions and velocities.
                                 #  "Trajectory" = feed in a trajectory to sample from.
@@ -84,14 +84,27 @@ class MiniCheetahCfg(LeggedRobotCfg):
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
 
         # * initialization for random range setup
-        dof_pos_high = [0.,0.,0.,0., 0., 0., 0.,0.,0., 0., 0., 0., 0.,0., 0., 0., 0., 0. ] #DOF dimensions
-        dof_pos_low =  [0.,0.,0.,0., 0., 0., 0.,0.,0.,   0., 0., 0., 0.,0., 0., 0., 0., 0. ]
-        dof_vel_high = [0.,0.,0.,0.0, 0., 0., 0.,0.,0.0, 0., 0., 0., 0.,0., 0., 0., 0., 0. ]
-        dof_vel_low = [0.,0.,0.,0.0, 0., 0., 0.,0.,0.0, 0., 0., 0., 0.,0., 0., 0., 0., 0. ]
-        com_pos_high = [0.,0.,1., 0., 0.5, 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
-        com_pos_low = [0.,0.,1., 0., -0.5, 0.] # x, y ,z, roll, pitch, yaw
-        com_vel_high = [0.,0.,0., 0., 0.0, 0.]
-        com_vel_low = [0.,0.,0.,0.,0.,0.]
+        dof_pos_high = [0.,  -0.785398, 1.596976,
+                        0.,  -0.785398, 1.596976,
+                        0.,  -0.785398, 1.596976,
+                        0.,  -0.785398, 1.596976]
+        dof_pos_low = [ 0.,  -0.785398, 1.596976,
+                        0.,  -0.785398, 1.596976,
+                        0.,  -0.785398, 1.596976,
+                        0.,  -0.785398, 1.596976]
+        dof_vel_high = [0., 0., 0.,
+                        0., 0., 0.,
+                        0., 0., 0.,
+                        0., 0., 0.]
+        dof_vel_low = [-0., -0., -0.,
+                        -0., -0., -0.,
+                        -0., -0., -0.,
+                        -0., -0., -0.]
+
+        com_pos_high = [0., 0., 0.33, 0., 0.5, 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
+        com_pos_low = [0., 0., 0.33, 0., -0.5, 0.] # x, y ,z, roll, pitch, yaw
+        com_vel_high = [2., 0.5,  0.1, 0., 0., 0.]
+        com_vel_low = [-1., -0.5, 0., 0., 0., 0.]
 
         # * initialization for trajectory (needs trajectory)
         # ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_walk.csv"
