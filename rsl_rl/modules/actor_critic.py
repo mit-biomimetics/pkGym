@@ -44,6 +44,8 @@ class ActorCritic(nn.Module):
                         critic_hidden_dims=[256, 256, 256],
                         activation='elu',
                         init_noise_std=1.0,
+                        custom_actor_args={},
+                        custom_critic_args={},
                         **kwargs):
         if kwargs:
             print("ActorCritic.__init__ got unexpected arguments, which will be ignored: " + str([key for key in kwargs.keys()]))
@@ -55,28 +57,40 @@ class ActorCritic(nn.Module):
         mlp_input_dim_c = num_critic_obs
 
         # Policy
-        actor_layers = []
-        actor_layers.append(nn.Linear(mlp_input_dim_a, actor_hidden_dims[0]))
-        actor_layers.append(activation)
-        for l in range(len(actor_hidden_dims)):
-            if l == len(actor_hidden_dims) - 1:
-                actor_layers.append(nn.Linear(actor_hidden_dims[l], num_actions))
-            else:
-                actor_layers.append(nn.Linear(actor_hidden_dims[l], actor_hidden_dims[l + 1]))
-                actor_layers.append(activation)
-        self.actor = nn.Sequential(*actor_layers)
+        if bool(custom_actor_args):
+            self.actor =  torch.jit.load(custom_actor_args['path'])
+            if custom_actor_args['freeze']:
+                for param in self.actor.parameters():
+                    param.requires_grad = False
+        else:
+            actor_layers = []
+            actor_layers.append(nn.Linear(mlp_input_dim_a, actor_hidden_dims[0]))
+            actor_layers.append(activation)
+            for l in range(len(actor_hidden_dims)):
+                if l == len(actor_hidden_dims) - 1:
+                    actor_layers.append(nn.Linear(actor_hidden_dims[l], num_actions))
+                else:
+                    actor_layers.append(nn.Linear(actor_hidden_dims[l], actor_hidden_dims[l + 1]))
+                    actor_layers.append(activation)
+            self.actor = nn.Sequential(*actor_layers)
 
         # Value function
-        critic_layers = []
-        critic_layers.append(nn.Linear(mlp_input_dim_c, critic_hidden_dims[0]))
-        critic_layers.append(activation)
-        for l in range(len(critic_hidden_dims)):
-            if l == len(critic_hidden_dims) - 1:
-                critic_layers.append(nn.Linear(critic_hidden_dims[l], 1))
-            else:
-                critic_layers.append(nn.Linear(critic_hidden_dims[l], critic_hidden_dims[l + 1]))
-                critic_layers.append(activation)
-        self.critic = nn.Sequential(*critic_layers)
+        if bool(custom_critic_args):
+            self.critic =  torch.jit.load(custom_critic_args['path'])
+            if custom_critic_args['freeze']:
+                for param in self.critic.parameters():
+                    param.requires_grad = False
+        else:
+            critic_layers = []
+            critic_layers.append(nn.Linear(mlp_input_dim_c, critic_hidden_dims[0]))
+            critic_layers.append(activation)
+            for l in range(len(critic_hidden_dims)):
+                if l == len(critic_hidden_dims) - 1:
+                    critic_layers.append(nn.Linear(critic_hidden_dims[l], 1))
+                else:
+                    critic_layers.append(nn.Linear(critic_hidden_dims[l], critic_hidden_dims[l + 1]))
+                    critic_layers.append(activation)
+            self.critic = nn.Sequential(*critic_layers)
 
         print(f"Actor MLP: {self.actor}")
         print(f"Critic MLP: {self.critic}")
