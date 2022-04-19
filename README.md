@@ -17,14 +17,14 @@ Paper: https://arxiv.org/abs/2109.11978
    - `cd isaacgym_lib/python && pip install -e .` to install the requirements
    - Try running an example `cd examples && python 1080_balls_of_solitude.py` (you need to execute the examples from the examples directory)
    - For troubleshooting check docs `isaacgym/docs/index.html`)
-4. Install gpu_rl (PPO implementation)
-   - after cloning `gpu_gym`, init the [submodules](https://www.atlassian.com/git/tutorials/git-submodule):
+4. Clone and initialize this repo
+   - clone `gpu_gym`, then init the [submodules](https://www.atlassian.com/git/tutorials/git-submodule):
    - `cd gpu_gym && git submodule init && git submodule update`
+5. Install gpu_rl (PPO implementation)
    - `cd gpu_rl && pip install -e .`
-5. Install gpuGym
-    - Clone this repository
-    - `cd gpuGym && pip install -e .`
-6. Install WandB for experiment tracking - follow [this guide](https://docs.wandb.ai/quickstart)
+6. Install gpuGym
+    - `cd .. && pip install -e .`
+7. Install WandB for experiment tracking - follow [this guide](https://docs.wandb.ai/quickstart)
     - `pip install wandb`
 
 ---
