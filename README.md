@@ -17,9 +17,10 @@ Paper: https://arxiv.org/abs/2109.11978
    - `cd isaacgym_lib/python && pip install -e .` to install the requirements
    - Try running an example `cd examples && python 1080_balls_of_solitude.py` (you need to execute the examples from the examples directory)
    - For troubleshooting check docs `isaacgym/docs/index.html`)
-4. Install rsl_rl (PPO implementation)
-   - Clone https://github.com/leggedrobotics/rsl_rl
-   -  `cd rsl_rl && pip install -e .` 
+4. Install gpu_rl (PPO implementation)
+   - after cloning `gpu_gym`, init the [submodules](https://www.atlassian.com/git/tutorials/git-submodule):
+   - `cd gpu_gym && git submodule init && git submodule update`
+   - `cd gpu_rl && pip install -e .`
 5. Install gpuGym
     - Clone this repository
     - `cd gpuGym && pip install -e .`
