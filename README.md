@@ -11,7 +11,7 @@ Paper: https://arxiv.org/abs/2109.11978
 ### Installation ###
 1. Create a new python virtual env with python 3.6, 3.7 or 3.8 (3.8 recommended)
 2. Install pytorch 1.10 with cuda-11.3:
-    - `pip3 install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html`
+    - `pip install torch==1.10.0+cu113 torchvision==0.11.1+cu113 torchaudio==0.10.0+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html`
 3. Install Isaac Gym
    - Download and install Isaac Gym Preview 3 (Preview 2 will not work!) from https://developer.nvidia.com/isaac-gym (extract the zip package, copy the isaacgym folder within the package whereever you want it to live - I prefer in the directory with my virtual enviornment)
    - `cd isaacgym_lib/python && pip install -e .` to install the requirements
@@ -25,7 +25,7 @@ Paper: https://arxiv.org/abs/2109.11978
     - Clone this repository
     - `cd gpuGym && pip install -e .`
 6. Install WandB for experiment tracking - follow [this guide](https://docs.wandb.ai/quickstart)
-    - `pip3 install wandb`
+    - `pip install wandb`
 
 ---
 
