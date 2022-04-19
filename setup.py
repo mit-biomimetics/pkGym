@@ -10,5 +10,7 @@ setup(
     description='Isaac Gym environments for Legged Robots',
     install_requires=['isaacgym',
                       'rsl-rl',
-                      'matplotlib']
+                      'matplotlib',
+                      'pandas',
+                      'tensorboard']
 )
