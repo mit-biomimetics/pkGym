@@ -102,7 +102,7 @@ Example:
     do_wandb = True`
 3. ```python /isaacgym3/python/gpuGym/gpugym/scripts/train.py --task=mit_humanoid --wandb_entity=sheim --wandb_project=humanoid```
 
----
+----
 
 ### WandB Major Features ###
 
