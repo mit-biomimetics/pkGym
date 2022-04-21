@@ -37,7 +37,7 @@ from torch.utils.tensorboard import SummaryWriter
 import wandb
 import torch
 
-from rsl_rl.algorithms import PPO
+from rsl_rl.algorithms import PPO, PPO_plus
 from rsl_rl.modules import ActorCritic, ActorCriticRecurrent
 from rsl_rl.env import VecEnv
 
@@ -167,10 +167,13 @@ class OnPolicyRunner:
             if it % self.save_interval == 0:
                 self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(it)))
             ep_infos.clear()
-            # * update global storage
-            if hasattr(self.alg, "update_global_storage"):
-                self.alg.update_global_storage()
+            # * update LT storage
+            if hasattr(self.alg, "update_LT_storage"):
+                self.alg.update_LT_storage()
+                # if self.cfg
+                self.env.update_X0(self.alg.LT_storage.observations, from_obs=True)
 
+        # * update initial conditions of env
         self.current_learning_iteration += num_learning_iterations
         self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.current_learning_iteration)))
 

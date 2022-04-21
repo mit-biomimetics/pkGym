@@ -82,7 +82,7 @@ class PPO_plus:
         # * Experience Replay Storage
         self.LT_storage = None # initialized later
 
-    def init_storage(self, num_envs, num_transitions_per_env, actor_obs_shape, critic_obs_shape, action_shape):
+    def init_storage(self, num_envs, num_transitions_per_env, actor_obs_shape, critic_obs_shape, action_shape, max_storage=None):
         self.storage = RolloutStorage(num_envs,
                                         num_transitions_per_env,
                                         actor_obs_shape,
@@ -90,11 +90,13 @@ class PPO_plus:
                                         action_shape,
                                         self.device)
 
+        if max_storage is None:
+            max_storage = num_envs * num_transitions_per_env
         self.LT_storage = LongTermStorage(max_storage,
-                                        obs_shape,
-                                        critic_obs_shape,
-                                        action_shape,
-                                        self.device)
+                                            actor_obs_shape,
+                                            critic_obs_shape,
+                                            action_shape,
+                                            self.device)
 
     def test_mode(self):
         self.actor_critic.test()
@@ -208,7 +210,9 @@ class PPO_plus:
         # todo: actually, use a step-var to keep track of how full it is
 
         n_LT = self.LT_storage.observations.shape[0]
-        n_new = self.storage.observations.shape[0]
-        all_obs = torch.cat((self.LT_storage.observations, self.storage.observations), dim=0)
+        n_new = self.storage.observations.flatten(end_dim=1).shape[0]
+        all_obs = torch.cat((self.LT_storage.observations,
+                            self.storage.observations.flatten(end_dim=1)),
+                            dim=0)
         indices = torch.randperm(n_LT + n_new)[:n_LT]
-        self.LT_storage.get_observations = all_obs[indices, :]
+        self.LT_storage.observations = all_obs[indices, :]
