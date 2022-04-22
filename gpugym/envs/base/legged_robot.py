@@ -416,9 +416,9 @@ class LeggedRobot(BaseTask):
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
 
     def random_sample(self, env_ids, high, low):
-        rand_pos = torch_rand_float(0, 1, (self.num_envs, len(low)), device=self.device)
-        diff_pos = (high - low).repeat(self.num_envs,1)
-        random_dof_pos = rand_pos*diff_pos + low.repeat(self.num_envs,1)
+        rand_pos = torch_rand_float(0, 1, (len(env_ids), len(low)), device=self.device)
+        diff_pos = (high - low).repeat(len(env_ids),1)
+        random_dof_pos = rand_pos*diff_pos + low.repeat(len(env_ids),1)
         return random_dof_pos 
 
     def _reset_system(self, env_ids):
@@ -436,16 +436,18 @@ class LeggedRobot(BaseTask):
 
             self.root_states[env_ids] = self.base_init_state
             self.root_states[env_ids, 7:13] = 0.0 #torch_rand_float(-0.5, 0.5, (len(env_ids), 6), device=self.device) # [7:10]: lin vel, [10:13]: ang vel
-        
+
         elif self.cfg.init_state.default_setup == "Range":
             #dof
             dof_pos_high = to_torch(self.cfg.init_state.dof_pos_high)
             dof_pos_low = to_torch(self.cfg.init_state.dof_pos_low)
             dof_vel_high = to_torch(self.cfg.init_state.dof_vel_high)
             dof_vel_low = to_torch(self.cfg.init_state.dof_vel_high)
-            
-            self.dof_pos[env_ids] = self.random_sample(env_ids,dof_pos_high,dof_pos_low)[env_ids]
-            self.dof_vel[env_ids] = self.random_sample(env_ids,dof_vel_high,dof_vel_low)[env_ids]
+
+            self.dof_pos[env_ids] = self.random_sample(env_ids, dof_pos_high,
+                                                        dof_pos_low)
+            self.dof_vel[env_ids] = self.random_sample(env_ids, dof_vel_high,
+                                                        dof_vel_low)
 
             #base state
             com_pos_high = to_torch(self.cfg.init_state.com_pos_high)
@@ -457,14 +459,15 @@ class LeggedRobot(BaseTask):
                                                 com_pos_low)
             random_com_vel = self.random_sample(env_ids,com_vel_high,
                                                 com_vel_low)
-            quat = torch.zeros(self.num_envs, 4, device=self.device)
-            for i in env_ids: # TODO: if someone knows how to do this without the for loop please fix
-                quat[i,:] = quat_from_euler_xyz(random_com_pos[i,3],random_com_pos[i,4],random_com_pos[i,5]) 
+            quat = torch.zeros(len(env_ids), 4, device=self.device)
+            # TODO: if someone knows how to do this without the for loop please fix
+            for i in range(len(env_ids)):
+                quat[i, :] = quat_from_euler_xyz(random_com_pos[i, 3],random_com_pos[i, 4],random_com_pos[i, 5]) 
 
-            random_root_state = torch.cat((random_com_pos[:,0:3], quat), 1)
+            random_root_state = torch.cat((random_com_pos[:, 0:3], quat), 1)
 
-            self.root_states[env_ids, 0:7] = random_root_state[env_ids,:]
-            self.root_states[env_ids, 7:13] = random_com_vel[env_ids, :]
+            self.root_states[env_ids, 0:7] = random_root_state
+            self.root_states[env_ids, 7:13] = random_com_vel
 
         elif self.cfg.init_state.default_setup == "Trajectory":
 
@@ -473,10 +476,10 @@ class LeggedRobot(BaseTask):
             random_vel = torch.zeros(self.num_envs, self.vel_traj.size(dim=1), device=self.device)
 
             for i in env_ids: # todo if someone knows how to do this without the for loop please fix
-                random_pos[i,:] = self.pos_traj[int(rand_timestamp[i]),:]
+                random_pos[i, :] = self.pos_traj[int(rand_timestamp[i]), :]
                 if (self.cfg.init_state.ref_type == "PosVel"):
-                    random_vel[i,:] = self.vel_traj[int(rand_timestamp[i]),:]
-                self.phase[i,:] = float(rand_timestamp[i])/float(self.pos_traj.size(dim=0)) #initialize phase to right step
+                    random_vel[i, :] = self.vel_traj[int(rand_timestamp[i]),:]
+                self.phase[i, :] = float(rand_timestamp[i])/float(self.pos_traj.size(dim=0)) #initialize phase to right step
 
             # dof
             self.dof_pos[env_ids] = random_pos[env_ids,8:]
