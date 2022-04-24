@@ -93,7 +93,6 @@ class CassieRoughCfg( LeggedRobotCfg ):
             termination = -200.
             tracking_ang_vel = 1.0
             torques = -5.e-6
-            dof_acc = -2.e-7
             lin_vel_z = -0.5
             feet_air_time = 5.
             dof_pos_limits = -1.

@@ -95,7 +95,6 @@ class FixedRobotCfg(BaseConfig):
             termination = -0.0
             torques = -0.00001
             dof_vel = -0.
-            dof_acc = -2.5e-7
             collision = -1.
             action_rate = -0.01
             dof_pos_limits = -1.

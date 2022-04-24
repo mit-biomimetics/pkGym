@@ -144,7 +144,6 @@ class CartpoleCfg(FixedRobotCfg):
             # Unused rewards
             torques = 0.0
             dof_vel = 0.0
-            dof_acc = 0.0
             collision = 0.0
             action_rate = 0.0
             action_rate2 = 0.0

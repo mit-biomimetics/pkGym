@@ -212,7 +212,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
             orientation = 0.1
             torques = -5.e-7
             dof_vel = 0.0
-            dof_acc = 0.0
             base_height = 0.0
             feet_air_time = 1.0  # rewards keeping feet in the air
             collision = -1.

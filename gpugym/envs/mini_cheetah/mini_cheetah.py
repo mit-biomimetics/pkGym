@@ -19,12 +19,6 @@ class MiniCheetah(LeggedRobot):
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
 
-        # * additional buffer for last ctrl: whatever is actually used for PD control (which can be shifted compared to action)
-        self.ctrl_hist = torch.zeros(self.num_envs, self.num_actions*3,
-                                         dtype=torch.float, device=self.device,
-                                         requires_grad=False)
-
-
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
             Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots

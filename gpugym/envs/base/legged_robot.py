@@ -145,9 +145,10 @@ class LeggedRobot(BaseTask):
         self.reset_idx(env_ids)
         self.compute_observations() # in some cases a simulation step might be required to refresh some obs (for example body positions)
 
-        self.last_actions[:] = self.actions[:]
-        self.last_dof_vel[:] = self.dof_vel[:]
-        self.last_root_vel[:] = self.root_states[:, 7:13]
+        nact = self.num_actions
+        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
+        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
+        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale
 
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
@@ -184,8 +185,7 @@ class LeggedRobot(BaseTask):
         self._resample_commands(env_ids)
 
         # reset buffers
-        self.last_actions[env_ids] = 0.
-        self.last_dof_vel[env_ids] = 0.
+        self.ctrl_hist[env_ids] = 0.
         self.feet_air_time[env_ids] = 0.
         self.episode_length_buf[env_ids] = 0
         self.reset_buf[env_ids] = 1
@@ -402,8 +402,6 @@ class LeggedRobot(BaseTask):
 
         if control_type=="P":
             torques = self.p_gains*(actions_scaled + offset_pos - self.dof_pos) + (offset_vel - self.d_gains*self.dof_vel)
-        elif control_type=="V":
-            torques = self.p_gains*(actions_scaled + offset_vel - self.dof_vel) - self.d_gains*(self.dof_vel - self.last_dof_vel)/self.sim_params.dt
         elif control_type=="T":
             torques = actions_scaled
         elif control_type=="Td":
@@ -643,12 +641,10 @@ class LeggedRobot(BaseTask):
         self.actions = torch.zeros(self.num_envs, self.num_actions,
                                    dtype=torch.float, device=self.device,
                                    requires_grad=False)
-        self.last_actions = torch.zeros(self.num_envs, self.num_actions,
-                                        dtype=torch.float, device=self.device,
-                                        requires_grad=False)
-        self.last_dof_vel = torch.zeros_like(self.dof_vel)
-        self.last_root_vel = torch.zeros_like(self.root_states[:, 7:13])
-
+        # * additional buffer for last ctrl: whatever is actually used for PD control (which can be shifted compared to action)
+        self.ctrl_hist = torch.zeros(self.num_envs, self.num_actions*3,
+                                     dtype=torch.float, device=self.device,
+                                     requires_grad=False)
         self.commands = torch.zeros(self.num_envs,
                                     self.cfg.commands.num_commands,
                                     dtype=torch.float, device=self.device,
@@ -1030,13 +1026,22 @@ class LeggedRobot(BaseTask):
         # Penalize dof velocities
         return torch.sum(torch.square(self.dof_vel), dim=1)
 
-    def _reward_dof_acc(self):
-        # Penalize dof accelerations
-        return torch.sum(torch.square((self.last_dof_vel - self.dof_vel) / self.dt), dim=1)
-
     def _reward_action_rate(self):
         # Penalize changes in actions
-        return torch.sum(torch.square(self.last_actions - self.actions), dim=1)
+        nact = self.num_actions
+        dt2 = (self.dt*self.cfg.control.decimation)**2
+        error = torch.square(self.ctrl_hist[:, :nact] \
+                            - self.ctrl_hist[:, nact:2*nact])/dt2
+        return torch.sum(error, dim=1)
+
+    def _reward_action_rate2(self):
+        # Penalize changes in actions
+        nact = self.num_actions
+        dt2 = (self.dt*self.cfg.control.decimation)**2
+        error = torch.square(self.ctrl_hist[:, :nact]  \
+                            - 2*self.ctrl_hist[:, nact:2*nact]  \
+                            + self.ctrl_hist[:, 2*nact:])/dt2
+        return torch.sum(error, dim=1)
 
     def _reward_collision(self):
         # Penalize collisions on selected bodies
