@@ -154,7 +154,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
             orientation = 2.0
             torques = 5.e-4
             dof_vel = -0.5
-            dof_acc = 0.0
             base_height = 1.0
             feet_air_time = 0.15  # rewards keeping feet in the air
             collision = -1.

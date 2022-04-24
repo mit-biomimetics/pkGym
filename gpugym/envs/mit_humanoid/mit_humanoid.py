@@ -17,12 +17,6 @@ class MIT_Humanoid(LeggedRobot):
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
 
-        # * additional buffer for last ctrl: whatever is actually used for PD control (which can be shifted compared to action)
-        self.ctrl_hist = torch.zeros(self.num_envs, self.num_actions*3,
-                                         dtype=torch.float, device=self.device,
-                                         requires_grad=False)
-
-
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
             Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
@@ -66,13 +60,6 @@ class MIT_Humanoid(LeggedRobot):
         # phase
         base_z = self.root_states[:, 2].unsqueeze(1)*self.obs_scales.base_z
         dof_pos = (self.dof_pos-self.default_dof_pos)*self.obs_scales.dof_pos
-
-        # * update commanded action history buffer
-        # todo move this to compute_torques, so you actually do it properly
-        nact = self.num_actions
-        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
-        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
-        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale  + self.default_dof_pos
 
         self.obs_buf = torch.cat((base_z,
                                   self.base_lin_vel*self.obs_scales.lin_vel,
