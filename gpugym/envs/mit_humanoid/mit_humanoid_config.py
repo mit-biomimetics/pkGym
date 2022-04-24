@@ -31,35 +31,12 @@
 from gpugym.envs.base.legged_robot_config import LeggedRobotCfg
 from gpugym.envs.base.legged_robot_config import LeggedRobotCfgPPO
 
-# from ...utils.augmentor import Augmentor
-
-class obs_augmentations:
-    add_kinematics = False
-    add_mass_matrix = False
-    add_coriolis_matrix = False
-    # add_jacobian_augmentations    = False
-    # add_centripetal_augmentations = False
-    # add_coriolis_augmentations    = False
-
-    augmentation_toggles = {'kinematics'*add_kinematics,
-                           'mass_matrix'*add_mass_matrix,
-                           'coriolis_matrix'*add_coriolis_matrix}
-
-    # augmentor = Augmentor(augmentation_toggles)
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         num_envs = 3000
+        num_observations = 67+2+3*18 # 187
         num_actions = 18
-
-        obs_augmentations = obs_augmentations
-        # augmentor = obs_augmentations.augmentor
-
-        num_observations = 67 + 2 + 3 * 18  # 187  # ! why? should be 66...
-
-        # augmentor.set_first_idx_in_obs_buf(num_observations)
-        #
-        # num_observations += augmentor.num_augmentations
 
     class terrain(LeggedRobotCfg.terrain):
         curriculum = False
