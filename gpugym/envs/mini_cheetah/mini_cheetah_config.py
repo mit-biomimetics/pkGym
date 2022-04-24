@@ -1,46 +1,13 @@
 
 from gpugym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
-import torch
-
-from ...utils.augmentor import Augmentor
-
-# BASE_HEIGHT_REF = 0.25
 BASE_HEIGHT_REF = 0.33
-
-class obs_augmentations:
-    add_kinematics = False
-    add_mass_matrix = False
-    add_coriolis_matrix = False
-    # add_kinematics_augmentations  = False
-    # add_jacobian_augmentations    = False
-    # add_centripetal_augmentations = False
-    # add_coriolis_augmentations    = False
-
-    augmentation_toggles = {'kinematics' * add_kinematics,
-                            'mass_matrix' * add_mass_matrix,
-                            'coriolis_matrix' * add_coriolis_matrix}
-
-    augmentor = Augmentor(augmentation_toggles)
 
 class MiniCheetahCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         num_envs = 2**12  # (n_robots in Rudin 2021 paper - batch_size = n_steps * n_robots)
         num_actions = 12  # 12 for the 12 actuated DoFs of the mini cheetah
-        num_observations = 87 + 12
-                           # obs_augmentations.add_kinematics_augmentations * 24 + \
-                           # obs_augmentations.add_jacobian_augmentations    * 24 + \
-                           # obs_augmentations.add_centripetal_augmentations * 18 + \
-                           # obs_augmentations.add_coriolis_augmentations    * (306 - 153)
-
-
-        obs_augmentations = obs_augmentations
-
-        augmentor = obs_augmentations.augmentor
-
-        augmentor.set_first_idx_in_obs_buf(num_observations)
-
-        num_observations += augmentor.num_augmentations
+        num_observations = 87
 
     class terrain(LeggedRobotCfg.terrain):
         curriculum = False
@@ -119,7 +86,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
             action_scale = 0.5 # 0.5
 
         # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 5 + (control_type in {'T', 'Td'})*5 # Implies control update at xkHz # 5
+        decimation = 5
 
         use_actuator_network = False
         # actuator_net_file = "{LEGGED_GYM_ROOT_DIR}/resources/actuator_nets/anydrive_v3_lstm.pt"
@@ -193,7 +160,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         class ranges(LeggedRobotCfg.commands.ranges):
             lin_vel_x = [0.025, 6.0] # min max [m/s]
             lin_vel_y = [0., 0]   # min max [m/s]
-            ang_vel_yaw = [-0.3*torch.pi, 0.3*torch.pi]    # min max [rad/s]
+            ang_vel_yaw = [-0.3*3.14, 0.3*3.14]    # min max [rad/s]
             heading = [-0.5, 0.5]
 
     class normalization(LeggedRobotCfg.normalization):
@@ -214,7 +181,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
                 height_measurements = 1./v_leg
             # clip_observations = 100.
-            clip_actions = 100.
+            clip_actions = 1000.
 
     class noise(LeggedRobotCfg.noise):
         add_noise = False
@@ -229,7 +196,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
             height_measurements = 0.1
     
     class sim:
-        dt = 0.002 # 0.00008  # 0.002
+        dt =  0.002
         substeps = 1
         gravity = [0., 0. , -9.81]  # [m/s^2]
 
@@ -237,8 +204,8 @@ class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
     seed = -1
     do_wandb = False
     class policy( LeggedRobotCfgPPO.policy ):
-        actor_hidden_dims = [18, 18] # [256, 256, 256]
-        critic_hidden_dims = [18, 18] # [256, 256, 256]
+        actor_hidden_dims = [256, 256, 256]
+        critic_hidden_dims = [256, 256, 256]
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
 
     class algorithm( LeggedRobotCfgPPO.algorithm):

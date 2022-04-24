@@ -9,8 +9,6 @@ import torch
 # from torch.tensor import Tensor
 from typing import Tuple, Dict
 
-from gpugym.utils.augmentor import Augmentor
-
 from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
 from gpugym.envs import LeggedRobot
 
@@ -26,7 +24,6 @@ class MiniCheetah(LeggedRobot):
                                          dtype=torch.float, device=self.device,
                                          requires_grad=False)
 
-        self.augmentor = cfg.env.augmentor
 
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
@@ -78,75 +75,24 @@ class MiniCheetah(LeggedRobot):
             self.ctrl_hist[:, nact:2 * nact] = self.ctrl_hist[:, :nact]
             self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale + self.default_dof_pos
 
-        local_default_dof_pos = torch.ones_like(dof_pos) * torch.squeeze(self.default_dof_pos.T)
-
-        # Use these in a debugger to ensure none are larger than 1.0
-        # base_z_max = torch.max(base_z, dim=0).values
-        # lin_vel = torch.max(self.base_lin_vel * self.obs_scales.lin_vel, dim=0).values
-        # ang_vel = torch.max(self.base_ang_vel * self.obs_scales.ang_vel, dim=0).values
-        # proj_grav = torch.max(self.projected_gravity, dim=0).values
-        # cmds = torch.max(self.commands[:, :3] * self.commands_scale, dim=0).values
-        # dof_pos_max = torch.max(dof_pos, dim=0).values
-        # default_dof_pos_max = torch.max(local_default_dof_pos, dim=0).values,
-        # dof_vel = torch.max(self.dof_vel * self.obs_scales.dof_vel, dim=0).values
-        # acts = torch.max(self.actions*self.obs_scales.action_scale, dim=0).values
-        # ctrl_hist = torch.max(self.ctrl_hist, dim=0).values
-        # phase_cos = torch.max(torch.cos(self.phase * 2 * torch.pi), dim=0).values
-        # phase_sin = torch.max(torch.sin(self.phase * 2 * torch.pi), dim=0).values
-
-        # self.obs_buf = torch.cat((base_z,
-        #                           self.base_lin_vel*self.obs_scales.lin_vel,
-        #                           self.base_ang_vel*self.obs_scales.ang_vel,
-        #                           self.projected_gravity,
-        #                           self.commands[:, :3]*self.commands_scale,
-        #                           dof_pos,
-        #                           local_default_dof_pos,
-        #                           self.dof_vel*self.obs_scales.dof_vel,
-        #                           self.actions*self.obs_scales.action_scale,
-        #                           self.ctrl_hist,
-        #                           torch.cos(self.phase*2*torch.pi),
-        #                           torch.sin(self.phase*2*torch.pi)),
-        #                          dim=-1)
-
-        base_observations = [base_z,
-                              self.base_lin_vel*self.obs_scales.lin_vel,
-                              self.base_ang_vel*self.obs_scales.ang_vel,
-                              self.projected_gravity,
-                              self.commands[:, :3]*self.commands_scale,
-                              dof_pos,
-                              local_default_dof_pos,
-                              self.dof_vel*self.obs_scales.dof_vel,
-                              self.actions*self.obs_scales.action_scale,
-                              self.ctrl_hist,
-                              torch.cos(self.phase*2*torch.pi),
-                              torch.sin(self.phase*2*torch.pi)]
-
-        cur_idx = 0
-        for observation_data in base_observations:
-            obs_length = observation_data.shape[1]
-            self.obs_buf[:, cur_idx:cur_idx + obs_length] = observation_data
-            cur_idx += obs_length
+        self.obs_buf = torch.cat((base_z,
+                                  self.base_lin_vel*self.obs_scales.lin_vel,
+                                  self.base_ang_vel*self.obs_scales.ang_vel,
+                                  self.projected_gravity,
+                                  self.commands[:, :3]*self.commands_scale,
+                                  dof_pos,
+                                  self.dof_vel*self.obs_scales.dof_vel,
+                                  self.actions,
+                                  self.ctrl_hist,
+                                  torch.cos(self.phase*2*torch.pi),
+                                  torch.sin(self.phase*2*torch.pi)),
+                                 dim=-1)
 
         # ! noise_scale_vec must be of correct order! Check def below
         # * add noise if needed
         if self.add_noise:
             self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
                             * self.noise_scale_vec
-
-        # Get the noisy - but unscaled - state observations
-        noisy_body_lin_vel = self.obs_buf[:, 1:4] / self.obs_scales.lin_vel
-        noisy_body_ang_vel = self.obs_buf[:, 4:7] / self.obs_scales.ang_vel
-        noisy_dof_pos = self.obs_buf[:, 13:25]  # based on calculation that the dof pos stuff happens at these indices
-        noisy_dof_vel = self.obs_buf[:, 25:37] / self.obs_scales.dof_vel
-
-        self.augmentor.apply_augmentations(self.obs_buf, noisy_body_lin_vel, noisy_body_ang_vel, noisy_dof_pos, noisy_dof_vel)
-
-        # augmented_dofs_list = self.augmentor.apply_augmentations(noisy_body_lin_vel, noisy_body_ang_vel, noisy_dof_pos, noisy_dof_vel)
-        # if len(augmented_dofs_list) > 0:
-        #     # When to start scaling stuff: (maxs.values > torch.ones_like(maxs.values)).any() evaluates to true
-        #     self.obs_buf = torch.cat([self.obs_buf] + augmented_dofs_list, dim=-1)
-
-
 
     def _get_noise_scale_vec(self, cfg):
         '''
@@ -192,10 +138,6 @@ class MiniCheetah(LeggedRobot):
         error = self.sqrdexp(self.base_ang_vel[:, :2] \
                              * self.cfg.normalization.obs_scales.ang_vel)
         return torch.sum(error, dim=1)
-
-    def _reward_torques(self):
-        # Penalize torques
-        return torch.sum(torch.exp(-torch.square(self.torques) * (1.0/self.cfg.control.action_scale)), dim=1)
 
     def _reward_orientation(self):
         # Penalize non flat base orientation
