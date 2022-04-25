@@ -159,7 +159,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         disable_gravity = False
         disable_actions = False
         disable_motors = False 
-        initial_penetration_check = True #disable to not check for penetration on initial conds.
+        initial_penetration_check = False #disable to not check for penetration on initial conds.
 
     class rewards(LeggedRobotCfg.rewards):
         soft_dof_pos_limit = 0.9

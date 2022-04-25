@@ -48,8 +48,6 @@ from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
 from gpugym.utils.helpers import class_to_dict
 from .legged_robot_config import LeggedRobotCfg
 
-import pandas as pd
-
 class LeggedRobot(BaseTask):
     def __init__(self, cfg: LeggedRobotCfg, sim_params, physics_engine, sim_device, headless):
         """ Parses the provided config file,
@@ -183,7 +181,6 @@ class LeggedRobot(BaseTask):
         self._reset_system(env_ids)
 
         self._resample_commands(env_ids)
-
         # reset buffers
         self.ctrl_hist[env_ids] = 0.
         self.feet_air_time[env_ids] = 0.
@@ -384,7 +381,7 @@ class LeggedRobot(BaseTask):
         Returns:
             [torch.Tensor]: Torques sent to the simulation
         """
-        #pd controller
+        # pd controller
         actions_scaled = actions * self.cfg.control.action_scale 
         control_type = self.cfg.control.control_type
 
@@ -414,6 +411,10 @@ class LeggedRobot(BaseTask):
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
 
     def random_sample(self, env_ids, high, low):
+        """
+        Generate random samples for each entry of env_ids
+        todo: pass in the actual number instead of the list env_ids
+        """
         rand_pos = torch_rand_float(0, 1, (len(env_ids), len(low)), device=self.device)
         diff_pos = (high - low).repeat(len(env_ids),1)
         random_dof_pos = rand_pos*diff_pos + low.repeat(len(env_ids),1)
@@ -426,6 +427,8 @@ class LeggedRobot(BaseTask):
 
         Args:
             env_ids (List[int]): Environemnt ids
+
+        # todo: make separate methods for each reset type, cycle through `default_setup` and call appropriate method. That way the base ones can be implemented once in legged_robot.
         """
         if self.cfg.init_state.default_setup == "Basic":
             #dof 
@@ -436,64 +439,39 @@ class LeggedRobot(BaseTask):
             self.root_states[env_ids, 7:13] = 0.0 #torch_rand_float(-0.5, 0.5, (len(env_ids), 6), device=self.device) # [7:10]: lin vel, [10:13]: ang vel
 
         elif self.cfg.init_state.default_setup == "Range":
-            #dof
-            dof_pos_high = to_torch(self.cfg.init_state.dof_pos_high)
-            dof_pos_low = to_torch(self.cfg.init_state.dof_pos_low)
-            dof_vel_high = to_torch(self.cfg.init_state.dof_vel_high)
-            dof_vel_low = to_torch(self.cfg.init_state.dof_vel_high)
+            
+            # dof states
+            self.dof_pos[env_ids] = self.random_sample(env_ids,
+                            to_torch(self.cfg.init_state.dof_pos_high),
+                            to_torch(self.cfg.init_state.dof_pos_low))
+            self.dof_vel[env_ids] = self.random_sample(env_ids,
+                            to_torch(self.cfg.init_state.dof_vel_high),
+                            to_torch(self.cfg.init_state.dof_vel_high))
 
-            self.dof_pos[env_ids] = self.random_sample(env_ids, dof_pos_high,
-                                                        dof_pos_low)
-            self.dof_vel[env_ids] = self.random_sample(env_ids, dof_vel_high,
-                                                        dof_vel_low)
+            # base states
+            random_com_pos = self.random_sample(env_ids,
+                                to_torch(self.cfg.init_state.com_pos_high),
+                                to_torch(self.cfg.init_state.com_pos_low))
 
-            #base state
-            com_pos_high = to_torch(self.cfg.init_state.com_pos_high)
-            com_pos_low = to_torch(self.cfg.init_state.com_pos_low)
-            com_vel_high = to_torch(self.cfg.init_state.com_vel_high)
-            com_vel_low = to_torch(self.cfg.init_state.com_vel_high)
+            quat = quat_from_euler_xyz(random_com_pos[:, 3],
+                                            random_com_pos[:, 4],
+                                            random_com_pos[:, 5]) 
 
-            random_com_pos = self.random_sample(env_ids,com_pos_high,
-                                                com_pos_low)
-            random_com_vel = self.random_sample(env_ids,com_vel_high,
-                                                com_vel_low)
-            quat = torch.zeros(len(env_ids), 4, device=self.device)
-            # TODO: if someone knows how to do this without the for loop please fix
-            for i in range(len(env_ids)):
-                quat[i, :] = quat_from_euler_xyz(random_com_pos[i, 3],random_com_pos[i, 4],random_com_pos[i, 5]) 
-
-            random_root_state = torch.cat((random_com_pos[:, 0:3], quat), 1)
-
-            self.root_states[env_ids, 0:7] = random_root_state
-            self.root_states[env_ids, 7:13] = random_com_vel
-
-        elif self.cfg.init_state.default_setup == "Trajectory":
-
-            rand_timestamp = torch.randint(0, self.pos_traj.size(dim=0), (self.num_envs, 1), device=self.device)
-            random_pos = torch.zeros(self.num_envs, self.pos_traj.size(dim=1), device=self.device)
-            random_vel = torch.zeros(self.num_envs, self.vel_traj.size(dim=1), device=self.device)
-
-            for i in env_ids: # todo if someone knows how to do this without the for loop please fix
-                random_pos[i, :] = self.pos_traj[int(rand_timestamp[i]), :]
-                if (self.cfg.init_state.ref_type == "PosVel"):
-                    random_vel[i, :] = self.vel_traj[int(rand_timestamp[i]),:]
-                self.phase[i, :] = float(rand_timestamp[i])/float(self.pos_traj.size(dim=0)) #initialize phase to right step
-
-            # dof
-            self.dof_pos[env_ids] = random_pos[env_ids,8:]
-            self.dof_vel[env_ids] = random_vel[env_ids,7:]
-
-            # base state
-            self.root_states[env_ids, 0:7] = random_pos[env_ids,1:8]
-            self.root_states[env_ids, 7:13] = random_vel[env_ids,1:7]
-
+            self.root_states[env_ids, 0:7] = torch.cat((random_com_pos[:, 0:3],
+                                    quat_from_euler_xyz(random_com_pos[:, 3],
+                                                        random_com_pos[:, 4],
+                                                        random_com_pos[:, 5])),
+                                                    1)
+            self.root_states[env_ids, 7:13] = self.random_sample(env_ids,
+                                to_torch(self.cfg.init_state.com_vel_high),
+                                to_torch(self.cfg.init_state.com_vel_high))
 
         env_ids_int32 = env_ids.to(dtype=torch.int32)
         self.gym.set_dof_state_tensor_indexed(self.sim,
                                               gymtorch.unwrap_tensor(self.dof_state),
                                               gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
-        
-        # base position
+
+        # start base position shifted in X-Y plane
         if self.custom_origins:
             self.root_states[env_ids, :3] += self.env_origins[env_ids]
             #self.root_states[env_ids, :2] += torch_rand_float(-1., 1., (len(env_ids), 2), device=self.device) # xy position within 1m of the center
@@ -504,40 +482,6 @@ class LeggedRobot(BaseTask):
         self.gym.set_actor_root_state_tensor_indexed(self.sim,
                                                      gymtorch.unwrap_tensor(self.root_states),
                                                      gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
-
-        if self.cfg.asset.initial_penetration_check:
-            temp_root_state = torch.clone(self.root_states)
-            temp_dof_state = torch.clone(self.dof_state)
-
-            self.gym.simulate(self.sim) #Need to one step the simulation to update dof !!THIS MAY BE A TERRIBLE IDEA!!
-
-            #retrieve body states of every link in every environment. 
-            self.gym.refresh_rigid_body_state_tensor(self.sim)
-            body_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
-            rb_states = gymtorch.wrap_tensor(body_states)
-
-            num_links = int(len(rb_states[:,0])/self.num_envs)
-
-            #iterate through the env ids that are being reset (and only the ones being reset)
-            for i in env_ids:
-                max_penetration = 0 
-                for j in range(num_links):
-                    #check each body position 
-                    link_height = rb_states[i*num_links + j, 2]
-                    if (link_height < 0.1): #check if COM of rigid link is to close to ground 
-                        #TODO: replace with exact measurement of toe/heel height
-                        if (0.1 - link_height > max_penetration):
-                            max_penetration = -link_height + 0.1
-            
-                #find max penetration and shift root state by that amount. 
-                temp_root_state[i, 2] += max_penetration
-            
-            self.gym.set_actor_root_state_tensor_indexed(self.sim,
-                                                    gymtorch.unwrap_tensor(temp_root_state),
-                                                    gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
-            self.gym.set_dof_state_tensor_indexed(self.sim,
-                                                gymtorch.unwrap_tensor(temp_dof_state),
-                                                gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))       
 
     def _push_robots(self):
         """ Random pushes the robots. Emulates an impulse by setting a randomized base velocity. 
@@ -698,37 +642,6 @@ class LeggedRobot(BaseTask):
                 if self.cfg.control.control_type in ["P", "V"]:
                     print(f"PD gain of joint {name} were not defined, setting them to zero")
         self.default_dof_pos = self.default_dof_pos.unsqueeze(0)
-
-        # retrieve reference trajectory
-        # todo only the buffer should be initialized here
-        # todo split up buffers of floating base from joints
-        if (self.cfg.init_state.ref_traj != ""):
-            referenceTraj = pd.read_csv(self.cfg.init_state.ref_traj)
-            state_list = ["t","x","y","z","qx","qy","qz","qw"] + self.dof_names
-            state_vel_list = ["t","x_v","y_v","z_v","wx","wy","wz"]+ [x+"_v" for x in self.dof_names]
-            self.total_ref_time = referenceTraj['t'].iloc[-1]
-            # Scale times [sec] to standard phase 0->1
-            referenceTraj['t'] /= self.total_ref_time
-
-            self.pos_traj = torch.zeros(len(referenceTraj["t"]),
-                                        len(state_list), device=self.device)
-            self.vel_traj = torch.zeros(len(referenceTraj["t"]), len(state_vel_list), device=self.device)
-            for i in range(len(state_list)): #iterate through positions
-                name = state_list[i]
-                try:
-                    self.pos_traj[:,i] = to_torch(referenceTraj[name])
-                except Exception:
-                    print("Missing: " + name)
-
-            if (self.cfg.init_state.ref_type == "PosVel"):
-                for i in range(len(state_vel_list)): #iterate through velocity
-                    name = state_vel_list[i]
-                    try:
-                        self.vel_traj[:,i] = to_torch(referenceTraj[name])
-                    except Exception:
-                        print("Missing: " + name)
-        else:
-            self.total_ref_time = 0
 
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, whcih will be called to compute the total reward.

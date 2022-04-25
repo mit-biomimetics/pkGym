@@ -34,11 +34,11 @@ class LeggedRobotCfg(BaseConfig):
     class env:
         num_envs = 4096  # (n_robots in Rudin 2021 paper - batch_size = n_steps * n_robots)
         num_observations = 235
-        num_privileged_obs = None # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
+        num_privileged_obs = None  # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
         num_actions = 12
         env_spacing = 3.  # not used with heightfields/trimeshes 
-        send_timeouts = True # send time out information to the algorithm
-        episode_length_s = 20 # episode length in seconds
+        send_timeouts = True  # send time out information to the algorithm
+        episode_length_s = 20  # episode length in seconds
 
     class terrain:
         mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
