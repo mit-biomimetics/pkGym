@@ -47,12 +47,6 @@ class FixedRobot(BaseTask):
             self._custom_init(cfg)
         self.init_done = True
 
-        # * additional buffer for last ctrl: whatever is actually used for PD control (which can be shifted compared to action)
-        self.ctrl_hist = torch.zeros(self.num_envs, self.num_actions*3,
-                                         dtype=torch.float, device=self.device,
-                                         requires_grad=False)
-
-
     def step(self, actions):
         """ Apply actions, simulate, call self.post_physics_step() and pre_physics_step()
 
@@ -130,8 +124,6 @@ class FixedRobot(BaseTask):
         self.reset_idx(env_ids)
         self.compute_observations()  # in some cases a simulation step might be required to refresh some obs (for example body positions)
 
-        self.last_dof_vel[:] = self.dof_vel[:]
-
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
 
@@ -167,8 +159,7 @@ class FixedRobot(BaseTask):
         # self._resample_commands(env_ids)  # todo remove
 
         # reset buffers
-        self.last_actions[env_ids] = 0.
-        self.last_dof_vel[env_ids] = 0.
+        self.ctrl_hist[env_ids] = 0.
         self.episode_length_buf[env_ids] = 0
         self.reset_buf[env_ids] = 0  # This was set to 1 for some reason -> needs to be zero
         # fill extras
@@ -463,12 +454,10 @@ class FixedRobot(BaseTask):
                                    device=self.device, requires_grad=False)
         self.actions = torch.zeros(n_envs, self.num_actions, dtype=torch.float,
                                    device=self.device, requires_grad=False)
-        self.last_actions = torch.zeros(n_envs, self.num_actions,
-                                        dtype=torch.float, device=self.device,
-                                        requires_grad=False)
-        self.last_dof_vel = torch.zeros_like(self.dof_vel, device=self.device)
-        self.last_root_vel = torch.zeros_like(self.root_states[:, 7:13],
-                                                device=self.device)
+        # * additional buffer for last ctrl: whatever is actually used for PD control (which can be shifted compared to action)
+        self.ctrl_hist = torch.zeros(self.num_envs, self.num_actions*3,
+                                     dtype=torch.float, device=self.device,
+                                     requires_grad=False)
 
         # * removed:
         # commands, commands_scale, feet_air_time, last_contacts, base_line_vel
@@ -692,10 +681,6 @@ class FixedRobot(BaseTask):
     def _reward_dof_vel(self):
         # Penalize dof velocities
         return torch.sum(torch.square(self.dof_vel), dim=1)
-
-    def _reward_dof_acc(self):
-        # Penalize dof accelerations
-        return torch.sum(torch.square((self.last_dof_vel - self.dof_vel) / self.dt), dim=1)
 
     def _reward_action_rate(self):
         # Penalize changes in actions

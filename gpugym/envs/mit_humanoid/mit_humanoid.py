@@ -17,12 +17,6 @@ class MIT_Humanoid(LeggedRobot):
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
 
-        # * additional buffer for last ctrl: whatever is actually used for PD control (which can be shifted compared to action)
-        self.ctrl_hist = torch.zeros(self.num_envs, self.num_actions*3,
-                                         dtype=torch.float, device=self.device,
-                                         requires_grad=False)
-
-
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
             Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
@@ -67,53 +61,29 @@ class MIT_Humanoid(LeggedRobot):
         base_z = self.root_states[:, 2].unsqueeze(1)*self.obs_scales.base_z
         dof_pos = (self.dof_pos-self.default_dof_pos)*self.obs_scales.dof_pos
 
-        # * update commanded action history buffer
-        # todo move this to compute_torques, so you actually do it properly
-        nact = self.num_actions
-        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
-        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
-        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale  + self.default_dof_pos
-
-        base_observations = [base_z,
-                              self.base_lin_vel*self.obs_scales.lin_vel,
-                              self.base_ang_vel*self.obs_scales.ang_vel,
-                              self.projected_gravity,
-                              self.commands[:, :3]*self.commands_scale,
-                              dof_pos,
-                              self.dof_vel*self.obs_scales.dof_vel,
-                              self.actions,
-                              self.ctrl_hist,
-                              torch.cos(self.phase*2*torch.pi),
-                              torch.sin(self.phase*2*torch.pi)]
-
-        cur_idx = 0
-        for observation_data in base_observations:
-            obs_length = observation_data.shape[1]
-            self.obs_buf[:, cur_idx: cur_idx + obs_length] = observation_data[:]
-            cur_idx += obs_length
-
-#         noise_vec[:3] = noise_scales.lin_vel*ns_lvl*self.obs_scales.lin_vel
-#         noise_vec[3:6] = noise_scales.ang_vel*ns_lvl*self.obs_scales.ang_vel
-#         noise_vec[6:9] = noise_scales.gravity*ns_lvl
-#         noise_vec[9:12] = 0.  # commands
-#         noise_vec[12:30] = noise_scales.dof_pos*ns_lvl*self.obs_scales.dof_pos
-#         noise_vec[30:48] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel
-#         noise_vec[48:66] = 0.  # previous actions
-#         noise_vec[66:68] = 0.  # phase # * could add noise, to make u_ff robust
+        self.obs_buf = torch.cat((base_z,
+                                  self.base_lin_vel*self.obs_scales.lin_vel,
+                                  self.base_ang_vel*self.obs_scales.ang_vel,
+                                  self.projected_gravity,
+                                  self.commands[:, :3]*self.commands_scale,
+                                  dof_pos,
+                                  self.dof_vel*self.obs_scales.dof_vel,
+                                  self.actions,
+                                  self.ctrl_hist,
+                                  torch.cos(self.phase*2*torch.pi),
+                                  torch.sin(self.phase*2*torch.pi)
+                                  ),
+                                 dim=-1)
+        # * add perceptive inputs if not blind
+        if self.cfg.terrain.measure_heights:
+            heights = torch.clip(self.root_states[:, 2].unsqueeze(1) - 0.5 - self.measured_heights, -1, 1.)*self.obs_scales.height_measurements
+            self.obs_buf = torch.cat((self.obs_buf, heights), dim=-1)
 
         # ! noise_scale_vec must be of correct order! Check def below
         # * add noise if needed
         if self.add_noise:
-            self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) * self.noise_scale_vec
-
-
-        # * add perceptive inputs if not blind
-        # if self.cfg.terrain.measure_heights:
-        #     heights = torch.clip(self.root_states[:, 2].unsqueeze(1) - 0.5 - self.measured_heights, -1, 1.)*self.obs_scales.height_measurements
-        #     self.obs_buf = torch.cat((self.obs_buf, heights), dim=-1)
-
-
-        # Now add the rest of the augmentations ...
+            self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
+                            * self.noise_scale_vec
 
 
     def _get_noise_scale_vec(self, cfg):
