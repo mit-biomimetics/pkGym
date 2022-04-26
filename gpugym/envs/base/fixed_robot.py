@@ -124,8 +124,6 @@ class FixedRobot(BaseTask):
         self.reset_idx(env_ids)
         self.compute_observations()  # in some cases a simulation step might be required to refresh some obs (for example body positions)
 
-        self.last_dof_vel[:] = self.dof_vel[:]
-
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
 
