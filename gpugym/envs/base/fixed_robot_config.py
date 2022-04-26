@@ -35,11 +35,12 @@ class FixedRobotCfg(BaseConfig):
 
     class init_state:
 
-        default_setup = "Basic" 
+        reset_mode = "reset_to_basic" 
         # default setup chooses how the initial conditions are chosen. 
-        # "Basic" = a single position with some randomized noise on top.
+        # "reset_to_basic" = a single position
+        # "reset_to_range" = uniformly random from a range defined below
 
-        dof_pos_high = [0., 0.] #DOF dimensions
+        dof_pos_high = [0., 0.] # DOF dimensions
         dof_pos_low = [0., 0.]
         dof_vel_high = [0., 0.]
         dof_vel_low = [0., 0.]

@@ -23,10 +23,11 @@ class MiniCheetahCfg(LeggedRobotCfg):
         Ab/ad: 0˚, hip: -45˚, knee: 91.5˚
         Default pose is around 0.27
         """
-        default_setup = "Range" # default setup chooses how the initial conditions are chosen. 
-                                # "Basic" = a single position with some randomized noise on top. 
-                                # "Range" = a range of joint positions and velocities.
-                                #  "Trajectory" = feed in a trajectory to sample from.
+        
+        reset_mode = "reset_to_basic" 
+        # reset setup chooses how the initial conditions are chosen. 
+        # "reset_to_basic" = a single position
+        # "reset_to_range" = uniformly random from a range defined below
 
         default_joint_angles = {
             "lf_haa": 0.0,
@@ -77,18 +78,10 @@ class MiniCheetahCfg(LeggedRobotCfg):
         com_vel_high = [-0.05, 0., 0.05, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
         com_vel_low = [0.05, 0., -0.05, 0., 0., 0.]
 
-        # * initialization for trajectory (needs trajectory)
-        # ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_walk.csv"
-        # ref_type = "Pos" #Pos, PosVel
-
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
-
-        # todo this should be deprecated out of here
-        nominal_pos = False
-        nominal_vel = False
 
         # Control type
         control_type = "P"  # "Td"
@@ -122,7 +115,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
         foot_name = "foot"
         penalize_contacts_on = ["shank", "thigh"]
         terminate_after_contacts_on = ["base", "hip"]
-        initial_penetration_check = False  # this is turned only for MIT Humanoid.
         collapse_fixed_joints = False  # merge bodies connected by fixed joints.
         self_collisions = 1  # added blindly from the AnymalCFlatCFG.  1 to disable, 0 to enable...bitwise filter
         flip_visual_attachments = False
@@ -140,13 +132,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
         only_positive_rewards = False
         base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.25
-
-        #reference traj tracking
-        base_pos_tracking = 0.
-        base_vel_tracking = 0.
-        dof_pos_tracking = 0.
-        dof_vel_tracking = 0.
-
         class scales(LeggedRobotCfg.rewards.scales):
             termination = -1.
             tracking_lin_vel = 1.0
