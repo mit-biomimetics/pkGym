@@ -75,8 +75,8 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
         com_pos_high = [0., 0., 0.4, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
         com_pos_low = [0., 0., 0.35, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
-        com_vel_high = [-0.05, 0., 0.05, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
-        com_vel_low = [0.05, 0., -0.05, 0., 0., 0.]
+        com_vel_high = [0.05, 0., 0.05, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
+        com_vel_low = [-0.05, 0., -0.05, 0., 0., 0.]
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
