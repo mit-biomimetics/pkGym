@@ -87,7 +87,7 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
         }
 
         #default COM for basic initialization 
-        pos = [0.0, 0.0, 0.67]  # x,y,z [m]
+        pos = [0.0, 0.0, 0.66]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
@@ -102,14 +102,6 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
         com_pos_low = [0.,0.,1., 0., -0.5, 0.] #x, y ,z, roll, pitch, yaw
         com_vel_high = [0.,0.,0., 0., 0.0, 0.]
         com_vel_low = [0.,0.,0.,0.,0.,0.]
-
-        #initialization for traj sampling setup
-        #ref_traj = "../../resources/robots/mit_humanoid/trajectories/across_back10/JSM_across_back_2_RESAMPLED10.csv"
-        # ref_traj = "../../resources/robots/mit_humanoid/trajectories/SH_standing_roll_2021_11_1_OUTPUT_1.csv"
-        # ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_walk.csv"
-        # ref_type = "PosVel" #Pos, PosVel
-        # is_single_traj = False #if the trajectory should only be run once
-        nom_gait_period = 0.8
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
@@ -134,8 +126,6 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
                    'elbow': 5,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
 
-        # stiffness = {}
-        # damping = {}
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 1.
         # decimation: Number of control action updates @ sim DT per policy DT
