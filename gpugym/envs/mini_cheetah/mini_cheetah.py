@@ -155,23 +155,6 @@ class MiniCheetah(LeggedRobot):
         error = torch.sum(torch.square(error), dim=1)
         return torch.exp(-error/self.cfg.rewards.tracking_sigma)
 
-        # base velocity error
-        # * might want this to be vector instead of element-wise
-        base_vel_err = self.root_states[:, 7:] - vel_ref_frame[:,1:7]
-        base_vel_err[:, 1:4] *= self.cfg.normalization.obs_scales.lin_vel
-        base_vel_err[:, 4:] *= self.cfg.normalization.obs_scales.ang_vel
-        reward += torch.sum(self.sqrdexp(base_vel_err), dim=1) \
-                  * self.cfg.rewards.base_vel_tracking
-
-        # dof velocity error
-        dof_vel_err = self.dof_pos - vel_ref_frame[:,7:]
-        dof_vel_err *= self.cfg.normalization.obs_scales.dof_vel
-        reward += torch.sum(self.sqrdexp(dof_vel_err), dim=1) \
-                  * self.cfg.rewards.dof_vel_tracking
-        # dof_vel_error =  torch.exp(-torch.sum(torch.square(dof_vel_error),dim=1))
-
-        return reward
-
     def _reward_dof_vel(self):
         # Penalize dof velocities
         return torch.sum(self.sqrdexp(self.dof_vel * self.cfg.normalization.obs_scales.dof_vel), dim=1)

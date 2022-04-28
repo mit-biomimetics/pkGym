@@ -24,7 +24,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         Default pose is around 0.27
         """
         
-        reset_mode = "reset_to_basic" 
+        reset_mode = "reset_to_range" 
         # reset setup chooses how the initial conditions are chosen. 
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
@@ -75,8 +75,8 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
         com_pos_high = [0., 0., 0.4, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
         com_pos_low = [0., 0., 0.35, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
-        com_vel_high = [-0.05, 0., 0.05, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
-        com_vel_low = [0.05, 0., -0.05, 0., 0., 0.]
+        com_vel_high = [0.05, 0., 0.05, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
+        com_vel_low = [-0.05, 0., -0.05, 0., 0., 0.]
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
@@ -197,7 +197,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
     class sim:
         dt =  0.002
         substeps = 1
-        gravity = [0., 0., -2.81]  # [m/s^2]
+        gravity = [0., 0., -9.81]  # [m/s^2]
 
 class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
     seed = -1

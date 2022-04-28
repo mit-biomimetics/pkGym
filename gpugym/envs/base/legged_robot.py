@@ -44,7 +44,7 @@ from typing import Tuple, Dict
 from gpugym import LEGGED_GYM_ROOT_DIR
 from gpugym.envs.base.base_task import BaseTask
 from gpugym.utils.terrain import Terrain
-from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
+from gpugym.utils.math import *
 from gpugym.utils.helpers import class_to_dict
 from .legged_robot_config import LeggedRobotCfg
 
@@ -420,17 +420,6 @@ class LeggedRobot(BaseTask):
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
 
 
-    def random_sample(self, env_ids, high, low):
-        """
-        Generate random samples for each entry of env_ids
-        todo: pass in the actual number instead of the list env_ids
-        """
-        rand_pos = torch_rand_float(0, 1, (len(env_ids), len(low)), device=self.device)
-        diff_pos = (high - low).repeat(len(env_ids),1)
-        random_dof_pos = rand_pos*diff_pos + low.repeat(len(env_ids),1)
-        return random_dof_pos 
-
-
     def _reset_system(self, env_ids):
         """ Resets DOF position and velocities of selected environmments
         Positions are randomly selected within 0.5:1.5 x default positions.
@@ -474,9 +463,7 @@ class LeggedRobot(BaseTask):
         #dof 
         self.dof_pos[env_ids] = self.default_dof_pos  #torch_rand_float(0.5, 1.5, (len(env_ids), self.num_dof), device=self.device)
         self.dof_vel[env_ids] = 0 
-
         self.root_states[env_ids] = self.base_init_state
-        self.root_states[env_ids, 7:13] = 0.0 #torch_rand_float(-0.5, 0.5, (len(env_ids), 6), device=self.device) # [7:10]: lin vel, [10:13]: ang vel
 
 
     def reset_to_range(self, env_ids):
@@ -485,30 +472,34 @@ class LeggedRobot(BaseTask):
         range for each state
         """
         # dof states
-        self.dof_pos[env_ids] = self.random_sample(env_ids,
-                        to_torch(self.cfg.init_state.dof_pos_high),
-                        to_torch(self.cfg.init_state.dof_pos_low))
-        self.dof_vel[env_ids] = self.random_sample(env_ids,
+        self.dof_pos[env_ids] = random_sample(env_ids,
+                                    to_torch(self.cfg.init_state.dof_pos_high),
+                                    to_torch(self.cfg.init_state.dof_pos_low),
+                                    device=self.device)
+        self.dof_vel[env_ids] = random_sample(env_ids,
                         to_torch(self.cfg.init_state.dof_vel_high),
-                        to_torch(self.cfg.init_state.dof_vel_high))
+                        to_torch(self.cfg.init_state.dof_vel_high),
+                        device=self.device)
 
         # base states
-        random_com_pos = self.random_sample(env_ids,
-                            to_torch(self.cfg.init_state.com_pos_high),
-                            to_torch(self.cfg.init_state.com_pos_low))
+        random_com_pos = random_sample(env_ids,
+                                    to_torch(self.cfg.init_state.com_pos_high),
+                                    to_torch(self.cfg.init_state.com_pos_low),
+                                    device=self.device)
 
         quat = quat_from_euler_xyz(random_com_pos[:, 3],
                                         random_com_pos[:, 4],
                                         random_com_pos[:, 5]) 
 
         self.root_states[env_ids, 0:7] = torch.cat((random_com_pos[:, 0:3],
-                                quat_from_euler_xyz(random_com_pos[:, 3],
-                                                    random_com_pos[:, 4],
-                                                    random_com_pos[:, 5])),
-                                                1)
-        self.root_states[env_ids, 7:13] = self.random_sample(env_ids,
-                            to_torch(self.cfg.init_state.com_vel_high),
-                            to_torch(self.cfg.init_state.com_vel_high))
+                                    quat_from_euler_xyz(random_com_pos[:, 3],
+                                                        random_com_pos[:, 4],
+                                                        random_com_pos[:, 5])),
+                                                    1)
+        self.root_states[env_ids, 7:13] = random_sample(env_ids,
+                                    to_torch(self.cfg.init_state.com_vel_high),
+                                    to_torch(self.cfg.init_state.com_vel_high),
+                                    device=self.device)
 
 
     def _push_robots(self):
@@ -672,6 +663,19 @@ class LeggedRobot(BaseTask):
                 if self.cfg.control.control_type in ["P", "V"]:
                     print(f"PD gain of joint {name} were not defined, setting them to zero")
         self.default_dof_pos = self.default_dof_pos.unsqueeze(0)
+
+        # * check that init range highs and lows are consistent
+        if hasattr(self.cfg.init_state, "com_pos_high"):
+            for i in range(self.num_dof):
+                if self.cfg.init_state.dof_pos_high[i] < self.cfg.init_state.dof_pos_low[i]:
+                    raise ValueError(f"dof_pos_high[{i}] < dof_pos_low[{i}]")
+                if self.cfg.init_state.dof_vel_high[i] < self.cfg.init_state.dof_vel_low[i]:
+                    raise ValueError(f"dof_vel_high[{i}] < dof_vel_low[{i}]")
+            for i in range(6):
+                if self.cfg.init_state.com_pos_high[i] < self.cfg.init_state.com_pos_low[i]:
+                    raise ValueError(f"com_pos_high[{i}] < com_pos_low[{i}]")
+                if self.cfg.init_state.com_vel_high[i] < self.cfg.init_state.com_vel_low[i]:
+                    raise ValueError(f"com_vel_high[{i}] < com_vel_low[{i}]")
 
 
     def _prepare_reward_function(self):
