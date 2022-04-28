@@ -209,13 +209,10 @@ class MIT_Humanoid_Vlip(LeggedRobot):
         return self.sqrdexp(self.base_lin_vel[:, 2]  \
                             * self.cfg.normalization.obs_scales.lin_vel)
 
-
-    def _reward_ang_vel_xy(self):
-        # Penalize xy axes base angular velocity
-        error = self.sqrdexp(self.base_ang_vel[:, :2] \
-                             * self.cfg.normalization.obs_scales.ang_vel)
-        return torch.sum(error, dim=1)
-
+    def _reward_tracking_ang_vel(self):
+        # Tracking of angular velocity commands (yaw)
+        ang_vel_error = torch.square(self.commands[:, 2] - self.base_ang_vel[:, 2])
+        return torch.exp(-ang_vel_error/self.cfg.rewards.base_yaw_rate_tracking)
 
     def _reward_orientation(self):
         # Penalize non flat base orientation
