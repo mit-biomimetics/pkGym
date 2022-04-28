@@ -243,11 +243,10 @@ class MIT_Humanoid_Vlip(LeggedRobot):
 
 
 
-
     def _reward_dof_vel(self):
         # Penalize dof velocities
-        return self.sqrdexp(self.dof_vel  \
-                            / self.cfg.normalization.obs_scales.dof_vel)
+        return torch.sum(self.sqrdexp(self.dof_vel  \
+                            / self.cfg.normalization.obs_scales.dof_vel), dim=1)
 
 
     def _reward_symm_legs(self):
