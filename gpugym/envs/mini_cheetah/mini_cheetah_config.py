@@ -197,7 +197,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
     class sim:
         dt =  0.002
         substeps = 1
-        gravity = [0., 0., -2.81]  # [m/s^2]
+        gravity = [0., 0., -9.81]  # [m/s^2]
 
 class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
     seed = -1
