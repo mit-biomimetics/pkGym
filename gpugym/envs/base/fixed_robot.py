@@ -14,7 +14,7 @@ from torch import Tensor
 from typing import Tuple, Dict
 
 from gpugym.envs.base.base_task import BaseTask
-from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
+from gpugym.utils.math import *
 from gpugym.utils.helpers import class_to_dict
 
 class FixedRobot(BaseTask):
@@ -364,15 +364,6 @@ class FixedRobot(BaseTask):
 
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
 
-    def random_sample(self, env_ids, high, low):
-        """
-        Sample random actions.
-        """
-        rand_pos = torch_rand_float(0, 1, (len(env_ids), len(low)), device=self.device)
-        diff_pos = (high - low).repeat(len(env_ids),1)
-        random_dof_pos = rand_pos*diff_pos + low.repeat(len(env_ids),1)
-        return random_dof_pos
-
 
     def _reset_system(self, env_ids):
         """
@@ -410,10 +401,10 @@ class FixedRobot(BaseTask):
         dof_pos_low = to_torch(self.cfg.init_state.dof_pos_low)
         dof_vel_high = to_torch(self.cfg.init_state.dof_vel_high)
         dof_vel_low = to_torch(self.cfg.init_state.dof_vel_high)
-        self.dof_pos[env_ids] = self.random_sample(env_ids, dof_pos_high,
-                                                    dof_pos_low)
-        self.dof_vel[env_ids] = self.random_sample(env_ids, dof_vel_high,
-                                                    dof_vel_low)
+        self.dof_pos[env_ids] = random_sample(env_ids, dof_pos_high,
+                                            dof_pos_low, device=self.device)
+        self.dof_vel[env_ids] = random_sample(env_ids, dof_vel_high,
+                                            dof_vel_low, device=self.device)
 
 
     def _push_robots(self):
@@ -511,6 +502,19 @@ class FixedRobot(BaseTask):
         # store indices of actuated joints
         self.act_idx = to_torch(actuated_idx, dtype=torch.long,
                                 device=self.device)
+
+        # * check that init range highs and lows are consistent
+        if hasattr(self.cfg.init_state, "com_pos_high"):
+            for i in range(self.num_dof):
+                if self.cfg.init_state.dof_pos_high[i] < self.cfg.init_state.dof_pos_low[i]:
+                    raise ValueError(f"dof_pos_high[{i}] < dof_pos_low[{i}]")
+                if self.cfg.init_state.dof_vel_high[i] < self.cfg.init_state.dof_vel_low[i]:
+                    raise ValueError(f"dof_vel_high[{i}] < dof_vel_low[{i}]")
+            for i in range(6):
+                if self.cfg.init_state.com_pos_high[i] < self.cfg.init_state.com_pos_low[i]:
+                    raise ValueError(f"com_pos_high[{i}] < com_pos_low[{i}]")
+                if self.cfg.init_state.com_vel_high[i] < self.cfg.init_state.com_vel_low[i]:
+                    raise ValueError(f"com_vel_high[{i}] < com_vel_low[{i}]")
 
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, which will be called to 
