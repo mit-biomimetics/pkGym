@@ -36,7 +36,7 @@ class FixedRobotCfg(BaseConfig):
     class init_state:
 
         reset_mode = "reset_to_basic" 
-        # default setup chooses how the initial conditions are chosen. 
+        # reset_mode chooses how the initial conditions are chosen. 
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
 

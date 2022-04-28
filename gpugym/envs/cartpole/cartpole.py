@@ -42,15 +42,16 @@ class Cartpole(FixedRobot):
         self.cfg = cfg
 
         self.reset_dist = self.cfg.env.reset_dist
-
         self.max_push_effort = self.cfg.env.max_effort
-        self.max_episode_length = 500  # 500
 
         # HANDLE AUGMENTATIONS
         self.augmentations = self.cfg.env.augmentations
 
         # HANDLE HIERARCHICAL REWARDS
         self.reward_hierarchy = cfg.rewards.hierarchy
+
+        if self.cfg.init_state.reset_mode == "reset_to_storage":
+            self.X0_conds[:, 1] = torch.pi
 
 
     def _post_physics_step_callback(self):
