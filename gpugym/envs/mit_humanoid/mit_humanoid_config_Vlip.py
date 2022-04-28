@@ -211,7 +211,7 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
             clip_actions = 1000.
 
     class noise(LeggedRobotCfg.noise):
-        add_noise = False
+        add_noise = True
         noise_level = 0.1  # scales other values
 
         class noise_scales(LeggedRobotCfg.noise.noise_scales):
@@ -229,7 +229,8 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
 
     class gait():
         nom_gait_period = 0.8
-
+        phase_offsets = [0, 0.5] # phase offset for each leg
+        switchingPhaseNominal = 0.5 # switch phase from stance to swing
 
 class MITHumanoidCfgPPO_Vlip(LeggedRobotCfgPPO):
 
@@ -242,7 +243,7 @@ class MITHumanoidCfgPPO_Vlip(LeggedRobotCfgPPO):
         num_steps_per_env = 25
         max_iterations = 500
         run_name = 'Standing'
-        experiment_name = 'MIT_Humanoid'
+        experiment_name = 'MIT_Humanoid_Stand'
         save_interval = 50
 
     class policy( LeggedRobotCfgPPO.policy ):
