@@ -87,7 +87,7 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
         }
 
         #default COM for basic initialization 
-        pos = [0.0, 0.0, 0.6565]  # x,y,z [m]
+        pos = [0.0, 0.0, 0.67]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
@@ -126,13 +126,13 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
                    'hip_abad': 2.,
                    'hip_pitch': 2.,
                    'knee': 2.,
-                   'ankle': 1.0,
+                   'ankle': 2.,
                    'shoulder_pitch': 0.5,
                    'shoulder_abad': 0.5,
                    'shoulder_yaw': 0.5,
                    'elbow': 5,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
-        nominal_pos = True  # use ref traj as nominal traj
+        nominal_pos = False  # use ref traj as nominal traj
         nominal_vel = False  # requires "PosVel" for ref_type
         # stiffness = {}
         # damping = {}
@@ -159,9 +159,9 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
-        disable_gravity = True
-        disable_actions = True
-        disable_motors = True
+        disable_gravity = False
+        disable_actions = False
+        disable_motors = False
 
     class rewards(LeggedRobotCfg.rewards):
         soft_dof_pos_limit = 0.9
@@ -185,41 +185,42 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
         dof_pos_scaling = 2
         dof_vel_scaling = 0.1
 
-        joint_level_scaling = [0.3,  # left_hip_yaw
-                               0.3,  # left_hip_abad
-                               1,  # left_hip_pitch
-                               100,  # left_knee
-                               1,  # left_ankle
-                               0.1,  # left_shoulder_pitch
-                               0.1,  # left_shoulder_abad
-                               0.1,  # left_shoulder_yaw
-                               0.1,  # left_elbow
-                               0.3,  # right_hip_yaw
-                               0.3,  # right_hip_abad
-                               1,  # right_hip_pitch
-                               100,  # right_knee
-                               1,  # right_ankle
-                               0.1,  # right_shoulder_pitch
-                               0.1,  # right_shoulder_abad
-                               0.1,  # right_shoulder_yaw
-                               0.1]  # right_elbow
+        # joint_level_scaling = [0.3,  # left_hip_yaw
+        #                        0.3,  # left_hip_abad
+        #                        1,  # left_hip_pitch
+        #                        100,  # left_knee
+        #                        1,  # left_ankle
+        #                        0.1,  # left_shoulder_pitch
+        #                        0.1,  # left_shoulder_abad
+        #                        0.1,  # left_shoulder_yaw
+        #                        0.1,  # left_elbow
+        #                        0.3,  # right_hip_yaw
+        #                        0.3,  # right_hip_abad
+        #                        1,  # right_hip_pitch
+        #                        100,  # right_knee
+        #                        1,  # right_ankle
+        #                        0.1,  # right_shoulder_pitch
+        #                        0.1,  # right_shoulder_abad
+        #                        0.1,  # right_shoulder_yaw
+        #                        0.1]  # right_elbow
 
         class scales(LeggedRobotCfg.rewards.scales):
             reference_traj = 0.
             termination = -1.
             tracking_lin_vel = 0.
             tracking_ang_vel = 0.
-            lin_vel_z = -0.
+            lin_vel_z = 0.5
             ang_vel_xy = -0.0
             orientation = 0.1
             torques = -0.#5.e-7
             dof_vel = 0.0
-            base_height = 0.1
+            base_height = 1.
+            dof_near_home = 1.
             feet_air_time = 0.0  # rewards keeping feet in the air
             collision = -0.
             feet_stumble = -0.
-            action_rate = -0. # -0.01
-            action_rate2 = -0.#-0.001
+            action_rate = -0.01
+            action_rate2 = -0.001
             stand_still = -0.
             dof_pos_limits = -0.0
             no_fly = 0.0
@@ -246,7 +247,7 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
             clip_actions = 1000.
 
     class noise(LeggedRobotCfg.noise):
-        add_noise = True
+        add_noise = False
         noise_level = 0.1  # scales other values
 
         class noise_scales(LeggedRobotCfg.noise.noise_scales):
