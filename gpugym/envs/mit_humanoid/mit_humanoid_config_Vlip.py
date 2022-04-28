@@ -37,6 +37,8 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
         num_envs = 3000
         num_observations = 67+2+3*18 # 187
         num_actions = 18
+        episode_length_s = 10  # episode length in seconds
+
 
     class terrain(LeggedRobotCfg.terrain):
         curriculum = False
@@ -50,34 +52,34 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
         resampling_time = 10. # time before command are changed[s]
         heading_command = True # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [0.5, 2.0] # min max [m/s]
+            lin_vel_x = [0., 0.] # min max [m/s]
             lin_vel_y = [0., 0]   # min max [m/s]
             ang_vel_yaw = [0., 0.]    # min max [rad/s]
             heading = [0, 0]
 
     class init_state(LeggedRobotCfg.init_state):
-        reset_mode = "reset_to_traj" # default setup chooses how the initial conditions are chosen.
+        reset_mode = "reset_to_basic" # default setup chooses how the initial conditions are chosen.
                                 # "reset_to_basic" = a single position with some randomized noise on top. 
                                 # "reset_to_range" = a range of joint positions and velocities.
                                 #  "reset_to_traj" = feed in a trajectory to sample from. 
-        penetration_check = True  # disable to not check for penetration on initial conds.
+        penetration_check = False  # disable to not check for penetration on initial conds.
 
         #default for normalization and basic initialization 
         default_joint_angles = {  # = target angles [rad] when action = 0.0
             'left_hip_yaw': 0.,
             'left_hip_abad': 0.,
-            'left_hip_pitch': 0.,
-            'left_knee': 0.,  # 0.785,
-            'left_ankle': 0.,
+            'left_hip_pitch': -0.4,
+            'left_knee': 0.77,  # 0.785,
+            'left_ankle': -0.37,
             'left_shoulder_pitch': 0.,
             'left_shoulder_abad': 0.,
             'left_shoulder_yaw': 0.,
             'left_elbow': 0.,
             'right_hip_yaw': 0.,
             'right_hip_abad': 0.,
-            'right_hip_pitch': 0.,
-            'right_knee': 0.,  # 0.785,
-            'right_ankle': 0.,
+            'right_hip_pitch': -0.4,
+            'right_knee': 0.77,  # 0.785,
+            'right_ankle': -0.37,
             'right_shoulder_pitch': 0.,
             'right_shoulder_abad': 0.,
             'right_shoulder_yaw': 0.,
@@ -85,7 +87,7 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
         }
 
         #default COM for basic initialization 
-        pos = [0.0, 0.0, 0.78]  # x,y,z [m]
+        pos = [0.0, 0.0, 0.6565]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
@@ -157,9 +159,9 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
-        disable_gravity = False
-        disable_actions = False
-        disable_motors = False 
+        disable_gravity = True
+        disable_actions = True
+        disable_motors = True
 
     class rewards(LeggedRobotCfg.rewards):
         soft_dof_pos_limit = 0.9
@@ -169,7 +171,7 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
 
         # if true negative total rewards are clipped at zero (avoids early termination problems)
         only_positive_rewards = False
-        base_height_target = 0.65
+        base_height_target = 0.6565
         tracking_sigma = 0.25
 
         #reference traj tracking
@@ -203,21 +205,21 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
                                0.1]  # right_elbow
 
         class scales(LeggedRobotCfg.rewards.scales):
-            reference_traj = 1.0
+            reference_traj = 0.
             termination = -1.
             tracking_lin_vel = 0.
-            tracking_ang_vel = 1.
+            tracking_ang_vel = 0.
             lin_vel_z = -0.
             ang_vel_xy = -0.0
             orientation = 0.1
-            torques = -5.e-7
+            torques = -0.#5.e-7
             dof_vel = 0.0
-            base_height = 0.0
-            feet_air_time = 1.0  # rewards keeping feet in the air
-            collision = -1.
+            base_height = 0.1
+            feet_air_time = 0.0  # rewards keeping feet in the air
+            collision = -0.
             feet_stumble = -0.
-            action_rate = -0.01 # -0.01
-            action_rate2 = -0.001
+            action_rate = -0. # -0.01
+            action_rate2 = -0.#-0.001
             stand_still = -0.
             dof_pos_limits = -0.0
             no_fly = 0.0
@@ -232,14 +234,14 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
                 dimless_time = (0.7/9.81)**0.5
                 v_leg = 0.72
                 # lin_vel = 1/v_leg*dimless_time
-                base_z = 1./0.72
+                base_z = 1./0.6565
                 lin_vel =  1./v_leg  # virtual leg lengths per second
                 # ang_vel = 0.25
                 ang_vel = 1./3.14*dimless_time
                 dof_pos = 1./3.14
                 dof_vel = 0.05  # ought to be roughly max expected speed.
 
-                height_measurements = 1./0.72
+                height_measurements = 1./0.6565
             # clip_observations = 100.
             clip_actions = 1000.
 
@@ -270,8 +272,8 @@ class MITHumanoidCfgPPO_Vlip(LeggedRobotCfgPPO):
 
     class runner(LeggedRobotCfgPPO.runner):
         num_steps_per_env = 25
-        max_iterations = 10
-        run_name = 'Reference_Traj_Walking'
+        max_iterations = 500
+        run_name = 'Standing'
         experiment_name = 'MIT_Humanoid'
         save_interval = 50
 
