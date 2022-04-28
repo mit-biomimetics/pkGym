@@ -15,9 +15,26 @@ import pandas as pd
 class MIT_Humanoid_Vlip(LeggedRobot):
 
     def _custom_init(self, cfg):
-        # * init buffer for phase variable
+        # * init buffer for phase main variable
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
+
+        # * init buffer for individual leg phase variable
+        self.LegPhase = torch.hstack((self.cfg.gait.phase_offsets[0]*torch.ones(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False),\
+                                       self.cfg.gait.phase_offsets[1]*torch.ones(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False)))
+
+        self.LegPhaseStance = torch.hstack((self.cfg.gait.phase_offsets[0]*torch.ones(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False),\
+                                       self.cfg.gait.phase_offsets[1]*torch.ones(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False)))
+
+        self.LegPhaseSwing = torch.hstack((self.cfg.gait.phase_offsets[0]*torch.ones(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False),\
+                                       self.cfg.gait.phase_offsets[1]*torch.ones(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False)))
+
 
         self.nom_gait_period = self.cfg.gait.nom_gait_period
 
@@ -26,9 +43,34 @@ class MIT_Humanoid_Vlip(LeggedRobot):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
             Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
         """
-        self.phase = torch.fmod(self.phase + self.dt / self.nom_gait_period, 1)
+        # increment phase variable
+        dphase = self.dt / self.nom_gait_period
 
-        
+        self.phase = torch.fmod(self.phase + dphase, 1)
+
+        for foot in range(2):
+            self.LegPhase[:, foot] = torch.fmod(self.LegPhase[:, foot] + dphase, 1)
+
+            in_stance_bool = (self.LegPhase[:, foot] <= self.cfg.gait.switchingPhaseNominal)
+            in_swing_bool = torch.logical_not(in_stance_bool)
+
+            self.LegPhaseStance[:, foot] = self.LegPhase[:, foot] / self.cfg.gait.switchingPhaseNominal*in_stance_bool +\
+                                           in_swing_bool*1 # Stance phase has completed since foot is in swing
+
+            self.LegPhaseSwing[:, foot] = 0 * in_stance_bool \
+                                          + in_swing_bool*(self.LegPhase[:, foot] - self.cfg.gait.switchingPhaseNominal)\
+                                          / (1.0 - self.cfg.gait.switchingPhaseNominal)
+
+        #     if (self.LegPhase[:, foot] <= self.cfg.gait.switchingPhaseNominal):
+        #         self.LegPhaseStance[:, foot] = self.LegPhase[:, foot]/self.cfg.gait.switchingPhaseNominal
+        #         self.LegPhaseSwing[:, foot] = 0  # Swing phase has not started since foot is in stance
+
+        #     # in swing phase
+        #     else:
+        #         self.LegPhaseStance[:, foot] = 1.  # Stance phase has completed since foot is in swing
+        #         self.LegPhaseSwing[:, foot] = (self.LegPhase[:, foot] - self.cfg.gait.switchingPhaseNominal)\
+        #                                       / (1.0 - self.cfg.gait.switchingPhaseNominal)
+
 
         env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
         self._resample_commands(env_ids)
