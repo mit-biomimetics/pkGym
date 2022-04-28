@@ -18,48 +18,15 @@ class MIT_Humanoid_Vlip(LeggedRobot):
         # * init buffer for phase variable
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
-        
-        # * retrieve reference trajectory
-        if hasattr(self.cfg.init_state, "ref_traj"):
-            referenceTraj = pd.read_csv(self.cfg.init_state.ref_traj)
-            pos_list = ["t","x","y","z","qx","qy","qz","qw"] + self.dof_names
-            vel_list = ["t","x_v","y_v","z_v","wx","wy","wz"]+ [x+"_v" for x in self.dof_names]
-            self.total_ref_time = referenceTraj['t'].iloc[-1]
-            # Scale times [sec] to standard phase 0->1
-            referenceTraj['t'] /= self.total_ref_time
 
-            self.pos_traj = torch.zeros(len(referenceTraj["t"]),
-                                        len(pos_list), device=self.device)
-            self.vel_traj = torch.zeros(len(referenceTraj["t"]),
-                                        len(vel_list), device=self.device)
-            for i in range(len(pos_list)):  # iterate through positions
-                name = pos_list[i]
-                try:
-                    self.pos_traj[:, i] = to_torch(referenceTraj[name])
-                except Exception:
-                    print("Missing: " + name)
+        self.nom_gait_period = self.cfg.gait.nom_gait_period
 
-            if (self.cfg.init_state.ref_type == "PosVel"):
-                for i in range(len(vel_list)):  # iterate through vels
-                    name = vel_list[i]
-                    try:
-                        self.vel_traj[:, i] = to_torch(referenceTraj[name])
-                    except Exception:
-                        print("Missing: " + name)
-        else:
-            self.total_ref_time = 0
 
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
             Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
         """
-        if self.cfg.init_state.is_single_traj:
-            self.phase = torch.minimum(self.phase + self.dt/self.total_ref_time, torch.tensor(1))
-        else:
-            if (self.total_ref_time > 0.0):
-                self.phase = torch.fmod(self.phase + self.dt/self.total_ref_time, 1)
-            else:
-                self.phase = torch.fmod(self.phase+self.dt, 1.)
+        self.phase = torch.fmod(self.phase + self.dt / self.nom_gait_period, 1)
 
         
 

@@ -106,9 +106,10 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
         #initialization for traj sampling setup
         #ref_traj = "../../resources/robots/mit_humanoid/trajectories/across_back10/JSM_across_back_2_RESAMPLED10.csv"
         # ref_traj = "../../resources/robots/mit_humanoid/trajectories/SH_standing_roll_2021_11_1_OUTPUT_1.csv"
-        ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_walk.csv"
-        ref_type = "PosVel" #Pos, PosVel
-        is_single_traj = False #if the trajectory should only be run once 
+        # ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_walk.csv"
+        # ref_type = "PosVel" #Pos, PosVel
+        # is_single_traj = False #if the trajectory should only be run once
+        nom_gait_period = 0.8
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
@@ -132,8 +133,7 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
                    'shoulder_yaw': 0.5,
                    'elbow': 5,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
-        nominal_pos = False  # use ref traj as nominal traj
-        nominal_vel = False  # requires "PosVel" for ref_type
+
         # stiffness = {}
         # damping = {}
         # action scale: target angle = actionScale * action + defaultAngle
@@ -262,6 +262,9 @@ class MITHumanoidCfg_Vlip(LeggedRobotCfg):
         dt = 0.002
         substeps = 1
         gravity = [0., 0., -9.81]
+
+    class gait():
+        nom_gait_period = 0.8
 
 
 class MITHumanoidCfgPPO_Vlip(LeggedRobotCfgPPO):
