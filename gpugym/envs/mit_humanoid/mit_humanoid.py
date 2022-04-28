@@ -10,12 +10,44 @@ from typing import Tuple, Dict
 from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
 from gpugym.envs import LeggedRobot
 
+import pandas as pd
+
 class MIT_Humanoid(LeggedRobot):
 
     def _custom_init(self, cfg):
         # * init buffer for phase variable
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
+        
+        # * retrieve reference trajectory
+        if hasattr(self.cfg.init_state, "ref_traj"):
+            referenceTraj = pd.read_csv(self.cfg.init_state.ref_traj)
+            pos_list = ["t","x","y","z","qx","qy","qz","qw"] + self.dof_names
+            vel_list = ["t","x_v","y_v","z_v","wx","wy","wz"]+ [x+"_v" for x in self.dof_names]
+            self.total_ref_time = referenceTraj['t'].iloc[-1]
+            # Scale times [sec] to standard phase 0->1
+            referenceTraj['t'] /= self.total_ref_time
+
+            self.pos_traj = torch.zeros(len(referenceTraj["t"]),
+                                        len(pos_list), device=self.device)
+            self.vel_traj = torch.zeros(len(referenceTraj["t"]),
+                                        len(vel_list), device=self.device)
+            for i in range(len(pos_list)):  # iterate through positions
+                name = pos_list[i]
+                try:
+                    self.pos_traj[:, i] = to_torch(referenceTraj[name])
+                except Exception:
+                    print("Missing: " + name)
+
+            if (self.cfg.init_state.ref_type == "PosVel"):
+                for i in range(len(vel_list)):  # iterate through vels
+                    name = vel_list[i]
+                    try:
+                        self.vel_traj[:, i] = to_torch(referenceTraj[name])
+                    except Exception:
+                        print("Missing: " + name)
+        else:
+            self.total_ref_time = 0
 
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
@@ -114,20 +146,114 @@ class MIT_Humanoid(LeggedRobot):
                                 * self.obs_scales.height_measurements
         return noise_vec
 
+    def _compute_torques(self, actions):
+        """ Compute torques from actions.
+            Actions can be interpreted as position or velocity targets given to a PD controller, or directly as scaled torques.
+            [NOTE]: torques must have the same dimension as the number of DOFs, even if some DOFs are not actuated.
+
+        Args:
+            actions (torch.Tensor): Actions
+
+        Returns:
+            [torch.Tensor]: Torques sent to the simulation
+        """
+        # pd controller
+        actions_scaled = actions * self.cfg.control.action_scale 
+        control_type = self.cfg.control.control_type
+
+        offset_pos = torch.zeros_like(self.torques) + self.default_dof_pos
+        offset_vel = torch.zeros_like(self.torques)
+
+        if self.cfg.control.nominal_pos:
+            ref_traj_idx = (torch.round(self.phase*self.pos_traj.size(dim=0)).squeeze(1)).long()
+            pos_ref_frame = self.pos_traj.repeat(self.num_envs,1)[ref_traj_idx,:]
+            offset_pos += pos_ref_frame[:,8:]
+
+        if self.cfg.control.nominal_vel:
+            vel_ref_frame = self.vel_traj.repeat(self.num_envs,1)[ref_traj_idx,:]
+            offset_vel += vel_ref_frame[:,7:]
+
+        if control_type=="P":
+            torques = self.p_gains*(actions_scaled + offset_pos - self.dof_pos) + (offset_vel - self.d_gains*self.dof_vel)
+        elif control_type=="T":
+            torques = actions_scaled
+        elif control_type=="Td":
+            torques = actions_scaled - self.d_gains*self.dof_vel
+        else:
+            raise NameError(f"Unknown controller type: {control_type}")
+        return torch.clip(torques, -self.torque_limits, self.torque_limits)
+
+
+    def reset_to_traj(self, env_ids):
+        rand_timestamp = torch.randint(0, self.pos_traj.size(dim=0), (self.num_envs, 1), device=self.device)
+        random_pos = torch.zeros(self.num_envs, self.pos_traj.size(dim=1), device=self.device)
+        random_vel = torch.zeros(self.num_envs, self.vel_traj.size(dim=1), device=self.device)
+
+        for i in env_ids: # todo if someone knows how to do this without the for loop please fix
+            random_pos[i,:] = self.pos_traj[int(rand_timestamp[i]),:]
+            if (self.cfg.init_state.ref_type == "PosVel"):
+                random_vel[i,:] = self.vel_traj[int(rand_timestamp[i]),:]
+            self.phase[i,:] = float(rand_timestamp[i])/float(self.pos_traj.size(dim=0)) #initialize phase to right step
+        # dof
+        self.dof_pos[env_ids] = random_pos[env_ids, 8:]
+        self.dof_vel[env_ids] = random_vel[env_ids, 7:]
+        # base state
+        self.root_states[env_ids, 0:7] = random_pos[env_ids, 1:8]
+        self.root_states[env_ids, 7:13] = random_vel[env_ids, 1:7]
+
+    def _custom_reset(self, env_ids):
+        if self.cfg.init_state.penetration_check:
+            temp_root_state = torch.clone(self.root_states)
+            temp_dof_state = torch.clone(self.dof_state)
+
+            self.gym.simulate(self.sim) #Need to one step the simulation to update dof !!THIS MAY BE A TERRIBLE IDEA!!
+
+            #retrieve body states of every link in every environment. 
+            self.gym.refresh_rigid_body_state_tensor(self.sim)
+            body_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
+            rb_states = gymtorch.wrap_tensor(body_states)
+
+            num_links = int(len(rb_states[:,0])/self.num_envs)
+
+            #iterate through the env ids that are being reset (and only the ones being reset)
+            for i in env_ids:
+                max_penetration = 0 
+                for j in range(num_links):
+                    #check each body position 
+                    link_height = rb_states[i*num_links + j, 2]
+                    if (link_height < 0.1): #check if COM of rigid link is to close to ground 
+                        #TODO: replace with exact measurement of toe/heel height
+                        if (0.1 - link_height > max_penetration):
+                            max_penetration = -link_height + 0.1
+
+                #find max penetration and shift root state by that amount. 
+                temp_root_state[i, 2] += max_penetration
+
+            env_ids_int32 = env_ids.to(dtype=torch.int32)
+            self.gym.set_actor_root_state_tensor_indexed(self.sim,
+                                                    gymtorch.unwrap_tensor(temp_root_state),
+                                                    gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
+            self.gym.set_dof_state_tensor_indexed(self.sim,
+                                                gymtorch.unwrap_tensor(temp_dof_state),
+                                                gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))       
+
     def sqrdexp(self, x):
         """ shorthand helper for squared exponential
         """
         return torch.exp(-torch.square(x)/self.cfg.rewards.tracking_sigma)
+
 
     def _reward_no_fly(self):
         contacts = self.contact_forces[:, self.feet_indices, 2] > 0.1
         single_contact = torch.sum(1.*contacts, dim=1) == 1
         return 1.*single_contact
 
+
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity w. squared exp
         return self.sqrdexp(self.base_lin_vel[:, 2]  \
                             * self.cfg.normalization.obs_scales.lin_vel)
+
 
     def _reward_ang_vel_xy(self):
         # Penalize xy axes base angular velocity
@@ -135,11 +261,13 @@ class MIT_Humanoid(LeggedRobot):
                              * self.cfg.normalization.obs_scales.ang_vel)
         return torch.sum(error, dim=1)
 
+
     def _reward_orientation(self):
         # Penalize non flat base orientation
         error = torch.sum(torch.square(self.projected_gravity[:, :2]), dim=1)
         return torch.exp(-error/self.cfg.rewards.tracking_sigma)
         # return self.sqrdexp(self.projected_gravity[:, 2]+1.)
+
 
     def _reward_base_height(self):
         """
@@ -151,6 +279,7 @@ class MIT_Humanoid(LeggedRobot):
         error = torch.clamp(error, max=0, min=None).flatten()
         return torch.exp(-torch.square(error)/self.cfg.rewards.tracking_sigma)
 
+
     def _reward_tracking_lin_vel(self):
         # Tracking of linear velocity commands (xy axes)
         # just use lin_vel?
@@ -159,6 +288,7 @@ class MIT_Humanoid(LeggedRobot):
         error *= 1./(1. + torch.abs(self.commands[:, :2]))
         error = torch.sum(torch.square(error), dim=1)
         return torch.exp(-error/self.cfg.rewards.tracking_sigma)
+
 
     def _reward_reference_traj(self):
         #tracking the reference trajectory
@@ -195,25 +325,14 @@ class MIT_Humanoid(LeggedRobot):
         reward += torch.sum(self.sqrdexp(dof_vel_err), dim=1) \
                   * self.cfg.rewards.dof_vel_tracking
         # dof_vel_error =  torch.exp(-torch.sum(torch.square(dof_vel_error),dim=1))
-
         return reward
 
-
-    def _reward_action_rate2(self):
-        # Penalize changes in actions
-        nact = self.num_actions
-        dt2 = (self.dt*self.cfg.control.decimation)**2
-        error = torch.square(self.ctrl_hist[:, :nact]  \
-                             - 2*self.ctrl_hist[:, nact:2*nact]  \
-                             + self.ctrl_hist[:, 2*nact:])/dt2
-        # todo this tracking_sigma is not scaled (check)
-        # error = torch.exp(-error/self.cfg.rewards.tracking_sigma)
-        return torch.sum(error, dim=1)
 
     def _reward_dof_vel(self):
         # Penalize dof velocities
         return self.sqrdexp(self.dof_vel  \
                             / self.cfg.normalization.obs_scales.dof_vel)
+
 
     def _reward_symm_legs(self):
         error = 0.
@@ -224,6 +343,7 @@ class MIT_Humanoid(LeggedRobot):
             error += self.sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
                         / self.cfg.normalization.obs_scales.dof_pos)
         return error
+
 
     def _reward_symm_arms(self):
         error = 0.

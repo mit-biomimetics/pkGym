@@ -14,10 +14,11 @@ from torch import Tensor
 from typing import Tuple, Dict
 
 from gpugym.envs.base.base_task import BaseTask
-from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
+from gpugym.utils.math import *
 from gpugym.utils.helpers import class_to_dict
 
 class FixedRobot(BaseTask):
+
     def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
         """ Parses the provided config file,
             calls create_sim() (which creates, simulation, terrain and environments),
@@ -63,7 +64,9 @@ class FixedRobot(BaseTask):
         self.render()
         for _ in range(self.cfg.control.decimation):
             self.torques = self._compute_torques(self.actions).view(self.torques.shape)
-
+            if self.cfg.asset.disable_motors:
+                torques[:] = 0.
+            # todo double-check this
             # Deals with passive joints that IsaacGym thinks are active...
             torques_to_gym_tensor = torch.zeros(size=(self.num_envs, self.num_dof), device=self.device)
             next_torques_idx = 0
@@ -156,7 +159,8 @@ class FixedRobot(BaseTask):
 
         # reset robot states
         self._reset_system(env_ids)
-        # self._resample_commands(env_ids)  # todo remove
+        if hasattr(self, "_custom_reset"):
+            self._custom_reset(env_ids)
 
         # reset buffers
         self.ctrl_hist[env_ids] = 0.
@@ -249,6 +253,7 @@ class FixedRobot(BaseTask):
         self.gym.viewer_camera_look_at(self.viewer, None, cam_pos, cam_target)
 
     #------------- Callbacks --------------
+
     def _process_rigid_shape_props(self, props, env_id):
         """
         Process rigid shape properties.
@@ -319,6 +324,7 @@ class FixedRobot(BaseTask):
         """
         return props
 
+
     def _post_physic_step_callback(self):
         """
         Callback after physics step.
@@ -327,11 +333,6 @@ class FixedRobot(BaseTask):
         if self.cfg.domain_rand.push_robots and  (self.common_step_counter % self.cfg.domain_rand.push_interval == 0):
             self._push_robots()
 
-    def _resample_commands(self, env_ids):
-        """
-        Resample commands. If you have any.
-        """
-        return 0
 
     def _compute_torques(self, actions):
         """ Compute torques from actions.
@@ -361,40 +362,18 @@ class FixedRobot(BaseTask):
         else:
             raise NameError(f"Unknown controller type: {control_type}")
 
-        if self.cfg.asset.disable_motors:
-            torques[:] = 0.
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
 
-    def random_sample(self, env_ids, high, low):
-        """
-        Sample random actions.
-        """
-        rand_pos = torch_rand_float(0, 1, (len(env_ids), len(low)), device=self.device)
-        diff_pos = (high - low).repeat(len(env_ids),1)
-        random_dof_pos = rand_pos*diff_pos + low.repeat(len(env_ids),1)
-        return random_dof_pos
 
     def _reset_system(self, env_ids):
         """
         Reset the system.
         """
-        # dof
-        if self.cfg.init_state.default_setup == "Basic":
 
-            self.dof_pos[env_ids] = self.default_dof_pos
-            self.dof_vel[env_ids] = 0
-        elif self.cfg.init_state.default_setup == "Range":
-            #dof
-            dof_pos_high = to_torch(self.cfg.init_state.dof_pos_high)
-            dof_pos_low = to_torch(self.cfg.init_state.dof_pos_low)
-            dof_vel_high = to_torch(self.cfg.init_state.dof_vel_high)
-            dof_vel_low = to_torch(self.cfg.init_state.dof_vel_high)
-            self.dof_pos[env_ids] = self.random_sample(env_ids, dof_pos_high,
-                                                        dof_pos_low)
-            self.dof_vel[env_ids] = self.random_sample(env_ids, dof_vel_high,
-                                                        dof_vel_low)
+        if hasattr(self, self.cfg.init_state.reset_mode):
+            eval(f"self.{self.cfg.init_state.reset_mode}(env_ids)")
         else:
-            print("WARNING: unknown default setup")
+            raise NameError(f"Unknown default setup: {self.cfg.init_state.reset_mode}")
 
         # self.root_states[env_ids] = self.base_init_state
         # self.root_states[env_ids, 7:13] = 0.0
@@ -403,6 +382,30 @@ class FixedRobot(BaseTask):
                                               gymtorch.unwrap_tensor(self.dof_state),
                                               gymtorch.unwrap_tensor(env_ids_int32),
                                               len(env_ids_int32))
+
+    # * implement reset methods
+    def reset_to_basic(self, env_ids):
+        """
+        Generate random samples for each entry of env_ids
+        todo: pass in the actual number instead of the list env_ids
+        """
+        self.dof_pos[env_ids] = self.default_dof_pos
+        self.dof_vel[env_ids] = 0
+
+    
+    def reset_to_range(self, env_ids):
+        """
+        Reset to a single initial state
+        """
+        dof_pos_high = to_torch(self.cfg.init_state.dof_pos_high)
+        dof_pos_low = to_torch(self.cfg.init_state.dof_pos_low)
+        dof_vel_high = to_torch(self.cfg.init_state.dof_vel_high)
+        dof_vel_low = to_torch(self.cfg.init_state.dof_vel_high)
+        self.dof_pos[env_ids] = random_sample(env_ids, dof_pos_high,
+                                            dof_pos_low, device=self.device)
+        self.dof_vel[env_ids] = random_sample(env_ids, dof_vel_high,
+                                            dof_vel_low, device=self.device)
+
 
     def _push_robots(self):
         """
@@ -499,6 +502,19 @@ class FixedRobot(BaseTask):
         # store indices of actuated joints
         self.act_idx = to_torch(actuated_idx, dtype=torch.long,
                                 device=self.device)
+
+        # * check that init range highs and lows are consistent
+        if hasattr(self.cfg.init_state, "com_pos_high"):
+            for i in range(self.num_dof):
+                if self.cfg.init_state.dof_pos_high[i] < self.cfg.init_state.dof_pos_low[i]:
+                    raise ValueError(f"dof_pos_high[{i}] < dof_pos_low[{i}]")
+                if self.cfg.init_state.dof_vel_high[i] < self.cfg.init_state.dof_vel_low[i]:
+                    raise ValueError(f"dof_vel_high[{i}] < dof_vel_low[{i}]")
+            for i in range(6):
+                if self.cfg.init_state.com_pos_high[i] < self.cfg.init_state.com_pos_low[i]:
+                    raise ValueError(f"com_pos_high[{i}] < com_pos_low[{i}]")
+                if self.cfg.init_state.com_vel_high[i] < self.cfg.init_state.com_vel_low[i]:
+                    raise ValueError(f"com_vel_high[{i}] < com_vel_low[{i}]")
 
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, which will be called to 
@@ -669,6 +685,7 @@ class FixedRobot(BaseTask):
         self.cfg.domain_rand.push_interval = np.ceil(self.cfg.domain_rand.push_interval_s / self.dt)
 
     #------------ reward functions----------------
+
     def sqrdexp(self, x):
         """ shorthand helper for squared exponential
         """

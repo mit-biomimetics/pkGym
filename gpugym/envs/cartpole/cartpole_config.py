@@ -65,10 +65,10 @@ class CartpoleCfg(FixedRobotCfg):
         """
         Initial States of the Cartpole where the middle is cart 0 and up is pole 0
         """
-        default_setup = "Range"  # default setup chooses how the initial conditions are chosen.
-        # "Basic" = a single position with some randomized noise on top.
-        # "Range" = a range of joint positions and velocities.
-        #  "Trajectory" = feed in a trajectory to sample from.
+        reset_mode = "reset_to_range" 
+        # default setup chooses how the initial conditions are chosen. 
+        # "reset_to_basic" = a single position
+        # "reset_to_range" = uniformly random from a range defined below
 
         dof_pos_high = [2.5, torch.pi]  # DOF dimensionspp
         dof_pos_low = [-2.5, -torch.pi]

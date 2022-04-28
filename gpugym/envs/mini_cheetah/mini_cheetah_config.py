@@ -8,6 +8,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         num_envs = 2**12  # (n_robots in Rudin 2021 paper - batch_size = n_steps * n_robots)
         num_actions = 12  # 12 for the 12 actuated DoFs of the mini cheetah
         num_observations = 87
+        episode_length_s = 4.
 
     class terrain(LeggedRobotCfg.terrain):
         curriculum = False
@@ -22,10 +23,11 @@ class MiniCheetahCfg(LeggedRobotCfg):
         Ab/ad: 0˚, hip: -45˚, knee: 91.5˚
         Default pose is around 0.27
         """
-        default_setup = "Range" # default setup chooses how the initial conditions are chosen. 
-                                # "Basic" = a single position with some randomized noise on top. 
-                                # "Range" = a range of joint positions and velocities.
-                                #  "Trajectory" = feed in a trajectory to sample from.
+        
+        reset_mode = "reset_to_range" 
+        # reset setup chooses how the initial conditions are chosen. 
+        # "reset_to_basic" = a single position
+        # "reset_to_range" = uniformly random from a range defined below
 
         default_joint_angles = {
             "lf_haa": 0.0,
@@ -45,50 +47,44 @@ class MiniCheetahCfg(LeggedRobotCfg):
         }
 
         # * default COM for basic initialization 
-        pos = [0.0, 0.0, BASE_HEIGHT_REF]  # x,y,z [m]
-        rot = [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
+        pos = [0.0, 0.0, 0.33]  # x,y,z [m]
+        rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
 
         # * initialization for random range setup
-        dof_pos_high = [0.,  -0.785398, 1.596976,
-                        0.,  -0.785398, 1.596976,
-                        0.,  -0.785398, 1.596976,
-                        0.,  -0.785398, 1.596976]
-        dof_pos_low = [ 0.,  -0.785398, 1.596976,
-                        0.,  -0.785398, 1.596976,
-                        0.,  -0.785398, 1.596976,
-                        0.,  -0.785398, 1.596976]
+        dof_pos_high = [0.05, -0.6, 1.72,
+                        0.05, -0.6, 1.72,
+                        0.05, -0.6, 1.72,
+                        0.05, -0.6, 1.72]
+
+        dof_pos_low =  [-0.05, -0.85, 1.45,
+                        -0.05, -0.85, 1.45,
+                        -0.05, -0.85, 1.45,
+                        -0.05, -0.85, 1.45]
+
         dof_vel_high = [0., 0., 0.,
                         0., 0., 0.,
                         0., 0., 0.,
                         0., 0., 0.]
-        dof_vel_low = [-0., -0., -0.,
-                        -0., -0., -0.,
-                        -0., -0., -0.,
-                        -0., -0., -0.]
 
-        com_pos_high = [0., 0., 0.33, 0., 0.5, 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
-        com_pos_low = [0., 0., 0.33, 0., -0.5, 0.] # x, y ,z, roll, pitch, yaw
-        com_vel_high = [2., 0.5,  0.1, 0., 0., 0.]
-        com_vel_low = [-1., -0.5, 0., 0., 0., 0.]
+        dof_vel_low =  [0., 0., 0.,
+                        0., 0., 0.,
+                        0., 0., 0.,
+                        0., 0., 0.]
 
-        # * initialization for trajectory (needs trajectory)
-        # ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_walk.csv"
-        # ref_type = "Pos" #Pos, PosVel
+        com_pos_high = [0., 0., 0.4, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
+        com_pos_low = [0., 0., 0.35, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
+        com_vel_high = [0.05, 0., 0.05, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
+        com_vel_low = [-0.05, 0., -0.05, 0., 0., 0.]
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
-        stiffness = {'haa': 80., 'hfe': 80., 'kfe': 80.}  # [N*m/rad]
-        damping = {'haa': 2., 'hfe': 2., 'kfe': 2}  # [N*m*s/rad]
-
-        # requires reference trajectory to be loaded
-        # TODO: ignore if no ref traj is loaded
-        nominal_pos = False
-        nominal_vel = False
+        stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
+        damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
 
         # Control type
-        control_type = "Td"  # "Td"
+        control_type = "P"  # "Td"
 
         # action scale: target angle = actionScale * action + defaultAngle
         if control_type == "T":
@@ -96,7 +92,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         elif control_type == "Td":
             action_scale = 4.0 # 1e-2 # stiffness['haa'] * 0.5
         else:
-            action_scale = 0.5 # 0.5
+            action_scale = 0.25 # 0.5
 
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 5
@@ -105,7 +101,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         # actuator_net_file = "{LEGGED_GYM_ROOT_DIR}/resources/actuator_nets/anydrive_v3_lstm.pt"
 
     class domain_rand(LeggedRobotCfg.domain_rand):
-        randomize_friction = False
+        randomize_friction = True
         friction_range = [0.75, 1.05]
         randomize_base_mass = False
         added_mass_range = [-2., 2.]
@@ -118,10 +114,9 @@ class MiniCheetahCfg(LeggedRobotCfg):
         file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah.urdf"
         foot_name = "foot"
         penalize_contacts_on = ["shank", "thigh"]
-        terminate_after_contacts_on = ["base", "hip"] + penalize_contacts_on
-        initial_penetration_check = False  # this is turned only for MIT Humanoid.
+        terminate_after_contacts_on = ["base", "hip"]
         collapse_fixed_joints = False  # merge bodies connected by fixed joints.
-        self_collisions = 1   # added blindly from the AnymalCFlatCFG.  1 to disable, 0 to enable...bitwise filter
+        self_collisions = 1  # added blindly from the AnymalCFlatCFG.  1 to disable, 0 to enable...bitwise filter
         flip_visual_attachments = False
         disable_gravity = False
         disable_actions = False  # disable neural networks
@@ -136,33 +131,25 @@ class MiniCheetahCfg(LeggedRobotCfg):
         # if true negative total rewards are clipped at zero (avoids early termination problems)
         only_positive_rewards = False
         base_height_target = BASE_HEIGHT_REF
-        tracking_sigma = 0.25  # This cannot be zero or else things break in weird obs = nan ways
-
-        #reference traj tracking
-        base_pos_tracking = 0.
-        base_vel_tracking = 0.
-        dof_pos_tracking = 0.
-        dof_vel_tracking = 0.
-
+        tracking_sigma = 0.25
         class scales(LeggedRobotCfg.rewards.scales):
-            reference_traj = 0.0
-            termination = -5.
+            termination = -1.
             tracking_lin_vel = 1.0
             tracking_ang_vel = 1.0
             lin_vel_z = -0.
-            ang_vel_xy = -0.0
-            orientation = 2.0
-            torques = 5.e-4
-            dof_vel = -0.5
-            base_height = 1.0
-            feet_air_time = 0.15  # rewards keeping feet in the air
-            collision = -1.
-            action_rate = -0.01  # -0.01
-            action_rate2 = -0.001  # -0.001
-            stand_still = -0.
-            dof_pos_limits = -0.25
-            feet_contact_forces = -1e-3
-            dof_near_home = 0.5
+            ang_vel_xy = 0.0
+            orientation = 1.0
+            torques = -5.e-7
+            dof_vel = 0.
+            base_height = 1.
+            feet_air_time = 0.  # rewards keeping feet in the air
+            collision = -0.
+            action_rate = -0.001  # -0.01
+            action_rate2 = -0.0001  # -0.001
+            stand_still = 0.
+            dof_pos_limits = 0.
+            feet_contact_forces = 0.
+            dof_near_home = 1.
             # symm_legs = 0.0
             # symm_arms = 0.0
 
@@ -170,10 +157,10 @@ class MiniCheetahCfg(LeggedRobotCfg):
         heading_command = False
         resampling_time = 4.
         class ranges(LeggedRobotCfg.commands.ranges):
-            lin_vel_x = [0.025, 6.0] # min max [m/s]
+            lin_vel_x = [0., 0.] # min max [m/s]
             lin_vel_y = [0., 0]   # min max [m/s]
-            ang_vel_yaw = [-0.3*3.14, 0.3*3.14]    # min max [rad/s]
-            heading = [-0.5, 0.5]
+            ang_vel_yaw = [0.*3.14, 0.*3.14]    # min max [rad/s]
+            heading = [0., 0.]
 
     class normalization(LeggedRobotCfg.normalization):
             class obs_scales(LeggedRobotCfg.normalization.obs_scales):
@@ -196,7 +183,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
             clip_actions = 1000.
 
     class noise(LeggedRobotCfg.noise):
-        add_noise = False
+        add_noise = True
         noise_level = 0.1  # scales other values
 
         class noise_scales(LeggedRobotCfg.noise.noise_scales):
@@ -210,7 +197,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
     class sim:
         dt =  0.002
         substeps = 1
-        gravity = [0., 0. , -9.81]  # [m/s^2]
+        gravity = [0., 0., -9.81]  # [m/s^2]
 
 class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
     seed = -1

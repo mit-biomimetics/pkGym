@@ -34,11 +34,11 @@ class LeggedRobotCfg(BaseConfig):
     class env:
         num_envs = 4096  # (n_robots in Rudin 2021 paper - batch_size = n_steps * n_robots)
         num_observations = 235
-        num_privileged_obs = None # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
+        num_privileged_obs = None  # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
         num_actions = 12
         env_spacing = 3.  # not used with heightfields/trimeshes 
-        send_timeouts = True # send time out information to the algorithm
-        episode_length_s = 20 # episode length in seconds
+        send_timeouts = True  # send time out information to the algorithm
+        episode_length_s = 20  # episode length in seconds
 
     class terrain:
         mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
@@ -83,8 +83,10 @@ class LeggedRobotCfg(BaseConfig):
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
 
-        default_setup = "Basic" #default setup chooses how the initial conditions are chosen. 
-                                #"Basic" = a single position with some randomized noise on top. "Range" = a range of joint positions and velocities. "Trajectory" = feed in a trajectory to sample from. 
+        reset_mode = "reset_to_basic" 
+        # reset setup chooses how the initial conditions are chosen. 
+        # "reset_to_basic" = a single position
+        # "reset_to_range" = uniformly random from a range defined below
 
         dof_pos_high = [0.,0.,0.] #DOF dimensions
         dof_pos_low = [0.,0.,0.]
@@ -122,7 +124,6 @@ class LeggedRobotCfg(BaseConfig):
         disable_actions = False
         disable_motors = False
         collapse_fixed_joints = True # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
-        initial_penetration_check = True
         fix_base_link = False # fixe the base of the robot
         default_dof_drive_mode = 3 # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
