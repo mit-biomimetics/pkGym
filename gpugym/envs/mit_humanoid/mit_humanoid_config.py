@@ -37,6 +37,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
         num_envs = 3000
         num_observations = 67+2+3*18 # 187
         num_actions = 18
+        episode_length_s = 10  # episode length in seconds
+
 
     class terrain(LeggedRobotCfg.terrain):
         curriculum = False
@@ -50,33 +52,34 @@ class MITHumanoidCfg(LeggedRobotCfg):
         resampling_time = 10. # time before command are changed[s]
         heading_command = True # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [0.5, 2.0] # min max [m/s]
+            lin_vel_x = [0., 0.] # min max [m/s]
             lin_vel_y = [0., 0]   # min max [m/s]
             ang_vel_yaw = [0., 0.]    # min max [rad/s]
             heading = [0, 0]
 
     class init_state(LeggedRobotCfg.init_state):
-        default_setup = "Trajectory" # default setup chooses how the initial conditions are chosen. 
-                                # "Basic" = a single position with some randomized noise on top. 
-                                # "Range" = a range of joint positions and velocities.
-                                #  "Trajectory" = feed in a trajectory to sample from. 
+        reset_mode = "reset_to_basic" # default setup chooses how the initial conditions are chosen.
+                                # "reset_to_basic" = a single position with some randomized noise on top. 
+                                # "reset_to_range" = a range of joint positions and velocities.
+                                #  "reset_to_traj" = feed in a trajectory to sample from. 
+        penetration_check = False  # disable to not check for penetration on initial conds.
 
         #default for normalization and basic initialization 
         default_joint_angles = {  # = target angles [rad] when action = 0.0
             'left_hip_yaw': 0.,
             'left_hip_abad': 0.,
-            'left_hip_pitch': 0.,
-            'left_knee': 0.,  # 0.785,
-            'left_ankle': 0.,
+            'left_hip_pitch': -0.4,
+            'left_knee': 0.77,  # 0.785,
+            'left_ankle': -0.37,
             'left_shoulder_pitch': 0.,
             'left_shoulder_abad': 0.,
             'left_shoulder_yaw': 0.,
             'left_elbow': 0.,
             'right_hip_yaw': 0.,
             'right_hip_abad': 0.,
-            'right_hip_pitch': 0.,
-            'right_knee': 0.,  # 0.785,
-            'right_ankle': 0.,
+            'right_hip_pitch': -0.4,
+            'right_knee': 0.77,  # 0.785,
+            'right_ankle': -0.37,
             'right_shoulder_pitch': 0.,
             'right_shoulder_abad': 0.,
             'right_shoulder_yaw': 0.,
@@ -84,7 +87,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         }
 
         #default COM for basic initialization 
-        pos = [0.0, 0.0, 0.78]  # x,y,z [m]
+        pos = [0.0, 0.0, 0.66]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
@@ -100,13 +103,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
         com_vel_high = [0.,0.,0., 0., 0.0, 0.]
         com_vel_low = [0.,0.,0.,0.,0.,0.]
 
-        #initialization for traj sampling setup
-        #ref_traj = "../../resources/robots/mit_humanoid/trajectories/across_back10/JSM_across_back_2_RESAMPLED10.csv"
-        # ref_traj = "../../resources/robots/mit_humanoid/trajectories/SH_standing_roll_2021_11_1_OUTPUT_1.csv"
-        ref_traj = "../../resources/robots/mit_humanoid/trajectories/humanoid3d_walk.csv"
-        ref_type = "PosVel" #Pos, PosVel
-        is_single_traj = False #if the trajectory should only be run once 
-
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
         stiffness = {'hip_yaw': 100.,
@@ -114,25 +110,22 @@ class MITHumanoidCfg(LeggedRobotCfg):
                      'hip_pitch': 100.,
                      'knee': 100.,
                      'ankle': 100.,
-                     'shoulder_pitch': 10.,
-                     'shoulder_abad': 10.,
-                     'shoulder_yaw': 10.,
-                     'elbow': 10.,
+                     'shoulder_pitch': 20.,
+                     'shoulder_abad': 20.,
+                     'shoulder_yaw': 20.,
+                     'elbow': 20.,
                     }  # [N*m/rad]
         damping = {'hip_yaw': 2.,
                    'hip_abad': 2.,
                    'hip_pitch': 2.,
                    'knee': 2.,
-                   'ankle': 1.0,
+                   'ankle': 2.,
                    'shoulder_pitch': 0.5,
                    'shoulder_abad': 0.5,
                    'shoulder_yaw': 0.5,
                    'elbow': 5,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
-        nominal_pos = True  # use ref traj as nominal traj
-        nominal_vel = False  # requires "PosVel" for ref_type
-        # stiffness = {}
-        # damping = {}
+
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 1.
         # decimation: Number of control action updates @ sim DT per policy DT
@@ -143,9 +136,9 @@ class MITHumanoidCfg(LeggedRobotCfg):
         friction_range = [0.5, 1.25]
         randomize_base_mass = False
         added_mass_range = [-1., 1.]
-        push_robots = True
-        push_interval_s = 15
-        max_push_vel_xy = 1.
+        push_robots = False
+        push_interval_s = 2
+        max_push_vel_xy = 0.25
 
     class asset(LeggedRobotCfg.asset):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_ht.urdf'
@@ -158,8 +151,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         default_dof_drive_mode = 3
         disable_gravity = False
         disable_actions = False
-        disable_motors = False 
-        initial_penetration_check = True #disable to not check for penetration on initial conds. 
+        disable_motors = False
 
     class rewards(LeggedRobotCfg.rewards):
         soft_dof_pos_limit = 0.9
@@ -169,55 +161,30 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         # if true negative total rewards are clipped at zero (avoids early termination problems)
         only_positive_rewards = False
-        base_height_target = 0.65
+        base_height_target = 0.6565
         tracking_sigma = 0.25
 
-        #reference traj tracking
-        base_pos_tracking = 0.0
-        base_vel_tracking = 0.15
-        dof_pos_tracking = 0.7
-        dof_vel_tracking = 0.15
+        swing_height_target = 0.1
 
         # this is scaling sqrd-exp width
-        base_vel_scaling = 10
-        dof_pos_scaling = 2
-        dof_vel_scaling = 0.1
-
-        joint_level_scaling = [0.3,  # left_hip_yaw
-                               0.3,  # left_hip_abad
-                               1,  # left_hip_pitch
-                               100,  # left_knee
-                               1,  # left_ankle
-                               0.1,  # left_shoulder_pitch
-                               0.1,  # left_shoulder_abad
-                               0.1,  # left_shoulder_yaw
-                               0.1,  # left_elbow
-                               0.3,  # right_hip_yaw
-                               0.3,  # right_hip_abad
-                               1,  # right_hip_pitch
-                               100,  # right_knee
-                               1,  # right_ankle
-                               0.1,  # right_shoulder_pitch
-                               0.1,  # right_shoulder_abad
-                               0.1,  # right_shoulder_yaw
-                               0.1]  # right_elbow
+        base_yaw_rate_tracking = 0.7
+        swing_height_tracking = 0.008
 
         class scales(LeggedRobotCfg.rewards.scales):
-            reference_traj = 1.0
             termination = -1.
-            tracking_lin_vel = 0.
-            tracking_ang_vel = 1.
-            lin_vel_z = -0.
-            ang_vel_xy = -0.0
+            tracking_lin_vel = 0.0
+            tracking_ang_vel = 0.02
+            lin_vel_z = 0.5
+            ang_vel_xy = -0.1
             orientation = 0.1
             torques = -5.e-7
-            dof_vel = 0.0
-            dof_acc = 0.0
-            base_height = 0.0
-            feet_air_time = 1.0  # rewards keeping feet in the air
+            dof_vel = 0.001
+            base_height = 1.
+            dof_near_home = 1.
+            feet_air_time = 0.0  # rewards keeping feet in the air
             collision = -1.
             feet_stumble = -0.
-            action_rate = -0.01 # -0.01
+            action_rate = -0.01
             action_rate2 = -0.001
             stand_still = -0.
             dof_pos_limits = -0.0
@@ -233,14 +200,14 @@ class MITHumanoidCfg(LeggedRobotCfg):
                 dimless_time = (0.7/9.81)**0.5
                 v_leg = 0.72
                 # lin_vel = 1/v_leg*dimless_time
-                base_z = 1./0.72
+                base_z = 1./0.6565
                 lin_vel =  1./v_leg  # virtual leg lengths per second
                 # ang_vel = 0.25
                 ang_vel = 1./3.14*dimless_time
                 dof_pos = 1./3.14
                 dof_vel = 0.05  # ought to be roughly max expected speed.
 
-                height_measurements = 1./0.72
+                height_measurements = 1./0.6565
             # clip_observations = 100.
             clip_actions = 1000.
 
@@ -261,9 +228,14 @@ class MITHumanoidCfg(LeggedRobotCfg):
         substeps = 1
         gravity = [0., 0., -9.81]
 
+    class gait():
+        nom_gait_period = 0.8
+        phase_offsets = [0, 0.5] # phase offset for each leg
+        switchingPhaseNominal = 0.5 # switch phase from stance to swing
 
 class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
 
+    do_wandb = True
 
     class algorithm(LeggedRobotCfgPPO.algorithm):
         entropy_coef = 0.01
@@ -271,8 +243,8 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
     class runner(LeggedRobotCfgPPO.runner):
         num_steps_per_env = 25
         max_iterations = 1000
-        run_name = 'Reference_Traj_Walking'
-        experiment_name = 'MIT_Humanoid'
+        run_name = 'Standing'
+        experiment_name = 'MIT_Humanoid_Stand'
         save_interval = 50
 
     class policy( LeggedRobotCfgPPO.policy ):

@@ -10,32 +10,79 @@ from typing import Tuple, Dict
 from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
 from gpugym.envs import LeggedRobot
 
+import pandas as pd
+
+END_EFFECTOR = ["left_hand", "right_hand", "left_foot", "right_foot"]
+
 class MIT_Humanoid(LeggedRobot):
 
     def _custom_init(self, cfg):
-        # * init buffer for phase variable
+
+
+        # * init buffer for phase main variable
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
 
-        # * additional buffer for last ctrl: whatever is actually used for PD control (which can be shifted compared to action)
-        self.ctrl_hist = torch.zeros(self.num_envs, self.num_actions*3,
-                                         dtype=torch.float, device=self.device,
-                                         requires_grad=False)
+        # * init buffer for individual leg phase variable
+        self.LegPhase = torch.hstack((self.cfg.gait.phase_offsets[0]*torch.ones(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False),\
+                                       self.cfg.gait.phase_offsets[1]*torch.ones(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False)))
+
+        self.LegPhaseStance = torch.hstack((self.cfg.gait.phase_offsets[0]*torch.ones(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False),\
+                                       self.cfg.gait.phase_offsets[1]*torch.ones(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False)))
+
+        self.LegPhaseSwing = torch.hstack((self.cfg.gait.phase_offsets[0]*torch.ones(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False),\
+                                       self.cfg.gait.phase_offsets[1]*torch.ones(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False)))
+
+
+        self.nom_gait_period = self.cfg.gait.nom_gait_period
+
+        # get end_effector IDs for forward kinematics
+        body_ids = []
+        for body_name in END_EFFECTOR:
+            body_id = self.gym.find_actor_rigid_body_handle(self.envs[0], self.actor_handles[0], body_name)
+            body_ids.append(body_id)
+
+        self.end_eff_ids = to_torch(body_ids, device=self.device, dtype=torch.long)
 
 
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
             Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
         """
-        if self.cfg.init_state.is_single_traj:
-            self.phase = torch.minimum(self.phase + self.dt/self.total_ref_time, torch.tensor(1))
-        else:
-            if (self.total_ref_time > 0.0):
-                self.phase = torch.fmod(self.phase + self.dt/self.total_ref_time, 1)
-            else:
-                self.phase = torch.fmod(self.phase+self.dt, 1.)
+        # increment phase variable
+        dphase = self.dt / self.nom_gait_period
 
-        
+        self.phase = torch.fmod(self.phase + dphase, 1)
+
+        for foot in range(2):
+            self.LegPhase[:, foot] = torch.fmod(self.LegPhase[:, foot] + dphase, 1)
+
+            in_stance_bool = (self.LegPhase[:, foot] <= self.cfg.gait.switchingPhaseNominal)
+            in_swing_bool = torch.logical_not(in_stance_bool)
+
+            self.LegPhaseStance[:, foot] = self.LegPhase[:, foot] / self.cfg.gait.switchingPhaseNominal*in_stance_bool +\
+                                           in_swing_bool*1 # Stance phase has completed since foot is in swing
+
+            self.LegPhaseSwing[:, foot] = 0 * in_stance_bool \
+                                          + in_swing_bool*(self.LegPhase[:, foot] - self.cfg.gait.switchingPhaseNominal)\
+                                          / (1.0 - self.cfg.gait.switchingPhaseNominal)
+
+        #     if (self.LegPhase[:, foot] <= self.cfg.gait.switchingPhaseNominal):
+        #         self.LegPhaseStance[:, foot] = self.LegPhase[:, foot]/self.cfg.gait.switchingPhaseNominal
+        #         self.LegPhaseSwing[:, foot] = 0  # Swing phase has not started since foot is in stance
+
+        #     # in swing phase
+        #     else:
+        #         self.LegPhaseStance[:, foot] = 1.  # Stance phase has completed since foot is in swing
+        #         self.LegPhaseSwing[:, foot] = (self.LegPhase[:, foot] - self.cfg.gait.switchingPhaseNominal)\
+        #                                       / (1.0 - self.cfg.gait.switchingPhaseNominal)
+
 
         env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
         self._resample_commands(env_ids)
@@ -66,13 +113,6 @@ class MIT_Humanoid(LeggedRobot):
         # phase
         base_z = self.root_states[:, 2].unsqueeze(1)*self.obs_scales.base_z
         dof_pos = (self.dof_pos-self.default_dof_pos)*self.obs_scales.dof_pos
-
-        # * update commanded action history buffer
-        # todo move this to compute_torques, so you actually do it properly
-        nact = self.num_actions
-        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
-        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
-        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale  + self.default_dof_pos
 
         self.obs_buf = torch.cat((base_z,
                                   self.base_lin_vel*self.obs_scales.lin_vel,
@@ -127,32 +167,71 @@ class MIT_Humanoid(LeggedRobot):
                                 * self.obs_scales.height_measurements
         return noise_vec
 
+
+    def _custom_reset(self, env_ids):
+        if self.cfg.init_state.penetration_check:
+            temp_root_state = torch.clone(self.root_states)
+            temp_dof_state = torch.clone(self.dof_state)
+
+            self.gym.simulate(self.sim) #Need to one step the simulation to update dof !!THIS MAY BE A TERRIBLE IDEA!!
+
+            #retrieve body states of every link in every environment. 
+            self.gym.refresh_rigid_body_state_tensor(self.sim)
+            body_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
+            rb_states = gymtorch.wrap_tensor(body_states)
+
+            num_links = int(len(rb_states[:,0])/self.num_envs)
+
+            #iterate through the env ids that are being reset (and only the ones being reset)
+            for i in env_ids:
+                max_penetration = 0 
+                for j in range(num_links):
+                    #check each body position 
+                    link_height = rb_states[i*num_links + j, 2]
+                    if (link_height < 0.1): #check if COM of rigid link is to close to ground 
+                        #TODO: replace with exact measurement of toe/heel height
+                        if (0.1 - link_height > max_penetration):
+                            max_penetration = -link_height + 0.1
+
+                #find max penetration and shift root state by that amount. 
+                temp_root_state[i, 2] += max_penetration
+
+            env_ids_int32 = env_ids.to(dtype=torch.int32)
+            self.gym.set_actor_root_state_tensor_indexed(self.sim,
+                                                    gymtorch.unwrap_tensor(temp_root_state),
+                                                    gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
+            self.gym.set_dof_state_tensor_indexed(self.sim,
+                                                gymtorch.unwrap_tensor(temp_dof_state),
+                                                gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))       
+
     def sqrdexp(self, x):
         """ shorthand helper for squared exponential
         """
         return torch.exp(-torch.square(x)/self.cfg.rewards.tracking_sigma)
+
 
     def _reward_no_fly(self):
         contacts = self.contact_forces[:, self.feet_indices, 2] > 0.1
         single_contact = torch.sum(1.*contacts, dim=1) == 1
         return 1.*single_contact
 
+
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity w. squared exp
         return self.sqrdexp(self.base_lin_vel[:, 2]  \
                             * self.cfg.normalization.obs_scales.lin_vel)
 
-    def _reward_ang_vel_xy(self):
-        # Penalize xy axes base angular velocity
-        error = self.sqrdexp(self.base_ang_vel[:, :2] \
-                             * self.cfg.normalization.obs_scales.ang_vel)
-        return torch.sum(error, dim=1)
+    def _reward_tracking_ang_vel(self):
+        # Tracking of angular velocity commands (yaw)
+        ang_vel_error = torch.square(self.commands[:, 2] - self.base_ang_vel[:, 2])
+        return torch.exp(-ang_vel_error/self.cfg.rewards.base_yaw_rate_tracking)
 
     def _reward_orientation(self):
         # Penalize non flat base orientation
         error = torch.sum(torch.square(self.projected_gravity[:, :2]), dim=1)
         return torch.exp(-error/self.cfg.rewards.tracking_sigma)
         # return self.sqrdexp(self.projected_gravity[:, 2]+1.)
+
 
     def _reward_base_height(self):
         """
@@ -164,6 +243,7 @@ class MIT_Humanoid(LeggedRobot):
         error = torch.clamp(error, max=0, min=None).flatten()
         return torch.exp(-torch.square(error)/self.cfg.rewards.tracking_sigma)
 
+
     def _reward_tracking_lin_vel(self):
         # Tracking of linear velocity commands (xy axes)
         # just use lin_vel?
@@ -173,60 +253,13 @@ class MIT_Humanoid(LeggedRobot):
         error = torch.sum(torch.square(error), dim=1)
         return torch.exp(-error/self.cfg.rewards.tracking_sigma)
 
-    def _reward_reference_traj(self):
-        #tracking the reference trajectory
-        ref_traj_idx = (torch.round(self.phase*self.pos_traj.size(dim=0)).squeeze(1)).long()
-        pos_ref_frame = self.pos_traj.repeat(self.num_envs,1)[ref_traj_idx,:]
-        vel_ref_frame = self.vel_traj.repeat(self.num_envs,1)[ref_traj_idx.long(),:]
-        reward = 0.
 
-        # todo needs to be redone: metrics in quaternion space are crap
-        # base position error
-        # base_pos_error = self.root_states[:,0:7] - pos_ref_frame[:, 1:8]
-        # base_pos_error = torch.exp(-torch.sum(torch.square(base_pos_error), dim=1))
-        # base_pos_error[:, 0:3] *= self.cfg.normalization.obs_scales.base_z
-        # reward += self.sqrdexp(base_pos_error)
-        #dof position error
-        dof_pos_err = (self.dof_pos - pos_ref_frame[:,8:])
-        dof_pos_err *= self.cfg.rewards.dof_pos_scaling #self.cfg.normalization.obs_scales.dof_pos
-        dof_pos_err *= torch.tensor(self.cfg.rewards.joint_level_scaling, device=self.device)
-        reward += torch.sum(self.sqrdexp(dof_pos_err), dim=1) \
-                  * self.cfg.rewards.dof_pos_tracking
-
-        # base velocity error
-        # * might want this to be vector instead of element-wise
-        base_vel_err = self.root_states[:,7:] - vel_ref_frame[:,1:7]
-        base_vel_err[:, 1:4] *= self.cfg.rewards.base_vel_scaling #self.cfg.normalization.obs_scales.lin_vel
-        base_vel_err[:, 4:] *= self.cfg.rewards.base_vel_scaling  #self.cfg.normalization.obs_scales.ang_vel
-        reward += torch.sum(self.sqrdexp(base_vel_err), dim=1) \
-                  * self.cfg.rewards.base_vel_tracking
-
-        # dof velocity error
-        dof_vel_err = self.dof_vel - vel_ref_frame[:, 7:]
-        dof_vel_err *= self.cfg.rewards.dof_vel_scaling  # self.cfg.normalization.obs_scales.dof_vel
-        dof_vel_err *= torch.tensor(self.cfg.rewards.joint_level_scaling, device=self.device)
-        reward += torch.sum(self.sqrdexp(dof_vel_err), dim=1) \
-                  * self.cfg.rewards.dof_vel_tracking
-        # dof_vel_error =  torch.exp(-torch.sum(torch.square(dof_vel_error),dim=1))
-
-        return reward
-
-
-    def _reward_action_rate2(self):
-        # Penalize changes in actions
-        nact = self.num_actions
-        dt2 = (self.dt*self.cfg.control.decimation)**2
-        error = torch.square(self.ctrl_hist[:, :nact]  \
-                             - 2*self.ctrl_hist[:, nact:2*nact]  \
-                             + self.ctrl_hist[:, 2*nact:])/dt2
-        # todo this tracking_sigma is not scaled (check)
-        # error = torch.exp(-error/self.cfg.rewards.tracking_sigma)
-        return torch.sum(error, dim=1)
 
     def _reward_dof_vel(self):
         # Penalize dof velocities
-        return self.sqrdexp(self.dof_vel  \
-                            / self.cfg.normalization.obs_scales.dof_vel)
+        return torch.sum(self.sqrdexp(self.dof_vel  \
+                            / self.cfg.normalization.obs_scales.dof_vel), dim=1)
+
 
     def _reward_symm_legs(self):
         error = 0.
@@ -237,6 +270,7 @@ class MIT_Humanoid(LeggedRobot):
             error += self.sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
                         / self.cfg.normalization.obs_scales.dof_pos)
         return error
+
 
     def _reward_symm_arms(self):
         error = 0.
@@ -249,3 +283,14 @@ class MIT_Humanoid(LeggedRobot):
                         / self.cfg.normalization.obs_scales.dof_pos)
         return error
 
+    def _reward_dof_near_home(self):
+        return torch.sum(self.sqrdexp((self.dof_pos - self.default_dof_pos) * self.cfg.normalization.obs_scales.dof_pos), dim=1)
+
+    def _reward_swing_height(self):
+        # reward for foot swing height based on gait scheduler.
+
+        height_ref = self.cfg.rewardsswing_height_target*torch.sin(torch.pi * self.LegPhaseSwing[:,0])
+        feet_heights = self._rigid_body_pos[:, self.end_eff_ids[2], :][2]
+        error = height_ref - feet_heights
+
+        return self.sqrdexp(error/self.cfg.rewards.swing_height_tracking)
