@@ -182,7 +182,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             base_height = 1.
             dof_near_home = 1.
             feet_air_time = 0.0  # rewards keeping feet in the air
-            collision = -1.
+            collision = -1
             feet_stumble = -0.
             action_rate = -0.01
             action_rate2 = -0.001
@@ -190,7 +190,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             dof_pos_limits = -0.0
             no_fly = 0.0
             feet_contact_forces = -0.
-            symm_legs = 0.0
+            symm_legs = 0.#0.000002
             symm_arms = 0.0
 
     class normalization(LeggedRobotCfg.normalization):
@@ -242,7 +242,7 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
 
     class runner(LeggedRobotCfgPPO.runner):
         num_steps_per_env = 25
-        max_iterations = 1000
+        max_iterations = 500
         run_name = 'Standing'
         experiment_name = 'MIT_Humanoid_Stand'
         save_interval = 50
