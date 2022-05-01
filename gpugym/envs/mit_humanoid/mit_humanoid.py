@@ -73,16 +73,6 @@ class MIT_Humanoid(LeggedRobot):
                                           + in_swing_bool*(self.LegPhase[:, foot] - self.cfg.gait.switchingPhaseNominal)\
                                           / (1.0 - self.cfg.gait.switchingPhaseNominal)
 
-        #     if (self.LegPhase[:, foot] <= self.cfg.gait.switchingPhaseNominal):
-        #         self.LegPhaseStance[:, foot] = self.LegPhase[:, foot]/self.cfg.gait.switchingPhaseNominal
-        #         self.LegPhaseSwing[:, foot] = 0  # Swing phase has not started since foot is in stance
-
-        #     # in swing phase
-        #     else:
-        #         self.LegPhaseStance[:, foot] = 1.  # Stance phase has completed since foot is in swing
-        #         self.LegPhaseSwing[:, foot] = (self.LegPhase[:, foot] - self.cfg.gait.switchingPhaseNominal)\
-        #                                       / (1.0 - self.cfg.gait.switchingPhaseNominal)
-
 
         env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
         self._resample_commands(env_ids)
@@ -284,13 +274,17 @@ class MIT_Humanoid(LeggedRobot):
         return error
 
     def _reward_dof_near_home(self):
-        return torch.sum(self.sqrdexp((self.dof_pos - self.default_dof_pos) * self.cfg.normalization.obs_scales.dof_pos), dim=1)
+        jnt_scales = torch.tensor(self.cfg.rewards.joint_level_scaling, device=self.device)
+
+        return torch.sum(jnt_scales*self.sqrdexp((self.dof_pos - self.default_dof_pos) \
+            * self.cfg.normalization.obs_scales.dof_pos), dim=1)
 
     def _reward_swing_height(self):
         # reward for foot swing height based on gait scheduler.
 
-        height_ref = self.cfg.rewardsswing_height_target*torch.sin(torch.pi * self.LegPhaseSwing[:,0])
-        feet_heights = self._rigid_body_pos[:, self.end_eff_ids[2], :][2]
+        height_ref = self.cfg.rewards.swing_height_target*torch.sin(torch.pi * self.LegPhaseSwing[:,:])
+        feet_ids = self.end_eff_ids[2:3]
+        feet_heights = self._rigid_body_pos[:, feet_ids, :][2]
         error = height_ref - feet_heights
 
-        return self.sqrdexp(error/self.cfg.rewards.swing_height_tracking)
+        return torch.sum(self.sqrdexp(error/self.cfg.rewards.swing_height_tracking))

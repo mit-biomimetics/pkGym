@@ -137,14 +137,14 @@ class MITHumanoidCfg(LeggedRobotCfg):
         randomize_base_mass = False
         added_mass_range = [-1., 1.]
         push_robots = False
-        push_interval_s = 2
-        max_push_vel_xy = 0.25
+        push_interval_s = 0.5
+        max_push_vel_xy = 0.5
 
     class asset(LeggedRobotCfg.asset):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_ht.urdf'
         foot_name = 'foot'
         penalize_contacts_on = ['base', 'arm']
-        terminate_after_contacts_on = ['base' ]
+        terminate_after_contacts_on = ['base' ,'arm','shoulder']
         flip_visual_attachments = False
         self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
@@ -171,7 +171,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         swing_height_tracking = 0.008
 
         joint_level_scaling = [1.0,  # left_hip_yaw
-                               1.0,  # left_hip_abad
+                               1.5,  # left_hip_abad
                                1.0,  # left_hip_pitch
                                1.0,  # left_knee
                                1.0,  # left_ankle
@@ -180,7 +180,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
                                1.0,  # left_shoulder_yaw
                                1.0,  # left_elbow
                                1.0,  # right_hip_yaw
-                               1.0,  # right_hip_abad
+                               1.5,  # right_hip_abad
                                1.0,  # right_hip_pitch
                                1.0,  # right_knee
                                1.0,  # right_ankle
@@ -191,21 +191,20 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         class scales(LeggedRobotCfg.rewards.scales):
             termination = -1.
-            tracking_lin_vel = 0.001
+            tracking_lin_vel = 0.0001
             tracking_ang_vel = 0.02
             lin_vel_z = 0.5
             ang_vel_xy = -0.1
             orientation = 0.1
             torques = -5.e-7
-            dof_vel = 0.001
+            dof_vel = 0.000
             base_height = 1.
             dof_near_home = 1.
             action_rate = -0.01
             action_rate2 = -0.001
+            collision = -1.
 
 
-            collision = -0.
-            feet_stumble = -0.
             stand_still = -0.
             dof_pos_limits = -0.0
             no_fly = 0.0
@@ -233,7 +232,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             clip_actions = 1000.
 
     class noise(LeggedRobotCfg.noise):
-        add_noise = True
+        add_noise = False
         noise_level = 0.1  # scales other values
 
         class noise_scales(LeggedRobotCfg.noise.noise_scales):
