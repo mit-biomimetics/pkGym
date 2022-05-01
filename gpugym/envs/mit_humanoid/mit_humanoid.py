@@ -284,7 +284,7 @@ class MIT_Humanoid(LeggedRobot):
 
         height_ref = self.cfg.rewards.swing_height_target*torch.sin(torch.pi * self.LegPhaseSwing[:,:])
         feet_ids = self.end_eff_ids[2:3]
-        feet_heights = self._rigid_body_pos[:, feet_ids, :][2]
+        feet_heights = self._rigid_body_pos[:, feet_ids, 2]
         error = height_ref - feet_heights
 
         return torch.sum(self.sqrdexp(error/self.cfg.rewards.swing_height_tracking))
