@@ -69,7 +69,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             'left_hip_yaw': 0.,
             'left_hip_abad': 0.,
             'left_hip_pitch': -0.4,
-            'left_knee': 0.77,  # 0.785,
+            'left_knee': 0.77,  
             'left_ankle': -0.37,
             'left_shoulder_pitch': 0.,
             'left_shoulder_abad': 0.,
@@ -170,9 +170,28 @@ class MITHumanoidCfg(LeggedRobotCfg):
         base_yaw_rate_tracking = 0.7
         swing_height_tracking = 0.008
 
+        joint_level_scaling = [1.0,  # left_hip_yaw
+                               1.0,  # left_hip_abad
+                               1.0,  # left_hip_pitch
+                               1.0,  # left_knee
+                               1.0,  # left_ankle
+                               1.0,  # left_shoulder_pitch
+                               1.0,  # left_shoulder_abad
+                               1.0,  # left_shoulder_yaw
+                               1.0,  # left_elbow
+                               1.0,  # right_hip_yaw
+                               1.0,  # right_hip_abad
+                               1.0,  # right_hip_pitch
+                               1.0,  # right_knee
+                               1.0,  # right_ankle
+                               1.0,  # right_shoulder_pitch
+                               1.0,  # right_shoulder_abad
+                               1.0,  # right_shoulder_yaw
+                               1.0]  # right_elbow
+
         class scales(LeggedRobotCfg.rewards.scales):
             termination = -1.
-            tracking_lin_vel = 0.0
+            tracking_lin_vel = 0.001
             tracking_ang_vel = 0.02
             lin_vel_z = 0.5
             ang_vel_xy = -0.1
@@ -181,17 +200,19 @@ class MITHumanoidCfg(LeggedRobotCfg):
             dof_vel = 0.001
             base_height = 1.
             dof_near_home = 1.
-            feet_air_time = 0.0  # rewards keeping feet in the air
-            collision = -1
-            feet_stumble = -0.
             action_rate = -0.01
             action_rate2 = -0.001
+
+
+            collision = -0.
+            feet_stumble = -0.
             stand_still = -0.
             dof_pos_limits = -0.0
             no_fly = 0.0
             feet_contact_forces = -0.
             symm_legs = 0.#0.000002
             symm_arms = 0.0
+            feet_air_time = 0.0  # rewards keeping feet in the air
 
     class normalization(LeggedRobotCfg.normalization):
             class obs_scales(LeggedRobotCfg.normalization.obs_scales):
