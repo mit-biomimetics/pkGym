@@ -10,7 +10,6 @@ from typing import Tuple, Dict
 from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
 from gpugym.utils.gait_scheduler import gait_scheduler
 from gpugym.envs import LeggedRobot
-
 import pandas as pd
 
 END_EFFECTOR = ["left_hand", "right_hand", "left_foot", "right_foot"]
@@ -18,8 +17,6 @@ END_EFFECTOR = ["left_hand", "right_hand", "left_foot", "right_foot"]
 class MIT_Humanoid(LeggedRobot):
 
     def _custom_init(self, cfg):
-        self.GS = gait_scheduler(self.cfg.gait,self.num_envs,self.device,self.dt)
-
         # get end_effector IDs for forward kinematics
         body_ids = []
         for body_name in END_EFFECTOR:
@@ -29,27 +26,21 @@ class MIT_Humanoid(LeggedRobot):
         self.end_eff_ids = to_torch(body_ids, device=self.device, dtype=torch.long)
 
 
-    def _post_physics_step_callback(self):
-        """ Callback called before computing terminations, rewards, and observations, phase-dynamics
-            Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
-        """
-        # increment phase variable
-        self.GS.increment_phase()
-        self.phase = self.GS.phase
+    # def _post_physics_step_callback(self):
+    #     """ Callback called before computing terminations, rewards, and observations, phase-dynamics
+    #         Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
+    #     """
+    #     env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
+    #     self._resample_commands(env_ids)
+    #     if self.cfg.commands.heading_command:
+    #         forward = quat_apply(self.base_quat, self.forward_vec)
+    #         heading = torch.atan2(forward[:, 1], forward[:, 0])
+    #         self.commands[:, 2] = torch.clip(0.5*wrap_to_pi(self.commands[:, 3] - heading), -1., 1.)
 
-
-
-        env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
-        self._resample_commands(env_ids)
-        if self.cfg.commands.heading_command:
-            forward = quat_apply(self.base_quat, self.forward_vec)
-            heading = torch.atan2(forward[:, 1], forward[:, 0])
-            self.commands[:, 2] = torch.clip(0.5*wrap_to_pi(self.commands[:, 3] - heading), -1., 1.)
-
-        if self.cfg.terrain.measure_heights:
-            self.measured_heights = self._get_heights()
-        if self.cfg.domain_rand.push_robots and  (self.common_step_counter % self.cfg.domain_rand.push_interval == 0):
-            self._push_robots()
+    #     if self.cfg.terrain.measure_heights:
+    #         self.measured_heights = self._get_heights()
+    #     if self.cfg.domain_rand.push_robots and  (self.common_step_counter % self.cfg.domain_rand.push_interval == 0):
+    #         self._push_robots()
 
 
     def compute_observations(self):
@@ -65,7 +56,6 @@ class MIT_Humanoid(LeggedRobot):
         # joint vel
         # actions
         # actions (n-1, n-2)
-        # phase
         base_z = self.root_states[:, 2].unsqueeze(1)*self.obs_scales.base_z
         dof_pos = (self.dof_pos-self.default_dof_pos)*self.obs_scales.dof_pos
 
@@ -77,9 +67,7 @@ class MIT_Humanoid(LeggedRobot):
                                   dof_pos,
                                   self.dof_vel*self.obs_scales.dof_vel,
                                   self.actions,
-                                  self.ctrl_hist,
-                                  torch.cos(self.phase*2*torch.pi),
-                                  torch.sin(self.phase*2*torch.pi)
+                                  self.ctrl_hist
                                   ),
                                  dim=-1)
         # * add perceptive inputs if not blind
@@ -116,7 +104,6 @@ class MIT_Humanoid(LeggedRobot):
         noise_vec[12:30] = noise_scales.dof_pos*ns_lvl*self.obs_scales.dof_pos
         noise_vec[30:48] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel
         noise_vec[48:66] = 0.  # previous actions
-        noise_vec[66:68] = 0.  # phase # * could add noise, to make u_ff robust
         if self.cfg.terrain.measure_heights:
             noise_vec[66:187] = noise_scales.height_measurements*ns_lvl \
                                 * self.obs_scales.height_measurements
@@ -243,13 +230,3 @@ class MIT_Humanoid(LeggedRobot):
 
         return torch.sum(jnt_scales*self.sqrdexp((self.dof_pos - self.default_dof_pos) \
             * self.cfg.normalization.obs_scales.dof_pos), dim=1)
-
-    def _reward_swing_height(self):
-        # reward for foot swing height based on gait scheduler.
-
-        height_ref = self.cfg.rewards.swing_height_target*torch.sin(torch.pi * self.LegPhaseSwing[:,:])
-        feet_ids = self.end_eff_ids[2:3]
-        feet_heights = self._rigid_body_pos[:, feet_ids, 2]
-        error = height_ref - feet_heights
-
-        return torch.sum(self.sqrdexp(error/self.cfg.rewards.swing_height_tracking))

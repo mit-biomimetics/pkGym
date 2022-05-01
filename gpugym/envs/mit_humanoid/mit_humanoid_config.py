@@ -35,7 +35,7 @@ from gpugym.envs.base.legged_robot_config import LeggedRobotCfgPPO
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         num_envs = 3000
-        num_observations = 67+2+3*18 # 187
+        num_observations = 67+3*18 # 187
         num_actions = 18
         episode_length_s = 10  # episode length in seconds
 
@@ -247,11 +247,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
         dt = 0.002
         substeps = 1
         gravity = [0., 0., -9.81]
-
-    class gait():
-        nom_gait_period = 0.8
-        phase_offsets = [0, 0.5] # phase offset for each leg
-        switchingPhaseNominal = 0.5 # switch phase from stance to swing
 
 class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
 
