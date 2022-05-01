@@ -8,6 +8,7 @@ from isaacgym import gymtorch, gymapi, gymutil
 import torch
 from typing import Tuple, Dict
 from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
+from gpugym.utils.gait_scheduler import gait_scheduler
 from gpugym.envs import LeggedRobot
 
 import pandas as pd
@@ -17,30 +18,7 @@ END_EFFECTOR = ["left_hand", "right_hand", "left_foot", "right_foot"]
 class MIT_Humanoid(LeggedRobot):
 
     def _custom_init(self, cfg):
-
-
-        # * init buffer for phase main variable
-        self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
-                                 device=self.device, requires_grad=False)
-
-        # * init buffer for individual leg phase variable
-        self.LegPhase = torch.hstack((self.cfg.gait.phase_offsets[0]*torch.ones(self.num_envs, 1, dtype=torch.float,
-                                 device=self.device, requires_grad=False),\
-                                       self.cfg.gait.phase_offsets[1]*torch.ones(self.num_envs, 1, dtype=torch.float,
-                                 device=self.device, requires_grad=False)))
-
-        self.LegPhaseStance = torch.hstack((self.cfg.gait.phase_offsets[0]*torch.ones(self.num_envs, 1, dtype=torch.float,
-                                 device=self.device, requires_grad=False),\
-                                       self.cfg.gait.phase_offsets[1]*torch.ones(self.num_envs, 1, dtype=torch.float,
-                                 device=self.device, requires_grad=False)))
-
-        self.LegPhaseSwing = torch.hstack((self.cfg.gait.phase_offsets[0]*torch.ones(self.num_envs, 1, dtype=torch.float,
-                                 device=self.device, requires_grad=False),\
-                                       self.cfg.gait.phase_offsets[1]*torch.ones(self.num_envs, 1, dtype=torch.float,
-                                 device=self.device, requires_grad=False)))
-
-
-        self.nom_gait_period = self.cfg.gait.nom_gait_period
+        self.GS = gait_scheduler(self.cfg.gait,self.num_envs,self.device,self.dt)
 
         # get end_effector IDs for forward kinematics
         body_ids = []
@@ -56,22 +34,9 @@ class MIT_Humanoid(LeggedRobot):
             Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
         """
         # increment phase variable
-        dphase = self.dt / self.nom_gait_period
+        self.GS.increment_phase()
+        self.phase = self.GS.phase
 
-        self.phase = torch.fmod(self.phase + dphase, 1)
-
-        for foot in range(2):
-            self.LegPhase[:, foot] = torch.fmod(self.LegPhase[:, foot] + dphase, 1)
-
-            in_stance_bool = (self.LegPhase[:, foot] <= self.cfg.gait.switchingPhaseNominal)
-            in_swing_bool = torch.logical_not(in_stance_bool)
-
-            self.LegPhaseStance[:, foot] = self.LegPhase[:, foot] / self.cfg.gait.switchingPhaseNominal*in_stance_bool +\
-                                           in_swing_bool*1 # Stance phase has completed since foot is in swing
-
-            self.LegPhaseSwing[:, foot] = 0 * in_stance_bool \
-                                          + in_swing_bool*(self.LegPhase[:, foot] - self.cfg.gait.switchingPhaseNominal)\
-                                          / (1.0 - self.cfg.gait.switchingPhaseNominal)
 
 
         env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
