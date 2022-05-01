@@ -136,8 +136,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
         friction_range = [0.5, 1.25]
         randomize_base_mass = False
         added_mass_range = [-1., 1.]
-        push_robots = False
-        push_interval_s = 1
+        push_robots = True
+        push_interval_s = 2
         max_push_vel_xy = 0.5
 
     class asset(LeggedRobotCfg.asset):
@@ -146,7 +146,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         penalize_contacts_on = ['base', 'arm']
         terminate_after_contacts_on = ['base' ,'arm','shoulder']
         flip_visual_attachments = False
-        self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
+        self_collisions = 0 # 1 to disagble, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
         disable_gravity = False
