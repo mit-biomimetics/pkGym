@@ -168,7 +168,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         # this is scaling sqrd-exp width
         base_yaw_rate_tracking = 0.7
-        swing_height_tracking = 0.008
+        swing_height_tracking = 0.08
 
         joint_level_scaling = [1.0,  # left_hip_yaw
                                0.7,  # left_hip_abad
@@ -232,7 +232,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             clip_actions = 1000.
 
     class noise(LeggedRobotCfg.noise):
-        add_noise = False
+        add_noise = True
         noise_level = 0.1  # scales other values
 
         class noise_scales(LeggedRobotCfg.noise.noise_scales):
@@ -262,7 +262,7 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
 
     class runner(LeggedRobotCfgPPO.runner):
         num_steps_per_env = 25
-        max_iterations = 500
+        max_iterations = 1000
         run_name = 'Standing'
         experiment_name = 'MIT_Humanoid_Stand'
         save_interval = 50
