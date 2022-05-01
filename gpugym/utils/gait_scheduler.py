@@ -101,7 +101,7 @@ if __name__== "__main__":
     # gait config class needed to initialize the gait scheduler
     class gait():
         nom_gait_period = 0.8
-        phase_offsets = [0, 0.5] # phase offset for each leg the length of this vector also determined the nb of legs used for the gait schedule
+        phase_offsets = [0, 0.5, 0.1] # phase offset for each leg the length of this vector also determined the nb of legs used for the gait schedule
         switchingPhaseNominal = 0.5 # switch phase from stance to swing
     
     # environment step dt
@@ -109,7 +109,7 @@ if __name__== "__main__":
     cfg_gait = gait()
 
 
-    num_env = 3
+    num_env = 2
     GS = gait_scheduler(cfg_gait,num_env,'cpu',dt)
 
     Ttot = 2
@@ -124,8 +124,8 @@ if __name__== "__main__":
     
     for i in range(N_iter):
         GS.increment_phase()
-        
-        main_phase[:,i]  = GS.phase.detach().cpu().numpy()
+
+        main_phase[:,i]  = GS.phase.detach().cpu().numpy().ravel()
         leg_phase[:,:,i] = GS.LegPhase.detach().cpu().numpy()
         stance_phase[:,:,i] = GS.LegPhaseStance.detach().cpu().numpy()
         swing_phase[:,:,i] = GS.LegPhaseSwing.detach().cpu().numpy()
@@ -141,21 +141,20 @@ if __name__== "__main__":
     plt.title('main phase')
 
     plt.subplot(nrows, ncols, idx);idx+=1
-    plt.plot(time,leg_phase[:,0,:].T)
-    plt.plot(time,leg_phase[:,1,:].T)
+    for i in range(numlegs):
+        plt.plot(time,leg_phase[:,i,:].T)
     plt.title('leg phase')
-    plt.legend(["leg0","leg1"])
+    #plt.legend(["leg0","leg1"])
 
     plt.subplot(nrows, ncols, idx);idx+=1
-    plt.plot(time,stance_phase[:,0,:].T)
-    plt.plot(time,stance_phase[:,1,:].T)
+    for i in range(numlegs):
+       plt.plot(time,stance_phase[:,i,:].T)
     plt.title('stance phase')
     plt.legend(["leg0","leg1"])
 
     plt.subplot(nrows, ncols, idx);idx+=1
-    plt.plot(time,swing_phase[:,0,:].T)
-    plt.plot(time,swing_phase[:,1,:].T)
+    for i in range(numlegs):
+        plt.plot(time,swing_phase[:,i,:].T)
     plt.title('swing phase')
     plt.legend(["leg0","leg1"])
-    #plt.plot(time.detach().cpu().numpy(), main_phase.detach().cpu().numpy())
     plt.show()
