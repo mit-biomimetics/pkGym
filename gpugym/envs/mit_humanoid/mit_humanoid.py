@@ -14,6 +14,8 @@ import pandas as pd
 
 END_EFFECTOR = ["left_hand", "right_hand", "left_foot", "right_foot"]
 
+import pandas as pd
+
 class MIT_Humanoid(LeggedRobot):
 
     def _custom_init(self, cfg):
@@ -168,6 +170,7 @@ class MIT_Humanoid(LeggedRobot):
         ang_vel_error = torch.square(self.commands[:, 2] - self.base_ang_vel[:, 2])
         return torch.exp(-ang_vel_error/self.cfg.rewards.base_yaw_rate_tracking)
 
+
     def _reward_orientation(self):
         # Penalize non flat base orientation
         error = torch.sum(torch.square(self.projected_gravity[:, :2]), dim=1)
@@ -201,6 +204,7 @@ class MIT_Humanoid(LeggedRobot):
         # Penalize dof velocities
         return torch.sum(self.sqrdexp(self.dof_vel  \
                             / self.cfg.normalization.obs_scales.dof_vel), dim=1)
+
 
 
     def _reward_symm_legs(self):
