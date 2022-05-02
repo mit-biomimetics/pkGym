@@ -402,6 +402,11 @@ class LeggedRobot(BaseTask):
         """
         # pd controller
 
+        if self.cfg.control.exp_avg_decay:
+            self.action_avg = exp_avg_filter(self.actions, self.action_avg,
+                                            self.cfg.control.exp_avg_decay)
+            actions = self.action_avg
+
         if self.cfg.control.control_type=="P":
             torques = self.p_gains*(actions * self.cfg.control.action_scale \
                                     + self.default_dof_pos \

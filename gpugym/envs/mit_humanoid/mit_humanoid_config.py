@@ -128,8 +128,10 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 1.
+        # * exponential average decay for action scale
+        exp_avg_decay = 0.95  # set to None to disable
         # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 5  # ! substeps?
+        decimation = 1  # ! substeps?
 
     class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_friction = False

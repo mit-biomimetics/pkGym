@@ -7,8 +7,7 @@ from isaacgym import gymtorch, gymapi, gymutil
 
 import torch
 from typing import Tuple, Dict
-from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
-from gpugym.utils.gait_scheduler import gait_scheduler
+from gpugym.utils.math import *
 from gpugym.envs import LeggedRobot
 import pandas as pd
 
@@ -26,6 +25,11 @@ class MIT_Humanoid(LeggedRobot):
             body_ids.append(body_id)
 
         self.end_eff_ids = to_torch(body_ids, device=self.device, dtype=torch.long)
+
+        if self.cfg.control.exp_avg_decay:
+            self.action_avg = torch.zeros(self.num_envs, self.num_actions,
+                                            dtype=torch.float,
+                                            device=self.device, requires_grad=False)
 
 
     def compute_observations(self):
