@@ -7,7 +7,7 @@ from isaacgym import gymtorch, gymapi, gymutil
 
 import torch
 from typing import Tuple, Dict
-from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
+from gpugym.utils.math import *
 from gpugym.envs import LeggedRobot
 
 import pandas as pd
@@ -19,6 +19,11 @@ class MIT_Humanoid(LeggedRobot):
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
         
+        if self.cfg.control.exp_avg_decay:
+            self.action_avg = torch.zeros(self.num_envs, self.num_actions,
+                                            dtype=torch.float,
+                                            device=self.device, requires_grad=False)
+
         # * retrieve reference trajectory
         if hasattr(self.cfg.init_state, "ref_traj"):
             referenceTraj = pd.read_csv(self.cfg.init_state.ref_traj)
@@ -48,6 +53,7 @@ class MIT_Humanoid(LeggedRobot):
                         print("Missing: " + name)
         else:
             self.total_ref_time = 0
+
 
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
@@ -158,6 +164,11 @@ class MIT_Humanoid(LeggedRobot):
             [torch.Tensor]: Torques sent to the simulation
         """
         # pd controller
+        if self.cfg.control.exp_avg_decay:
+            self.action_avg = exp_avg_filter(self.actions, self.action_avg,
+                                            self.cfg.control.exp_avg_decay)
+            actions = self.action_avg
+
         actions_scaled = actions * self.cfg.control.action_scale 
         control_type = self.cfg.control.control_type
 
