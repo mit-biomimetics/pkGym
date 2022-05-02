@@ -56,11 +56,11 @@ class MITHumanoidCfg(LeggedRobotCfg):
             heading = [0, 0]
 
     class init_state(LeggedRobotCfg.init_state):
-        reset_mode = "reset_to_traj" # default setup chooses how the initial conditions are chosen.
+        reset_mode = "reset_to_storage" # default setup chooses how the initial conditions are chosen.
                                 # "reset_to_basic" = a single position with some randomized noise on top. 
                                 # "reset_to_range" = a range of joint positions and velocities.
                                 #  "reset_to_traj" = feed in a trajectory to sample from. 
-        penetration_check = True  # disable to not check for penetration on initial conds.
+        penetration_check = False  # disable to not check for penetration on initial conds.
 
         #default for normalization and basic initialization 
         default_joint_angles = {  # = target angles [rad] when action = 0.0

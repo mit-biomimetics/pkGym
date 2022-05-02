@@ -18,6 +18,8 @@ class MiniCheetah(LeggedRobot):
         # * init buffer for phase variable
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
+        
+        self.num_states = 13 + 2*self.num_dof + 1
 
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
@@ -113,6 +115,56 @@ class MiniCheetah(LeggedRobot):
             noise_vec[66:187] = noise_scales.height_measurements*ns_lvl \
                                 * self.obs_scales.height_measurements
         return noise_vec
+
+
+    def update_X0(self, X0, from_obs=False):
+        """
+        Needs to match any scaling or other changes made in observations
+        """
+
+        if not from_obs:
+            self.X0_conds = X0
+            return
+        # * otherwise, unscale and handle obs to get back to states
+        base_z = X0[:, 0]
+        base_lin_vel = X0[:, 1:4]/self.obs_scales.lin_vel
+        base_ang_vel = X0[:, 4:7]/self.obs_scales.ang_vel
+        prj_grv = X0[:, 7:10]  # ! I think? Check...
+        dof_pos = X0[:, 10:22]
+        dof_vel = X0[:, 34:46]/self.obs_scales.dof_vel
+        phase = torch.atan2(X0[:, 46], X0[:, 47])
+
+        # from prj_grv to roll and pitch
+        pitch = torch.atan2(-prj_grv[:, 1], prj_grv[:, 2])
+        roll = torch.atan2(prj_grv[:, 0], prj_grv[:, 2]/torch.cos(pitch))
+
+        base_quat = quat_from_euler_xyz(roll, pitch, torch.zeros_like(roll))
+        base_pos = torch.cat((torch.zeros_like(base_z),
+                            torch.zeros_like(base_z),
+                            base_z), dim=1)
+        self.X0_conds[:, :3] = base_pos
+        self.X0_conds[:, 3:7] = base_quat
+        self.X0_conds[:, 7:10] = base_lin_vel
+        self.X0_conds[:, 10:13] = base_ang_vel
+        self.X0_conds[:, 13:25] = dof_pos
+        self.X0_conds[:, 25:37] = dof_vel
+        self.X0_conds[:, 37] = phase
+
+    
+    def reset_to_storage(self, env_ids):
+        # also reset phase
+        # # * with replacement
+        # # more general because it allows buffer to be less than envs
+        idx = torch.randint(self.X0_conds.shape[0], (len(env_ids),))
+        self.root_states[env_ids] = self.X0_conds[idx, :13]
+        # self.dof_pos[env_ids] = torch.zeros_like(self.dof_pos[env_ids])
+        self.dof_pos[env_ids] = self.X0_conds[idx, 13:13+self.num_dof]
+        # self.dof_vel[env_ids] = torch.zeros_like(self.dof_vel[env_ids])
+        self.dof_vel[env_ids] = self.X0_conds[idx,
+                                        13+self.num_dof:13+2*self.num_dof]
+        self.phase = self.X0_conds[idx, 37]
+
+
 
     def sqrdexp(self, x):
         """ shorthand helper for squared exponential

@@ -73,12 +73,12 @@ class LeggedRobot(BaseTask):
 
         if not self.headless:
             self.set_camera(self.cfg.viewer.pos, self.cfg.viewer.lookat)
-        self._init_buffers()
-        self._prepare_reward_function()
+
         if hasattr(self, "_custom_init"):
             self._custom_init(cfg)
+        self._init_buffers()
+        self._prepare_reward_function()
         self.init_done = True
-
 
     def step(self, actions):
         """ Apply actions, simulate, call self.post_physics_step()
@@ -502,6 +502,28 @@ class LeggedRobot(BaseTask):
                                     device=self.device)
 
 
+    def reset_to_storage(self, env_ids):
+        # # * without replacement
+        # # indices = torch.randperm(len(self.X0_conds.shape[0]))[:len(env_ids)]]
+        # # * with replacement
+        # # more general because it allows buffer to be less than envs
+        idx = torch.randint(self.X0_conds.shape[0], (len(env_ids),))
+        self.root_states[env_ids] = self.X0_conds[idx, :13]
+        # self.dof_pos[env_ids] = torch.zeros_like(self.dof_pos[env_ids])
+        self.dof_pos[env_ids] = self.X0_conds[idx, 13:13+self.num_dof]
+        # self.dof_vel[env_ids] = torch.zeros_like(self.dof_vel[env_ids])
+        self.dof_vel[env_ids] = self.X0_conds[idx,
+                                        13+self.num_dof:13+2*self.num_dof]
+
+
+    def update_X0(self, X0, from_obs=False):
+        """
+        Update batch of possible initial conditions.
+        Overload if observations are not just states.
+        """
+        self.X0_conds = X0
+
+
     def _push_robots(self):
         """ Random pushes the robots. Emulates an impulse by setting a randomized base velocity. 
         """
@@ -677,6 +699,22 @@ class LeggedRobot(BaseTask):
                 if self.cfg.init_state.com_vel_high[i] < self.cfg.init_state.com_vel_low[i]:
                     raise ValueError(f"com_vel_high[{i}] < com_vel_low[{i}]")
 
+        # * init storage, if used
+        # todo different size than num_envs
+        # ! overload for specific
+        if self.cfg.init_state.reset_mode == "reset_to_storage":
+            self._initialize_storage()
+
+
+    def _initialize_storage(self):
+         # * init storage, if used
+        # todo different size than num_envs
+        # ! overload for specific
+        if self.cfg.init_state.reset_mode == "reset_to_storage":
+            self.X0_conds = torch.zeros(self.num_envs, self.num_states,
+                                        device=self.device, requires_grad=False)
+            self.X0_conds[:, :13] = self.base_init_state
+            self.X0_conds[:, 13:13+self.num_dof] = self.default_dof_pos
 
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, whcih will be called to compute the total reward.
@@ -786,6 +824,7 @@ class LeggedRobot(BaseTask):
         self.num_bodies = self.gym.get_asset_rigid_body_count(robot_asset)
         dof_props_asset = self.gym.get_asset_dof_properties(robot_asset)
         rigid_shape_props_asset = self.gym.get_asset_rigid_shape_properties(robot_asset)
+        self.num_states = 13 + 2*self.num_dof  # can be replaced in custom_init
 
         # save body names from the asset
         body_names = self.gym.get_asset_rigid_body_names(robot_asset)

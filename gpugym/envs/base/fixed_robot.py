@@ -430,6 +430,14 @@ class FixedRobot(BaseTask):
         self.dof_vel[env_ids] = self.X0_conds[indices, self.num_dof:]
 
 
+    def update_X0(self, X0, from_obs=False):
+        """
+        Update batch of possible initial conditions.
+        Overload if observations are not just states.
+        """
+        self.X0_conds = X0
+
+
     def _push_robots(self):
         """
         Needs to be implemented for each robot, depending where you want the push to happen.
