@@ -157,10 +157,10 @@ class MITHumanoidCfg(LeggedRobotCfg):
     class asset(LeggedRobotCfg.asset):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_sf.urdf'
         foot_name = 'foot'
-        penalize_contacts_on = ['base']
-        terminate_after_contacts_on = ['base']
+        penalize_contacts_on = ['base', 'arm']
+        terminate_after_contacts_on = ['base' ]
         flip_visual_attachments = False
-        self_collisions = 1  # 1 to disagble, 0 to enable...bitwise filter
+        self_collisions = 1 # 1 to disagble, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
         disable_gravity = False
@@ -198,28 +198,28 @@ class MITHumanoidCfg(LeggedRobotCfg):
                                1.0,  # right_shoulder_yaw
                                1.0]  # right_elbow
         class scales(LeggedRobotCfg.rewards.scales):
-            termination = -2.
-            tracking_ang_vel = 0.5  # 5.0
-            tracking_lin_vel = 0.5  # 1.0
-            orientation = 1.5
-            torques = -5.e-6
-            base_height = 0.75
+            termination = -2.  # -1
+            tracking_ang_vel = 0.5  # 0.0001
+            tracking_lin_vel = 0.5  # 0.02
+            orientation = 1.5  # 0.1
+            torques = -5.e-6  # -5.e-7
+            base_height = 0.75  # 1.
             feet_air_time = 0.0  # 1.0  # rewards keeping feet in the air
-            collision = 0.
+            collision = 0.  # -1.
             action_rate = -0.00  # -0.01
-            action_rate2 = -0.000
+            action_rate2 = -0.000  # -0.001
             feet_contact_forces = -0.1
-            lin_vel_z = 0.
-            ang_vel_xy = -0.0
+            lin_vel_z = 0.  # 0.5
+            ang_vel_xy = -0.0  # -0.1
             feet_stumble = -0.
-            dof_vel = 0.001
+            dof_vel = 0.001  # 0.01
             dof_acc = 0.0
             stand_still = 0. # 1.5
             dof_pos_limits = -0.0
             no_fly = 0.0
             symm_legs = 0.0
             symm_arms = 0.0
-            dof_near_home = 2.5
+            dof_near_home = 2.5  # 1.
 
     class normalization(LeggedRobotCfg.normalization):
             class obs_scales(LeggedRobotCfg.normalization.obs_scales):
