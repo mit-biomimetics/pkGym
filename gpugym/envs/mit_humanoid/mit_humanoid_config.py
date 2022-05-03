@@ -141,12 +141,12 @@ class MITHumanoidCfg(LeggedRobotCfg):
         max_push_vel_xy = 0.5
 
     class asset(LeggedRobotCfg.asset):
-        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_F_ht.urdf'
+        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_sf.urdf'
         foot_name = 'foot'
         penalize_contacts_on = ['base', 'arm']
-        terminate_after_contacts_on = ['base' ,'arm','shoulder']
+        terminate_after_contacts_on = ['base' ]
         flip_visual_attachments = False
-        self_collisions = 0 # 1 to disagble, 0 to enable...bitwise filter
+        self_collisions = 1 # 1 to disagble, 0 to enable...bitwise filter
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
         disable_gravity = False
@@ -171,7 +171,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         swing_height_tracking = 0.08
 
         joint_level_scaling = [1.0,  # left_hip_yaw
-                               0.7,  # left_hip_abad
+                               2.0,  # left_hip_abad
                                1.0,  # left_hip_pitch
                                1.0,  # left_knee
                                1.0,  # left_ankle
@@ -180,7 +180,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
                                1.0,  # left_shoulder_yaw
                                1.0,  # left_elbow
                                1.0,  # right_hip_yaw
-                               0.7,  # right_hip_abad
+                               2.0,  # right_hip_abad
                                1.0,  # right_hip_pitch
                                1.0,  # right_knee
                                1.0,  # right_ankle
@@ -197,7 +197,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             ang_vel_xy = -0.1
             orientation = 0.1
             torques = -5.e-7
-            dof_vel = 0.000
+            dof_vel = 0.01
             base_height = 1.
             dof_near_home = 1.
             action_rate = -0.01
