@@ -43,22 +43,24 @@ class MIT_Humanoid(LeggedRobot):
         # commands
         # joint pos
         # joint vel
-        # actions
         # actions (n-1, n-2)
         base_z = self.root_states[:, 2].unsqueeze(1)*self.obs_scales.base_z
         dof_pos = (self.dof_pos-self.default_dof_pos)*self.obs_scales.dof_pos
 
-        self.obs_buf = torch.cat((base_z,
+        self.obs_buf = torch.cat((base_z*self.obs_scales.base_z,
                                   self.base_lin_vel*self.obs_scales.lin_vel,
                                   self.base_ang_vel*self.obs_scales.ang_vel,
                                   self.projected_gravity,
                                   self.commands[:, :3]*self.commands_scale,
-                                  dof_pos,
+                                  dof_pos*self.obs_scales.dof_pos,
                                   self.dof_vel*self.obs_scales.dof_vel,
-                                  self.actions,
                                   self.ctrl_hist
                                   ),
                                  dim=-1)
+
+        if self.cfg.env.num_privileged_obs:
+            self.privileged_obs_buf = self.obs_buf
+        
         # * add perceptive inputs if not blind
         if self.cfg.terrain.measure_heights:
             heights = torch.clip(self.root_states[:, 2].unsqueeze(1) - 0.5 - self.measured_heights, -1, 1.)*self.obs_scales.height_measurements
@@ -83,20 +85,56 @@ class MIT_Humanoid(LeggedRobot):
             [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
         '''
         noise_vec = torch.zeros_like(self.obs_buf[0])
-        self.add_noise = self.cfg.noise.add_noise
+        self.add_noise = self.cfg.noise.add_noise  # why is this here?
         noise_scales = self.cfg.noise.noise_scales
         ns_lvl = self.cfg.noise.noise_level
-        noise_vec[:3] = noise_scales.lin_vel*ns_lvl*self.obs_scales.lin_vel
-        noise_vec[3:6] = noise_scales.ang_vel*ns_lvl*self.obs_scales.ang_vel
-        noise_vec[6:9] = noise_scales.gravity*ns_lvl
-        noise_vec[9:12] = 0.  # commands
-        noise_vec[12:30] = noise_scales.dof_pos*ns_lvl*self.obs_scales.dof_pos
-        noise_vec[30:48] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel
-        noise_vec[48:66] = 0.  # previous actions
+        noise_vec[0] = noise_scales.base_z*ns_lvl*self.obs_scales.base_z
+        noise_vec[1:4] = noise_scales.lin_vel*ns_lvl*self.obs_scales.lin_vel
+        noise_vec[4:7] = noise_scales.ang_vel*ns_lvl*self.obs_scales.ang_vel
+        noise_vec[7:10] = noise_scales.gravity*ns_lvl
+        noise_vec[10:13] = 0.  # commands
+        noise_vec[13:31] = noise_scales.dof_pos*ns_lvl*self.obs_scales.dof_pos
+        noise_vec[31:49] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel
         if self.cfg.terrain.measure_heights:
             noise_vec[66:187] = noise_scales.height_measurements*ns_lvl \
                                 * self.obs_scales.height_measurements
         return noise_vec
+
+
+    def _compute_torques(self, actions):
+        """ Compute torques from actions.
+            Actions can be interpreted as position or velocity targets given to a PD controller, or directly as scaled torques.
+            [NOTE]: torques must have the same dimension as the number of DOFs, even if some DOFs are not actuated.
+
+        Args:
+            actions (torch.Tensor): Actions
+
+        Returns:
+            [torch.Tensor]: Torques sent to the simulation
+        """
+        # pd controller
+
+        if self.cfg.control.exp_avg_decay:
+            self.action_avg = exp_avg_filter(self.actions, self.action_avg,
+                                            self.cfg.control.exp_avg_decay)
+            actions = self.action_avg
+
+        if self.cfg.control.control_type=="P":
+            torques = self.p_gains*(actions * self.cfg.control.action_scale \
+                                    + self.default_dof_pos \
+                                    - self.dof_pos) \
+                    - self.d_gains*self.dof_vel
+
+        elif self.cfg.control.control_type=="T":
+            torques = actions * self.cfg.control.action_scale
+
+        elif self.cfg.control.control_type=="Td":
+            torques = actions * self.cfg.control.action_scale \
+                        - self.d_gains*self.dof_vel
+
+        else:
+            raise NameError(f"Unknown controller type: {control_type}")
+        return torch.clip(torques, -self.torque_limits, self.torque_limits)
 
 
     def _custom_reset(self, env_ids):
@@ -135,6 +173,15 @@ class MIT_Humanoid(LeggedRobot):
                                                 gymtorch.unwrap_tensor(temp_dof_state),
                                                 gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))       
 
+
+    def _push_robots(self):
+        """ Random pushes the robots. Emulates an impulse by setting a randomized base velocity. 
+        """
+        max_vel = self.cfg.domain_rand.max_push_vel_xy
+        self.root_states[:, 7:8] = torch_rand_float(-max_vel, max_vel, (self.num_envs, 1), device=self.device) # lin vel x
+        self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self.root_states))
+
+
     def sqrdexp(self, x):
         """ shorthand helper for squared exponential
         """
@@ -154,8 +201,8 @@ class MIT_Humanoid(LeggedRobot):
 
     def _reward_tracking_ang_vel(self):
         # Tracking of angular velocity commands (yaw)
-        ang_vel_error = torch.square(self.commands[:, 2] - self.base_ang_vel[:, 2])
-        return torch.exp(-ang_vel_error/self.cfg.rewards.base_yaw_rate_tracking)
+        ang_vel_error = torch.square((self.commands[:, 2] - self.base_ang_vel[:, 2])*2/torch.pi)
+        return torch.exp(-ang_vel_error/self.cfg.rewards.tracking_sigma)
 
 
     def _reward_orientation(self):
@@ -215,6 +262,7 @@ class MIT_Humanoid(LeggedRobot):
         error += self.sqrdexp((self.dof_pos[:, 8]+self.dof_pos[:, 17]) \
                         / self.cfg.normalization.obs_scales.dof_pos)
         return error
+
 
     def _reward_dof_near_home(self):
         jnt_scales = torch.tensor(self.cfg.rewards.joint_level_scaling, device=self.device)
