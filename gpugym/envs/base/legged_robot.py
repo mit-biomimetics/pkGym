@@ -483,7 +483,7 @@ class LeggedRobot(BaseTask):
                                     device=self.device)
         self.dof_vel[env_ids] = random_sample(env_ids,
                         to_torch(self.cfg.init_state.dof_vel_high),
-                        to_torch(self.cfg.init_state.dof_vel_high),
+                        to_torch(self.cfg.init_state.dof_vel_low),
                         device=self.device)
 
         # base states
@@ -503,7 +503,7 @@ class LeggedRobot(BaseTask):
                                                     1)
         self.root_states[env_ids, 7:13] = random_sample(env_ids,
                                     to_torch(self.cfg.init_state.com_vel_high),
-                                    to_torch(self.cfg.init_state.com_vel_high),
+                                    to_torch(self.cfg.init_state.com_vel_low),
                                     device=self.device)
 
 
