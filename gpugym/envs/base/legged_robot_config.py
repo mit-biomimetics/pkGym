@@ -150,24 +150,22 @@ class LeggedRobotCfg(BaseConfig):
 
     class rewards:
         class scales:
-            termination = -0.0
-            tracking_lin_vel = 1.0
-            tracking_ang_vel = 0.5
-            lin_vel_z = -2.0
-            ang_vel_xy = -0.05
-            orientation = -0.
-            torques = -0.00001
-            dof_vel = -0.
-            base_height = -0.
-            feet_air_time =  1.0
-            collision = -1.
-            feet_stumble = -0.0
-            action_rate = -0.01
-            action_rate2 = -0.001
-            stand_still = -0.
-            dof_pos_limits = -1.
-
-            reference_traj = 0.0 
+            termination = .0
+            tracking_lin_vel = .0
+            tracking_ang_vel = 0.
+            lin_vel_z = 0
+            ang_vel_xy = 0.
+            orientation = 0.
+            torques = 0.
+            dof_vel = 0.
+            base_height = 0.
+            feet_air_time = 0.
+            collision = 0.
+            feet_stumble = 0.0
+            action_rate = 0.
+            action_rate2 = 0.
+            stand_still = 0.
+            dof_pos_limits = 0. 
 
         only_positive_rewards = True # if true negative total rewards are clipped at zero (avoids early termination problems)
         tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
@@ -176,13 +174,6 @@ class LeggedRobotCfg(BaseConfig):
         soft_torque_limit = 1.  # ! may want to turn this off
         base_height_target = 1.
         max_contact_force = 100. # forces above this value are penalized
-
-        #ref traj tracking       
-        base_pos_tracking = 0.0
-        base_vel_tracking = 0.0
-        dof_pos_tracking = 0.0
-        dof_vel_tracking = 0.0
-        joint_level_scaling = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
     class normalization:
         class obs_scales:
