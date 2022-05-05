@@ -95,6 +95,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
             action_scale = 0.25 # 0.5
 
         # decimation: Number of control action updates @ sim DT per policy DT
+        exp_avg_decay = 0.35  # set to None to disable
         decimation = 5
 
         use_actuator_network = False

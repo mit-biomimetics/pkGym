@@ -26,11 +26,6 @@ class MIT_Humanoid(LeggedRobot):
 
         self.end_eff_ids = to_torch(body_ids, device=self.device, dtype=torch.long)
 
-        if self.cfg.control.exp_avg_decay:
-            self.action_avg = torch.zeros(self.num_envs, self.num_actions,
-                                            dtype=torch.float,
-                                            device=self.device, requires_grad=False)
-
 
     def compute_observations(self):
         """ Computes observations
@@ -99,42 +94,6 @@ class MIT_Humanoid(LeggedRobot):
             noise_vec[66:187] = noise_scales.height_measurements*ns_lvl \
                                 * self.obs_scales.height_measurements
         return noise_vec
-
-
-    def _compute_torques(self, actions):
-        """ Compute torques from actions.
-            Actions can be interpreted as position or velocity targets given to a PD controller, or directly as scaled torques.
-            [NOTE]: torques must have the same dimension as the number of DOFs, even if some DOFs are not actuated.
-
-        Args:
-            actions (torch.Tensor): Actions
-
-        Returns:
-            [torch.Tensor]: Torques sent to the simulation
-        """
-        # pd controller
-
-        if self.cfg.control.exp_avg_decay:
-            self.action_avg = exp_avg_filter(self.actions, self.action_avg,
-                                            self.cfg.control.exp_avg_decay)
-            actions = self.action_avg
-
-        if self.cfg.control.control_type=="P":
-            torques = self.p_gains*(actions * self.cfg.control.action_scale \
-                                    + self.default_dof_pos \
-                                    - self.dof_pos) \
-                    - self.d_gains*self.dof_vel
-
-        elif self.cfg.control.control_type=="T":
-            torques = actions * self.cfg.control.action_scale
-
-        elif self.cfg.control.control_type=="Td":
-            torques = actions * self.cfg.control.action_scale \
-                        - self.d_gains*self.dof_vel
-
-        else:
-            raise NameError(f"Unknown controller type: {control_type}")
-        return torch.clip(torques, -self.torque_limits, self.torque_limits)
 
 
     def _custom_reset(self, env_ids):

@@ -71,7 +71,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             'left_hip_abad': 0.,
             'left_hip_pitch': -0.4,
             'left_knee': 0.9,  # 0.785,
-            'left_ankle': -0.45,  #41,
+            'left_ankle': -0.45,
             'left_shoulder_pitch': 0.,
             'left_shoulder_abad': 0.,
             'left_shoulder_yaw': 0.,
@@ -80,7 +80,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             'right_hip_abad': 0.,
             'right_hip_pitch': -0.4,
             'right_knee': 0.9,  # 0.785,
-            'right_ankle': -0.45,  # 41,
+            'right_ankle': -0.45,
             'right_shoulder_pitch': 0.,
             'right_shoulder_abad': 0.,
             'right_shoulder_yaw': 0.,
@@ -94,9 +94,9 @@ class MITHumanoidCfg(LeggedRobotCfg):
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
 
         # initialization for random range setup
-        dof_pos_high = [0., 0.,-0.25,  0.71, -0.39,
+        dof_pos_high = [0., 0., -0.25,  0.71, -0.39,
                         0., 0., 0., 0.,
-                        0., 0.,-0.25,  0.71, -0.39,
+                        0., 0., -0.25,  0.71, -0.39,
                         0., 0., 0., 0.]  # DOF dimensions
         dof_pos_low = [0., 0., -0.29,  0.67, -0.43,
                         0., 0., 0., 0.,
@@ -148,7 +148,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
     class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_friction = True
         friction_range = [0.5, 1.25]
-        randomize_base_mass = False
+        randomize_base_mass = True
         added_mass_range = [-1., 1.]
         push_robots = False
         push_interval_s = 7
@@ -240,7 +240,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             clip_actions = 1000.
 
     class noise(LeggedRobotCfg.noise):
-        add_noise = False
+        add_noise = True
         noise_level = 0.01  # scales other values
 
         class noise_scales(LeggedRobotCfg.noise.noise_scales):

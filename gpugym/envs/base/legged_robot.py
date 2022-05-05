@@ -95,9 +95,12 @@ class LeggedRobot(BaseTask):
         # step physics and render each frame
         self.render()
         for _ in range(self.cfg.control.decimation):
-            self.torques = self._compute_torques(self.actions).view(self.torques.shape)
-            if self.cfg.asset.disable_motors:
-                self.torques[:] = 0.
+            if self.cfg.control.exp_avg_decay:
+                self.action_avg = exp_avg_filter(self.actions, self.action_avg,
+                                                self.cfg.control.exp_avg_decay)
+                self.torques = self._compute_torques(self.action_avg).view(self.torques.shape)
+            else:
+                self.torques = self._compute_torques(self.actions).view(self.torques.shape)
 
             self.gym.set_dof_actuation_force_tensor(self.sim, gymtorch.unwrap_tensor(self.torques))
             self.gym.simulate(self.sim)
@@ -435,7 +438,7 @@ class LeggedRobot(BaseTask):
 
         # todo: make separate methods for each reset type, cycle through `reset_mode` and call appropriate method. That way the base ones can be implemented once in legged_robot.
         """
-        
+
         if hasattr(self, self.cfg.init_state.reset_mode):
             eval(f"self.{self.cfg.init_state.reset_mode}(env_ids)")
         else:
@@ -654,6 +657,11 @@ class LeggedRobot(BaseTask):
         if self.cfg.terrain.measure_heights:
             self.height_points = self._init_height_points()
         self.measured_heights = 0
+
+        if self.cfg.control.exp_avg_decay:
+            self.action_avg = torch.zeros(self.num_envs, self.num_actions,
+                                            dtype=torch.float,
+                                            device=self.device, requires_grad=False)
 
         # joint positions offsets and PD gains
         self.default_dof_pos = torch.zeros(self.num_dof, dtype=torch.float,
