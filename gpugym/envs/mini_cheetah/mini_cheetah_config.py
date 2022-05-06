@@ -23,11 +23,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
         Ab/ad: 0˚, hip: -45˚, knee: 91.5˚
         Default pose is around 0.27
         """
-        
-        reset_mode = "reset_to_range" 
-        # reset setup chooses how the initial conditions are chosen. 
-        # "reset_to_basic" = a single position
-        # "reset_to_range" = uniformly random from a range defined below
 
         default_joint_angles = {
             "lf_haa": 0.0,
@@ -46,6 +41,11 @@ class MiniCheetahCfg(LeggedRobotCfg):
             "rh_kfe": 1.596976,
         }
 
+        reset_mode = "reset_to_range" 
+        # reset setup chooses how the initial conditions are chosen. 
+        # "reset_to_basic" = a single position
+        # "reset_to_range" = uniformly random from a range defined below
+
         # * default COM for basic initialization 
         pos = [0.0, 0.0, 0.33]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
@@ -53,30 +53,27 @@ class MiniCheetahCfg(LeggedRobotCfg):
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
 
         # * initialization for random range setup
-        dof_pos_high = [0.05, -0.6, 1.72,
-                        0.05, -0.6, 1.72,
-                        0.05, -0.6, 1.72,
-                        0.05, -0.6, 1.72]
 
-        dof_pos_low =  [-0.05, -0.85, 1.45,
-                        -0.05, -0.85, 1.45,
-                        -0.05, -0.85, 1.45,
-                        -0.05, -0.85, 1.45]
+        dof_pos_range = {'haa': [-0.05, 0.05],
+                        'hfe': [-0.85, -0.6],
+                        'kfe': [-1.45, 1.72]}
 
-        dof_vel_high = [0., 0., 0.,
-                        0., 0., 0.,
-                        0., 0., 0.,
-                        0., 0., 0.]
+        dof_vel_range = {'haa': [0., 0.],
+                        'hfe': [0., 0.],
+                        'kfe': [0., 0.]}
 
-        dof_vel_low =  [0., 0., 0.,
-                        0., 0., 0.,
-                        0., 0., 0.,
-                        0., 0., 0.]
-
-        com_pos_high = [0., 0., 0.4, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
-        com_pos_low = [0., 0., 0.35, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
-        com_vel_high = [0.05, 0., 0.05, 0., 0., 0.] # COM dimensions, in euler angles because randomizing in quat is confusing
-        com_vel_low = [-0.05, 0., -0.05, 0., 0., 0.]
+        root_pos_range = [[0., 0.],  # x
+                          [0., 0.],  # y
+                          [0.35, 0.4],  # z
+                          [0., 0.],  # roll
+                          [0., 0.],  # pitch
+                          [0., 0.]]  # yaw
+        root_vel_range = [[-0.05, 0.05],  # x
+                          [0., 0.],  # y
+                          [-0.05, 0.05],  # z
+                          [0., 0.],  # roll
+                          [0., 0.],  # pitch
+                          [0., 0.]]  # yaw
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:

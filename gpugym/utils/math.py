@@ -56,7 +56,7 @@ def torch_rand_sqrt_float(lower, upper, shape, device):
     return (upper - lower) * r + lower
 
 # @ torch.jit.script
-def random_sample(env_ids, high, low, device):
+def random_sample(env_ids, low, high, device):
         """
         Generate random samples for each entry of env_ids
         """

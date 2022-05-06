@@ -61,7 +61,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
         reset_mode = "reset_to_range" # default setup chooses how the initial conditions are chosen.
                                 # "reset_to_basic" = a single position with some randomized noise on top. 
                                 # "reset_to_range" = a range of joint positions and velocities.
-                                #  "reset_to_traj" = feed in a trajectory to sample from. 
         penetration_check = False  # disable to not check for penetration on initial conds.
 
         #default for normalization and basic initialization 
@@ -94,26 +93,63 @@ class MITHumanoidCfg(LeggedRobotCfg):
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
 
         # initialization for random range setup
-        dof_pos_high = [0., 0., -0.25,  0.71, -0.39,
-                        0., 0., 0., 0.,
-                        0., 0., -0.25,  0.71, -0.39,
-                        0., 0., 0., 0.]  # DOF dimensions
-        dof_pos_low = [0., 0., -0.29,  0.67, -0.43,
-                        0., 0., 0., 0.,
-                        0., 0., -0.29,  0.67, -0.43,
-                        0., 0., 0., 0.]  # DOF dimensions
-        dof_vel_high = [0.1, 0.1, 0.1, 0.1, 0.1,
-                        0.1, 0.1, 0.1, 0.1,
-                        0.1, 0.1, 0.1, 0.1, 0.1,
-                        0.1, 0.1, 0.1, 0.1]  # DOF dimensions
-        dof_vel_low = [-0.1, -0.1, -0.1, -0.1, -0.1,
-                        -0.1, -0.1, -0.1, -0.1,
-                        -0.1, -0.1, -0.1, -0.1, -0.1,
-                        -0.1, -0.1, -0.1, -0.1]  # DOF dimensions
-        com_pos_high = [0., 0., 0.72, 0., 0., 0.]  # COM dimensions, in euler angles because randomizing in quat is confusing
-        com_pos_low = [0., 0., 0.7, 0., 0., 0.]  # x, y ,z, roll, pitch, yaw
-        com_vel_high = [0.25, 0.1, 0.2, 0.1, 0.1, 0.1]
-        com_vel_low = [-0.1, -0.1, -0.2, -0.1, -0.1, -0.1]
+
+        dof_pos_range = {'hip_yaw': [0., 0.],
+                        'hip_abad': [0., 0.],
+                        'hip_pitch': [-0.29, -0.25],
+                        'knee': [0.67, 0.71],
+                        'ankle': [-0.43, -0.39],
+                        'shoulder_pitch': [0., 0.],
+                        'shoulder_abad': [0., 0.],
+                        'shoulder_yaw': [0., 0.],
+                        'elbow': [0., 0.]
+                        }
+        
+        dof_vel_range = {'hip_yaw': [0., 0.],
+                        'hip_abad': [0., 0.],
+                        'hip_pitch': [-0.29, -0.25],
+                        'knee': [0.67, 0.71],
+                        'ankle': [-0.43, -0.39],
+                        'shoulder_pitch': [0., 0.],
+                        'shoulder_abad': [0., 0.],
+                        'shoulder_yaw': [0., 0.],
+                        'elbow': [0., 0.]
+                        }
+
+        root_pos_range = [[0., 0.],  # x
+                          [0., 0.],  # y
+                          [0.7, 0.72],  # z
+                          [0., 0.],  # roll
+                          [0., 0.],  # pitch
+                          [0., 0.]]  # yaw
+
+        root_vel_range = [[-0.1, 0.1],  # x
+                          [-0.1, 0.1],  # y
+                          [-0.1, 0.1],  # z
+                          [-0.1, 0.1],  # roll
+                          [-0.1, 0.1],  # pitch
+                          [-0.1, 0.1]]  # yaw
+
+        # dof_pos_high = [0., 0., -0.25,  0.71, -0.39,
+        #                 0., 0., 0., 0.,
+        #                 0., 0., -0.25,  0.71, -0.39,
+        #                 0., 0., 0., 0.]  # DOF dimensions
+        # dof_pos_low = [0., 0., -0.29,  0.67, -0.43,
+        #                 0., 0., 0., 0.,
+        #                 0., 0., -0.29,  0.67, -0.43,
+        #                 0., 0., 0., 0.]  # DOF dimensions
+        # dof_vel_high = [0.1, 0.1, 0.1, 0.1, 0.1,
+        #                 0.1, 0.1, 0.1, 0.1,
+        #                 0.1, 0.1, 0.1, 0.1, 0.1,
+        #                 0.1, 0.1, 0.1, 0.1]  # DOF dimensions
+        # dof_vel_low = [-0.1, -0.1, -0.1, -0.1, -0.1,
+        #                 -0.1, -0.1, -0.1, -0.1,
+        #                 -0.1, -0.1, -0.1, -0.1, -0.1,
+        #                 -0.1, -0.1, -0.1, -0.1]  # DOF dimensions
+        # com_pos_high = [0., 0., 0.72, 0., 0., 0.]  # COM dimensions, in euler angles because randomizing in quat is confusing
+        # com_pos_low = [0., 0., 0.7, 0., 0., 0.]  # x, y ,z, roll, pitch, yaw
+        # com_vel_high = [0.25, 0.1, 0.2, 0.1, 0.1, 0.1]
+        # com_vel_low = [-0.1, -0.1, -0.2, -0.1, -0.1, -0.1]
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:

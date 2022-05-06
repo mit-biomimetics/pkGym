@@ -481,18 +481,18 @@ class LeggedRobot(BaseTask):
         """
         # dof states
         self.dof_pos[env_ids] = random_sample(env_ids,
-                                    to_torch(self.cfg.init_state.dof_pos_high),
-                                    to_torch(self.cfg.init_state.dof_pos_low),
+                                    self.dof_pos_range[:, 0],
+                                    self.dof_pos_range[:, 1],
                                     device=self.device)
         self.dof_vel[env_ids] = random_sample(env_ids,
-                        to_torch(self.cfg.init_state.dof_vel_high),
-                        to_torch(self.cfg.init_state.dof_vel_low),
+                        self.dof_vel_range[:, 0],
+                        self.dof_vel_range[:, 1],
                         device=self.device)
 
         # base states
         random_com_pos = random_sample(env_ids,
-                                    to_torch(self.cfg.init_state.com_pos_high),
-                                    to_torch(self.cfg.init_state.com_pos_low),
+                                    self.root_pos_range[:, 0],
+                                    self.root_pos_range[:, 1],
                                     device=self.device)
 
         quat = quat_from_euler_xyz(random_com_pos[:, 3],
@@ -505,8 +505,8 @@ class LeggedRobot(BaseTask):
                                                         random_com_pos[:, 5])),
                                                     1)
         self.root_states[env_ids, 7:13] = random_sample(env_ids,
-                                    to_torch(self.cfg.init_state.com_vel_high),
-                                    to_torch(self.cfg.init_state.com_vel_low),
+                                    self.root_vel_range[:, 0],
+                                    self.root_vel_range[:, 1],
                                     device=self.device)
 
 
@@ -670,7 +670,7 @@ class LeggedRobot(BaseTask):
         for i in range(self.num_dof):
             name = self.dof_names[i]
             angle = self.cfg.init_state.default_joint_angles[name]
-            self.default_dof_pos[i] = angle
+            self.default_dof_pos[i] = self.cfg.init_state.default_joint_angles[name]
             found = False
             for dof_name in self.cfg.control.stiffness.keys():
                 if dof_name in name:
@@ -685,17 +685,32 @@ class LeggedRobot(BaseTask):
         self.default_dof_pos = self.default_dof_pos.unsqueeze(0)
 
         # * check that init range highs and lows are consistent
-        if hasattr(self.cfg.init_state, "com_pos_high"):
-            for i in range(self.num_dof):
-                if self.cfg.init_state.dof_pos_high[i] < self.cfg.init_state.dof_pos_low[i]:
-                    raise ValueError(f"dof_pos_high[{i}] < dof_pos_low[{i}]")
-                if self.cfg.init_state.dof_vel_high[i] < self.cfg.init_state.dof_vel_low[i]:
-                    raise ValueError(f"dof_vel_high[{i}] < dof_vel_low[{i}]")
-            for i in range(6):
-                if self.cfg.init_state.com_pos_high[i] < self.cfg.init_state.com_pos_low[i]:
-                    raise ValueError(f"com_pos_high[{i}] < com_pos_low[{i}]")
-                if self.cfg.init_state.com_vel_high[i] < self.cfg.init_state.com_vel_low[i]:
-                    raise ValueError(f"com_vel_high[{i}] < com_vel_low[{i}]")
+        # * and repopulate to match 
+        if self.cfg.init_state.reset_mode == "reset_to_range":
+            self.dof_pos_range = torch.zeros(self.num_dof, 2,
+                                            dtype=torch.float,
+                                            device=self.device,
+                                            requires_grad=False)
+            self.dof_vel_range = torch.zeros(self.num_dof, 2,
+                                            dtype=torch.float,
+                                            device=self.device,
+                                            requires_grad=False)
+
+            for joint, vals in self.cfg.init_state.dof_pos_range.items():
+                for i in range(self.num_dof):
+                    if joint in self.dof_names[i]:
+                        self.dof_pos_range[i, :] = to_torch(vals)
+
+            for joint, vals in self.cfg.init_state.dof_vel_range.items():
+                for i in range(self.num_dof):
+                    if joint in self.dof_names[i]:
+                        self.dof_vel_range[i, :] = to_torch(vals)
+            
+            self.root_pos_range = torch.tensor(self.cfg.init_state.root_pos_range,
+                    dtype=torch.float, device=self.device, requires_grad=False)
+            self.root_vel_range = torch.tensor(self.cfg.init_state.root_vel_range,
+                    dtype=torch.float, device=self.device, requires_grad=False)
+            # todo check for consistency (low first, high second)
 
 
     def _prepare_reward_function(self):
