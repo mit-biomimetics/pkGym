@@ -148,7 +148,7 @@ class MiniCheetah(LeggedRobot):
         self.X0_conds[:, 10:13] = base_ang_vel
         self.X0_conds[:, 13:25] = dof_pos
         self.X0_conds[:, 25:37] = dof_vel
-        self.X0_conds[:, 37] = phase
+        self.X0_conds[:, 37:38] = phase
 
     
     def reset_to_storage(self, env_ids):
@@ -161,8 +161,8 @@ class MiniCheetah(LeggedRobot):
         self.dof_pos[env_ids] = self.X0_conds[idx, 13:13+self.num_dof]
         # self.dof_vel[env_ids] = torch.zeros_like(self.dof_vel[env_ids])
         self.dof_vel[env_ids] = self.X0_conds[idx,
-                                        13+self.num_dof:13+2*self.num_dof]
-        self.phase = self.X0_conds[idx, 37]
+                                            13+self.num_dof:13+2*self.num_dof]
+        self.phase[env_ids] = self.X0_conds[idx, 37:38]  # keep it vertical (or unsqueeze)
 
 
 

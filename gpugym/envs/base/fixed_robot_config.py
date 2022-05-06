@@ -40,14 +40,17 @@ class FixedRobotCfg(BaseConfig):
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
 
-        dof_pos_high = [0., 0.] # DOF dimensions
-        dof_pos_low = [0., 0.]
-        dof_vel_high = [0., 0.]
-        dof_vel_low = [0., 0.]
+        # * target state when action = 0, also reset positions for basic mode
+        default_joint_angles = {"joint_a": 0.,
+                                "joint_b": 0.}
 
-        default_joint_angles = { # target angles when action = 0.0
-            "joint_a": 0.,
-            "joint_b": 0.}
+        # * initial conditiosn for reset_to_range
+        dof_pos_range = {'joint_a': [-1., 1.],
+                         'joint_b': [-1., 1.]}
+        dof_vel_range = {'joint_a': [-1., 1.],
+                         'joint_b': [-1., 1.]}
+
+
 
     class control:
         control_type = 'P' # P: position, V: velocity, T: torques

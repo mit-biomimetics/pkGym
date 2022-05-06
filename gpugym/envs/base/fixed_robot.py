@@ -405,16 +405,18 @@ class FixedRobot(BaseTask):
 
     def reset_to_range(self, env_ids):
         """
-        Reset to a single initial state
+        Reset to a uniformly random distribution of states, sampled from a
+        range for each state
         """
-        dof_pos_high = to_torch(self.cfg.init_state.dof_pos_high)
-        dof_pos_low = to_torch(self.cfg.init_state.dof_pos_low)
-        dof_vel_high = to_torch(self.cfg.init_state.dof_vel_high)
-        dof_vel_low = to_torch(self.cfg.init_state.dof_vel_high)
-        self.dof_pos[env_ids] = random_sample(env_ids, dof_pos_high,
-                                            dof_pos_low, device=self.device)
-        self.dof_vel[env_ids] = random_sample(env_ids, dof_vel_high,
-                                            dof_vel_low, device=self.device)
+        # dof states
+        self.dof_pos[env_ids] = random_sample(env_ids,
+                                    self.dof_pos_range[:, 0],
+                                    self.dof_pos_range[:, 1],
+                                    device=self.device)
+        self.dof_vel[env_ids] = random_sample(env_ids,
+                        self.dof_vel_range[:, 0],
+                        self.dof_vel_range[:, 1],
+                        device=self.device)
 
 
     def reset_to_storage(self, env_ids):
@@ -533,19 +535,28 @@ class FixedRobot(BaseTask):
         # store indices of actuated joints
         self.act_idx = to_torch(actuated_idx, dtype=torch.long,
                                 device=self.device)
-
         # * check that init range highs and lows are consistent
-        if hasattr(self.cfg.init_state, "com_pos_high"):
-            for i in range(self.num_dof):
-                if self.cfg.init_state.dof_pos_high[i] < self.cfg.init_state.dof_pos_low[i]:
-                    raise ValueError(f"dof_pos_high[{i}] < dof_pos_low[{i}]")
-                if self.cfg.init_state.dof_vel_high[i] < self.cfg.init_state.dof_vel_low[i]:
-                    raise ValueError(f"dof_vel_high[{i}] < dof_vel_low[{i}]")
-            for i in range(6):
-                if self.cfg.init_state.com_pos_high[i] < self.cfg.init_state.com_pos_low[i]:
-                    raise ValueError(f"com_pos_high[{i}] < com_pos_low[{i}]")
-                if self.cfg.init_state.com_vel_high[i] < self.cfg.init_state.com_vel_low[i]:
-                    raise ValueError(f"com_vel_high[{i}] < com_vel_low[{i}]")
+        # * and repopulate to match 
+        if self.cfg.init_state.reset_mode == "reset_to_range":
+            self.dof_pos_range = torch.zeros(self.num_dof, 2,
+                                            dtype=torch.float,
+                                            device=self.device,
+                                            requires_grad=False)
+            self.dof_vel_range = torch.zeros(self.num_dof, 2,
+                                            dtype=torch.float,
+                                            device=self.device,
+                                            requires_grad=False)
+
+            for joint, vals in self.cfg.init_state.dof_pos_range.items():
+                for i in range(self.num_dof):
+                    if joint in self.dof_names[i]:
+                        self.dof_pos_range[i, :] = to_torch(vals)
+
+            for joint, vals in self.cfg.init_state.dof_vel_range.items():
+                for i in range(self.num_dof):
+                    if joint in self.dof_names[i]:
+                        self.dof_vel_range[i, :] = to_torch(vals)
+            # todo check for consistency (low first, high second)
 
         # * init storage, if used
         # todo different size than num_envs
