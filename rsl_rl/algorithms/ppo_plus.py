@@ -52,6 +52,7 @@ class PPO_plus:
                  schedule="fixed",
                  desired_kl=0.01,
                  device='cpu',
+                 storage_size=4000
                  ):
 
         self.device = device
@@ -81,8 +82,9 @@ class PPO_plus:
 
         # * Experience Replay Storage
         self.LT_storage = None # initialized later
+        self.storage_size = storage_size
 
-    def init_storage(self, num_envs, num_transitions_per_env, actor_obs_shape, critic_obs_shape, action_shape, max_storage=None):
+    def init_storage(self, num_envs, num_transitions_per_env, actor_obs_shape, critic_obs_shape, action_shape):
         self.storage = RolloutStorage(num_envs,
                                         num_transitions_per_env,
                                         actor_obs_shape,
@@ -90,9 +92,7 @@ class PPO_plus:
                                         action_shape,
                                         self.device)
 
-        if max_storage is None:
-            max_storage = num_envs * num_transitions_per_env
-        self.LT_storage = LongTermStorage(max_storage,
+        self.LT_storage = LongTermStorage(self.storage_size,
                                             actor_obs_shape,
                                             critic_obs_shape,
                                             action_shape,

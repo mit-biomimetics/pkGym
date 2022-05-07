@@ -67,6 +67,13 @@ class OnPolicyRunner:
         alg_class = eval(self.cfg["algorithm_class_name"]) # PPO
         # ! this is hardcoded
         # self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
+        if self.cfg["algorithm_class_name"] == "PPO":
+            self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
+        elif self.cfg["algorithm_class_name"] == "PPO_plus":
+            self.alg: PPO_plus = alg_class(actor_critic, device=self.device, **self.alg_cfg)
+        else:
+            print("No idea what algorithm you want from me here.")
+
         self.alg = alg_class(actor_critic, device=self.device, **self.alg_cfg)
         self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
@@ -171,7 +178,8 @@ class OnPolicyRunner:
             if hasattr(self.alg, "update_LT_storage"):
                 self.alg.update_LT_storage()
                 # if self.cfg
-                self.env.update_X0(self.alg.LT_storage.observations, from_obs=True)
+                self.env.update_X0(self.alg.LT_storage.observations,
+                                    from_obs=True)
 
         # * update initial conditions of env
         self.current_learning_iteration += num_learning_iterations
