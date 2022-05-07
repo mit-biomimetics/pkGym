@@ -126,13 +126,15 @@ class MiniCheetah(LeggedRobot):
             self.X0_conds = X0
             return
         # * otherwise, unscale and handle obs to get back to states
-        base_z = X0[:, 0:1]
-        base_lin_vel = X0[:, 1:4]/self.obs_scales.lin_vel
-        base_ang_vel = X0[:, 4:7]/self.obs_scales.ang_vel
-        prj_grv = X0[:, 7:10]  # ! I think? Check...
-        dof_pos = X0[:, 10:22]
-        dof_vel = X0[:, 34:46]/self.obs_scales.dof_vel
-        phase = torch.atan2(X0[:, 46:47], X0[:, 47:48])
+
+        n_new = min(X0.shape[0], self.X0_conds.shape[0])
+        base_z = X0[:n_new, 0:1]
+        base_lin_vel = X0[:n_new, 1:4]/self.obs_scales.lin_vel
+        base_ang_vel = X0[:n_new, 4:7]/self.obs_scales.ang_vel
+        prj_grv = X0[:n_new, 7:10]  # ! I think? Check...
+        dof_pos = X0[:n_new, 10:22]
+        dof_vel = X0[:n_new, 34:46]/self.obs_scales.dof_vel
+        phase = torch.atan2(X0[:n_new, 46:47], X0[:n_new, 47:48])
 
         # from prj_grv to roll and pitch
         pitch = torch.atan2(-prj_grv[:, 1], prj_grv[:, 2])
@@ -142,13 +144,13 @@ class MiniCheetah(LeggedRobot):
         base_pos = torch.cat((torch.zeros_like(base_z),
                             torch.zeros_like(base_z),
                             base_z), dim=1)
-        self.X0_conds[:, :3] = base_pos
-        self.X0_conds[:, 3:7] = base_quat
-        self.X0_conds[:, 7:10] = base_lin_vel
-        self.X0_conds[:, 10:13] = base_ang_vel
-        self.X0_conds[:, 13:25] = dof_pos
-        self.X0_conds[:, 25:37] = dof_vel
-        self.X0_conds[:, 37:38] = phase
+        self.X0_conds[:n_new, :3] = base_pos
+        self.X0_conds[:n_new, 3:7] = base_quat
+        self.X0_conds[:n_new, 7:10] = base_lin_vel
+        self.X0_conds[:n_new, 10:13] = base_ang_vel
+        self.X0_conds[:n_new, 13:25] = dof_pos
+        self.X0_conds[:n_new, 25:37] = dof_vel
+        self.X0_conds[:n_new, 37:38] = phase
 
     
     def reset_to_storage(self, env_ids):

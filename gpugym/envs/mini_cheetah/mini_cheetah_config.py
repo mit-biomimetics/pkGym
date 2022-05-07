@@ -223,7 +223,7 @@ class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
         desired_kl = 0.01
         max_grad_norm = 1.
         # PPO_plus params
-        storage_size = 4000
+        storage_size = 16000
 
     class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
