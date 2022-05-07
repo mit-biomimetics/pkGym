@@ -46,6 +46,9 @@ class MiniCheetahCfg(LeggedRobotCfg):
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
 
+        # * storage parameters
+        storage_size = 4000
+
         # * default COM for basic initialization 
         pos = [0.0, 0.0, 0.33]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
@@ -206,9 +209,25 @@ class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
 
     class algorithm( LeggedRobotCfgPPO.algorithm):
+        # training params
+        value_loss_coef = 1.0
+        use_clipped_value_loss = True
+        clip_param = 0.2
         entropy_coef = 0.01
+        num_learning_epochs = 5
+        num_mini_batches = 4 # mini batch size = num_envs*nsteps / nminibatches
+        learning_rate = 1.e-3 #5.e-4
+        schedule = 'adaptive' # could be adaptive, fixed
+        gamma = 0.99
+        lam = 0.95
+        desired_kl = 0.01
+        max_grad_norm = 1.
+        # PPO_plus params
+        storage_size = 4000
 
     class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
         experiment_name = 'mini_cheetah'
         max_iterations = 500  # number of policy updates
+        algorithm_class_name = 'PPO_plus'
+        num_steps_per_env = 24 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)

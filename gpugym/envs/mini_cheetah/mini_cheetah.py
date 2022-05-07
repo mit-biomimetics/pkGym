@@ -126,13 +126,13 @@ class MiniCheetah(LeggedRobot):
             self.X0_conds = X0
             return
         # * otherwise, unscale and handle obs to get back to states
-        base_z = X0[:, 0]
+        base_z = X0[:, 0:1]
         base_lin_vel = X0[:, 1:4]/self.obs_scales.lin_vel
         base_ang_vel = X0[:, 4:7]/self.obs_scales.ang_vel
         prj_grv = X0[:, 7:10]  # ! I think? Check...
         dof_pos = X0[:, 10:22]
         dof_vel = X0[:, 34:46]/self.obs_scales.dof_vel
-        phase = torch.atan2(X0[:, 46], X0[:, 47])
+        phase = torch.atan2(X0[:, 46:47], X0[:, 47:48])
 
         # from prj_grv to roll and pitch
         pitch = torch.atan2(-prj_grv[:, 1], prj_grv[:, 2])

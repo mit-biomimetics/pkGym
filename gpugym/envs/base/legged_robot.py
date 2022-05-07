@@ -746,7 +746,8 @@ class LeggedRobot(BaseTask):
         # todo different size than num_envs
         # ! overload for specific
         if self.cfg.init_state.reset_mode == "reset_to_storage":
-            self.X0_conds = torch.zeros(self.num_envs, self.num_states,
+            self.X0_conds = torch.zeros(self.cfg.init_state.storage_size,
+                                        self.num_states,
                                         device=self.device, requires_grad=False)
             self.X0_conds[:, :13] = self.base_init_state
             self.X0_conds[:, 13:13+self.num_dof] = self.default_dof_pos
