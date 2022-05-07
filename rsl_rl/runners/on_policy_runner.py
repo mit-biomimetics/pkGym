@@ -142,7 +142,8 @@ class OnPolicyRunner:
                     obs, privileged_obs, rewards, dones, infos = self.env.step(actions)
                     critic_obs = privileged_obs if privileged_obs is not None else obs
                     obs, critic_obs, rewards, dones = obs.to(self.device), critic_obs.to(self.device), rewards.to(self.device), dones.to(self.device)
-                    self.alg.process_env_step(rewards, dones, infos)  # add data-point to storage
+                    # add data-point to storage
+                    self.alg.process_env_step(rewards, dones, infos)
 
                     if self.log_dir is not None:
                         # Book keeping
@@ -175,13 +176,14 @@ class OnPolicyRunner:
                 self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(it)))
             ep_infos.clear()
             # * update LT storage
-            if hasattr(self.alg, "update_LT_storage"):
+            if self.cfg["algorithm_class_name"] == "PPO_plus":
                 self.alg.update_LT_storage()
-                # if self.cfg
-                self.env.update_X0(self.alg.LT_storage.observations,
+                # * update initial conditions of env
+                # todo do this more slowly, every x or so
+                n_DC = self.alg.LT_storage.data_count
+                self.env.update_X0(self.alg.LT_storage.observations[:n_DC],
                                     from_obs=True)
 
-        # * update initial conditions of env
         self.current_learning_iteration += num_learning_iterations
         self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.current_learning_iteration)))
 

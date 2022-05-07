@@ -1,8 +1,8 @@
 
 # * keep track of observations across entire training run
 # for off-policy algorithms, initial conditions
-# todo prune nearby 
-
+# todo prune nearby
+# todo add privileged observatiosn too?
 import torch
 import numpy as np
 
@@ -23,7 +23,7 @@ class LongTermStorage:
             self.action_mean = None
             self.action_sigma = None
             self.hidden_states = None
-        
+
         def clear(self):
             self.__init__()
 
@@ -56,42 +56,42 @@ class LongTermStorage:
         # * probably don't need
         # self.actions_log_prob = torch.zeros(max_storage, 1,
         #                                     device=self.device)
-        self.values = torch.zeros(max_storage, 1, device=self.device)
-        self.returns = torch.zeros(max_storage, 1,
-                                    device=self.device)
-        self.advantages = torch.zeros(max_storage, 1,
-                                        device=self.device)
-        self.mu = torch.zeros(max_storage, *actions_shape,
-                                device=self.device)
-        self.sigma = torch.zeros(max_storage, *actions_shape,
-                                device=self.device)
+        # self.values = torch.zeros(max_storage, 1, device=self.device)
+        # self.returns = torch.zeros(max_storage, 1,
+        #                             device=self.device)
+        # self.advantages = torch.zeros(max_storage, 1,
+        #                                 device=self.device)
+        # self.mu = torch.zeros(max_storage, *actions_shape,
+        #                         device=self.device)
+        # self.sigma = torch.zeros(max_storage, *actions_shape,
+        #                         device=self.device)
 
         # trackers
         self.max_storage = max_storage
         # self.num_envs = num_envs
         self.step = 0
 
-    def add_transitions(self, transition: Transition):
-        if self.data_count >= self.max_storage:
-            raise AssertionError("Rollout buffer overflow")
-            # ! probably change message
-        self.observations[self.step].copy_(transition.observations)
-        if self.privileged_observations is not None:
-            self.privileged_observations[self.step].copy_(transition.critic_observations)
+    # def add_transitions(self, transition: Transition):
+    #     if self.data_count >= self.max_storage:
+    #         raise AssertionError("Rollout buffer overflow")
+    #         # ! probably change message
+    #     self.observations[self.step].copy_(transition.observations)
+    #     if self.privileged_observations is not None:
+    #         self.privileged_observations[self.step].copy_(transition.critic_observations)
 
-        self.actions[self.step].copy_(transition.actions)
-        self.rewards[self.step].copy_(transition.rewards.view(-1, 1))
-        self.dones[self.step].copy_(transition.dones.view(-1, 1))
-        # ! values need to re-evaluated for each update step
-        # self.values[self.step].copy_(transition.values)
-        # ! this data is used off-policy
-        # self.actions_log_prob[self.step].copy_(transition.actions_log_prob.view(-1, 1))
-        # ! ppo stuff
-        # self.mu[self.step].copy_(transition.action_mean)
-        # self.sigma[self.step].copy_(transition.action_sigma)
-        self.step += 1  # probably not needed
+    #     self.actions[self.step].copy_(transition.actions)
+    #     self.rewards[self.step].copy_(transition.rewards.view(-1, 1))
+    #     self.dones[self.step].copy_(transition.dones.view(-1, 1))
+    #     # ! values need to re-evaluated for each update step
+    #     # self.values[self.step].copy_(transition.values)
+    #     # ! this data is used off-policy
+    #     # self.actions_log_prob[self.step].copy_(transition.actions_log_prob.view(-1, 1))
+    #     # ! ppo stuff
+    #     # self.mu[self.step].copy_(transition.action_mean)
+    #     # self.sigma[self.step].copy_(transition.action_sigma)
+    #     self.step += 1  # probably not needed
 
-        self.data_count += 1
+    #     self.data_count += 1
 
     def clear(self):
         self.step = 0
@@ -179,3 +179,6 @@ class LongTermStorage:
                         # , advantages_batch, returns_batch, \
                         # old_actions_log_prob_batch, old_mu_batch, \
                         # old_sigma_batch
+
+    
+    # def add_data(self, new_transitions):
