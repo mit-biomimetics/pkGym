@@ -1,5 +1,5 @@
 
-# * keep track of observations across entire training run
+# * keep track of obs across entire training run
 # for off-policy algorithms, initial conditions
 # todo prune nearby
 # todo add privileged observatiosn too?
@@ -13,16 +13,18 @@ class LongTermStorage:
     # ! probably don't use this, pull in directly from RolloutStorage
     class Transition:
         def __init__(self):
-            self.observations = None
-            self.critic_observations = None
+            self.obs = None
+            self.priv_obs = None
+            self.next_obs = None
+            self.next_priv_obs = None
             self.actions = None
             self.rewards = None
-            self.dones = None
-            self.values = None
+            self.dones = None  # probably not needed
+            # self.values = None
             self.actions_log_prob = None
-            self.action_mean = None
-            self.action_sigma = None
-            self.hidden_states = None
+            # self.action_mean = None
+            # self.action_sigma = None
+            # self.hidden_states = None
 
         def clear(self):
             self.__init__()
@@ -38,13 +40,17 @@ class LongTermStorage:
         self.actions_shape = actions_shape
         self.data_count = 0  # amount of data stored
         # Core
-        self.observations = torch.zeros(max_storage, *obs_shape,
+        self.obs = torch.zeros(max_storage, *obs_shape,
+                                        device=self.device)
+        self.next_obs = torch.zeros(max_storage, *obs_shape,
                                         device=self.device)
         if privileged_obs_shape[0] is not None:
-            self.privileged_observations = torch.zeros(max_storage,
+            self.privileged_obs = torch.zeros(max_storage,
+                                    *privileged_obs_shape, device=self.device)
+            self.next_priv_obs = torch.zeros(max_storage,
                                     *privileged_obs_shape, device=self.device)
         else:
-            self.privileged_observations = None
+            self.privileged_obs = None
         self.rewards = torch.zeros(max_storage, 1,
                                    device=self.device)
         self.actions = torch.zeros(max_storage, *actions_shape,
@@ -71,13 +77,16 @@ class LongTermStorage:
         # self.num_envs = num_envs
         self.step = 0
 
+    # def add_transition(self, transition: Transition):
+    #     self.observations[self.data_count]
+
     # def add_transitions(self, transition: Transition):
     #     if self.data_count >= self.max_storage:
     #         raise AssertionError("Rollout buffer overflow")
     #         # ! probably change message
-    #     self.observations[self.step].copy_(transition.observations)
-    #     if self.privileged_observations is not None:
-    #         self.privileged_observations[self.step].copy_(transition.critic_observations)
+    #     self.obs[self.step].copy_(transition.obs)
+    #     if self.privileged_obs is not None:
+    #         self.privileged_obs[self.step].copy_(transition.priv_obs)
 
     #     self.actions[self.step].copy_(transition.actions)
     #     self.rewards[self.step].copy_(transition.rewards.view(-1, 1))
@@ -142,11 +151,11 @@ class LongTermStorage:
                                     requires_grad=False,
                                     device=self.device)
 
-        observations = self.observations.flatten(0, 1)
-        if self.privileged_observations is not None:
-            critic_observations = self.privileged_observations.flatten(0, 1)
+        obs = self.obs.flatten(0, 1)
+        if self.privileged_obs is not None:
+            priv_obs = self.privileged_obs.flatten(0, 1)
         else:
-            critic_observations = observations
+            priv_obs = obs
 
         actions = self.actions.flatten(0, 1)
         values = self.values.flatten(0, 1)
@@ -164,8 +173,8 @@ class LongTermStorage:
                 end = (i+1)*mini_batch_size
                 batch_idx = indices[start:end]
 
-                obs_batch = observations[batch_idx]
-                critic_observations_batch = critic_observations[batch_idx]
+                obs_batch = obs[batch_idx]
+                critic_obs_batch = priv_obs[batch_idx]
                 actions_batch = actions[batch_idx]
                 target_values_batch = values[batch_idx]
                 target_q_values_batch = q_values[batch_idx]
@@ -174,7 +183,7 @@ class LongTermStorage:
                 # advantages_batch = advantages[batch_idx]
                 # old_mu_batch = old_mu[batch_idx]
                 # old_sigma_batch = old_sigma[batch_idx]
-                yield obs_batch, critic_observations_batch, actions_batch, \
+                yield obs_batch, critic_obs_batch, actions_batch, \
                         target_values_batch, target_q_values_batch
                         # , advantages_batch, returns_batch, \
                         # old_actions_log_prob_batch, old_mu_batch, \

@@ -214,18 +214,18 @@ class PPO_plus:
         n_new = self.storage.observations.flatten(end_dim=1).shape[0]
 
         if n_LT >= n_LT_max:
-            all_obs = torch.cat((self.LT_storage.observations,
+            all_obs = torch.cat((self.LT_storage.obs,
                                 self.storage.observations.flatten(end_dim=1)),
                                 dim=0)
             indices = torch.randperm(n_LT + n_new)[:n_LT]
-            self.LT_storage.observations = all_obs[indices, :]
+            self.LT_storage.obs = all_obs[indices, :]
         elif n_LT+n_new >= n_LT_max:  # keep a random set
-            all_obs = torch.cat((self.LT_storage.observations[:n_LT, :],
+            all_obs = torch.cat((self.LT_storage.obs[:n_LT, :],
                                 self.storage.observations.flatten(end_dim=1)),
                                 dim=0)
             indices = torch.randperm(n_LT + n_new)[:n_LT_max]
-            self.LT_storage.observations = all_obs[indices, :]
+            self.LT_storage.obs = all_obs[indices, :]
             self.LT_storage.data_count = n_LT_max
         else:  # just fill
-            self.LT_storage.observations[self.LT_storage.data_count:self.LT_storage.data_count+n_new, :] = self.storage.observations.flatten(end_dim=1)
+            self.LT_storage.obs[self.LT_storage.data_count:self.LT_storage.data_count+n_new, :] = self.storage.observations.flatten(end_dim=1)
             self.LT_storage.data_count += n_new

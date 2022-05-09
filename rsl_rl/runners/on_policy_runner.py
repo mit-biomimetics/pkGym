@@ -181,7 +181,7 @@ class OnPolicyRunner:
                 # * update initial conditions of env
                 # todo do this more slowly, every x or so
                 n_DC = self.alg.LT_storage.data_count
-                self.env.update_X0(self.alg.LT_storage.observations[:n_DC],
+                self.env.update_X0(self.alg.LT_storage.obs[:n_DC],
                                     from_obs=True)
 
         self.current_learning_iteration += num_learning_iterations
