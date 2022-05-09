@@ -119,8 +119,8 @@ class OnPolicyRunner:
         if init_at_random_ep_len:
             self.env.episode_length_buf = torch.randint_like(self.env.episode_length_buf, high=int(self.env.max_episode_length))
         obs = self.env.get_observations()
-        privileged_obs = self.env.get_privileged_observations()
-        critic_obs = privileged_obs if privileged_obs is not None else obs
+        priv_obs = self.env.get_privileged_observations()
+        critic_obs = priv_obs if priv_obs is not None else obs
         obs, critic_obs = obs.to(self.device), critic_obs.to(self.device)
         self.alg.actor_critic.train() # switch to train mode (for dropout for example)
 
@@ -139,11 +139,17 @@ class OnPolicyRunner:
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
                     actions = self.alg.act(obs, critic_obs)
-                    obs, privileged_obs, rewards, dones, infos = self.env.step(actions)
-                    critic_obs = privileged_obs if privileged_obs is not None else obs
+                    # * step simulation
+                    obs, priv_obs, rewards, dones, infos = self.env.step(actions)
+                    critic_obs = priv_obs if priv_obs is not None else obs
                     obs, critic_obs, rewards, dones = obs.to(self.device), critic_obs.to(self.device), rewards.to(self.device), dones.to(self.device)
+                    
                     # add data-point to storage
-                    self.alg.process_env_step(rewards, dones, infos)
+                    if self.cfg["algorithm_class_name"] == "PPO_plus":
+                        self.alg.process_env_step(rewards, dones, infos,
+                                                obs, critic_obs)
+                    elif self.cfg["algorithm_class_name"] == "PPO":
+                        self.alg.process_env_step(rewards, dones, infos)
 
                     if self.log_dir is not None:
                         # Book keeping
@@ -177,11 +183,11 @@ class OnPolicyRunner:
             ep_infos.clear()
             # * update LT storage
             if self.cfg["algorithm_class_name"] == "PPO_plus":
-                self.alg.update_LT_storage()
+                # self.alg.update_LT_storage()
                 # * update initial conditions of env
                 # todo do this more slowly, every x or so
-                n_DC = self.alg.LT_storage.data_count
-                self.env.update_X0(self.alg.LT_storage.obs[:n_DC],
+                n_DC = self.alg.storage.data_count
+                self.env.update_X0(self.alg.storage.critic_obs[:n_DC],
                                     from_obs=True)
 
         self.current_learning_iteration += num_learning_iterations

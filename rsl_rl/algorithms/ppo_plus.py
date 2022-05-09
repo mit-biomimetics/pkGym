@@ -52,7 +52,8 @@ class PPO_plus:
                  schedule="fixed",
                  desired_kl=0.01,
                  device='cpu',
-                 storage_size=4000
+                 storage_size=4000,
+                 priv_obs_only=False
                  ):
 
         self.device = device
@@ -80,33 +81,28 @@ class PPO_plus:
         self.max_grad_norm = max_grad_norm
         self.use_clipped_value_loss = use_clipped_value_loss
 
-        # * Experience Replay Storage
-        self.LT_storage = None # initialized later
-        self.storage_size = storage_size
+        # ppo plus params
+        self.LT_storage_size = storage_size
+        self.LT_priv_obs_only = priv_obs_only
 
-    def init_storage(self, num_envs, num_transitions_per_env, actor_obs_shape, critic_obs_shape, action_shape):
-        self.storage = RolloutStorage(num_envs,
-                                        num_transitions_per_env,
+    def init_storage(self, num_envs, num_transitions_per_env, actor_obs_shape,
+                        critic_obs_shape, action_shape):
+
+        self.storage = LongTermStorage(num_envs, num_transitions_per_env,
+                                        self.LT_storage_size,
                                         actor_obs_shape,
                                         critic_obs_shape,
                                         action_shape,
+                                        self.LT_priv_obs_only,
                                         self.device)
-
-        self.LT_storage = LongTermStorage(self.storage_size,
-                                            actor_obs_shape,
-                                            critic_obs_shape,
-                                            action_shape,
-                                            self.device)
 
     def test_mode(self):
         self.actor_critic.test()
-    
+
     def train_mode(self):
         self.actor_critic.train()
 
     def act(self, obs, critic_obs):
-        if self.actor_critic.is_recurrent:
-            self.transition.hidden_states = self.actor_critic.get_hidden_states()
         # Compute the actions and values
         self.transition.actions = self.actor_critic.act(obs).detach()
         self.transition.values = self.actor_critic.evaluate(critic_obs).detach()
@@ -118,29 +114,56 @@ class PPO_plus:
         self.transition.critic_observations = critic_obs
         return self.transition.actions
 
-    def process_env_step(self, rewards, dones, infos):
+    def process_env_step(self, rewards, dones, infos, new_actor_obs, new_critic_obs):
         self.transition.rewards = rewards.clone()
         self.transition.dones = dones
         # Bootstrapping on time outs
-        if 'time_outs' in infos:
-            self.transition.rewards += self.gamma * torch.squeeze(self.transition.values * infos['time_outs'].unsqueeze(1).to(self.device), 1)
+        self.transition.rewards += self.gamma * torch.squeeze(self.transition.values * infos['time_outs'].unsqueeze(1).to(self.device), 1)
 
         # Record the transition
-        self.storage.add_transitions(self.transition)
+
+        self.storage.rollout.add_transitions(self.transition)
+        # * add transitions that are not time-outs to LT storage
+
+        keep = ~infos['time_outs'].to(self.device)
+        self.storage.add_LT_transitions(self.transition.observations[keep, :],
+                            self.transition.critic_observations[keep, :],
+                            self.transition.actions[keep, :],
+                            new_actor_obs[keep, :],
+                            new_critic_obs[keep, :],
+                            self.transition.rewards[keep].unsqueeze(1))
+                            # possibly add dones (mark failure terminations)
+        # if self.LT_crit_obs_only:
+        # start = self.storage.data_count
+        # keep = ~infos['time_outs'].to(self.device)
+        # n_keep = sum(~infos['time_outs'].to(self.device))
+        # self.storage.actor_obs[start:start+n_keep, :] = \ 
+        #                         self.transition.observations[keep, :]
+        # self.storage.critic_obs[start:start+n_keep, :] = \
+        #                         self.transition.critic_observations[keep, :]
+        # self.storage.actions[start:start+n_keep, :] = \
+        #                         self.transition.actions[keep, :]
+        # self.storage.next_actor_obs[start:start+n_keep, :] = \
+        #                         new_actor_obs[keep, :]
+        # self.storage.next_critic_obs[start:start+n_keep, :] = \
+        #                         new_critic_obs[keep, :]
+        # self.storage.data_count += n_keep
+        # * clear and reset
         self.transition.clear()
-        self.actor_critic.reset(dones)
+        self.actor_critic.reset(dones)  # does NOTHING
+
 
     def compute_returns(self, last_critic_obs):
         last_values= self.actor_critic.evaluate(last_critic_obs).detach()
-        self.storage.compute_returns(last_values, self.gamma, self.lam)
+        self.storage.rollout.compute_returns(last_values, self.gamma, self.lam)
 
     def update(self):
         mean_value_loss = 0
         mean_surrogate_loss = 0
         if self.actor_critic.is_recurrent:
-            generator = self.storage.reccurent_mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
+            generator = self.storage.rollout.reccurent_mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
         else:
-            generator = self.storage.mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
+            generator = self.storage.rollout.mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
         for obs_batch, critic_obs_batch, actions_batch, target_values_batch, advantages_batch, returns_batch, old_actions_log_prob_batch, \
             old_mu_batch, old_sigma_batch, hid_states_batch, masks_batch in generator:
 
@@ -199,33 +222,33 @@ class PPO_plus:
         num_updates = self.num_learning_epochs * self.num_mini_batches
         mean_value_loss /= num_updates
         mean_surrogate_loss /= num_updates
-        self.storage.clear()
+        self.storage.rollout.clear()
 
         return mean_value_loss, mean_surrogate_loss
 
-    def update_LT_storage(self):
-        # for now, just randomly select a mix of previous and new obs
+    # def update_LT_storage(self):
+    #     # for now, just randomly select a mix of previous and new obs
 
-        # todo if all zeros (or anyway not yet initialized), then just copy over
-        # todo: actually, use a step-var to keep track of how full it is
+    #     # todo if all zeros (or anyway not yet initialized), then just copy over
+    #     # todo: actually, use a step-var to keep track of how full it is
 
-        n_LT = self.LT_storage.data_count
-        n_LT_max = self.LT_storage.max_storage
-        n_new = self.storage.observations.flatten(end_dim=1).shape[0]
+    #     n_LT = self.storage.data_count
+    #     n_LT_max = self.storage.LT_storage_size
+    #     n_new = self.storage.observations.flatten(end_dim=1).shape[0]
 
-        if n_LT >= n_LT_max:
-            all_obs = torch.cat((self.LT_storage.obs,
-                                self.storage.observations.flatten(end_dim=1)),
-                                dim=0)
-            indices = torch.randperm(n_LT + n_new)[:n_LT]
-            self.LT_storage.obs = all_obs[indices, :]
-        elif n_LT+n_new >= n_LT_max:  # keep a random set
-            all_obs = torch.cat((self.LT_storage.obs[:n_LT, :],
-                                self.storage.observations.flatten(end_dim=1)),
-                                dim=0)
-            indices = torch.randperm(n_LT + n_new)[:n_LT_max]
-            self.LT_storage.obs = all_obs[indices, :]
-            self.LT_storage.data_count = n_LT_max
-        else:  # just fill
-            self.LT_storage.obs[self.LT_storage.data_count:self.LT_storage.data_count+n_new, :] = self.storage.observations.flatten(end_dim=1)
-            self.LT_storage.data_count += n_new
+    #     if n_LT >= n_LT_max:
+    #         all_obs = torch.cat((self.LT_storage.obs,
+    #                             self.storage.observations.flatten(end_dim=1)),
+    #                             dim=0)
+    #         indices = torch.randperm(n_LT + n_new)[:n_LT]
+    #         self.LT_storage.obs = all_obs[indices, :]
+    #     elif n_LT+n_new >= n_LT_max:  # keep a random set
+    #         all_obs = torch.cat((self.LT_storage.obs[:n_LT, :],
+    #                             self.storage.observations.flatten(end_dim=1)),
+    #                             dim=0)
+    #         indices = torch.randperm(n_LT + n_new)[:n_LT_max]
+    #         self.LT_storage.obs = all_obs[indices, :]
+    #         self.LT_storage.data_count = n_LT_max
+    #     else:  # just fill
+    #         self.LT_storage.obs[self.LT_storage.data_count:self.LT_storage.data_count+n_new, :] = self.storage.observations.flatten(end_dim=1)
+    #         self.LT_storage.data_count += n_new
