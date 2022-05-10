@@ -8,7 +8,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         num_envs = 2**12  # (n_robots in Rudin 2021 paper - batch_size = n_steps * n_robots)
         num_actions = 12  # 12 for the 12 actuated DoFs of the mini cheetah
         num_observations = 87
-        episode_length_s = 6
+        episode_length_s = 10.
 
     class terrain(LeggedRobotCfg.terrain):
         curriculum = False
@@ -157,6 +157,8 @@ class MiniCheetahCfg(LeggedRobotCfg):
     class commands(LeggedRobotCfg.commands):
         heading_command = False
         resampling_time = 4.
+        curriculum = True
+        max_curriculum = 3.
         class ranges(LeggedRobotCfg.commands.ranges):
             lin_vel_x = [0., 0.] # min max [m/s]
             lin_vel_y = [0., 0]   # min max [m/s]
@@ -185,15 +187,14 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
     class noise(LeggedRobotCfg.noise):
         add_noise = True
-        noise_level = 0.1  # scales other values
+        noise_level = 1  # scales other values
 
         class noise_scales(LeggedRobotCfg.noise.noise_scales):
-            dof_pos = 0.01
-            dof_vel = 0.01
-            lin_vel = 0.1
-            ang_vel = 0.2
-            gravity = 0.05
-            height_measurements = 0.1
+            dof_pos = 0.005  # can be made very low
+            dof_vel = 0.005
+            ang_vel = [0.3, 0.15, 0.4]  # 0.027, 0.14, 0.37
+            gravity = 0.02
+            # height_measurements = 0.1
     
     class sim:
         dt =  0.002
