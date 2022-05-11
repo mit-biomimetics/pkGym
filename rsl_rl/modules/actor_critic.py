@@ -28,8 +28,6 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-import numpy as np
-
 import torch
 import torch.nn as nn
 from torch.distributions import Normal

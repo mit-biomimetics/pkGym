@@ -37,9 +37,8 @@ from torch.utils.tensorboard import SummaryWriter
 import wandb
 import torch
 
-from rsl_rl.algorithms import PPO, PPO_plus, PPO_SE
+from rsl_rl.algorithms import PPO, PPO_plus
 from rsl_rl.modules import ActorCritic, ActorCriticRecurrent
-from rsl_rl.modules import StateEstimator
 from rsl_rl.env import VecEnv
 
 
@@ -72,21 +71,15 @@ class OnPolicyRunner:
             self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
         elif self.cfg["algorithm_class_name"] == "PPO_plus":
             self.alg: PPO_plus = alg_class(actor_critic, device=self.device, **self.alg_cfg)
-        elif self.cfg["algorithm_class_name"] == "PPO_SE":
-            num_SE_outputs = train_cfg['state_estimator']['SE_outputs']
-            state_estimator = StateEstimator(self.env.num_obs,
-                                                num_SE_outputs)
-            self.alg: PPO_SE = alg_class(actor_critic, state_estimator, device=self.device, **self.alg_cfg)
         else:
             print("No idea what algorithm you want from me here.")
 
+        self.alg = alg_class(actor_critic, device=self.device, **self.alg_cfg)
         self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
 
         # init storage and model
-        self.alg.init_storage(self.env.num_envs, self.num_steps_per_env,
-                            [self.env.num_obs], [self.env.num_privileged_obs],
-                            [self.env.num_actions], [num_SE_outputs])
+        self.alg.init_storage(self.env.num_envs, self.num_steps_per_env, [self.env.num_obs], [self.env.num_privileged_obs], [self.env.num_actions])
 
         # Log
         self.log_dir = log_dir
@@ -132,8 +125,6 @@ class OnPolicyRunner:
         self.alg.actor_critic.train() # switch to train mode (for dropout for example)
 
         ep_infos = []
-        success_counts_infos = []
-        episode_counts_infos = []
         rewbuffer = deque(maxlen=100)
         lenbuffer = deque(maxlen=100)
         cur_reward_sum = torch.zeros(self.env.num_envs, dtype=torch.float, device=self.device)
@@ -141,8 +132,6 @@ class OnPolicyRunner:
 
         tot_iter = self.current_learning_iteration + num_learning_iterations
         for it in range(self.current_learning_iteration, tot_iter):
-            if it == round(0.8*tot_iter):
-                print("Almost done")
             start = time.time()
             # Rollout
             with torch.inference_mode():
@@ -154,8 +143,7 @@ class OnPolicyRunner:
                     obs, critic_obs, rewards, dones = obs.to(self.device), critic_obs.to(self.device), rewards.to(self.device), dones.to(self.device)
                     
                     # add data-point to storage
-                    if self.cfg["algorithm_class_name"] in ["PPO_plus",
-                                                            "PPO_SE"]:
+                    if self.cfg["algorithm_class_name"] == "PPO_plus":
                         self.alg.process_env_step(rewards, dones, infos,
                                                 obs, critic_obs)
                     elif self.cfg["algorithm_class_name"] == "PPO":
@@ -165,9 +153,6 @@ class OnPolicyRunner:
                         # Book keeping
                         if 'episode' in infos:
                             ep_infos.append(infos['episode'])
-                        if 'success counts' in infos and 'episode counts' in infos:
-                            success_counts_infos.append(infos['success counts'])
-                            episode_counts_infos.append(infos['episode counts'])
                         cur_reward_sum += rewards
                         cur_episode_length += 1
                         new_ids = (dones > 0).nonzero(as_tuple=False)
@@ -230,24 +215,6 @@ class OnPolicyRunner:
         mean_std = self.alg.actor_critic.std.mean()
         fps = int(self.num_steps_per_env * self.env.num_envs / (locs['collection_time'] + locs['learn_time']))
 
-        if locs['success_counts_infos'] and locs['episode_counts_infos']:
-            # This counts all the agent resets that occurred during the logging period
-            total_tries = torch.sum(torch.tensor([logged_info['total_reset'] for logged_info in locs['episode_counts_infos']]))
-            for key in locs['success_counts_infos'][0]:
-                infotensor = torch.tensor([], device=self.device)
-                for success_counts_info in locs['success_counts_infos']:
-                    # handle scalar and zero dimensional tensor infos
-                    if not isinstance(success_counts_info[key], torch.Tensor):
-                        success_counts_info[key] = torch.Tensor([success_counts_info[key]])
-                    if len(success_counts_info[key].shape) == 0:
-                        success_counts_info[key] = success_counts_info[key].unsqueeze(0)
-                    infotensor = torch.cat((infotensor, success_counts_info[key].to(self.device)))
-                success_count = torch.sum(infotensor)
-                success_rate = success_count / total_tries
-                self.writer.add_scalar('Success Rates/' + key, success_rate, locs['it'])
-                wandb_to_log['Success Rates/' + key] = success_rate
-                ep_string += f"""{f'Mean Success Rate {key}:':>{pad}} {success_rate*100:.1f}%\n"""
-
         self.writer.add_scalar('Loss/value_function', locs['mean_value_loss'], locs['it'])
         self.writer.add_scalar('Loss/surrogate', locs['mean_surrogate_loss'], locs['it'])
         self.writer.add_scalar('Loss/learning_rate', self.alg.learning_rate, locs['it'])
@@ -271,7 +238,7 @@ class OnPolicyRunner:
             wandb_to_log['Perf/learning_time'] = locs['learn_time']
             self.wandb.log(wandb_to_log, step=locs['it'])
 
-        str = f" \033[1m Learning iteration {locs['it']}/{locs['tot_iter']} \033[0m "
+        str = f" \033[1m Learning iteration {locs['it']}/{self.current_learning_iteration + locs['num_learning_iterations']} \033[0m "
 
         if len(locs['rewbuffer']) > 0:
             log_string = (f"""{'#' * width}\n"""

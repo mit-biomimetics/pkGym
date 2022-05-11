@@ -23,7 +23,7 @@ class LongTermStorage:
 
     # def __init__(self, num_envs, num_transitions_per_env, actor_obs_shape, critic_obs_shape, actions_shape, device='cpu'):
     def __init__(self, num_envs, num_transitions_per_env, LT_storage_size,
-                    actor_obs_shape, critic_obs_shape, actions_shape,
+                    actor_obs_shape, critic_obs_shape, actions_shape, se_shape,
                     priv_obs_only=True,
                     device='cpu'):
 
@@ -34,7 +34,7 @@ class LongTermStorage:
         # * start rollout storage
         self.rollout = RolloutStorage(num_envs, num_transitions_per_env,
                                         actor_obs_shape, critic_obs_shape,
-                                        actions_shape, self.device)
+                                        actions_shape, se_shape, self.device)
 
         # * initialize long-term storage
         self.data_count = 0  # amount of data stored
