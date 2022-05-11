@@ -119,13 +119,15 @@ class PPO_SE:
 
     def act(self, obs, critic_obs):
         # Compute the actions and values
-        self.transition.actions = self.actor_critic.act(obs).detach()
+        SE_prediction = self.state_estimator.evaluate(obs)
+        actor_obs = torch.cat((SE_prediction, obs), dim=1)
+        self.transition.actions = self.actor_critic.act(actor_obs).detach()
         self.transition.values = self.actor_critic.evaluate(critic_obs).detach()
         self.transition.actions_log_prob = self.actor_critic.get_actions_log_prob(self.transition.actions).detach()
         self.transition.action_mean = self.actor_critic.action_mean.detach()
         self.transition.action_sigma = self.actor_critic.action_std.detach()
         # need to record obs and critic_obs before env.step()
-        self.transition.observations = obs
+        self.transition.observations = obs  # not actor_obs
         self.transition.critic_observations = critic_obs
         return self.transition.actions
 
@@ -182,7 +184,13 @@ class PPO_SE:
         for obs_batch, critic_obs_batch, actions_batch, target_values_batch, advantages_batch, returns_batch, old_actions_log_prob_batch, \
             old_mu_batch, old_sigma_batch, SE_target_batch, hid_states_batch, masks_batch in generator:
 
-                self.actor_critic.act(obs_batch, masks=masks_batch,
+                # * plug state-estimator into policy
+                SE_prediction_batch = self.state_estimator.evaluate(obs_batch,
+                                        masks=masks_batch,
+                                        hidden_states=hid_states_batch[0])
+                actor_obs_batch = torch.cat((SE_prediction_batch.detach(),
+                                            obs_batch), dim=1)
+                self.actor_critic.act(actor_obs_batch, masks=masks_batch,
                                         hidden_states=hid_states_batch[0])
                 actions_log_prob_batch = \
                         self.actor_critic.get_actions_log_prob(actions_batch)
@@ -207,7 +215,6 @@ class PPO_SE:
 
                         for param_group in self.optimizer.param_groups:
                             param_group['lr'] = self.learning_rate
-
 
                 # Surrogate loss
                 ratio = torch.exp(actions_log_prob_batch \
@@ -241,15 +248,10 @@ class PPO_SE:
                 mean_surrogate_loss += surrogate_loss.item()
 
                 # * do a pass on the state-estimator too
-                SE_prediction = self.state_estimator.evaluate(obs_batch,
-                                        masks=masks_batch,
-                                        hidden_states=hid_states_batch[0])
-                SE_loss = self.SE_loss_fn(SE_prediction, SE_target_batch)
+                SE_loss = self.SE_loss_fn(SE_prediction_batch, SE_target_batch)
                 self.SE_optimizer.zero_grad()
                 SE_loss.backward()
                 self.SE_optimizer.step()
-
-
 
         num_updates = self.num_learning_epochs * self.num_mini_batches
         mean_value_loss /= num_updates

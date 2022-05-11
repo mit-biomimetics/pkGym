@@ -61,7 +61,13 @@ class OnPolicyRunner:
         else:
             num_critic_obs = self.env.num_obs
         actor_critic_class = eval(self.cfg["policy_class_name"]) # ActorCritic
-        actor_critic: ActorCritic = actor_critic_class( self.env.num_obs,
+
+        if self.cfg["algorithm_class_name"] == "PPO_SE":
+            num_actor_obs = self.env.num_obs \
+                            + train_cfg['state_estimator']['SE_outputs']
+        else:
+            num_actor_obs = self.env.num_obs
+        actor_critic: ActorCritic = actor_critic_class( num_actor_obs,
                                                         num_critic_obs,
                                                         self.env.num_actions,
                                                         **self.policy_cfg).to(self.device)
@@ -73,9 +79,9 @@ class OnPolicyRunner:
         elif self.cfg["algorithm_class_name"] == "PPO_plus":
             self.alg: PPO_plus = alg_class(actor_critic, device=self.device, **self.alg_cfg)
         elif self.cfg["algorithm_class_name"] == "PPO_SE":
-            num_SE_outputs = train_cfg['state_estimator']['SE_outputs']
+            # num_SE_outputs = train_cfg['state_estimator']['SE_outputs']
             state_estimator = StateEstimator(self.env.num_obs,
-                                                num_SE_outputs)
+                                train_cfg['state_estimator']['SE_outputs'])
             self.alg: PPO_SE = alg_class(actor_critic, state_estimator, device=self.device, **self.alg_cfg)
         else:
             print("No idea what algorithm you want from me here.")
@@ -86,7 +92,7 @@ class OnPolicyRunner:
         # init storage and model
         self.alg.init_storage(self.env.num_envs, self.num_steps_per_env,
                             [self.env.num_obs], [self.env.num_privileged_obs],
-                            [self.env.num_actions], [num_SE_outputs])
+                            [self.env.num_actions], [train_cfg['state_estimator']['SE_outputs']])
 
         # Log
         self.log_dir = log_dir
