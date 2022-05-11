@@ -258,6 +258,8 @@ class LeggedRobot(BaseTask):
             self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
                             * self.noise_scale_vec
 
+        # ! set up SE targets if needed (custom to each robot)
+
 
     def create_sim(self):
         """ Creates simulation, terrain and evironments

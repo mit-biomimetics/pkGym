@@ -6,6 +6,7 @@ BASE_HEIGHT_REF = 0.33
 class MiniCheetahCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         num_envs = 2**12  # (n_robots in Rudin 2021 paper - batch_size = n_steps * n_robots)
+        num_se_targets = 4 # ! must match under algorithm.se config
         num_actions = 12  # 12 for the 12 actuated DoFs of the mini cheetah
         num_observations = 87
         episode_length_s = 10.
@@ -160,7 +161,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         curriculum = True
         max_curriculum = 3.
         class ranges(LeggedRobotCfg.commands.ranges):
-            lin_vel_x = [0., 0.] # min max [m/s]
+            lin_vel_x = [0., 1.] # min max [m/s]
             lin_vel_y = [0., 0]   # min max [m/s]
             ang_vel_yaw = [0.*3.14, 0.*3.14]    # min max [rad/s]
             heading = [0., 0.]
@@ -225,10 +226,14 @@ class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
         max_grad_norm = 1.
         # PPO_plus params
         storage_size = 16000
+        # PPO_SE params
+    class state_estimator:
+        SE_outputs = 4
+
 
     class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
         experiment_name = 'mini_cheetah'
-        max_iterations = 500  # number of policy updates
-        algorithm_class_name = 'PPO_plus'
+        max_iterations = 1000  # number of policy updates
+        algorithm_class_name = 'PPO_SE'
         num_steps_per_env = 24 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)
