@@ -65,19 +65,20 @@ class CartpoleCfg(FixedRobotCfg):
         """
         Initial States of the Cartpole where the middle is cart 0 and up is pole 0
         """
+        
+        default_joint_angles = {"slider_to_cart": 0.,
+                                "cart_to_pole": 0.}
+
         reset_mode = "reset_to_range" 
         # default setup chooses how the initial conditions are chosen. 
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
 
-        dof_pos_high = [2.5, torch.pi]  # DOF dimensionspp
-        dof_pos_low = [-2.5, -torch.pi]
-        dof_vel_high = [0.1, 0.1]
-        dof_vel_low = [-0.1, -0.1]
-
-        default_joint_angles = {  # target angles when action = 0.0
-            "slider_to_cart": 0.,
-            "cart_to_pole": 0.}
+        # * initial conditiosn for reset_to_range
+        dof_pos_range = {'slider_to_cart': [-2.5, 2.5],
+                         'cart_to_pole': [-torch.pi, torch.pi]}
+        dof_vel_range = {'slider_to_cart': [-0.1, 0.1],
+                         'cart_to_pole': [-0.1, 0.1]}
 
     class control(FixedRobotCfg.control):
         # PD Drive parameters:

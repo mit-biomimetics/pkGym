@@ -59,6 +59,8 @@ task_registry.register("a1", LeggedRobot, A1RoughCfg(), A1RoughCfgPPO())
 task_registry.register("cassie", Cassie, CassieRoughCfg(), CassieRoughCfgPPO())
 task_registry.register("mit_humanoid", MIT_Humanoid, MITHumanoidCfg(),
                        MITHumanoidCfgPPO())
+
+
 task_registry.register("mini_cheetah", MiniCheetah, MiniCheetahCfg(),MiniCheetahCfgPPO())
 # task_registry.register("furuta", Furuta, FurutaCfg(), FurutaCfgPPO())
 task_registry.register("cartpole", Cartpole, CartpoleCfg(), CartpoleCfgPPO())
