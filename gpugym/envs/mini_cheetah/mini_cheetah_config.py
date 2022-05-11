@@ -8,7 +8,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         num_envs = 2**12  # (n_robots in Rudin 2021 paper - batch_size = n_steps * n_robots)
         num_se_targets = 4 # ! must match under algorithm.se config
         num_actions = 12  # 12 for the 12 actuated DoFs of the mini cheetah
-        num_observations = 87
+        num_observations = 71
         episode_length_s = 10.
 
     class terrain(LeggedRobotCfg.terrain):

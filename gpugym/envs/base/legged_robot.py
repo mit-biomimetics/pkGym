@@ -211,6 +211,8 @@ class LeggedRobot(BaseTask):
         # send timeout info to the algorithm
         if self.cfg.env.send_timeouts:
             self.extras["time_outs"] = self.time_out_buf
+        if hasattr(self.cfg, "SE"):
+            self.extras["SE_targets"] = self.SE_targets
 
 
     def compute_reward(self):

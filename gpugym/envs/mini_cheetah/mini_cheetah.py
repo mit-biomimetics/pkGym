@@ -72,14 +72,24 @@ class MiniCheetah(LeggedRobot):
             self.ctrl_hist[:, nact:2 * nact] = self.ctrl_hist[:, :nact]
             self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale + self.default_dof_pos
 
-        self.obs_buf = torch.cat((base_z,
-                                  self.base_lin_vel*self.obs_scales.lin_vel,
-                                  self.base_ang_vel*self.obs_scales.ang_vel,
+        # self.obs_buf = torch.cat((base_z,
+        #                           self.base_lin_vel*self.obs_scales.lin_vel,
+        #                           self.base_ang_vel*self.obs_scales.ang_vel,
+        #                           self.projected_gravity,
+        #                           self.commands[:, :3]*self.commands_scale,
+        #                           dof_pos,
+        #                           self.dof_vel*self.obs_scales.dof_vel,
+        #                           self.actions,
+        #                           self.ctrl_hist,
+        #                           torch.cos(self.phase*2*torch.pi),
+        #                           torch.sin(self.phase*2*torch.pi)),
+        #                          dim=-1)
+
+        self.obs_buf = torch.cat((self.base_ang_vel*self.obs_scales.ang_vel,
                                   self.projected_gravity,
                                   self.commands[:, :3]*self.commands_scale,
                                   dof_pos,
                                   self.dof_vel*self.obs_scales.dof_vel,
-                                  self.actions,
                                   self.ctrl_hist,
                                   torch.cos(self.phase*2*torch.pi),
                                   torch.sin(self.phase*2*torch.pi)),
@@ -111,15 +121,13 @@ class MiniCheetah(LeggedRobot):
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         ns_lvl = self.cfg.noise.noise_level
-        noise_vec[1:4] = noise_scales.lin_vel*ns_lvl*self.obs_scales.lin_vel
-        noise_vec[4:7] = to_torch(noise_scales.ang_vel)*ns_lvl*self.obs_scales.ang_vel
-        noise_vec[7:10] = noise_scales.gravity*ns_lvl
-        noise_vec[10:13] = 0.  # commands
-        noise_vec[13:25] = noise_scales.dof_pos*ns_lvl*self.obs_scales.dof_pos
-        noise_vec[25:37] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel
-        noise_vec[37:49] = 0.  # previous actions
-        noise_vec[49:85] = 0.
-        noise_vec[85:87] = 0.  # phase # * could add noise, to make u_ff robust
+        # noise_vec[1:4] = noise_scales.lin_vel*ns_lvl*self.obs_scales.lin_vel
+        noise_vec[0:3] = to_torch(noise_scales.ang_vel)*ns_lvl*self.obs_scales.ang_vel
+        noise_vec[3:6] = noise_scales.gravity*ns_lvl
+        noise_vec[6:9] = 0.  # commands
+        noise_vec[9:21] = noise_scales.dof_pos*ns_lvl*self.obs_scales.dof_pos
+        noise_vec[21:33] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel
+
         if self.cfg.terrain.measure_heights:
             noise_vec[66:187] = noise_scales.height_measurements*ns_lvl \
                                 * self.obs_scales.height_measurements
