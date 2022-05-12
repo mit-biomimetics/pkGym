@@ -328,7 +328,16 @@ class OnPolicyRunner:
         return loaded_dict['infos']
 
     def get_inference_policy(self, device=None):
-        self.alg.actor_critic.eval() # switch to evaluation mode (dropout for example)
-        if device is not None:
-            self.alg.actor_critic.to(device)
-        return self.alg.actor_critic.act_inference
+
+        if self.cfg["algorithm_class_name"] == "PPO_SE":
+            self.alg.actor_critic.eval()
+            self.alg.state_estimator.eval()
+            if device is not None:
+                self.alg.actor_critic.to(device)
+                self.alg.state_estimator.to(device)
+            return self.alg.se_act
+        else:
+            self.alg.actor_critic.eval() # switch to evaluation mode (dropout for example)
+            if device is not None:
+                self.alg.actor_critic.to(device)
+            return self.alg.actor_critic.act_inference

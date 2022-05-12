@@ -260,6 +260,13 @@ class PPO_SE:
 
         return mean_value_loss, mean_surrogate_loss
 
+    def se_act(self, obs):
+        state_prediction = self.state_estimator.evaluate(obs)
+        actor_obs = torch.cat((state_prediction.detach(),
+                                    obs), dim=1)
+        actions = self.actor_critic.act_inference(actor_obs)
+        return actions
+
     # def update_LT_storage(self):
     #     # for now, just randomly select a mix of previous and new obs
 
