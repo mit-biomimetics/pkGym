@@ -41,7 +41,6 @@ import torch
 from torch import Tensor
 from typing import Tuple, Dict
 
-from gpugym import LEGGED_GYM_ROOT_DIR
 from gpugym.envs.base.base_task import BaseTask
 from gpugym.utils.terrain import Terrain
 from gpugym.utils.math import *
