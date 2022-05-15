@@ -1,13 +1,13 @@
 
 from gpugym.envs.mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahCfgPPO
 
-BASE_HEIGHT_REF = 0.33
+BASE_HEIGHT_REF = 0.3
 
 class SERefCfg(MiniCheetahCfg):
     class env(MiniCheetahCfg.env):
-        num_envs = 2**12  # (n_robots in Rudin 2021 paper - batch_size = n_steps * n_robots)
+        num_envs = 8000
         num_se_targets = 4 # ! must match under algorithm.se config
-        num_actions = 12  # 12 for the 12 actuated DoFs of the mini cheetah
+        num_actions = 12
         num_observations = 71
         episode_length_s = 10.
 
@@ -42,7 +42,7 @@ class SERefCfg(MiniCheetahCfg):
             "rh_kfe": 1.596976,
         }
 
-        reset_mode = "reset_to_storage" 
+        reset_mode = "reset_to_basic" 
         # reset setup chooses how the initial conditions are chosen. 
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
@@ -86,7 +86,7 @@ class SERefCfg(MiniCheetahCfg):
         # PD Drive parameters:
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
-        gait_freq = 2 #
+        gait_freq = 2. #
         # Control type
         control_type = "P"  # "Td"
 
@@ -99,8 +99,8 @@ class SERefCfg(MiniCheetahCfg):
             action_scale = 1. # 0.5
 
         # decimation: Number of control action updates @ sim DT per policy DT
-        exp_avg_decay = 0.35  # set to None to disable
-        decimation = 5
+        exp_avg_decay = 0.15  # set to None to disable
+        decimation = 10
 
         use_actuator_network = False
         # actuator_net_file = "{LEGGED_GYM_ROOT_DIR}/resources/actuator_nets/anydrive_v3_lstm.pt"
@@ -137,27 +137,29 @@ class SERefCfg(MiniCheetahCfg):
         # if true negative total rewards are clipped at zero (avoids early termination problems)
         only_positive_rewards = False
         base_height_target = BASE_HEIGHT_REF
-        tracking_sigma = 0.35
+        tracking_sigma = 0.3
         class scales(MiniCheetahCfg.rewards.scales):
             termination = -10.
-            tracking_lin_vel = 6.0
+            tracking_lin_vel = 4.0
             tracking_ang_vel = 1.0
-            lin_vel_z = -0.
+            lin_vel_z = 0.5
             ang_vel_xy = 0.0
-            orientation = 3.
+            orientation = 2.
             torques = -5.e-7
             dof_vel = 0.
             base_height = 1.
-            feet_air_time = 0.5  # rewards keeping feet in the air
+            feet_air_time = 0.  # rewards keeping feet in the air
             collision = -0.
-            action_rate = -0.001  # -0.01
-            action_rate2 = -0.0001  # -0.001
+            action_rate = -0.1  # -0.01
+            action_rate2 = -0.001  # -0.001
             stand_still = 0.
             dof_pos_limits = 0.
             feet_contact_forces = 0.
             dof_near_home = 0.
             reference_traj = 1.5
-            
+            swing_grf = -0.75
+            stance_grf = 1.5
+
             # * #####
             # termination = 0. # -1.
             # tracking_lin_vel = 0. # 1.0
@@ -184,11 +186,11 @@ class SERefCfg(MiniCheetahCfg):
         heading_command = False
         resampling_time = 4.
         curriculum = True
-        max_curriculum = 3.
+        max_curriculum = 3.5
         class ranges(MiniCheetahCfg.commands.ranges):
-            lin_vel_x = [0., 1.] # min max [m/s]
+            lin_vel_x = [0., 3.] # min max [m/s]
             lin_vel_y = [-0.1, 0.1]   # min max [m/s]
-            ang_vel_yaw = [-0.2*3.14, 0.2*3.14]    # min max [rad/s]
+            ang_vel_yaw = [-0.5*3.14, 0.5*3.14]    # min max [rad/s]
             heading = [0., 0.]
 
     class normalization(MiniCheetahCfg.normalization):
@@ -220,7 +222,7 @@ class SERefCfg(MiniCheetahCfg):
             # height_measurements = 0.1
 
     class sim:
-        dt =  0.002
+        dt =  0.001
         substeps = 1
         gravity = [0., 0., -9.81]  # [m/s^2]
 
@@ -238,16 +240,16 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         use_clipped_value_loss = True
         clip_param = 0.2
         entropy_coef = 0.01
-        num_learning_epochs = 5
+        num_learning_epochs = 6
         num_mini_batches = 4 # mini batch size = num_envs*nsteps / nminibatches
-        learning_rate = 5.e-4
+        learning_rate = 2.e-4
         schedule = 'adaptive' # could be adaptive, fixed
         gamma = 0.99
         lam = 0.99
         desired_kl = 0.01
         max_grad_norm = 1.
         # PPO_plus params
-        storage_size = 16000
+        storage_size = 4000
         # PPO_SE params
     class state_estimator:
         SE_outputs = 4

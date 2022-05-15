@@ -36,6 +36,11 @@ class MiniCheetahRef(MiniCheetah):
         csv_path = self.cfg.init_state.ref_traj.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
         self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy())  # ! check that this works out
 
+
+    def _custom_reset(self, env_ids):
+        self.action_avg[env_ids] = 0.
+
+
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
             Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
@@ -74,7 +79,7 @@ class MiniCheetahRef(MiniCheetah):
 
             torques = self.p_gains*(actions * self.cfg.control.action_scale \
                                     + self.default_dof_pos \
-                                    # + self.get_ref() \
+                                    + self.get_ref() \
                                     - self.dof_pos) \
                     - self.d_gains*self.dof_vel
 
@@ -120,7 +125,8 @@ class MiniCheetahRef(MiniCheetah):
             nact = self.num_actions
             self.ctrl_hist[:, 2 * nact:] = self.ctrl_hist[:, nact:2 * nact]
             self.ctrl_hist[:, nact:2 * nact] = self.ctrl_hist[:, :nact]
-            self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale + self.default_dof_pos
+            # self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale + self.default_dof_pos
+            self.ctrl_hist[:, :nact] = self.action_avg
 
         # self.obs_buf = torch.cat((base_z,
         #                           self.base_lin_vel*self.obs_scales.lin_vel,
@@ -221,18 +227,19 @@ class MiniCheetahRef(MiniCheetah):
         self.X0_conds[:n_new, 25:37] = dof_vel
         self.X0_conds[:n_new, 37:38] = phase
 
-    # def _reward_swing_grf(self):
-    #     #Reward non-zero grf during stance (pi to 2pi)
-    #     grf = torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1)
-    #     rew = torch.zeros_like(self.rew_buf)
-    #     idx = torch.lt(self.phase, torch.pi)
-    #     if torch.any(idx):
-    #         rew[idx] += torch.gt(grf[:, 0:3].sum(dim=1), 0.)
-    #         rew[idx] += torch.gt(grf[:, 9:12].sum(dim=1), 0.)
-    #     if torch.any(~idx):
-    #         rew[~idx] += torch.gt(grf[:, 3:6].sum(dim=1), 0.)
-    #         rew[~idx] += torch.gt(grf[:, 6:9].sum(dim=1), 0.)
-    #     return torch.sum(rew, dim=1)
+    def _reward_swing_grf(self):
+        # Reward non-zero grf during swing (0 to pi)
+        grf = torch.gt(torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1), 50.)
+        ph_off = torch.lt(self.phase, torch.pi)  # should this be in swing?
+        rew = grf*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1).int()
+        return torch.sum(rew, dim=1)
+    
+    def _reward_stance_grf(self):
+        # Reward non-zero grf during stance (pi to 2pi)
+        grf = torch.gt(torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1), 50.)
+        ph_off = torch.gt(self.phase, torch.pi)  # should this be in swing?
+        rew = grf*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1).int()
+        return torch.sum(rew, dim=1)
 
     def _reward_reference_traj(self):
         # REWARDS EACH LEG INDIVIDUALLY BASED ON ITS POSITION IN THE CYCLE
@@ -253,11 +260,12 @@ class MiniCheetahRef(MiniCheetah):
                             (self.leg_ref.size(dim=0)/(2*np.pi)-1))).long()
         pho_idx = (torch.round(ph_off* \
                             (self.leg_ref.size(dim=0)/(2*np.pi)-1))).long()
-        leg_frame[:, 0:3] += self.leg_ref[phd_idx.squeeze(),:]
-        leg_frame[:, 3:6] += self.leg_ref[pho_idx.squeeze(),:]
-        leg_frame[:, 6:9] += self.leg_ref[pho_idx.squeeze(),:]
-        leg_frame[:, 9:12] += self.leg_ref[phd_idx.squeeze(),:]
+        leg_frame[:, 0:3] += self.leg_ref[phd_idx.squeeze(), :]
+        leg_frame[:, 3:6] += self.leg_ref[pho_idx.squeeze(), :]
+        leg_frame[:, 6:9] += self.leg_ref[pho_idx.squeeze(), :]
+        leg_frame[:, 9:12] += self.leg_ref[phd_idx.squeeze(), :]
         return leg_frame
+
 
     # def _reward_symm_legs(self):
     #     error = 0.
