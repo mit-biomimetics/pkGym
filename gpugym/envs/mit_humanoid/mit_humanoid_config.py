@@ -302,15 +302,15 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
     seed = -1
 
     class algorithm(LeggedRobotCfgPPO.algorithm):
-        # training params
+         # training params
         value_loss_coef = 1.0
         use_clipped_value_loss = True
         clip_param = 0.2
         entropy_coef = 0.001
         num_learning_epochs = 5
-        num_mini_batches = 4  # mini batch size = num_envs*nsteps/n_minibatches
+        num_mini_batches = 4 # mini batch size = num_envs*nsteps / nminibatches
         learning_rate = 5.e-4
-        schedule = 'adaptive'  # could be adaptive, fixed
+        schedule = 'adaptive' # could be adaptive, fixed
         gamma = 0.999
         lam = 0.95
         desired_kl = 0.01

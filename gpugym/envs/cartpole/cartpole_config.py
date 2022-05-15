@@ -69,7 +69,7 @@ class CartpoleCfg(FixedRobotCfg):
         default_joint_angles = {"slider_to_cart": 0.,
                                 "cart_to_pole": 0.}
 
-        reset_mode = "reset_to_storage" 
+        reset_mode = "reset_to_range" 
         # default setup chooses how the initial conditions are chosen. 
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
