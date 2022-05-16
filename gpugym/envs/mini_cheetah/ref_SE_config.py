@@ -1,7 +1,7 @@
 
 from gpugym.envs.mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahCfgPPO
 
-BASE_HEIGHT_REF = 0.3
+BASE_HEIGHT_REF = 0.32
 
 class SERefCfg(MiniCheetahCfg):
     class env(MiniCheetahCfg.env):
@@ -9,7 +9,7 @@ class SERefCfg(MiniCheetahCfg):
         num_se_targets = 4 # ! must match under algorithm.se config
         num_actions = 12
         num_observations = 71
-        episode_length_s = 10.
+        episode_length_s = 15.
 
     class terrain(MiniCheetahCfg.terrain):
         curriculum = False
@@ -86,18 +86,18 @@ class SERefCfg(MiniCheetahCfg):
         # PD Drive parameters:
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
-        gait_freq = 2. #
+        gait_freq = 4. #
         # Control type
         control_type = "P"  # "Td"
 
         # action scale: target angle = actionScale * action + defaultAngle
-        if control_type == "T":
-            action_scale = 20 * 0.5
-        elif control_type == "Td":
-            action_scale = 4.0 # 1e-2 # stiffness['haa'] * 0.5
-        else:
-            action_scale = 1. # 0.5
-
+        # if control_type == "T":
+        #     action_scale = 20 * 0.5
+        # elif control_type == "Td":
+        #     action_scale = 4.0 # 1e-2 # stiffness['haa'] * 0.5
+        # else:
+        #     action_scale = 1. # 0.5
+        action_scale = 0.75
         # decimation: Number of control action updates @ sim DT per policy DT
         exp_avg_decay = 0.15  # set to None to disable
         decimation = 10
@@ -112,11 +112,11 @@ class SERefCfg(MiniCheetahCfg):
         added_mass_range = [-2., 2.]
         friction_range = [0., 1.0] # on ground planes the friction combination mode is averaging, i.e total friction = (foot_friction + 1.)/2.
         push_robots = True
-        push_interval_s = 15
+        push_interval_s = 10
         max_push_vel_xy = 0.05
 
     class asset(MiniCheetahCfg.asset):
-        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah.urdf"
+        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/slim_cheetah.urdf"
         foot_name = "foot"
         penalize_contacts_on = []
         terminate_after_contacts_on = ["base"]
@@ -142,12 +142,12 @@ class SERefCfg(MiniCheetahCfg):
             termination = -10.
             tracking_lin_vel = 4.0
             tracking_ang_vel = 1.0
-            lin_vel_z = 0.5
+            lin_vel_z = 0.6
             ang_vel_xy = 0.0
-            orientation = 2.
+            orientation = 1.75
             torques = -5.e-7
             dof_vel = 0.
-            base_height = 1.
+            base_height = 1.5
             feet_air_time = 0.  # rewards keeping feet in the air
             collision = -0.
             action_rate = -0.1  # -0.01
@@ -156,7 +156,7 @@ class SERefCfg(MiniCheetahCfg):
             dof_pos_limits = 0.
             feet_contact_forces = 0.
             dof_near_home = 0.
-            reference_traj = 1.5
+            reference_traj = 0.25
             swing_grf = -0.75
             stance_grf = 1.5
 
@@ -186,11 +186,12 @@ class SERefCfg(MiniCheetahCfg):
         heading_command = False
         resampling_time = 4.
         curriculum = True
-        max_curriculum = 3.5
+        max_curriculum_x = 3.5
+        max_curriculum_ang = 2.5
         class ranges(MiniCheetahCfg.commands.ranges):
-            lin_vel_x = [0., 3.] # min max [m/s]
+            lin_vel_x = [0., 0.5] # min max [m/s]
             lin_vel_y = [-0.1, 0.1]   # min max [m/s]
-            ang_vel_yaw = [-0.5*3.14, 0.5*3.14]    # min max [rad/s]
+            ang_vel_yaw = [-0.25*3.14, 0.25*3.14]    # min max [rad/s]
             heading = [0., 0.]
 
     class normalization(MiniCheetahCfg.normalization):
@@ -208,7 +209,7 @@ class SERefCfg(MiniCheetahCfg):
                 dof_vel = 0.01 # 0.05  # ought to be roughly max expected speed.
                 height_measurements = 1./v_leg
             # clip_observations = 100.
-            clip_actions = 1000.
+            clip_actions = 100.
 
     class noise(MiniCheetahCfg.noise):
         add_noise = True
@@ -241,7 +242,7 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         clip_param = 0.2
         entropy_coef = 0.01
         num_learning_epochs = 6
-        num_mini_batches = 4 # mini batch size = num_envs*nsteps / nminibatches
+        num_mini_batches = 6 # mini batch size = num_envs*nsteps / nminibatches
         learning_rate = 2.e-4
         schedule = 'adaptive' # could be adaptive, fixed
         gamma = 0.99
@@ -261,4 +262,4 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         experiment_name = 'se_ref'
         max_iterations = 1000  # number of policy updates
         algorithm_class_name = 'PPO_SE'
-        num_steps_per_env = 24 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)
+        num_steps_per_env = 32 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)

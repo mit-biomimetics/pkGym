@@ -42,21 +42,14 @@ class MiniCheetahCfg(LeggedRobotCfg):
             "rh_kfe": 1.596976,
         }
 
-<<<<<<< HEAD
         reset_mode = "reset_to_storage" 
-=======
-        reset_mode = "reset_to_basic" 
->>>>>>> dev
         # reset setup chooses how the initial conditions are chosen. 
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
 
-<<<<<<< HEAD
         # * storage parameters
         storage_size = 4000
 
-=======
->>>>>>> dev
         # * default COM for basic initialization 
         pos = [0.0, 0.0, 0.33]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
@@ -75,11 +68,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
         root_pos_range = [[0., 0.],  # x
                           [0., 0.],  # y
-<<<<<<< HEAD
-                          [0.35, 0.4],  # z
-=======
                           [0.37, 0.4],  # z
->>>>>>> dev
                           [0., 0.],  # roll
                           [0., 0.],  # pitch
                           [0., 0.]]  # yaw
