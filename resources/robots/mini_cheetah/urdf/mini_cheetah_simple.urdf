@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<robot name="mini_cheetah_vision">
+<robot name="mini_cheetah">
  <!-- Base -->
     <link name="base">
         <inertial>
@@ -15,8 +15,9 @@
         </visual>
         <collision>
             <geometry>
-                <!--mesh filename="meshes/mini_vision_body.dae"/-->
-                <box size="0.23 0.18 0.1"/>
+                <!-- <mesh filename="meshes/mini_vision_body.dae"/> -->
+                <box size="0.23 0.18 0.15"/>
+                <!-- oversize box to ensure termination (no cheating!)-->
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 0"/>
         </collision>
@@ -46,8 +47,8 @@
         </visual>
         <collision>
             <geometry>
-                <!--mesh filename="meshes/mini_vision_abd.dae"/-->
-                <cylinder length ="0.01" radius = "0.0475"/>
+                <mesh filename="meshes/mini_vision_abd.dae"/>
+                <!-- <cylinder length ="0.01" radius = "0.0475"/> -->
             </geometry>
             <origin rpy="3.141592 0. 0." xyz="0. 0 0"/>
         </collision>
@@ -76,8 +77,8 @@
         </visual>
         <collision>
             <geometry>
-                <!--mesh filename="meshes/mini_vision_upper_leg.dae"/-->
-                <cylinder length ="0.17" radius = "0.015"/>
+                <mesh filename="meshes/mini_vision_upper_leg.dae"/>
+                <!-- <cylinder length ="0.17" radius = "0.015"/> -->
             </geometry>
             <origin rpy="0 0 3.141592" xyz="0 0 0"/>
         </collision>
@@ -106,8 +107,8 @@
         </visual>
         <collision>
             <geometry>
-                <!-- <mesh filename="meshes/lower_leg.dae"/> -->
-                <cylinder length ="0.15" radius = "0.01"/>
+                <mesh filename="meshes/lower_leg.dae"/>
+                <!-- <cylinder length ="0.15" radius = "0.01"/> -->
             </geometry>
             <origin rpy="0 0 3.141592" xyz="0 0 0"/>
         </collision>
@@ -158,8 +159,8 @@
         </visual>
         <collision>
             <geometry>
-                <!-- <mesh filename="meshes/mini_vision_abd.dae"/> -->
-                 <cylinder length ="0.01" radius = "0.0475"/>
+                <mesh filename="meshes/mini_vision_abd.dae"/>
+                 <!-- <cylinder length ="0.01" radius = "0.0475"/> -->
             </geometry>
             <origin rpy="0. 0. 0." xyz="0. 0 0"/>
         </collision>
@@ -188,8 +189,8 @@
         </visual>
         <collision>
             <geometry>
-                <!-- <mesh filename="meshes/mini_vision_upper_leg.dae"/> -->
-                <cylinder length ="0.17" radius = "0.015"/>
+                <mesh filename="meshes/mini_vision_upper_leg.dae"/>
+                <!-- <cylinder length ="0.17" radius = "0.015"/> -->
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 0"/>
         </collision>
@@ -218,8 +219,8 @@
         </visual>
         <collision>
             <geometry>
-                <!-- <mesh filename="meshes/lower_leg.dae"/> -->
-                <cylinder length ="0.15" radius = "0.01"/>
+                <mesh filename="meshes/lower_leg.dae"/>
+                <!-- <cylinder length ="0.15" radius = "0.01"/> -->
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 0"/>
         </collision>
@@ -270,8 +271,8 @@
         </visual>
         <collision>
             <geometry>
-                <!-- <mesh filename="meshes/mini_vision_abd.dae"/> -->
-                <cylinder length ="0.01" radius = "0.0475"/>
+                <mesh filename="meshes/mini_vision_abd.dae"/>
+                <!-- <cylinder length ="0.01" radius = "0.0475"/> -->
             </geometry>
             <origin rpy="3.141592 0. 0." xyz="0. 0 0"/>
         </collision>
@@ -300,8 +301,8 @@
         </visual>
         <collision>
             <geometry>
-                <!-- <mesh filename="meshes/mini_vision_upper_leg.dae"/> -->
-                <cylinder length ="0.17" radius = "0.015"/>
+                <mesh filename="meshes/mini_vision_upper_leg.dae"/>
+                <!-- <cylinder length ="0.17" radius = "0.015"/> -->
             </geometry>
             <origin rpy="0 0 3.141592" xyz="0 0 0"/>
         </collision>
@@ -330,8 +331,8 @@
         </visual>
         <collision>
             <geometry>
-                <!-- <mesh filename="meshes/lower_leg.dae"/> -->
-                <cylinder length ="0.15" radius = "0.01"/>
+                <mesh filename="meshes/lower_leg.dae"/>
+                <!-- <cylinder length ="0.15" radius = "0.01"/> -->
             </geometry>
             <origin rpy="0 0 3.141592" xyz="0 0 0"/>
         </collision>
@@ -382,8 +383,8 @@
         </visual>
         <collision>
             <geometry>
-                <!-- <mesh filename="meshes/mini_vision_abd.dae"/> -->
-                 <cylinder length ="0.01" radius = "0.0475"/>
+                <mesh filename="meshes/mini_vision_abd.dae"/>
+                 <!-- <cylinder length ="0.01" radius = "0.0475"/> -->
             </geometry>
             <origin rpy="0. 0. 0." xyz="0. 0 0"/>
         </collision>
@@ -412,8 +413,8 @@
         </visual>
         <collision>
             <geometry>
-                <!-- <mesh filename="meshes/mini_vision_upper_leg.dae"/> -->
-                <cylinder length ="0.17" radius = "0.015"/>
+                <mesh filename="meshes/mini_vision_upper_leg.dae"/>
+                <!-- <cylinder length ="0.17" radius = "0.015"/> -->
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 0"/>
         </collision>
@@ -442,8 +443,8 @@
         </visual>
         <collision>
             <geometry>
-                <!-- <mesh filename="meshes/lower_leg.dae"/> -->
-                <cylinder length ="0.15" radius = "0.01"/>
+                <mesh filename="meshes/lower_leg.dae"/>
+                <!-- <cylinder length ="0.15" radius = "0.01"/> -->
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 0"/>
         </collision>

@@ -116,9 +116,9 @@ class SERefCfg(MiniCheetahCfg):
         max_push_vel_xy = 0.05
 
     class asset(MiniCheetahCfg.asset):
-        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/slim_cheetah.urdf"
+        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah_simple.urdf"
         foot_name = "foot"
-        penalize_contacts_on = []
+        penalize_contacts_on = ["shank"]
         terminate_after_contacts_on = ["base"]
         collapse_fixed_joints = False  # merge bodies connected by fixed joints.
         fix_base_link = False
@@ -149,7 +149,7 @@ class SERefCfg(MiniCheetahCfg):
             dof_vel = 0.
             base_height = 1.5
             feet_air_time = 0.  # rewards keeping feet in the air
-            collision = -0.
+            collision = -0.25
             action_rate = -0.1  # -0.01
             action_rate2 = -0.001  # -0.001
             stand_still = 0.
@@ -243,7 +243,7 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         entropy_coef = 0.01
         num_learning_epochs = 6
         num_mini_batches = 6 # mini batch size = num_envs*nsteps / nminibatches
-        learning_rate = 2.e-4
+        learning_rate = 5.e-5
         schedule = 'adaptive' # could be adaptive, fixed
         gamma = 0.99
         lam = 0.99
@@ -253,8 +253,8 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         storage_size = 4000
         # PPO_SE params
     class state_estimator:
-        SE_outputs = 4
-        hidden_dims = [256, 128]
+        num_outputs = 4
+        hidden_dims = [256, 128]  # None will default to 256, 128
 
 
     class runner(MiniCheetahCfgPPO.runner):
