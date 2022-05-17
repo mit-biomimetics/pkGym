@@ -51,9 +51,7 @@ class OnPolicyRunner:
                  log_dir=None,
                  device='cpu'):
 
-        self.cfg=train_cfg["runner"]
-        self.alg_cfg = train_cfg["algorithm"]
-        self.policy_cfg = train_cfg["policy"]
+        self.parse_train_cfg(train_cfg)
         self.device = device
         self.env = env
         if self.env.num_privileged_obs is not None:
@@ -63,14 +61,13 @@ class OnPolicyRunner:
         actor_critic_class = eval(self.cfg["policy_class_name"]) # ActorCritic
 
         if self.cfg["algorithm_class_name"] == "PPO_SE":
-            num_actor_obs = self.env.num_obs \
-                            + train_cfg['state_estimator']['SE_outputs']
+            num_actor_obs = self.env.num_obs + self.se_cfg['num_outputs']
         else:
             num_actor_obs = self.env.num_obs
-        actor_critic: ActorCritic = actor_critic_class( num_actor_obs,
-                                                        num_critic_obs,
-                                                        self.env.num_actions,
-                                                        **self.policy_cfg).to(self.device)
+        actor_critic: ActorCritic = actor_critic_class(num_actor_obs,
+                                                       num_critic_obs,
+                                                       self.env.num_actions,
+                                                       **self.policy_cfg).to(self.device)
         alg_class = eval(self.cfg["algorithm_class_name"]) # PPO
         # ! this is hardcoded
         # self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
@@ -79,9 +76,7 @@ class OnPolicyRunner:
         elif self.cfg["algorithm_class_name"] == "PPO_plus":
             self.alg: PPO_plus = alg_class(actor_critic, device=self.device, **self.alg_cfg)
         elif self.cfg["algorithm_class_name"] == "PPO_SE":
-            # num_SE_outputs = train_cfg['state_estimator']['SE_outputs']
-            state_estimator = StateEstimator(self.env.num_obs,
-                                train_cfg['state_estimator']['SE_outputs'])
+            state_estimator = StateEstimator(self.env.num_obs, **self.se_cfg)
             self.alg: PPO_SE = alg_class(actor_critic, state_estimator, device=self.device, **self.alg_cfg)
         else:
             print("No idea what algorithm you want from me here.")
@@ -90,9 +85,7 @@ class OnPolicyRunner:
         self.save_interval = self.cfg["save_interval"]
 
         # init storage and model
-        self.alg.init_storage(self.env.num_envs, self.num_steps_per_env,
-                            [self.env.num_obs], [self.env.num_privileged_obs],
-                            [self.env.num_actions], [train_cfg['state_estimator']['SE_outputs']])
+        self.init_storage()
 
         # Log
         self.log_dir = log_dir
@@ -108,6 +101,33 @@ class OnPolicyRunner:
         self.init_at_random_ep_len = None
 
         _, _ = self.env.reset()
+
+
+    def parse_train_cfg(self, train_cfg):
+        self.cfg=train_cfg['runner']
+        self.alg_cfg = train_cfg['algorithm']
+        self.policy_cfg = train_cfg['policy']
+        if 'state_estimator' in train_cfg:
+            self.se_cfg = train_cfg['state_estimator']
+        else:
+            self.se_cfg = None
+
+
+    def init_storage(self):
+        if self.cfg["algorithm_class_name"] == "PPO_SE":
+            self.alg.init_storage(self.env.num_envs,
+                                self.num_steps_per_env,
+                                [self.env.num_obs],
+                                [self.env.num_privileged_obs],
+                                [self.env.num_actions],
+                                [self.se_cfg['num_outputs']])
+        else:
+            self.alg.init_storage(self.env.num_envs,
+                                self.num_steps_per_env,
+                                [self.env.num_obs],
+                                [self.env.num_privileged_obs],
+                                [self.env.num_actions])
+
 
     def configure_wandb(self, wandb):
         self.wandb = wandb

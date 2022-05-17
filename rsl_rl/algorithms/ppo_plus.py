@@ -86,13 +86,14 @@ class PPO_plus:
         self.LT_priv_obs_only = priv_obs_only
 
     def init_storage(self, num_envs, num_transitions_per_env, actor_obs_shape,
-                        critic_obs_shape, action_shape):
+                        critic_obs_shape, action_shape, se_shape=None):
 
         self.storage = LongTermStorage(num_envs, num_transitions_per_env,
                                         self.LT_storage_size,
                                         actor_obs_shape,
                                         critic_obs_shape,
                                         action_shape,
+                                        se_shape,
                                         self.LT_priv_obs_only,
                                         self.device)
 
@@ -169,8 +170,11 @@ class PPO_plus:
 
 
                 self.actor_critic.act(obs_batch, masks=masks_batch, hidden_states=hid_states_batch[0])
-                actions_log_prob_batch = self.actor_critic.get_actions_log_prob(actions_batch)
-                value_batch = self.actor_critic.evaluate(critic_obs_batch, masks=masks_batch, hidden_states=hid_states_batch[1])
+                actions_log_prob_batch = \
+                        self.actor_critic.get_actions_log_prob(actions_batch)
+                value_batch = self.actor_critic.evaluate(critic_obs_batch,
+                                            masks=masks_batch,
+                                            hidden_states=hid_states_batch[1])
                 mu_batch = self.actor_critic.action_mean
                 sigma_batch = self.actor_critic.action_std
                 entropy_batch = self.actor_critic.entropy
@@ -190,12 +194,13 @@ class PPO_plus:
                         for param_group in self.optimizer.param_groups:
                             param_group['lr'] = self.learning_rate
 
-
                 # Surrogate loss
-                ratio = torch.exp(actions_log_prob_batch - torch.squeeze(old_actions_log_prob_batch))
+                ratio = torch.exp(actions_log_prob_batch \
+                            - torch.squeeze(old_actions_log_prob_batch))
                 surrogate = -torch.squeeze(advantages_batch) * ratio
-                surrogate_clipped = -torch.squeeze(advantages_batch) * torch.clamp(ratio, 1.0 - self.clip_param,
-                                                                                1.0 + self.clip_param)
+                surrogate_clipped = -torch.squeeze(advantages_batch) \
+                                    * torch.clamp(ratio, 1.0 - self.clip_param,
+                                    1.0 + self.clip_param)
                 surrogate_loss = torch.max(surrogate, surrogate_clipped).mean()
 
                 # Value function loss
@@ -213,7 +218,8 @@ class PPO_plus:
                 # Gradient step
                 self.optimizer.zero_grad()
                 loss.backward()
-                nn.utils.clip_grad_norm_(self.actor_critic.parameters(), self.max_grad_norm)
+                nn.utils.clip_grad_norm_(self.actor_critic.parameters(),
+                                            self.max_grad_norm)
                 self.optimizer.step()
 
                 mean_value_loss += value_loss.item()

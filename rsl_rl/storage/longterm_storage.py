@@ -22,8 +22,11 @@ class LongTermStorage:
         #     self.__init__()
 
     # def __init__(self, num_envs, num_transitions_per_env, actor_obs_shape, critic_obs_shape, actions_shape, device='cpu'):
+
+
+    # * initialization wtih State Estimator
     def __init__(self, num_envs, num_transitions_per_env, LT_storage_size,
-                    actor_obs_shape, critic_obs_shape, actions_shape, se_shape,
+                    actor_obs_shape, critic_obs_shape, actions_shape, se_shape=None,
                     priv_obs_only=True,
                     device='cpu'):
 
