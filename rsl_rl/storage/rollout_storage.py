@@ -172,7 +172,7 @@ class RolloutStorage:
         advantages = self.advantages.flatten(0, 1)
         old_mu = self.mu.flatten(0, 1)
         old_sigma = self.sigma.flatten(0, 1)
-        if self.SE_targets:
+        if self.SE_targets is not None:
             SE_targets = self.SE_targets.flatten(0, 1)
             for epoch in range(num_epochs):
                 for i in range(num_mini_batches):
