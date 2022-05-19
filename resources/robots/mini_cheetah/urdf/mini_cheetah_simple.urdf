@@ -16,7 +16,7 @@
         <collision>
             <geometry>
                 <!-- <mesh filename="meshes/mini_vision_body.dae"/> -->
-                <box size="0.23 0.18 0.15"/>
+                <box size="0.23 0.18 0.2"/>
                 <!-- oversize box to ensure termination (no cheating!)-->
             </geometry>
             <origin rpy="0 0 0" xyz="0 0 0"/>

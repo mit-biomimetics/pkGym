@@ -79,7 +79,7 @@ class MiniCheetahRef(MiniCheetah):
 
             torques = self.p_gains*(actions * self.cfg.control.action_scale \
                                     + self.default_dof_pos \
-                                    + self.get_ref() \
+                                    # + self.get_ref() \
                                     - self.dof_pos) \
                     - self.d_gains*self.dof_vel
 
@@ -147,8 +147,8 @@ class MiniCheetahRef(MiniCheetah):
                                   dof_pos,
                                   self.dof_vel*self.obs_scales.dof_vel,
                                   self.ctrl_hist,
-                                  torch.cos(self.phase*2*torch.pi),
-                                  torch.sin(self.phase*2*torch.pi)),
+                                  torch.cos(self.phase),
+                                  torch.sin(self.phase)),
                                  dim=-1)
 
         # ! noise_scale_vec must be of correct order! Check def below
@@ -159,7 +159,7 @@ class MiniCheetahRef(MiniCheetah):
 
         if self.cfg.env.num_se_targets:
             self.extras["SE_targets"] = torch.cat((base_z,
-                                self.base_lin_vel \
+                                self.base_lin_vel * self.obs_scales.lin_vel),
                                 * self.obs_scales.dof_vel),
                                 dim=-1)
 
@@ -244,30 +244,54 @@ class MiniCheetahRef(MiniCheetah):
                 self.command_ranges["ang_vel_yaw"][1] = np.clip(self.command_ranges["ang_vel_yaw"][1] + 0.15, 0., self.cfg.commands.max_curriculum_ang)
 
 
+    def _resample_commands(self, env_ids):
+        """ Randommly select commands of some environments
+
+        Args:
+            env_ids (List[int]): Environments ids for which new commands are needed
+        """
+        self.commands[env_ids, 0] = torch_rand_float(self.command_ranges["lin_vel_x"][0], self.command_ranges["lin_vel_x"][1], (len(env_ids), 1), device=self.device).squeeze(1)
+        self.commands[env_ids, 1] = torch_rand_float(self.command_ranges["lin_vel_y"][0], self.command_ranges["lin_vel_y"][1], (len(env_ids), 1), device=self.device).squeeze(1)
+        if self.cfg.commands.heading_command:
+            self.commands[env_ids, 3] = torch_rand_float(self.command_ranges["heading"][0], self.command_ranges["heading"][1], (len(env_ids), 1), device=self.device).squeeze(1)
+        else:
+            self.commands[env_ids, 2] = torch_rand_float(self.command_ranges["ang_vel_yaw"][0], self.command_ranges["ang_vel_yaw"][1], (len(env_ids), 1), device=self.device).squeeze(1)
+
+        # * with 10% chance, reset to 0 commands
+            self.commands[env_ids, :3] *= (torch_rand_float(0, 1, (len(env_ids), 1), device=self.device).squeeze(1) < 0.9).unsqueeze(1)
+        # * set small commands to zero
+        self.commands[env_ids, :3] *= (torch.norm(self.commands[env_ids, :3], dim=1) > 0.2).unsqueeze(1)
+
+    
+    def switch(self):
+        c_vel = torch.linalg.norm(self.commands, dim=1)
+        return torch.exp(-torch.square(torch.max(torch.zeros_like(c_vel), c_vel-0.1))/0.1)
+
+
     def _reward_swing_grf(self):
         # Reward non-zero grf during swing (0 to pi)
         grf = torch.gt(torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1), 50.)
         ph_off = torch.lt(self.phase, torch.pi)  # should this be in swing?
         rew = grf*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1).int()
-        return torch.sum(rew, dim=1)
+        return torch.sum(rew, dim=1)*(1-self.switch())
     
     def _reward_stance_grf(self):
         # Reward non-zero grf during stance (pi to 2pi)
         grf = torch.gt(torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1), 50.)
         ph_off = torch.gt(self.phase, torch.pi)  # should this be in swing?
         rew = grf*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1).int()
-        return torch.sum(rew, dim=1)
+
+        return torch.sum(rew, dim=1)*(1-self.switch())
 
     def _reward_reference_traj(self):
         # REWARDS EACH LEG INDIVIDUALLY BASED ON ITS POSITION IN THE CYCLE
-        #dof position error
+        # dof position error
         error = self.get_ref() + self.default_dof_pos - self.dof_pos
-        #print(self.get_ref() + self.default_dof_pos)
+        # print(self.get_ref() + self.default_dof_pos)
         error *= self.obs_scales.dof_pos
         reward = torch.sum(self.sqrdexp(error) - torch.abs(error)*0.2, dim=1)/12.  # normalize by n_dof
         # * only when commanded velocity is higher
-        switch = 1-self.sqrdexp(torch.linalg.norm(self.commands[:, :2], dim=1))
-        return reward*switch
+        return reward*(1-self.switch())
 
     def get_ref(self):
         leg_frame = torch.zeros_like(self.torques)
@@ -283,6 +307,22 @@ class MiniCheetahRef(MiniCheetah):
         leg_frame[:, 9:12] += self.leg_ref[phd_idx.squeeze(), :]
         return leg_frame
 
+    def _reward_stand_still(self):
+        # Penalize motion at zero commands
+        # * normalize angles so we care about being within 5 deg
+        rew_pos = torch.sum(self.sqrdexp((self.dof_pos - self.default_dof_pos)/torch.pi*36), dim=1)/12.
+        rew_vel = torch.sum(self.sqrdexp(self.dof_vel), dim=1)/12.
+        rew_base_vel = -torch.square(self.base_lin_vel[:, :2])*10.
+        return (rew_vel+rew_pos-rew_base_vel)*self.switch()
+
+    def _reward_tracking_lin_vel(self):
+        # Tracking of linear velocity commands (xy axes)
+        # just use lin_vel?
+        error = self.commands[:, :2] - self.base_lin_vel[:, :2]
+        # * scale by (1+|cmd|): if cmd=0, no scaling.
+        error *= 1./(1. + torch.abs(self.commands[:, :2]))
+        error = torch.sum(torch.square(error), dim=1)
+        return torch.exp(-error/self.cfg.rewards.tracking_sigma)*(1-self.switch())
 
     # def _reward_symm_legs(self):
     #     error = 0.

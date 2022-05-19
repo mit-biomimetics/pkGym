@@ -6,7 +6,7 @@ BASE_HEIGHT_REF = 0.32
 class SERefCfg(MiniCheetahCfg):
     class env(MiniCheetahCfg.env):
         num_envs = 8000
-        num_se_targets = 4 # ! must match under algorithm.se config
+        num_se_targets = 4  # ! must match under algorithm.se config
         num_actions = 12
         num_observations = 71
         episode_length_s = 15.
@@ -242,9 +242,9 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         clip_param = 0.2
         entropy_coef = 0.01
         num_learning_epochs = 6
-        num_mini_batches = 6 # mini batch size = num_envs*nsteps / nminibatches
+        num_mini_batches = 6  # mini batch size = num_envs*nsteps / nminibatches
         learning_rate = 5.e-5
-        schedule = 'adaptive' # could be adaptive, fixed
+        schedule = 'adaptive'  # could be adaptive, fixed
         gamma = 0.99
         lam = 0.99
         desired_kl = 0.01
@@ -259,7 +259,7 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
 
     class runner(MiniCheetahCfgPPO.runner):
         run_name = ''
-        experiment_name = 'se_ref'
+        experiment_name = 'se_ref_D'
         max_iterations = 1000  # number of policy updates
         algorithm_class_name = 'PPO_SE'
         num_steps_per_env = 32 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)

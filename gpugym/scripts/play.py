@@ -30,7 +30,7 @@
 
 from gpugym import LEGGED_GYM_ROOT_DIR
 import os
-
+import copy
 import isaacgym
 from gpugym.envs import *
 from gpugym.utils import  get_args, export_policy_as_jit, task_registry, Logger
@@ -46,11 +46,11 @@ def play(args):
     env_cfg.terrain.num_rows = 5
     env_cfg.terrain.num_cols = 5
     env_cfg.terrain.curriculum = False
-    env_cfg.noise.add_noise = False
+    env_cfg.noise.add_noise = True
     env_cfg.domain_rand.randomize_friction = False
-    env_cfg.domain_rand.push_robots = False
-    env_cfg.domain_rand.push_interval_s = 2
-    env_cfg.domain_rand.max_push_vel_xy = 1.0
+    env_cfg.domain_rand.push_robots = True
+    env_cfg.domain_rand.push_interval_s = 5
+    env_cfg.domain_rand.max_push_vel_xy = 0.05
 
     # prepare environment
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
@@ -65,6 +65,10 @@ def play(args):
         path = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name, 'exported', 'policies')
         export_policy_as_jit(ppo_runner.alg.actor_critic, path)
         print('Exported policy as jit script to: ', path)
+        se_path = os.path.join(path, 'se_1.jit')
+        se_model = copy.deepcopy(ppo_runner.alg.state_estimator.estimator).to('cpu')
+        traced_script_module = torch.jit.script(se_model)
+        traced_script_module.save(se_path)
 
     logger = Logger(env.dt)
     robot_index = 0 # which robot is used for logging
