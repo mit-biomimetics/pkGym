@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<!-- URDF for MIT Humanoid
+Version Specifics: "Full" and "Heel-Toe"
+Full: collision geometries for all links
+Heel-Toe: separate heel and toe contacts -->
+
 <robot
   name="humanoid">
   <link
@@ -249,10 +254,12 @@
         ixx="0.000092"
         ixy="0.0"
         ixz="-0.000054 "
-        iyy="0.000806 "
+        iyy="0.08 "
         iyz="0.0 "
         izz="0.000769" />
     </inertial>
+    <!-- Foot inertia Iyy default: 0.000806
+    Modified to account for reflected motor inertia -->
     <visual>
       <origin
         xyz="0 0 0"
@@ -291,7 +298,7 @@
         xyz="0.0 -0.0 0.0"
         rpy="0 0 0" />
       <mass
-        value="0.0" />
+        value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -301,7 +308,7 @@
         izz="0.0" />
     </inertial>
       <collision>
-            <origin rpy="0 0 0" xyz="0.085 0.0 -0.02"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
                 <box size="0.08 0.02 0.05"/>
             </geometry>
@@ -314,7 +321,7 @@
         xyz="0.0 -0.0 0.0"
         rpy="0 0 0" />
       <mass
-        value="0.0" />
+        value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -324,7 +331,7 @@
         izz="0.0" />
     </inertial>
       <collision>
-            <origin rpy="0 0 0" xyz="-0.05 0.0 -0.02"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
                 <box size="0.06 0.02 0.05"/>
             </geometry>
@@ -334,7 +341,7 @@
     name="left_toe_link"
     type="fixed">
     <origin
-      xyz="0 -0.0 0"
+      xyz="0.085 0.0 -0.02"
       rpy="0 0 0" />
     <parent
       link="left_foot" />
@@ -345,7 +352,7 @@
     name="left_heel_link"
     type="fixed">
     <origin
-      xyz="0 -0.0 0"
+      xyz="-0.05 0.0 -0.02"
       rpy="0 0 0" />
     <parent
       link="left_foot" />
@@ -565,10 +572,12 @@
         ixx="0.000092"
         ixy="0.0"
         ixz="0.000054 "
-        iyy="0.000806 "
+        iyy="0.08 "
         iyz="0.0 "
         izz="0.000769" />
     </inertial>
+    <!-- Foot inertia Iyy default: 0.000806
+    Modified to account for reflected motor inertia -->
     <visual>
       <origin
         xyz="0 0 0"
@@ -607,7 +616,7 @@
         xyz="0.0 -0.0 0.0"
         rpy="0 0 0" />
       <mass
-        value="0.0" />
+        value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -617,7 +626,7 @@
         izz="0.0" />
     </inertial>
       <collision>
-            <origin rpy="0 0 0" xyz="0.085 0.0 -0.02"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
                 <box size="0.08 0.02 0.05"/>
             </geometry>
@@ -630,7 +639,7 @@
         xyz="0.0 -0.0 0.0"
         rpy="0 0 0" />
       <mass
-        value="0.0" />
+        value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -640,7 +649,7 @@
         izz="0.0" />
     </inertial>
       <collision>
-            <origin rpy="0 0 0" xyz="-0.05 0.0 -0.02"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
                 <box size="0.06 0.02 0.05"/>
             </geometry>
@@ -650,7 +659,7 @@
     name="right_toe_link"
     type="fixed">
     <origin
-      xyz="0 -0.0 0"
+      xyz="0.085 0.0 -0.02"
       rpy="0 0 0" />
     <parent
       link="right_foot" />
@@ -661,7 +670,7 @@
     name="right_heel_link"
     type="fixed">
     <origin
-      xyz="0 -0.0 0"
+      xyz="0.085 0.0 -0.02"
       rpy="0 0 0" />
     <parent
       link="right_foot" />

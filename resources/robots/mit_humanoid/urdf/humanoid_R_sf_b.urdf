@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+<!-- URDF for MIT Humanoid
+Version Specifics: "Reduced" and "Simple Foot" and "Back"
+Reduced: collision geometries only on feet, hands, and torso
+Simple Foot: foot approximated as single box-contact 
+Back: Humanoid has curved back with collision geometry -->
+
 <robot
   name="humanoid">
   <link
@@ -332,75 +338,6 @@
     <dynamics damping="0.0" friction="0.0" rotor_inertia="0.04752"/>
   </joint>
 
-  <!-- <link
-    name="left_toe">
-    <inertial>
-      <origin
-        xyz="0.0 -0.0 0.0"
-        rpy="0 0 0" />
-      <mass
-        value="0.0" />
-      <inertia
-        ixx="0.0"
-        ixy="0.0"
-        ixz="0.0"
-        iyy="0.0"
-        iyz="0.0"
-        izz="0.0" />
-    </inertial>
-      <collision>
-            <origin rpy="0 0 0" xyz="0.085 0.0 -0.02"/>
-            <geometry>
-                <box size="0.08 0.02 0.05"/>
-            </geometry>
-    </collision>
-  </link>
-  <link
-      name="left_heel">
-    <inertial>
-      <origin
-        xyz="0.0 -0.0 0.0"
-        rpy="0 0 0" />
-      <mass
-        value="0.0" />
-      <inertia
-        ixx="0.0"
-        ixy="0.0"
-        ixz="0.0"
-        iyy="0.0"
-        iyz="0.0"
-        izz="0.0" />
-    </inertial>
-      <collision>
-            <origin rpy="0 0 0" xyz="-0.05 0.0 -0.02"/>
-            <geometry>
-                <box size="0.06 0.02 0.05"/>
-            </geometry>
-    </collision>
-  </link>
-  <joint
-    name="left_toe_link"
-    type="fixed">
-    <origin
-      xyz="0 -0.0 0"
-      rpy="0 0 0" />
-    <parent
-      link="left_foot" />
-    <child
-      link="left_toe" />
-  </joint>
-    <joint
-    name="left_heel_link"
-    type="fixed">
-    <origin
-      xyz="0 -0.0 0"
-      rpy="0 0 0" />
-    <parent
-      link="left_foot" />
-    <child
-      link="left_heel" />
-  </joint> -->
-
  <link
     name="right_hip_yaw">
     <inertial>
@@ -642,74 +579,6 @@
     <dynamics damping="0.0" friction="0.0" rotor_inertia="0.04752"/>
   </joint>
 
-  <!-- <link
-    name="right_toe">
-    <inertial>
-      <origin
-        xyz="0.0 -0.0 0.0"
-        rpy="0 0 0" />
-      <mass
-        value="0.0" />
-      <inertia
-        ixx="0.0"
-        ixy="0.0"
-        ixz="0.0"
-        iyy="0.0"
-        iyz="0.0"
-        izz="0.0" />
-    </inertial>
-      <collision>
-            <origin rpy="0 0 0" xyz="0.085 0.0 -0.02"/>
-            <geometry>
-                <box size="0.08 0.02 0.05"/>
-            </geometry>
-    </collision>
-  </link>
-  <link
-      name="right_heel">
-    <inertial>
-      <origin
-        xyz="0.0 -0.0 0.0"
-        rpy="0 0 0" />
-      <mass
-        value="0.0" />
-      <inertia
-        ixx="0.0"
-        ixy="0.0"
-        ixz="0.0"
-        iyy="0.0"
-        iyz="0.0"
-        izz="0.0" />
-    </inertial>
-      <collision>
-            <origin rpy="0 0 0" xyz="-0.05 0.0 -0.02"/>
-            <geometry>
-                <box size="0.06 0.02 0.05"/>
-            </geometry>
-    </collision>
-  </link>
-  <joint
-    name="right_toe_link"
-    type="fixed">
-    <origin
-      xyz="0 -0.0 0"
-      rpy="0 0 0" />
-    <parent
-      link="right_foot" />
-    <child
-      link="right_toe" />
-  </joint>
-    <joint
-    name="right_heel_link"
-    type="fixed">
-    <origin
-      xyz="0 -0.0 0"
-      rpy="0 0 0" />
-    <parent
-      link="right_foot" />
-    <child
-      link="right_heel" />
-  </joint> -->
   
 
   <!-- Left Arm -->
