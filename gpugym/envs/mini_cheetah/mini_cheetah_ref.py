@@ -160,7 +160,6 @@ class MiniCheetahRef(MiniCheetah):
         if self.cfg.env.num_se_targets:
             self.extras["SE_targets"] = torch.cat((base_z,
                                 self.base_lin_vel * self.obs_scales.lin_vel),
-                                * self.obs_scales.dof_vel),
                                 dim=-1)
 
     def _get_noise_scale_vec(self, cfg):
@@ -310,9 +309,10 @@ class MiniCheetahRef(MiniCheetah):
     def _reward_stand_still(self):
         # Penalize motion at zero commands
         # * normalize angles so we care about being within 5 deg
-        rew_pos = torch.sum(self.sqrdexp((self.dof_pos - self.default_dof_pos)/torch.pi*36), dim=1)/12.
-        rew_vel = torch.sum(self.sqrdexp(self.dof_vel), dim=1)/12.
-        rew_base_vel = -torch.square(self.base_lin_vel[:, :2])*10.
+        rew_pos = torch.mean(self.sqrdexp((self.dof_pos - self.default_dof_pos)/torch.pi*36), dim=1)
+        rew_vel = torch.mean(self.sqrdexp(self.dof_vel), dim=1)
+        rew_base_vel = torch.mean(torch.square(self.base_lin_vel), dim=1)
+        rew_base_vel += torch.mean(torch.square(self.base_ang_vel), dim=1)
         return (rew_vel+rew_pos-rew_base_vel)*self.switch()
 
     def _reward_tracking_lin_vel(self):

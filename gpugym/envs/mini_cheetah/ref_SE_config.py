@@ -109,11 +109,11 @@ class SERefCfg(MiniCheetahCfg):
         randomize_friction = True
         friction_range = [0.75, 1.05]
         randomize_base_mass = True
-        added_mass_range = [-2., 2.]
+        added_mass_range = [-1., 3.]
         friction_range = [0., 1.0] # on ground planes the friction combination mode is averaging, i.e total friction = (foot_friction + 1.)/2.
         push_robots = True
         push_interval_s = 10
-        max_push_vel_xy = 0.05
+        max_push_vel_xy = 0.2
 
     class asset(MiniCheetahCfg.asset):
         file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah_simple.urdf"
@@ -139,7 +139,7 @@ class SERefCfg(MiniCheetahCfg):
         base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.3
         class scales(MiniCheetahCfg.rewards.scales):
-            termination = -10.
+            termination = -15.
             tracking_lin_vel = 4.0
             tracking_ang_vel = 1.0
             lin_vel_z = 0.6
@@ -152,11 +152,11 @@ class SERefCfg(MiniCheetahCfg):
             collision = -0.25
             action_rate = -0.1  # -0.01
             action_rate2 = -0.001  # -0.001
-            stand_still = 0.
+            stand_still = 0.5
             dof_pos_limits = 0.
             feet_contact_forces = 0.
             dof_near_home = 0.
-            reference_traj = 0.25
+            reference_traj = 0.5
             swing_grf = -0.75
             stance_grf = 1.5
 
@@ -186,12 +186,12 @@ class SERefCfg(MiniCheetahCfg):
         heading_command = False
         resampling_time = 4.
         curriculum = True
-        max_curriculum_x = 3.5
+        max_curriculum_x = 4.
         max_curriculum_ang = 2.5
         class ranges(MiniCheetahCfg.commands.ranges):
-            lin_vel_x = [0., 0.5] # min max [m/s]
-            lin_vel_y = [-0.1, 0.1]   # min max [m/s]
-            ang_vel_yaw = [-0.25*3.14, 0.25*3.14]    # min max [rad/s]
+            lin_vel_x = [0., 1.] # min max [m/s]
+            lin_vel_y = [-0., 0.]   # min max [m/s]
+            ang_vel_yaw = [-0.5*3.14, 0.5*3.14]    # min max [rad/s]
             heading = [0., 0.]
 
     class normalization(MiniCheetahCfg.normalization):
@@ -260,6 +260,6 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
     class runner(MiniCheetahCfgPPO.runner):
         run_name = ''
         experiment_name = 'se_ref_D'
-        max_iterations = 1000  # number of policy updates
+        max_iterations = 10000  # number of policy updates
         algorithm_class_name = 'PPO_SE'
         num_steps_per_env = 32 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)
