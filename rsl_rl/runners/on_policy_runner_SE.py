@@ -42,7 +42,6 @@ from rsl_rl.modules import ActorCritic, ActorCriticRecurrent
 from rsl_rl.modules import StateEstimator
 from rsl_rl.env import VecEnv
 
-
 class OnPolicyRunner:
 
     def __init__(self,
@@ -76,8 +75,13 @@ class OnPolicyRunner:
         elif self.cfg["algorithm_class_name"] == "PPO_plus":
             self.alg: PPO_plus = alg_class(actor_critic, device=self.device, **self.alg_cfg)
         elif self.cfg["algorithm_class_name"] == "PPO_SE":
-            state_estimator = StateEstimator(self.env.num_obs, **self.se_cfg)
-            self.alg: PPO_SE = alg_class(actor_critic, state_estimator, device=self.device, **self.alg_cfg)
+            self.state_estimator = StateEstimator(self.env.num_obs, **self.se_cfg)
+            self.state_estimator.to(self.device)
+            self.SE_optimizer = optim.Adam(self.state_estimator.parameters(),
+                                    lr=self.alg_cfg["learning_rate"])
+            self.SE_loss_fn = nn.MSELoss()
+            # self.alg: PPO_SE = alg_class(actor_critic, state_estimator, device=self.device, **self.alg_cfg)
+
         else:
             print("No idea what algorithm you want from me here.")
 
@@ -173,6 +177,11 @@ class OnPolicyRunner:
             # Rollout
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
+
+                    if self.cfg["algorithm_class_name"] in ["PPO_SE"]:  # TODO: if error, check actor_critic input dimension
+                        SE_prediction = self.state_estimator.evaluate(obs)
+                        obs = torch.cat((SE_prediction, obs), dim=1)
+                        
                     actions = self.alg.act(obs, critic_obs)                        # compute SE prediction and actions and values
                     # * step simulation
                     obs, priv_obs, rewards, dones, infos = self.env.step(actions)  # infos contains extras[SE.target]
@@ -207,7 +216,7 @@ class OnPolicyRunner:
 
                 # Learning step
                 start = stop
-                self.alg.compute_returns(critic_obs) # TODO: what's this?
+                self.alg.compute_returns(critic_obs)
 
             mean_value_loss, mean_surrogate_loss = self.alg.update()
             stop = time.time()
@@ -226,7 +235,8 @@ class OnPolicyRunner:
                 self.env.update_X0(self.alg.storage.critic_obs[:n_DC],
                                     from_obs=True)
 
-        self.current_learning_iteration += num_learning_iterations
+            self.current_learning_iteration += 1
+
         self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.current_learning_iteration)))
 
     def log(self, locs, width=80, pad=35):
