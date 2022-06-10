@@ -5,10 +5,12 @@ BASE_HEIGHT_REF = 0.32
 
 class SERefCfg(MiniCheetahCfg):
     class env(MiniCheetahCfg.env):
-        num_envs = 8000
+        num_envs = 4 # original 8000, now for testing
         num_se_targets = 4  # ! must match under algorithm.se config
         num_actions = 12
-        num_observations = 71
+        num_env_obs = 71   # all the sensor info that go in
+        num_observations = 71 + num_se_targets   # augmented by SE info
+        num_privileged_obs = num_observations    # critic obs, same as actors'
         episode_length_s = 15.
 
     class terrain(MiniCheetahCfg.terrain):
@@ -150,7 +152,7 @@ class SERefCfg(MiniCheetahCfg):
             base_height = 1.5
             feet_air_time = 0.  # rewards keeping feet in the air
             collision = -0.25
-            action_rate = -0.1  # -0.01
+            action_rate = -0.01  # -0.01
             action_rate2 = -0.001  # -0.001
             stand_still = 0.5
             dof_pos_limits = 0.
@@ -229,7 +231,12 @@ class SERefCfg(MiniCheetahCfg):
 
 class SERefCfgPPO(MiniCheetahCfgPPO):
     seed = -1
-    do_wandb = False
+    do_wandb = True
+
+    class wandb:
+        what_to_log = {}
+        # what_to_log['']
+
     class policy( MiniCheetahCfgPPO.policy ):
         actor_hidden_dims = [256, 256, 128]
         critic_hidden_dims = [256, 256, 128]
@@ -252,9 +259,14 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         # PPO_plus params
         storage_size = 4000
         # PPO_SE params
-    class state_estimator:
-        num_outputs = 4
+
+    class state_estimator_nn:
+        num_outputs = 4           # how many quantities we are estimating, match the extras[SE_target] dimension
         hidden_dims = [256, 128]  # None will default to 256, 128
+
+    class state_estimator:
+        num_learning_epochs = 6
+        num_mini_batches = 6  # mini batch size = num_envs*nsteps / nminibatches
 
 
     class runner(MiniCheetahCfgPPO.runner):

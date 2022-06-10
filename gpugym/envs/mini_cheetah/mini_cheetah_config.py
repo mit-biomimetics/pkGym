@@ -205,7 +205,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
 class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
     seed = -1
     do_wandb = False
-    class policy( LeggedRobotCfgPPO.policy ):
+    class policy( LeggedRobotCfgPPO.policy):
         actor_hidden_dims = [256, 256, 256]
         critic_hidden_dims = [256, 256, 256]
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid

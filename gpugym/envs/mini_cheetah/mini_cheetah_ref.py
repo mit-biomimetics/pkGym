@@ -158,8 +158,10 @@ class MiniCheetahRef(MiniCheetah):
                             * self.noise_scale_vec
 
         if self.cfg.env.num_se_targets:
+            
             self.extras["SE_targets"] = torch.cat((base_z,
                                 self.base_lin_vel * self.obs_scales.lin_vel),
+                                # self.contact_forces[:,self.feet_indices,:].view(4, -1)),
                                 dim=-1)
 
     def _get_noise_scale_vec(self, cfg):
