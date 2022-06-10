@@ -1,12 +1,14 @@
 
+from rsl_rl.storage.Storage_SE import TransitionSE
+from rsl_rl.storage.rollout_storage import RolloutStorage
 import torch
 import torch.nn as nn
 import torch.optim as optim
 
 from rsl_rl.modules import StateEstimator
-from rsl_rl.storage import LTStorageSE
+from rsl_rl.storage import LTStorageSE, RolloutSE
 
-class SE:
+class StateEstimatorMod:
     """ This class provides a learned state estimator.
     predict() function provides state estimation for RL given the observation
     update() function optimize for the nn params
@@ -23,13 +25,23 @@ class SE:
     def __init__(self,
                  state_estimator,    # network
                  learning_rate=1e-3,
+                 storage_size = 4000,
+                 num_mini_batches = 1,
+                 num_learning_epochs = 1,
                  device='cpu',
                  ):
 
+        # general parameters
         self.device = device
         self.learning_rate = learning_rate
-        self.storage = None  # initialized later
-        self.transition = LTStorageSE.Transition()
+        self.SE_LT_size = storage_size
+        self.num_mini_batches = num_mini_batches
+        self.num_learning_epochs = num_learning_epochs
+
+        # SE storage
+        self.transition = None
+        self.rollout    = None
+        self.storage    = None  # initialized later
 
         # SE network and optimizer
         self.state_estimator = state_estimator
@@ -39,76 +51,67 @@ class SE:
         self.SE_loss_fn = nn.MSELoss()
 
 
-    def init_storage(self, num_envs, num_transitions_per_env, actor_obs_shape,
-                        critic_obs_shape, action_shape, se_shape):
-        # TODO: implement this function
-        self.storage = LTStorageSE(num_envs, num_transitions_per_env,
-                                        self.LT_storage_size,
+    def init_storage(self, num_envs, num_transitions_per_env, raw_obs_shape, se_shape):
+
+        # TODO: implement this function, do we need action?? is it torque??
+        self.transition = TransitionSE()
+        self.rollout    = RolloutSE(num_envs, num_transitions_per_env, raw_obs_shape,
+                        se_shape, device=self.device)
+        self.LTstorage  = LTStorageSE(num_envs, num_transitions_per_env, self.SE_LT_size,
+                                        raw_obs_shape,
                                         se_shape,
+                                        # self.LT_priv_obs_only,
                                         self.device)
 
 
     def predict(self, obs, critic_obs):
+        """ Predicte the estimated states
+        return: cat(predicted, raw_states)
+        """
         # Compute the predicted states
         SE_prediction = self.state_estimator.evaluate(obs)
         actor_obs = torch.cat((SE_prediction, obs), dim=1)
 
         # Store transition values
-        self.transition.observations = obs
-        self.transition.critic_observations = critic_obs
+        self.transition.observations = obs                 # only raw state observation
+        self.transition.critic_observations = critic_obs   # privilege raw states observation
         self.transition.SE_prediction = SE_prediction
         return actor_obs
 
     def process_env_step(self, dones, infos, new_actor_obs, new_critic_obs):
 
+        # Record the transition
         self.transition.dones = dones
         self.transition.SE_targets = infos['SE_targets']
-        # Record the transition
 
-        self.storage.LT_add_transitions(self.transition)  # TODO: not implemented yet
-        # * add transitions that are not time-outs to LT storage
-
-        keep = ~infos['time_outs'].to(self.device)
-        self.storage.add_LT_transitions(self.transition.observations[keep, :],
-                            self.transition.critic_observations[keep, :],
-                            self.transition.actions[keep, :],
-                            new_actor_obs[keep, :],
-                            new_critic_obs[keep, :],
-                            self.transition.rewards[keep].unsqueeze(1))
-                            # possibly add dones (mark failure terminations)
+        # TODO: implement function, check delete new_actor_obs and new_critic_obs is ok
+        # Store transitions to rollout and longterm
+        self.rollout.add_transitions(self.transition)
+        self.LTstorage.add_transitions(self.transition)
 
         self.transition.clear()
 
-    def compute_returns(self, last_critic_obs):
-        # last_values= self.actor_critic.evaluate(last_critic_obs).detach()
-        self.storage.rollout.compute_returns(last_values, self.gamma, self.lam)
-
     def update(self):
-        mean_value_loss = 0
-        mean_surrogate_loss = 0
-        if self.actor_critic.is_recurrent:
-            generator = self.storage.rollout.reccurent_mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
-        else:
-            generator = self.storage.rollout.mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
-        for obs_batch, critic_obs_batch, actions_batch, target_values_batch, advantages_batch, returns_batch, old_actions_log_prob_batch, \
-            old_mu_batch, old_sigma_batch, SE_target_batch, hid_states_batch, masks_batch in generator:
 
-                # * plug state-estimator into policy
-                SE_prediction_batch = self.state_estimator.evaluate(obs_batch,
-                                        masks=masks_batch,
-                                        hidden_states=hid_states_batch[0])
-                actor_obs_batch = torch.cat((SE_prediction_batch.detach(),
-                                            obs_batch), dim=1)
+        generator = self.rollout.mini_batch_generator(self.num_mini_batches, self.num_learning_epochs)
+        mean_SE_loss = 0
+        for obs_batch, SE_target_batch, hid_states_batch, masks_batch in generator:
 
-                # * do a pass on the state-estimator too
-                SE_loss = self.SE_loss_fn(SE_prediction_batch, SE_target_batch)
-                self.SE_optimizer.zero_grad()
-                SE_loss.backward()
-                self.SE_optimizer.step()
+            # * plug state-estimator into policy
+            SE_prediction_batch = self.state_estimator.evaluate(obs_batch,
+                                    masks=masks_batch,
+                                    hidden_states=hid_states_batch[0])
+                                    # TODO: what is mask and hid_states
+
+            # * do a pass on the state-estimator too
+            SE_loss = self.SE_loss_fn(SE_prediction_batch, SE_target_batch)
+            self.SE_optimizer.zero_grad()
+            SE_loss.backward()
+            self.SE_optimizer.step()
+            mean_SE_loss += SE_loss.item()  # TODO: check is it the right way to record loss
 
         num_updates = self.num_learning_epochs * self.num_mini_batches
-        mean_value_loss /= num_updates
-        mean_surrogate_loss /= num_updates
-        self.storage.rollout.clear()
+        mean_SE_loss /= num_updates
+        self.rollout.clear()
 
-        return mean_value_loss, mean_surrogate_loss        
+        return mean_SE_loss        

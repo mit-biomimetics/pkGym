@@ -5,7 +5,7 @@ from torch.nn.modules import rnn
 
 class StateEstimator(nn.Module):
     is_recurrent = False
-    def __init__(self,  num_inputs, num_outputs, hidden_dims=[256, 128],
+    def __init__(self,  num_inputs, num_outputs=4, hidden_dims=[256, 128],
                  activation='elu', **kwargs):
         if kwargs:
             print("StateEstimator.__init__ got unexpected arguments, which will be ignored: " + str([key for key in kwargs.keys()]))

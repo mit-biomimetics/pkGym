@@ -32,17 +32,18 @@ import time
 import os
 from collections import deque
 import statistics
+from rsl_rl.algorithms.ppo_SEmod import PPO_SEMod
 
 from torch.utils.tensorboard import SummaryWriter
 import wandb
 import torch
 
-from rsl_rl.algorithms import PPO, PPO_plus, PPO_SE
+from rsl_rl.algorithms import PPO, PPO_plus, PPO_SE, StateEstimatorMod
 from rsl_rl.modules import ActorCritic, ActorCriticRecurrent
 from rsl_rl.modules import StateEstimator
 from rsl_rl.env import VecEnv
 
-class OnPolicyRunner:
+class OnPolicyRunnerSE:
 
     def __init__(self,
                  env: VecEnv,
@@ -60,7 +61,7 @@ class OnPolicyRunner:
         actor_critic_class = eval(self.cfg["policy_class_name"]) # ActorCritic
 
         if self.cfg["algorithm_class_name"] == "PPO_SE":
-            num_actor_obs = self.env.num_obs + self.se_cfg['num_outputs']
+            num_actor_obs = self.env.num_obs + self.se_nn_cfg['num_outputs']  
         else:
             num_actor_obs = self.env.num_obs
         actor_critic: ActorCritic = actor_critic_class(num_actor_obs,
@@ -75,12 +76,11 @@ class OnPolicyRunner:
         elif self.cfg["algorithm_class_name"] == "PPO_plus":
             self.alg: PPO_plus = alg_class(actor_critic, device=self.device, **self.alg_cfg)
         elif self.cfg["algorithm_class_name"] == "PPO_SE":
-            self.state_estimator = StateEstimator(self.env.num_obs, **self.se_cfg)
-            self.state_estimator.to(self.device)
-            self.SE_optimizer = optim.Adam(self.state_estimator.parameters(),
-                                    lr=self.alg_cfg["learning_rate"])
-            self.SE_loss_fn = nn.MSELoss()
-            # self.alg: PPO_SE = alg_class(actor_critic, state_estimator, device=self.device, **self.alg_cfg)
+            self.state_estimator_nn = StateEstimator(self.env.num_obs, **self.se_nn_cfg) # network
+            self.state_estimator_nn.to(self.device)
+            self.alg_cfg.pop('storage_size')
+            self.alg = PPO_SEMod(actor_critic, device=self.device, **self.alg_cfg)  # TODO: modify alg later, and change SE params according to config.py
+            self.state_estimator = StateEstimatorMod(self.state_estimator_nn ,device=self.device, **self.se_cfg)
 
         else:
             print("No idea what algorithm you want from me here.")
@@ -113,18 +113,29 @@ class OnPolicyRunner:
         self.policy_cfg = train_cfg['policy']
         if 'state_estimator' in train_cfg:
             self.se_cfg = train_cfg['state_estimator']
+            self.se_nn_cfg = train_cfg['state_estimator_nn']
         else:
             self.se_cfg = None
 
 
     def init_storage(self):
         if self.cfg["algorithm_class_name"] == "PPO_SE":
+            # self.alg.init_storage(self.env.num_envs,
+            #                     self.num_steps_per_env,
+            #                     [self.env.num_obs],
+            #                     [self.env.num_privileged_obs],
+            #                     [self.env.num_actions],
+            #                     [self.se_cfg['num_outputs']])
             self.alg.init_storage(self.env.num_envs,
                                 self.num_steps_per_env,
+                                [self.env.num_obs + self.se_nn_cfg['num_outputs']],
+                                [self.env.num_privileged_obs],            # TODO: read from cfg
+                                [self.env.num_actions])
+            # SE only stores raw_obs (71) and se output (4)
+            self.state_estimator.init_storage(self.env.num_envs,
+                                self.num_steps_per_env,
                                 [self.env.num_obs],
-                                [self.env.num_privileged_obs],
-                                [self.env.num_actions],
-                                [self.se_cfg['num_outputs']])
+                                [self.se_nn_cfg['num_outputs']])
         else:
             self.alg.init_storage(self.env.num_envs,
                                 self.num_steps_per_env,
@@ -155,10 +166,10 @@ class OnPolicyRunner:
             self.writer = SummaryWriter(log_dir=self.log_dir, flush_secs=10)
         if init_at_random_ep_len:
             self.env.episode_length_buf = torch.randint_like(self.env.episode_length_buf, high=int(self.env.max_episode_length))
-        obs = self.env.get_observations()                   # return obs_buffer, wrapped up in mc_ref.py
+        env_obs = self.env.get_observations()                   # return obs_buffer, wrapped up in mc_ref.py
         priv_obs = self.env.get_privileged_observations()
-        critic_obs = priv_obs if priv_obs is not None else obs
-        obs, critic_obs = obs.to(self.device), critic_obs.to(self.device)
+        critic_obs = priv_obs if priv_obs is not None else env_obs
+        env_obs, critic_obs = env_obs.to(self.device), critic_obs.to(self.device)
         self.alg.actor_critic.train() # switch to train mode (for dropout for example)
 
         ep_infos = []
@@ -178,21 +189,21 @@ class OnPolicyRunner:
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
 
-                    if self.cfg["algorithm_class_name"] in ["PPO_SE"]:  # TODO: if error, check actor_critic input dimension
-                        SE_prediction = self.state_estimator.evaluate(obs)
-                        obs = torch.cat((SE_prediction, obs), dim=1)
+                    if self.cfg["algorithm_class_name"] in ["PPO_SE"]: 
+                        obs = self.state_estimator.predict(env_obs, critic_obs)  # estimation + raw states
                         
                     actions = self.alg.act(obs, critic_obs)                        # compute SE prediction and actions and values
                     # * step simulation
-                    obs, priv_obs, rewards, dones, infos = self.env.step(actions)  # infos contains extras[SE.target]
-                    critic_obs = priv_obs if priv_obs is not None else obs
-                    obs, critic_obs, rewards, dones = obs.to(self.device), critic_obs.to(self.device), rewards.to(self.device), dones.to(self.device)
+                    env_obs, priv_obs, rewards, dones, infos = self.env.step(actions)  # infos contains extras[SE.target]
+                    critic_obs = priv_obs if priv_obs is not None else env_obs
+                    critic_obs = torch.cat((infos['SE_targets'], env_obs), dim=1)
+                    env_obs, critic_obs, rewards, dones = env_obs.to(self.device), critic_obs.to(self.device), rewards.to(self.device), dones.to(self.device)
                     
                     # add data-point to storage
                     if self.cfg["algorithm_class_name"] in ["PPO_plus",
                                                             "PPO_SE"]:
-                        self.alg.process_env_step(rewards, dones, infos,
-                                                obs, critic_obs)
+                        self.alg.process_env_step(rewards, dones, infos)
+                        self.state_estimator.process_env_step(dones, infos, env_obs, critic_obs) # TODO: check  if it is ok without next_obs
                     elif self.cfg["algorithm_class_name"] == "PPO":
                         self.alg.process_env_step(rewards, dones, infos)
 
@@ -218,7 +229,9 @@ class OnPolicyRunner:
                 start = stop
                 self.alg.compute_returns(critic_obs)
 
+            # TODO: 
             mean_value_loss, mean_surrogate_loss = self.alg.update()
+            SE_loss = self.state_estimator.update()
             stop = time.time()
             learn_time = stop - start
             if self.log_dir is not None:
@@ -361,10 +374,10 @@ class OnPolicyRunner:
 
         if self.cfg["algorithm_class_name"] == "PPO_SE":
             self.alg.actor_critic.eval()
-            self.alg.state_estimator.eval()
+            self.state_estimator.eval()
             if device is not None:
                 self.alg.actor_critic.to(device)
-                self.alg.state_estimator.to(device)
+                self.state_estimator.to(device)
             return self.alg.se_act
         else:
             self.alg.actor_critic.eval() # switch to evaluation mode (dropout for example)

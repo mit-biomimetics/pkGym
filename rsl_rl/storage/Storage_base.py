@@ -1,29 +1,37 @@
 import torch
 import numpy as np
 
-class RolloutStorageBase:
-    """ This class stores rollout data for each update
-    """
+""" Store data for different loop
+Design consideration: change the original "has-a" relationship of LT->rollout->transition to parallel.
+Transition stores all the needed data for every step and will be cleared/updated every step and passed to rollout and longterm
+Rollout store data for every iteration, generate batch for learning
+Longterm stores needed data from transition, and probably also generate batches
+"""
 
-    class Transition:
-        """ Transition storage class, i.e. store data for each STEP of ALL agents
+class TransitionBase:
+    """ Transition storage class.
+    i.e. store data for each STEP of ALL agents
+    """
+    def __init__(self):
+        """ Define all the data you need to store in __init__
         """
-        def __init__(self):
-            """ Define all the data you need to store in __init__
-            """
-            raise NotImplementedError
-        
-        def clear(self):
-            self.__init__()
+        raise NotImplementedError
+    
+    def clear(self):
+        self.__init__()
+
+class RolloutStorageBase:
+    """ This class stores rollout data for each update.
+    i.e. all the transition data in one ITERATION. It will be used to update the policy
+    """
 
     def __init__(self, num_envs, num_transitions_per_env, device='cpu'):
         self.device = device
         self.num_transitions_per_env = num_transitions_per_env
         self.num_envs = num_envs
-
         self.step = 0
 
-    def add_transitions(self, transition: Transition):
+    def add_transitions(self, transition: TransitionBase):
         """ Add current transition to LT storage
         Store variables according to the __init__ 
         """
@@ -39,7 +47,7 @@ class RolloutStorageBase:
         raise NotImplementedError
 
 class LTStorageBase:
-    """ This class stores longterm data for certain algorithm
+    """ This class stores LONGTERM data needed for certain algorithm
     1. Define transition (step): should be complete data and parameters for single step
     1. Define the full buffer to store the data
     2. Add data from transition
@@ -56,7 +64,7 @@ class LTStorageBase:
         
         # other parameters
 
-    def add_transitions(self, transition: RolloutStorageBase.Transition):
+    def add_transitions(self, transition: TransitionBase):
         """ Add current transition to LT storage
         Store variables according to the __init__ 
         """
@@ -66,5 +74,4 @@ class LTStorageBase:
         """ Generate mini batch for learning
         """
         raise NotImplementedError
-
 
