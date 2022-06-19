@@ -58,8 +58,12 @@ class BaseTask():
             self.graphics_device_id = -1
 
         self.num_envs = cfg.env.num_envs
-        self.num_obs = cfg.env.num_env_obs
-        self.num_privileged_obs = cfg.env.num_privileged_obs
+        if hasattr(cfg.env, 'num_env_obs'):
+            self.num_obs = cfg.env.num_env_obs
+            self.num_privileged_obs = cfg.env.num_privileged_obs
+        else:
+            self.num_obs = cfg.env.num_observations
+            self.num_privileged_obs = None
         self.num_actions = cfg.env.num_actions
 
         # optimization flags for pytorch JIT

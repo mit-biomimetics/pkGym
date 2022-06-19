@@ -8,9 +8,9 @@ class SERefCfg(MiniCheetahCfg):
         num_envs = 4 # original 8000, now for testing
         num_se_targets = 4  # ! must match under algorithm.se config
         num_actions = 12
-        num_env_obs = 71   # all the sensor info that go in
-        num_observations = 71 + num_se_targets   # augmented by SE info
-        num_privileged_obs = num_observations    # critic obs, same as actors'
+        num_env_obs = 71                         # raw obs from sim: all the sensor info that go in
+        num_observations = 71 + num_se_targets   # actor obs: can be augmented by SE info
+        num_privileged_obs = num_observations    # critic obs: for now is the same as actors'
         episode_length_s = 15.
 
     class terrain(MiniCheetahCfg.terrain):
