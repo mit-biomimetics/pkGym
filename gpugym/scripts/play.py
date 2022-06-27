@@ -120,7 +120,7 @@ def play(args):
         #     logger.print_rewards()
 
 if __name__ == '__main__':
-    EXPORT_POLICY = True
+    EXPORT_POLICY = False  # TODO: turn that into true
     RECORD_FRAMES = False
     MOVE_CAMERA = False
     args = get_args()

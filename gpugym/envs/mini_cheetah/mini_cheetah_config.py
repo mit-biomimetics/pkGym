@@ -78,6 +78,10 @@ class MiniCheetahCfg(LeggedRobotCfg):
                           [0., 0.],  # roll
                           [0., 0.],  # pitch
                           [0., 0.]]  # yaw
+                          
+        # TODO: add new traj
+        ref_traj = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/trajectories/single_leg.csv"
+        ref_type = "Pos"
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
@@ -205,7 +209,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
 class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
     seed = -1
     do_wandb = False
-    class policy( LeggedRobotCfgPPO.policy):
+    class policy( LeggedRobotCfgPPO.policy ):
         actor_hidden_dims = [256, 256, 256]
         critic_hidden_dims = [256, 256, 256]
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid

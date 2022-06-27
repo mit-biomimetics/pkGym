@@ -49,6 +49,8 @@ from .cartpole.cartpole_config import CartpoleCfg, CartpoleCfgPPO
 from .mini_cheetah.mini_cheetah_ref import MiniCheetahRef
 from .mini_cheetah.ref_SE_config import SERefCfg, SERefCfgPPO
 
+from .mini_cheetah.mini_cheetah_PPO_config import MCRefCfg, MCRefCfgPPO # new ref files
+
 from gpugym.utils.task_registry import task_registry
 
 task_registry.register("anymal_c_rough", Anymal, AnymalCRoughCfg(),
@@ -65,5 +67,6 @@ task_registry.register("mit_humanoid", MIT_Humanoid, MITHumanoidCfg(),
 
 task_registry.register("mini_cheetah", MiniCheetah, MiniCheetahCfg(),MiniCheetahCfgPPO())
 task_registry.register("mc_se_ref", MiniCheetahRef, SERefCfg(), SERefCfgPPO())
+task_registry.register("mc_PPO_ref", MiniCheetah, MCRefCfg, MCRefCfgPPO)    # PPO ref file, use SE config
 # task_registry.register("furuta", Furuta, FurutaCfg(), FurutaCfgPPO())
 task_registry.register("cartpole", Cartpole, CartpoleCfg(), CartpoleCfgPPO())

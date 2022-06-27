@@ -58,7 +58,8 @@ class BaseTask():
             self.graphics_device_id = -1
 
         self.num_envs = cfg.env.num_envs
-        if hasattr(cfg.env, 'num_env_obs'):
+        # if hasattr(cfg.env, 'num_env_obs'):    # with state estimator
+        if cfg.env.num_env_obs is not None:
             self.num_obs = cfg.env.num_env_obs
             self.num_privileged_obs = cfg.env.num_privileged_obs
         else:
@@ -71,7 +72,8 @@ class BaseTask():
         torch._C._jit_set_profiling_executor(False)
 
         # allocate buffers
-        self.obs_buf = torch.zeros(self.num_envs, self.num_obs, device=self.device, dtype=torch.float)
+        self.obs_buf = torch.zeros(self.num_envs, self.num_obs, device=self.device
+        , dtype=torch.float)
         self.rew_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
         self.reset_buf = torch.ones(self.num_envs, device=self.device, dtype=torch.long)
         self.episode_length_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)

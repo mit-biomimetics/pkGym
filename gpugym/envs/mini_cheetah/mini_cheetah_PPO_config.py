@@ -2,16 +2,19 @@
 from gpugym.envs.mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahCfgPPO
 
 BASE_HEIGHT_REF = 0.32
-SE_target = 8
 
-class SERefCfg(MiniCheetahCfg):
+"""
+This file is modified from ref_SE_config.py, aims to create a benchmark for PPO only testing
+"""
+
+class MCRefCfg(MiniCheetahCfg):
     class env(MiniCheetahCfg.env):
         num_envs = 4 # original 8000, now for testing
-        num_se_targets = SE_target  # ! must match under algorithm.se config
+        num_se_targets = 4  # ! must match under algorithm.se config
         num_actions = 12
-        num_env_obs = 71                         # raw obs from sim: all the sensor info that go in
-        num_observations = 71 + num_se_targets   # actor obs: can be augmented by SE info
-        num_privileged_obs = num_observations    # critic obs: for now is the same as actors'
+        # num_env_obs = 71                         # raw obs from sim: all the sensor info that go in
+        num_observations = 71  # actor obs: can be augmented by SE info
+        # num_privileged_obs = num_observations    # critic obs: for now is the same as actors'
         episode_length_s = 15.
 
     class terrain(MiniCheetahCfg.terrain):
@@ -45,7 +48,7 @@ class SERefCfg(MiniCheetahCfg):
             "rh_kfe": 1.596976,
         }
 
-        reset_mode = "reset_to_basic" 
+        reset_mode = "reset_to_storage" # TODO: original is basic 
         # reset setup chooses how the initial conditions are chosen. 
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
@@ -94,12 +97,6 @@ class SERefCfg(MiniCheetahCfg):
         control_type = "P"  # "Td"
 
         # action scale: target angle = actionScale * action + defaultAngle
-        # if control_type == "T":
-        #     action_scale = 20 * 0.5
-        # elif control_type == "Td":
-        #     action_scale = 4.0 # 1e-2 # stiffness['haa'] * 0.5
-        # else:
-        #     action_scale = 1. # 0.5
         action_scale = 0.75
         # decimation: Number of control action updates @ sim DT per policy DT
         exp_avg_decay = 0.15  # set to None to disable
@@ -163,28 +160,6 @@ class SERefCfg(MiniCheetahCfg):
             swing_grf = -0.75
             stance_grf = 1.5
 
-            # * #####
-            # termination = 0. # -1.
-            # tracking_lin_vel = 0. # 1.0
-            # tracking_ang_vel = 0. # 1.0
-            # lin_vel_z = 0. # -0.
-            # ang_vel_xy = 0. # 0.0
-            # orientation = 0. # 1.0
-            # torques = -5.e-7
-            # dof_vel = 0. # 0.
-            # base_height = 0. # 1.
-            # feet_air_time = 0. # 0.  # rewards keeping feet in the air
-            # collision = 0. # -0.
-            # action_rate = 0.  # -0.001  # -0.01
-            # action_rate2 = 0.  # -0.0001  # -0.001
-            # stand_still = 0. # 0.
-            # dof_pos_limits = 0. # 0.
-            # feet_contact_forces = 0. # 0.
-            # dof_near_home = 0. # 1.
-            # reference_traj = 10.
-            # symm_legs = 0.0
-            # symm_arms = 0.0
-
     class commands(MiniCheetahCfg.commands):
         heading_command = False
         resampling_time = 4.
@@ -230,7 +205,7 @@ class SERefCfg(MiniCheetahCfg):
         substeps = 1
         gravity = [0., 0., -9.81]  # [m/s^2]
 
-class SERefCfgPPO(MiniCheetahCfgPPO):
+class MCRefCfgPPO(MiniCheetahCfgPPO):
     seed = -1
     do_wandb = True
 
@@ -261,19 +236,10 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         storage_size = 4000
         # PPO_SE params
 
-    class state_estimator_nn:
-        num_outputs = SE_target           # how many quantities we are estimating, match the extras[SE_target] dimension
-        hidden_dims = [256, 128]  # None will default to 256, 128
-
-    class state_estimator:
-        # num_outputs = 4
-        num_learning_epochs = 6
-        num_mini_batches = 6  # mini batch size = num_envs*nsteps / nminibatches
-
 
     class runner(MiniCheetahCfgPPO.runner):
         run_name = ''
-        experiment_name = 'se_ref_D'
+        experiment_name = 'MC_ref'
         max_iterations = 10000  # number of policy updates
-        algorithm_class_name = 'PPO_SE'
+        algorithm_class_name = 'PPO_plus'
         num_steps_per_env = 32 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)

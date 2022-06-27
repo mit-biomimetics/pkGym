@@ -143,7 +143,7 @@ class MiniCheetahRef(MiniCheetah):
 
         self.obs_buf = torch.cat((self.base_ang_vel*self.obs_scales.ang_vel,
                                   self.projected_gravity,
-                                  self.commands[:, :3]*self.commands_scale,
+                                  self.commands[:, :3]*self.commands_scale, # TODO: no command
                                   dof_pos,
                                   self.dof_vel*self.obs_scales.dof_vel,
                                   self.ctrl_hist,
@@ -160,8 +160,9 @@ class MiniCheetahRef(MiniCheetah):
         if self.cfg.env.num_se_targets:
             
             self.extras["SE_targets"] = torch.cat((base_z,
-                                self.base_lin_vel * self.obs_scales.lin_vel),
-                                # self.contact_forces[:,self.feet_indices,:].view(4, -1)),
+                                self.base_lin_vel * self.obs_scales.lin_vel,
+                                # self.contact_forces[:,self.feet_indices,:].view(-1, 12)),
+                                self.contact_forces[:,self.feet_indices,2].view(-1, 4)),  # grf-z only
                                 dim=-1)
 
     def _get_noise_scale_vec(self, cfg):

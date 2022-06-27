@@ -146,7 +146,13 @@ class TaskRegistry():
             log_dir = os.path.join(log_root, datetime.now().strftime('%b%d_%H-%M-%S') + '_' + train_cfg.runner.run_name)
         
         train_cfg_dict = class_to_dict(train_cfg)
-        runner = OnPolicyRunnerSE(env, train_cfg_dict, log_dir, device=args.rl_device) # TODO: test SE_runner
+
+        # return different runner when different algorithms are used
+        if train_cfg_dict['runner']['algorithm_class_name'] is 'PPO_SE':
+            runner = OnPolicyRunnerSE(env, train_cfg_dict, log_dir, device=args.rl_device)
+        else:
+            runner = OnPolicyRunner(env, train_cfg_dict, log_dir, device=args.rl_device)
+
         #save resume path before creating a new log_dir
         resume = train_cfg.runner.resume
         if resume:
