@@ -108,7 +108,7 @@ class StateEstimatorMod:
             self.SE_optimizer.zero_grad()
             SE_loss.backward()
             self.SE_optimizer.step()
-            mean_SE_loss += SE_loss.item()  # TODO: check is it the right way to record loss
+            mean_SE_loss += SE_loss.item()
 
         num_updates = self.num_learning_epochs * self.num_mini_batches
         mean_SE_loss /= num_updates

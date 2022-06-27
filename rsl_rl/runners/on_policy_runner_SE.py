@@ -189,9 +189,7 @@ class OnPolicyRunnerSE:
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
 
-                    if self.cfg["algorithm_class_name"] in ["PPO_SE"]: 
-                        obs = self.state_estimator.predict(env_obs, critic_obs)  # estimation + raw states
-                        
+                    obs = self.state_estimator.predict(env_obs, critic_obs)  # estimation + raw states
                     actions = self.alg.act(obs, critic_obs)                        # compute SE prediction and actions and values
                     # * step simulation
                     env_obs, priv_obs, rewards, dones, infos = self.env.step(actions)  # infos contains extras[SE.target]
@@ -299,6 +297,7 @@ class OnPolicyRunnerSE:
 
         self.writer.add_scalar('Loss/value_function', locs['mean_value_loss'], locs['it'])
         self.writer.add_scalar('Loss/surrogate', locs['mean_surrogate_loss'], locs['it'])
+        self.writer.add_scalar('Loss/SE_loss', locs['SE_loss'], locs['it'])
         self.writer.add_scalar('Loss/learning_rate', self.alg.learning_rate, locs['it'])
         self.writer.add_scalar('Policy/mean_noise_std', mean_std.item(), locs['it'])
         self.writer.add_scalar('Perf/total_fps', fps, locs['it'])
@@ -374,13 +373,21 @@ class OnPolicyRunnerSE:
 
         if self.cfg["algorithm_class_name"] == "PPO_SE":
             self.alg.actor_critic.eval()
-            self.state_estimator.eval()
+            self.state_estimator.state_estimator.eval()
             if device is not None:
                 self.alg.actor_critic.to(device)
-                self.state_estimator.to(device)
-            return self.alg.se_act
+                self.state_estimator.state_estimator.to(device)
+            return self.se_policy_act
         else:
             self.alg.actor_critic.eval() # switch to evaluation mode (dropout for example)
             if device is not None:
                 self.alg.actor_critic.to(device)
             return self.alg.actor_critic.act_inference
+
+    # TODO: figure out where to put this function
+    def se_policy_act(self, obs):
+        state_prediction = self.state_estimator.state_estimator.evaluate(obs)
+        actor_obs = torch.cat((state_prediction.detach(),
+                                    obs), dim=1)
+        actions = self.alg.actor_critic.act_inference(actor_obs)
+        return actions
