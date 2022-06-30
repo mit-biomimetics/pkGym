@@ -71,7 +71,7 @@ class ActorCritic(nn.Module):
 
         # Value function
         critic_layers = []
-        if not actor_hidden_dims:  # handle no hidden layers
+        if not critic_hidden_dims:  # handle no hidden layers
             critic_layers.append(nn.Linear(mlp_input_dim_c, 1))
         else:
             critic_layers.append(nn.Linear(mlp_input_dim_c, critic_hidden_dims[0]))
