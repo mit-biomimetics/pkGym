@@ -6,11 +6,11 @@ import numpy as np
 class TransitionSE(TransitionBase):
     def __init__(self):
         self.observations = None
-        self.critic_observations = None
+        # self.critic_observations = None
         self.dones = None
         self.values = None
         self.hidden_states = None
-        self.SE_prediciton = None   # TODO: not sure whether we need this
+        self.SE_prediciton = None
         self.SE_targets = None
 
     def clear(self):

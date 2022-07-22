@@ -64,19 +64,17 @@ class StateEstimatorMod:
                                         self.device)
 
 
-    def predict(self, obs, critic_obs):
+    def predict(self, obs):
         """ Predicte the estimated states
         return: cat(predicted, raw_states)
         """
         # Compute the predicted states
         SE_prediction = self.state_estimator.evaluate(obs)
-        actor_obs = torch.cat((SE_prediction, obs), dim=1)
 
         # Store transition values
         self.transition.observations = obs                 # only raw state observation
-        self.transition.critic_observations = critic_obs   # privilege raw states observation
         self.transition.SE_prediction = SE_prediction
-        return actor_obs
+        return SE_prediction
 
     def process_env_step(self, dones, infos, new_actor_obs, new_critic_obs):
 
