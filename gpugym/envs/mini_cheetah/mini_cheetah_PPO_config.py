@@ -9,7 +9,7 @@ This file is modified from ref_SE_config.py, aims to create a benchmark for PPO 
 
 class MCRefCfg(MiniCheetahCfg):
     class env(MiniCheetahCfg.env):
-        num_envs = 4 # original 8000, now for testing
+        num_envs = 8000
         num_se_targets = 4  # ! must match under algorithm.se config
         num_actions = 12
         # num_env_obs = 71                         # raw obs from sim: all the sensor info that go in

@@ -149,13 +149,17 @@ class MiniCheetahRef(MiniCheetah):
                                   self.ctrl_hist,
                                   torch.cos(self.phase),
                                   torch.sin(self.phase)),
-                                 dim=-1)
+                                  dim=-1)
+
+        self.se_obs_buf = self.obs_buf # NOTE: can be modified as needed 
 
         # ! noise_scale_vec must be of correct order! Check def below
         # * add noise if needed
         if self.add_noise:
             self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
                             * self.noise_scale_vec
+            self.se_obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
+                           * self.noise_scale_vec             # TODO: should be changed later
 
         if self.cfg.env.num_se_targets:
             
@@ -177,6 +181,33 @@ class MiniCheetahRef(MiniCheetah):
             [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
         '''
         noise_vec = torch.zeros_like(self.obs_buf[0])
+        self.add_noise = self.cfg.noise.add_noise
+        noise_scales = self.cfg.noise.noise_scales
+        ns_lvl = self.cfg.noise.noise_level
+        # noise_vec[1:4] = noise_scales.lin_vel*ns_lvl*self.obs_scales.lin_vel
+        noise_vec[0:3] = to_torch(noise_scales.ang_vel)*ns_lvl*self.obs_scales.ang_vel
+        noise_vec[3:6] = noise_scales.gravity*ns_lvl
+        noise_vec[6:9] = 0.  # commands
+        noise_vec[9:21] = noise_scales.dof_pos*ns_lvl \
+            *self.obs_scales.dof_pos
+        noise_vec[21:33] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel
+
+        if self.cfg.terrain.measure_heights:
+            noise_vec[66:187] = noise_scales.height_measurements*ns_lvl \
+                                * self.obs_scales.height_measurements
+        return noise_vec
+
+    def _get_se_noise_scale_vec(self, cfg):
+        '''
+        Sets a vector used to scale the noise added to the observations.
+            [NOTE]: Must be adapted when changing the observations structure
+            Default is set to the same as _get_noise_scale_vec
+        Args:
+            cfg (Dict): Environment config file
+        Returns:
+            [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
+        '''
+        noise_vec = torch.zeros(self.num_env_obs, device=self.device)   #TODO: num_se_obs
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         ns_lvl = self.cfg.noise.noise_level

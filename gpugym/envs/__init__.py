@@ -67,6 +67,6 @@ task_registry.register("mit_humanoid", MIT_Humanoid, MITHumanoidCfg(),
 
 task_registry.register("mini_cheetah", MiniCheetah, MiniCheetahCfg(),MiniCheetahCfgPPO())
 task_registry.register("mc_se_ref", MiniCheetahRef, SERefCfg(), SERefCfgPPO())
-task_registry.register("mc_PPO_ref", MiniCheetah, MCRefCfg, MCRefCfgPPO)    # PPO ref file, use SE config
+task_registry.register("mc_PPO_ref", MiniCheetah, MCRefCfg(), MCRefCfgPPO())    # PPO ref file, use SE config
 # task_registry.register("furuta", Furuta, FurutaCfg(), FurutaCfgPPO())
 task_registry.register("cartpole", Cartpole, CartpoleCfg(), CartpoleCfgPPO())
