@@ -191,7 +191,8 @@ class OnPolicyRunnerSE:
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
 
-                    se_prediction = self.state_estimator.predict(se_obs)          # estimation + raw states
+                    se_obs = actor_env_obs # TODO: change later
+                    se_prediction = self.state_estimator.predict(se_obs)          # TODO: change to actor_env_obs?? estimation + raw states
                     actor_obs     = torch.cat((se_prediction, actor_env_obs), dim=1)     # TODO: add PPO_SE selection
                     actions = self.alg.act(actor_obs, critic_obs)                        # compute SE prediction and actions and values
                     # * step simulation
