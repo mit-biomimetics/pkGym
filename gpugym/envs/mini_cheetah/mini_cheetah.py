@@ -27,7 +27,7 @@ class MiniCheetah(LeggedRobot):
         #                         self.cfg.env.num_se_targets,
         #                         dtype=torch.float,
         #                         device=self.device, requires_grad=False)
-        self.obs_scales.dof_pos = torch.tile(to_torch(self.obs_scales.dof_pos), (4,))
+        # self.obs_scales.dof_pos = torch.tile(to_torch(self.obs_scales.dof_pos), (4,))
 
         # * reference traj
         csv_path = self.cfg.init_state.ref_traj.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
