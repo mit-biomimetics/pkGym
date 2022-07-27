@@ -167,7 +167,6 @@ class OnPolicyRunnerSE:
             self.writer = SummaryWriter(log_dir=self.log_dir, flush_secs=10)
         if init_at_random_ep_len:
             self.env.episode_length_buf = torch.randint_like(self.env.episode_length_buf, high=int(self.env.max_episode_length))
-        se_obs = self.env.get_se_observations()
         actor_env_obs = self.env.get_observations()   # return obs_buffer, wrapped up in mc_ref.py
         priv_obs = self.env.get_privileged_observations()
         critic_obs = priv_obs if priv_obs is not None else actor_env_obs
@@ -191,21 +190,26 @@ class OnPolicyRunnerSE:
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
 
-                    se_obs = actor_env_obs # TODO: change later
-                    se_prediction = self.state_estimator.predict(se_obs)          # TODO: change to actor_env_obs?? estimation + raw states
-                    actor_obs     = torch.cat((se_prediction, actor_env_obs), dim=1)     # TODO: add PPO_SE selection
+                    if self.cfg["algorithm_class_name"] == "PPO_SE":
+                        se_prediction = self.state_estimator.predict(self.env.get_se_observations())
+                        actor_obs     = torch.cat((se_prediction, actor_env_obs), dim=1)
+                    else:
+                        actor_obs = actor_env_obs
                     actions = self.alg.act(actor_obs, critic_obs)                        # compute SE prediction and actions and values
                     # * step simulation
-                    actor_env_obs, priv_obs, rewards, dones, infos = self.env.step(actions)  # infos contains extras[SE.target]
-                    # critic_obs = priv_obs if priv_obs is not None else actor_env_obs         # TODO: clear ambiguity: critic_env_obs in fact
-                    critic_obs = torch.cat((infos['SE_targets'], actor_env_obs), dim=1)        # TODO: include critic_obs?? need to be more flexible?
+                    actor_env_obs, priv_obs, rewards, dones, infos = self.env.step(actions)
+
+                    if self.cfg["algorithm_class_name"] == "PPO_SE":
+                        critic_obs = torch.cat((infos['SE_targets'], actor_env_obs), dim=1)
+                    else:
+                        critic_obs = priv_obs if priv_obs is not None else actor_env_obs
                     actor_env_obs, critic_obs, rewards, dones = actor_env_obs.to(self.device), critic_obs.to(self.device), rewards.to(self.device), dones.to(self.device)
                     
                     # add data-point to storage
                     if self.cfg["algorithm_class_name"] in ["PPO_plus",
                                                             "PPO_SE"]:
                         self.alg.process_env_step(rewards, dones, infos)
-                        self.state_estimator.process_env_step(dones, infos, actor_env_obs, critic_obs) # TODO: check  if it is ok without next_obs
+                        self.state_estimator.process_env_step(dones, infos, actor_env_obs, critic_obs)
                     elif self.cfg["algorithm_class_name"] == "PPO":
                         self.alg.process_env_step(rewards, dones, infos)
 
@@ -406,7 +410,6 @@ class OnPolicyRunnerSE:
                 self.alg.actor_critic.to(device)
             return self.alg.actor_critic.act_inference
 
-    # TODO: figure out where to put this function
     def se_policy_act(self, obs):
         state_prediction = self.state_estimator.state_estimator.evaluate(obs)
         actor_obs = torch.cat((state_prediction.detach(),
