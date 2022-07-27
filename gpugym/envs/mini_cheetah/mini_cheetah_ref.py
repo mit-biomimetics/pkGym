@@ -31,6 +31,8 @@ class MiniCheetahRef(MiniCheetah):
         #                         dtype=torch.float,
         #                         device=self.device, requires_grad=False)
         self.obs_scales.dof_pos = torch.tile(to_torch(self.obs_scales.dof_pos), (4,))
+        self.se_obs_buf = torch.zeros(self.num_envs, self.num_obs, device=self.device, dtype=torch.float)
+        self.se_noise_scale_vec = self._get_se_noise_scale_vec(self.cfg)
 
         # * reference traj
         csv_path = self.cfg.init_state.ref_traj.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
@@ -143,7 +145,7 @@ class MiniCheetahRef(MiniCheetah):
 
         self.obs_buf = torch.cat((self.base_ang_vel*self.obs_scales.ang_vel,
                                   self.projected_gravity,
-                                  self.commands[:, :3]*self.commands_scale, # TODO: no command
+                                  self.commands[:, :3]*self.commands_scale, # TODO: try using no command
                                   dof_pos,
                                   self.dof_vel*self.obs_scales.dof_vel,
                                   self.ctrl_hist,
@@ -158,11 +160,10 @@ class MiniCheetahRef(MiniCheetah):
         if self.add_noise:
             self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
                             * self.noise_scale_vec
-            self.se_obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
-                           * self.noise_scale_vec             # TODO: should be changed later
+            self.se_obs_buf += (2*torch.rand_like(self.se_obs_buf) - 1) \
+                           * self.se_noise_scale_vec
 
         if self.cfg.env.num_se_targets:
-            
             self.extras["SE_targets"] = torch.cat((base_z,
                                 self.base_lin_vel * self.obs_scales.lin_vel,
                                 # self.contact_forces[:,self.feet_indices,:].view(-1, 12)),
@@ -207,7 +208,7 @@ class MiniCheetahRef(MiniCheetah):
         Returns:
             [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
         '''
-        noise_vec = torch.zeros(self.num_env_obs, device=self.device)   #TODO: num_se_obs
+        noise_vec = torch.zeros_like(self.se_obs_buf[0])
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         ns_lvl = self.cfg.noise.noise_level
