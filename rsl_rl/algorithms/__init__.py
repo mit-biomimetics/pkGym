@@ -29,7 +29,4 @@
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
 from .ppo import PPO
-from .ppo_plus import PPO_plus
-from .ppo_SE import PPO_SE
-from .ppo_SEmod import PPO_SEMod
 from .SE import StateEstimatorMod

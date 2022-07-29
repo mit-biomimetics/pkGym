@@ -37,11 +37,10 @@ from torch.utils.tensorboard import SummaryWriter
 import wandb
 import torch
 
-from rsl_rl.algorithms import PPO, PPO_plus, PPO_SE
+from rsl_rl.algorithms import PPO, StateEstimatorMod
 from rsl_rl.modules import ActorCritic, ActorCriticRecurrent
 from rsl_rl.modules import StateEstimator
 from rsl_rl.env import VecEnv
-
 
 class OnPolicyRunner:
 
@@ -61,23 +60,29 @@ class OnPolicyRunner:
         actor_critic_class = eval(self.cfg["policy_class_name"]) # ActorCritic
 
         if self.cfg["algorithm_class_name"] == "PPO_SE":
-            num_actor_obs = self.env.num_obs + self.se_cfg['num_outputs']
+            num_actor_obs = self.env.num_obs + self.se_nn_cfg['num_outputs']  
         else:
             num_actor_obs = self.env.num_obs
         actor_critic: ActorCritic = actor_critic_class(num_actor_obs,
                                                        num_critic_obs,
                                                        self.env.num_actions,
                                                        **self.policy_cfg).to(self.device)
-        alg_class = eval(self.cfg["algorithm_class_name"]) # PPO
+        
         # ! this is hardcoded
         # self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
         if self.cfg["algorithm_class_name"] == "PPO":
+            alg_class = eval(self.cfg["algorithm_class_name"]) # PPO
             self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
         elif self.cfg["algorithm_class_name"] == "PPO_plus":
+            alg_class = eval(self.cfg["algorithm_class_name"]) # PPO
             self.alg: PPO_plus = alg_class(actor_critic, device=self.device, **self.alg_cfg)
         elif self.cfg["algorithm_class_name"] == "PPO_SE":
-            state_estimator = StateEstimator(self.env.num_obs, **self.se_cfg)
-            self.alg: PPO_SE = alg_class(actor_critic, state_estimator, device=self.device, **self.alg_cfg)
+            self.state_estimator_nn = StateEstimator(self.env.num_obs, **self.se_nn_cfg) # network
+            self.state_estimator_nn.to(self.device)
+            self.alg_cfg.pop('storage_size')
+            self.alg = PPO(actor_critic, device=self.device, **self.alg_cfg)  # TODO: modify alg later, and change SE params according to config.py
+            self.state_estimator = StateEstimatorMod(self.state_estimator_nn ,device=self.device, **self.se_cfg)
+
         else:
             print("No idea what algorithm you want from me here.")
 
@@ -89,6 +94,7 @@ class OnPolicyRunner:
 
         # Log
         self.log_dir = log_dir
+        self.SE_path = os.path.join(self.log_dir, 'SE')   # log_dir for SE
         self.wandb = None
         self.do_wandb = False
         self.writer = None
@@ -109,18 +115,29 @@ class OnPolicyRunner:
         self.policy_cfg = train_cfg['policy']
         if 'state_estimator' in train_cfg:
             self.se_cfg = train_cfg['state_estimator']
+            self.se_nn_cfg = train_cfg['state_estimator_nn']
         else:
             self.se_cfg = None
 
 
     def init_storage(self):
         if self.cfg["algorithm_class_name"] == "PPO_SE":
+            # self.alg.init_storage(self.env.num_envs,
+            #                     self.num_steps_per_env,
+            #                     [self.env.num_obs],
+            #                     [self.env.num_privileged_obs],
+            #                     [self.env.num_actions],
+            #                     [self.se_cfg['num_outputs']])
             self.alg.init_storage(self.env.num_envs,
                                 self.num_steps_per_env,
+                                [self.env.num_obs + self.se_nn_cfg['num_outputs']],
+                                [self.env.num_privileged_obs],            # TODO: read from cfg
+                                [self.env.num_actions])
+            # SE only stores raw_obs (71) and se output (4)
+            self.state_estimator.init_storage(self.env.num_envs,
+                                self.num_steps_per_env,
                                 [self.env.num_obs],
-                                [self.env.num_privileged_obs],
-                                [self.env.num_actions],
-                                [self.se_cfg['num_outputs']])
+                                [self.se_nn_cfg['num_outputs']])
         else:
             self.alg.init_storage(self.env.num_envs,
                                 self.num_steps_per_env,
@@ -151,10 +168,10 @@ class OnPolicyRunner:
             self.writer = SummaryWriter(log_dir=self.log_dir, flush_secs=10)
         if init_at_random_ep_len:
             self.env.episode_length_buf = torch.randint_like(self.env.episode_length_buf, high=int(self.env.max_episode_length))
-        obs = self.env.get_observations()                   # return obs_buffer, wrapped up in mc_ref.py
-        priv_obs = self.env.get_privileged_observations()
-        critic_obs = priv_obs if priv_obs is not None else obs
-        obs, critic_obs = obs.to(self.device), critic_obs.to(self.device)
+        actor_env_obs = self.env.get_observations()   # return obs_buffer, wrapped up in mc_ref.py
+        privileged_obs = self.env.get_privileged_observations()
+        critic_obs = privileged_obs if privileged_obs is not None else actor_env_obs
+        actor_env_obs, critic_obs = actor_env_obs.to(self.device), critic_obs.to(self.device)
         self.alg.actor_critic.train() # switch to train mode (for dropout for example)
 
         ep_infos = []
@@ -173,19 +190,30 @@ class OnPolicyRunner:
             # Rollout
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
-                    actions = self.alg.act(obs, critic_obs)                        # compute SE prediction and actions and values
+
+                    if self.cfg["algorithm_class_name"] == "PPO_SE":
+                        se_prediction = self.state_estimator.predict(self.env.get_se_observations())
+                        actor_obs     = torch.cat((se_prediction, actor_env_obs), dim=1)
+                    else:
+                        actor_obs = actor_env_obs
+                    actions = self.alg.act(actor_obs, critic_obs)                        # compute SE prediction and actions and values
                     # * step simulation
-                    obs, priv_obs, rewards, dones, infos = self.env.step(actions)  # infos contains extras[SE.target]
-                    critic_obs = priv_obs if priv_obs is not None else obs
-                    obs, critic_obs, rewards, dones = obs.to(self.device), critic_obs.to(self.device), rewards.to(self.device), dones.to(self.device)
+                    actor_env_obs, priv_obs, rewards, dones, infos = self.env.step(actions)
+
+                    if self.cfg["algorithm_class_name"] == "PPO_SE":
+                        critic_obs = torch.cat((infos['SE_targets'], actor_env_obs), dim=1)
+                    else:
+                        critic_obs = privileged_obs if privileged_obs is not None else actor_env_obs
+                    actor_env_obs, critic_obs, rewards, dones = actor_env_obs.to(self.device), critic_obs.to(self.device), rewards.to(self.device), dones.to(self.device)
                     
                     # add data-point to storage
-                    if self.cfg["algorithm_class_name"] in ["PPO_plus",
-                                                            "PPO_SE"]:
-                        self.alg.process_env_step(rewards, dones, infos,
-                                                obs, critic_obs)
+                    if self.cfg["algorithm_class_name"] == "PPO_SE":
+                        self.alg.process_env_step(rewards, dones, infos)
+                        self.state_estimator.process_env_step(dones, infos, actor_env_obs, critic_obs)
                     elif self.cfg["algorithm_class_name"] == "PPO":
                         self.alg.process_env_step(rewards, dones, infos)
+                    elif self.cfg["algorithm_class_name"] == "PPO_plus":
+                        self.alg.process_env_step(rewards, dones, infos, actor_env_obs, critic_obs)
 
                     if self.log_dir is not None:
                         # Book keeping
@@ -207,15 +235,21 @@ class OnPolicyRunner:
 
                 # Learning step
                 start = stop
-                self.alg.compute_returns(critic_obs) # TODO: what's this?
+                self.alg.compute_returns(critic_obs)
 
             mean_value_loss, mean_surrogate_loss = self.alg.update()
+            if self.cfg["algorithm_class_name"] == "PPO_SE":
+                SE_loss = self.state_estimator.update()
             stop = time.time()
             learn_time = stop - start
             if self.log_dir is not None:
                 self.log(locals())
             if it % self.save_interval == 0:
                 self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(it)))
+                if self.cfg["algorithm_class_name"] == "PPO_SE":
+                    if not os.path.exists(self.SE_path):
+                        os.makedirs(self.SE_path)
+                    self.save_SE(os.path.join(self.SE_path, 'SE_{}.pt'.format(it)))
             ep_infos.clear()
             # * update LT storage
             if self.cfg["algorithm_class_name"] == "PPO_plus":
@@ -228,6 +262,8 @@ class OnPolicyRunner:
 
         self.current_learning_iteration += num_learning_iterations
         self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.current_learning_iteration)))
+        if self.cfg["algorithm_class_name"] == "PPO_SE":
+            self.save_SE(os.path.join(self.SE_path, 'SE_{}.pt'.format(self.current_learning_iteration)))
 
     def log(self, locs, width=80, pad=35):
         self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
@@ -276,6 +312,8 @@ class OnPolicyRunner:
 
         self.writer.add_scalar('Loss/value_function', locs['mean_value_loss'], locs['it'])
         self.writer.add_scalar('Loss/surrogate', locs['mean_surrogate_loss'], locs['it'])
+        if self.cfg["algorithm_class_name"] == "PPO_SE":
+            self.writer.add_scalar('Loss/SE_loss', locs['SE_loss'], locs['it'])
         self.writer.add_scalar('Loss/learning_rate', self.alg.learning_rate, locs['it'])
         self.writer.add_scalar('Policy/mean_noise_std', mean_std.item(), locs['it'])
         self.writer.add_scalar('Perf/total_fps', fps, locs['it'])
@@ -339,25 +377,46 @@ class OnPolicyRunner:
             'infos': infos,
             }, path)
 
+    def save_SE(self, path, infos=None):
+        torch.save({
+            'model_state_dict': self.state_estimator.state_estimator.state_dict(),
+            'optimizer_state_dict': self.state_estimator.SE_optimizer.state_dict(),
+            'iter': self.current_learning_iteration,
+            'infos': infos,
+            }, path)
+
     def load(self, path, load_optimizer=True):
         loaded_dict = torch.load(path)
         self.alg.actor_critic.load_state_dict(loaded_dict['model_state_dict'])
         if load_optimizer:
             self.alg.optimizer.load_state_dict(loaded_dict['optimizer_state_dict'])
         self.current_learning_iteration = loaded_dict['iter']
+
+        if self.cfg["algorithm_class_name"] == "PPO_SE":
+            SE_path = path.replace("/model_", "/SE/SE_")
+            SEloaded_dict = torch.load(SE_path)
+            self.state_estimator.state_estimator.load_state_dict(SEloaded_dict['model_state_dict'])
+
         return loaded_dict['infos']
 
     def get_inference_policy(self, device=None):
 
         if self.cfg["algorithm_class_name"] == "PPO_SE":
             self.alg.actor_critic.eval()
-            self.alg.state_estimator.eval()
+            self.state_estimator.state_estimator.eval()
             if device is not None:
                 self.alg.actor_critic.to(device)
-                self.alg.state_estimator.to(device)
-            return self.alg.se_act
+                self.state_estimator.state_estimator.to(device)
+            return self.se_policy_act
         else:
             self.alg.actor_critic.eval() # switch to evaluation mode (dropout for example)
             if device is not None:
                 self.alg.actor_critic.to(device)
             return self.alg.actor_critic.act_inference
+
+    def se_policy_act(self, obs):
+        state_prediction = self.state_estimator.state_estimator.evaluate(obs)
+        actor_obs = torch.cat((state_prediction.detach(),
+                                    obs), dim=1)
+        actions = self.alg.actor_critic.act_inference(actor_obs)
+        return actions
