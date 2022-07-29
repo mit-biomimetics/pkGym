@@ -65,10 +65,11 @@ def play(args):
         path = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name, 'exported', 'policies')
         export_policy_as_jit(ppo_runner.alg.actor_critic, path)
         print('Exported policy as jit script to: ', path)
-        se_path = os.path.join(path, 'se_1.jit')
-        se_model = copy.deepcopy(ppo_runner.alg.state_estimator.estimator).to('cpu')
-        traced_script_module = torch.jit.script(se_model)
-        traced_script_module.save(se_path)
+        if train_cfg.runner.algorithm_class_name == "PPO_SE":
+            se_path = os.path.join(path, 'se_1.jit')
+            se_model = copy.deepcopy(ppo_runner.alg.state_estimator.estimator).to('cpu')
+            traced_script_module = torch.jit.script(se_model)
+            traced_script_module.save(se_path)
 
     logger = Logger(env.dt)
     robot_index = 0 # which robot is used for logging
