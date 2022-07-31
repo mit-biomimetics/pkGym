@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<robot
-  name="humanoid">
-  <link
-    name="base">
+<!-- URDF for MIT Humanoid
+Version Specifics: "Reduced" and "Heel-Toe"
+Reduced: collision geometries only on feet, hands, and torso
+Heel-Toe: separate heel and toe contacts -->
+
+<robot name="humanoid">
+  <link name="base">
     <inertial>
       <origin
         xyz="0.009598 0.000935 0.151714"
@@ -32,15 +35,16 @@
           rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
       </material>
     </visual>
-     <collision>
-            <origin rpy="0 0 0" xyz="0.023 0. 0.08"/>
-            <geometry>
-                <box size="0.15 0.3 0.35"/>
-            </geometry>
+    <collision>
+      <origin rpy="0 0 0" xyz="0.023 0. 0.08"/>
+      <geometry>
+        <box size="0.15 0.3 0.35"/>
+      </geometry>
     </collision>
   </link>
-  <link
-    name="left_hip_yaw">
+
+  <!-- LEFT LEG -->
+  <link name="left_hip_yaw">
     <inertial>
       <origin
         xyz="-0.065362  -0.000128  -0.063947"
@@ -70,23 +74,17 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="left_hip_yaw"
-    type="revolute">
+  <joint name="left_hip_yaw" type="revolute">
     <origin
       xyz="0 0.082 0"
       rpy="0 -0.174533 0" />
-    <parent
-      link="base" />
-    <child
-      link="left_hip_yaw" />
-    <axis
-      xyz="0 0 -1" />
-    <!-- <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/> -->
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+    <parent link="base" />
+    <child link="left_hip_yaw" />
+    <axis xyz="0 0 -1" />
+    <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
-  <link
-    name="left_hip_abad">
+  <link name="left_hip_abad">
     <inertial>
       <origin
         xyz=" 0.067579  -0.013035 0.000132"
@@ -116,23 +114,17 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="left_hip_abad"
-    type="revolute">
+  <joint name="left_hip_abad" type="revolute">
     <origin
       xyz="-0.06435 0 -.07499"
       rpy="0.0 0.436332 0.0"/>
-    <parent
-      link="left_hip_yaw" />
-    <child
-      link="left_hip_abad" />
-    <axis
-      xyz="1 0 0" />
-          <!-- <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/> -->
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+    <parent link="left_hip_yaw" />
+    <child link="left_hip_abad" />
+    <axis xyz="1 0 0" />
+    <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
- <link 
-    name="left_upper_leg">
+  <link  name="left_upper_leg">
     <inertial>
       <origin
         xyz=" -0.001100  0.026032 -0.078842"
@@ -162,24 +154,17 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="left_hip_pitch"
-    type="revolute">
+  <joint name="left_hip_pitch" type="revolute">
     <origin
       xyz="0.08837 -0.00284 -0.01385"
       rpy="0 -0.261799 0" />
-    <parent
-      link="left_hip_abad" />
-    <child
-      link="left_upper_leg" />
-    <axis
-      xyz="0 1 0" />
-          <limit effort="72" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/>
+    <parent link="left_hip_abad" />
+    <child link="left_upper_leg" />
+    <axis xyz="0 1 0" />
+    <limit effort="72" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/> -->
   </joint>
-  
-  <link
-    name="left_lower_leg">
+  <link name="left_lower_leg">
     <inertial>
       <origin
         xyz="0.005232 0.000457  -0.131581"
@@ -209,24 +194,17 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="left_knee"
-    type="revolute">
+  <joint name="left_knee" type="revolute">
     <origin
       xyz="-0.01306 0.0 -0.24916"
       rpy="0 0 0" />
-    <parent
-      link="left_upper_leg" />
-    <child
-      link="left_lower_leg" />
-    <axis
-      xyz="0 1 0" />
-          <limit effort="144" lower="0." upper="3." velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0792"/>
+    <parent link="left_upper_leg" />
+    <child link="left_lower_leg" />
+    <axis xyz="0 1 0" />
+    <limit effort="144" lower="0." upper="3." velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0792"/> -->
   </joint>
-  
-   <link
-    name="left_foot">
+  <link name="left_foot">
     <inertial>
       <origin
         xyz="0.022696 0.0 -0.013879 "
@@ -237,7 +215,7 @@
         ixx="0.000092"
         ixy="0.0"
         ixz="-0.000054 "
-        iyy="0.000806 "
+        iyy="0.0806 "
         iyz="0.0 "
         izz="0.000769" />
     </inertial>
@@ -255,31 +233,30 @@
           rgba="0.63671875 0.12109375 0.752941176470588 1" />
       </material>
     </visual>
+    <!-- <collision>
+        <origin rpy="1.57079 0 0" xyz="0.0175 0.0 -0.03"/>
+        <geometry>
+            <box size="0.215 0.02 0.05"/>
+        </geometry>
+    </collision> -->
   </link>
-  <joint
-    name="left_ankle"
-    type="revolute">
+  <joint name="left_ankle" type="revolute">
     <origin
       xyz="0.0 0.0 -0.2785"
       rpy="0 0 0" />
-    <parent
-      link="left_lower_leg" />
-    <child
-      link="left_foot" />
-    <axis
-      xyz="0 1 0" />
-          <limit effort="68" lower="-1.5" upper="1.5" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.04752"/>
+    <parent link="left_lower_leg" />
+    <child link="left_foot" />
+    <axis xyz="0 1 0" />
+    <limit effort="68" lower="-1.5" upper="1.5" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.04752"/> -->
   </joint>
-
-  <link
-    name="left_toe">
+  <link name="left_toe">
     <inertial>
       <origin
-        xyz="0.0 -0.0 0.0"
+        xyz="0 0 0"
         rpy="0 0 0" />
       <mass
-        value="0.0" />
+        value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -289,20 +266,19 @@
         izz="0.0" />
     </inertial>
       <collision>
-            <origin rpy="0 0 0" xyz="0.085 0.0 -0.02"/>
-            <geometry>
-                <box size="0.08 0.02 0.05"/>
-            </geometry>
+        <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+        <geometry>
+          <box size="0.08 0.02 0.05"/>
+        </geometry>
     </collision>
   </link>
-  <link
-      name="left_heel">
+  <link name="left_heel">
     <inertial>
       <origin
-        xyz="0.0 -0.0 0.0"
+        xyz="0 0 0"
         rpy="0 0 0" />
       <mass
-        value="0.0" />
+        value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -312,28 +288,24 @@
         izz="0.0" />
     </inertial>
       <collision>
-            <origin rpy="0 0 0" xyz="-0.05 0.0 -0.02"/>
-            <geometry>
-                <box size="0.06 0.02 0.05"/>
-            </geometry>
+        <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+        <geometry>
+          <box size="0.06 0.02 0.05"/>
+        </geometry>
     </collision>
   </link>
-  <joint
-    name="left_toe_link"
-    type="fixed">
+  <joint name="left_toe_link" type="fixed">
     <origin
-      xyz="0 -0.0 0"
+      xyz="0.085 0.0 -0.02"
       rpy="0 0 0" />
     <parent
       link="left_foot" />
     <child
       link="left_toe" />
   </joint>
-    <joint
-    name="left_heel_link"
-    type="fixed">
+  <joint name="left_heel_link" type="fixed">
     <origin
-      xyz="0 -0.0 0"
+      xyz="-0.05 0.0 -0.02"
       rpy="0 0 0" />
     <parent
       link="left_foot" />
@@ -341,8 +313,8 @@
       link="left_heel" />
   </joint>
 
- <link
-    name="right_hip_yaw">
+  <!-- RIGHT LEG -->
+  <link name="right_hip_yaw">
     <inertial>
       <origin
         xyz="-0.065362  0.000128  -0.063947"
@@ -372,9 +344,7 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="right_hip_yaw"
-    type="revolute">
+  <joint name="right_hip_yaw" type="revolute">
     <origin
       xyz="0 -0.082 0"
       rpy="0 -0.174533 0" />
@@ -384,12 +354,10 @@
       link="right_hip_yaw" />
     <axis
       xyz="0 0 1" />
-    <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+    <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
-  
-  <link
-    name="right_hip_abad">
+  <link name="right_hip_abad">
     <inertial>
       <origin
         xyz=" 0.067579  0.013035 0.000132"
@@ -419,9 +387,7 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="right_hip_abad"
-    type="revolute">
+  <joint name="right_hip_abad" type="revolute">
     <origin
       xyz="-0.06435 0 -.07499"
       rpy="0.0 0.436332 0.0"/>
@@ -431,12 +397,10 @@
       link="right_hip_abad" />
     <axis
       xyz="-1 0 0" />
-          <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+          <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
-  
- <link
-    name="right_upper_leg">
+  <link name="right_upper_leg">
     <inertial>
       <origin
         xyz=" -0.001100  -0.026032 -0.078842"
@@ -466,9 +430,7 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="right_hip_pitch"
-    type="revolute">
+  <joint name="right_hip_pitch" type="revolute">
     <origin
       xyz="0.08837 0.00284 -0.01385"
       rpy="0 -0.261799 0" />
@@ -478,12 +440,10 @@
       link="right_upper_leg" />
     <axis
       xyz="0 1 0" />
-          <limit effort="72" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/>
+        <limit effort="72" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/> -->
   </joint>
-  
-  <link
-    name="right_lower_leg">
+  <link name="right_lower_leg">
     <inertial>
       <origin
         xyz="0.005232 -0.000457  -0.131581"
@@ -513,9 +473,7 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="right_knee"
-    type="revolute">
+  <joint name="right_knee" type="revolute">
     <origin
       xyz="-0.01306 0.0 -0.24916"
       rpy="0 0 0" />
@@ -526,11 +484,9 @@
     <axis
       xyz="0 1 0" />
           <limit effort="144" lower="0." upper="3.0" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0792"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0792"/> -->
   </joint>
-  
-   <link
-    name="right_foot">
+  <link name="right_foot">
     <inertial>
       <origin
         xyz="0.022696 0.0 -0.013879 "
@@ -559,10 +515,14 @@
           rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
+    <!-- <collision>
+        <origin rpy="1.57079 0 0" xyz="0.02 0.0 -0.03"/>
+        <geometry>
+            <box size="0.17 0.02 0.05"/>
+        </geometry>
+    </collision> -->
   </link>
-  <joint
-    name="right_ankle"
-    type="revolute">
+  <joint name="right_ankle" type="revolute">
     <origin
       xyz="0.0 0.0 -0.2785"
       rpy="0 0 0" />
@@ -573,17 +533,15 @@
     <axis
       xyz="0 1 0" />
           <limit effort="68" lower="-1.5" upper="1.5" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.04752"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.04752"/> -->
   </joint>
-
-  <link
-    name="right_toe">
+  <link name="right_toe">
     <inertial>
       <origin
-        xyz="0.0 -0.0 0.0"
+        xyz="0.0 0.0 0.0"
         rpy="0 0 0" />
       <mass
-        value="0.0" />
+        value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -593,20 +551,19 @@
         izz="0.0" />
     </inertial>
       <collision>
-            <origin rpy="0 0 0" xyz="0.085 0.0 -0.02"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
                 <box size="0.08 0.02 0.05"/>
             </geometry>
     </collision>
   </link>
-  <link
-      name="right_heel">
+  <link name="right_heel">
     <inertial>
       <origin
         xyz="0.0 -0.0 0.0"
         rpy="0 0 0" />
       <mass
-        value="0.0" />
+        value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -616,39 +573,33 @@
         izz="0.0" />
     </inertial>
       <collision>
-            <origin rpy="0 0 0" xyz="-0.05 0.0 -0.02"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
                 <box size="0.06 0.02 0.05"/>
             </geometry>
     </collision>
   </link>
-  <joint
-    name="right_toe_link"
-    type="fixed">
+  <joint name="right_toe_link" type="fixed">
     <origin
-      xyz="0 -0.0 0"
+      xyz="0.085 0.0 -0.02"
       rpy="0 0 0" />
     <parent
       link="right_foot" />
     <child
       link="right_toe" />
   </joint>
-    <joint
-    name="right_heel_link"
-    type="fixed">
+  <joint name="right_heel_link" type="fixed">
     <origin
-      xyz="0 -0.0 0"
+      xyz="-0.05 0.0 -0.02"
       rpy="0 0 0" />
     <parent
       link="right_foot" />
     <child
       link="right_heel" />
   </joint>
-  
 
-  <!-- Left Arm -->
-  <link
-    name="left_shoulder">
+  <!-- LEFT ARM -->
+  <link name="left_shoulder">
     <inertial>
       <origin
         xyz="0.009518 0.053027 0.000060"
@@ -678,9 +629,7 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="left_shoulder_pitch"
-    type="revolute">
+  <joint name="left_shoulder_pitch" type="revolute">
     <origin
       xyz="0.01911 0.17608 0.30392"
       rpy="0 0 0" />
@@ -690,12 +639,10 @@
       link="left_shoulder" />
     <axis
       xyz="0 1 0" />
-          <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+          <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
-  
-  <link
-    name="left_shoulder_2">
+  <link name="left_shoulder_2">
     <inertial>
       <origin
         xyz="0.000117 0.000122 -0.082758"
@@ -725,9 +672,7 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="left_shoulder_abad"
-    type="revolute">
+  <joint name="left_shoulder_abad" type="revolute">
     <origin
       xyz="0 .05760 0"
       rpy="0.0 0 0" />
@@ -737,13 +682,10 @@
       link="left_shoulder_2" />
     <axis
       xyz="1 0 0" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+        <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
-  <!--  -->
-  
-  <link
-    name="left_upper_arm">
+  <link name="left_upper_arm">
     <inertial>
       <origin
         xyz="-0.000073 -0.016471  -0.063210"
@@ -773,9 +715,7 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="left_shoulder_yaw"
-    type="revolute">
+  <joint name="left_shoulder_yaw" type="revolute">
     <origin
       xyz="0 0 -.10250"
       rpy="0.0 0 0" />
@@ -785,13 +725,10 @@
       link="left_upper_arm" />
     <axis
       xyz="0 0 -1" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+        <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
-
-  
-  <link
-    name="left_lower_arm">
+  <link name="left_lower_arm">
     <inertial>
       <origin
         xyz="-0.007103 -0.000073 -0.099203"
@@ -821,9 +758,7 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="left_elbow"
-    type="revolute">
+  <joint name="left_elbow" type="revolute">
     <origin
       xyz="0 0 -.15750"
       rpy="0 0 0.0" />
@@ -833,17 +768,16 @@
       link="left_lower_arm" />
     <axis
       xyz="0 1 0" />
-        <limit effort="55" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0304"/>
+        <limit effort="55" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0304"/> -->
   </joint>
-  <link
-    name="left_hand">
+  <link name="left_hand">
     <inertial>
       <origin
         xyz="0.0 -0.0 -0.27"
         rpy="0 0 0" />
       <mass
-        value="0.0" />
+        value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -852,16 +786,14 @@
         iyz="0.0"
         izz="0.0" />
     </inertial>
-      <collision>
-        <origin rpy="1.57079 0 0" xyz="0.0 0.0 0."/>
-        <geometry>
-            <cylinder radius="0.025" length="0.015"/>
-        </geometry>
+    <collision>
+      <origin rpy="1.57079 0 0" xyz="0.0 0.0 0."/>
+      <geometry>
+          <cylinder radius="0.025" length="0.015"/>
+      </geometry>
     </collision>
   </link>
-  <joint
-    name="left_hand_link"
-    type="fixed">
+  <joint name="left_hand_link" type="fixed">
     <origin
       xyz="0 0 -0.27"
       rpy="0 0 0" />
@@ -871,9 +803,8 @@
       link="left_hand" />
   </joint>
 
-  <!-- Right Arm -->
-  <link
-    name="right_shoulder">
+  <!-- RIGHT ARM -->
+  <link name="right_shoulder">
     <inertial>
       <origin
         xyz="0.009518 -0.053027 0.000060"
@@ -903,9 +834,7 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="right_shoulder_pitch"
-    type="revolute">
+  <joint name="right_shoulder_pitch" type="revolute">
     <origin
       xyz="0.01911 -0.17608 0.30392"
       rpy="0 0 0" />
@@ -915,12 +844,10 @@
       link="right_shoulder" />
     <axis
       xyz="0 1 0" />
-          <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+          <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
-  
-  <link
-    name="right_shoulder_2">
+  <link name="right_shoulder_2">
     <inertial>
       <origin
         xyz="0.000117 -0.000122 -0.082758"
@@ -950,9 +877,7 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="right_shoulder_abad"
-    type="revolute">
+  <joint name="right_shoulder_abad" type="revolute">
     <origin
       xyz="0 -.05760 0"
       rpy="0.0 0 0" />
@@ -962,13 +887,10 @@
       link="right_shoulder_2" />
     <axis
       xyz="-1 0 0" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+        <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
-  <!--  -->
-  
-  <link
-    name="right_upper_arm">
+  <link name="right_upper_arm">
     <inertial>
       <origin
         xyz="-0.000073 0.016471  -0.063210"
@@ -998,9 +920,7 @@
       </material>
     </visual>
   </link>
-  <joint
-    name="right_shoulder_yaw"
-    type="revolute">
+  <joint name="right_shoulder_yaw" type="revolute">
     <origin
       xyz="0 0 -.10250"
       rpy="0.0 0 0" />
@@ -1010,13 +930,10 @@
       link="right_upper_arm" />
     <axis
       xyz="0 0 1" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+        <limit effort="34" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
   </joint>
-
-  
-  <link
-    name="right_lower_arm">
+  <link name="right_lower_arm">
     <inertial>
       <origin
         xyz="-0.007103 -0.000073 -0.099203"
@@ -1052,9 +969,7 @@
             </geometry>
         </collision> -->
   </link>
-  <joint
-    name="right_elbow"
-    type="revolute">
+  <joint name="right_elbow" type="revolute">
     <origin
       xyz="0 0 -.15750"
       rpy="0 0 0.0" />
@@ -1064,17 +979,16 @@
       link="right_lower_arm" />
     <axis
       xyz="0 1 0" />
-        <limit effort="55" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0304"/>
+        <limit effort="55" lower="-3" upper="3" velocity="50"/>
+    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0304"/> -->
   </joint>
-    <link
-    name="right_hand">
+  <link name="right_hand">
     <inertial>
       <origin
         xyz="0.0 -0.0 -0.27"
         rpy="0 0 0" />
       <mass
-        value="0.0" />
+        value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -1090,9 +1004,7 @@
         </geometry>
     </collision>
   </link>
-  <joint
-    name="right_hand_link"
-    type="fixed">
+  <joint name="right_hand_link" type="fixed">
     <origin
       xyz="0 0 -0.27"
       rpy="0 0 0" />
@@ -1101,10 +1013,5 @@
     <child
       link="right_hand" />
   </joint>
-<!--  -->
-<!--  -->
-
-
-
 
 </robot>

@@ -11,26 +11,22 @@ from gpugym.utils.math import *
 from gpugym.envs import LeggedRobot
 import pandas as pd
 
-END_EFFECTOR = ["left_hand", "right_hand", "left_foot", "right_foot"]
+END_EFFECTOR = ["left_hand", "right_hand", "left_toe", "left_heel", "right_toe", "right_heel"]
 
 import pandas as pd
 
 class MIT_Humanoid(LeggedRobot):
-
     def _custom_init(self, cfg):
         # get end_effector IDs for forward kinematics
         body_ids = []
         for body_name in END_EFFECTOR:
             body_id = self.gym.find_actor_rigid_body_handle(self.envs[0], self.actor_handles[0], body_name)
             body_ids.append(body_id)
-
         self.end_eff_ids = to_torch(body_ids, device=self.device, dtype=torch.long)
-
 
     def compute_observations(self):
         """ Computes observations
         """
-
         # base_z
         # base lin vel
         # base ang vel
@@ -72,10 +68,8 @@ class MIT_Humanoid(LeggedRobot):
         '''
         Sets a vector used to scale the noise added to the observations.
             [NOTE]: Must be adapted when changing the observations structure
-
         Args:
             cfg (Dict): Environment config file
-
         Returns:
             [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
         '''
@@ -100,14 +94,12 @@ class MIT_Humanoid(LeggedRobot):
         if self.cfg.init_state.penetration_check:
             temp_root_state = torch.clone(self.root_states)
             temp_dof_state = torch.clone(self.dof_state)
-
             self.gym.simulate(self.sim) #Need to one step the simulation to update dof !!THIS MAY BE A TERRIBLE IDEA!!
 
             #retrieve body states of every link in every environment. 
             self.gym.refresh_rigid_body_state_tensor(self.sim)
             body_states = self.gym.acquire_rigid_body_state_tensor(self.sim)
             rb_states = gymtorch.wrap_tensor(body_states)
-
             num_links = int(len(rb_states[:,0])/self.num_envs)
 
             #iterate through the env ids that are being reset (and only the ones being reset)
@@ -120,10 +112,8 @@ class MIT_Humanoid(LeggedRobot):
                         #TODO: replace with exact measurement of toe/heel height
                         if (0.1 - link_height > max_penetration):
                             max_penetration = -link_height + 0.1
-
                 #find max penetration and shift root state by that amount. 
                 temp_root_state[i, 2] += max_penetration
-
             env_ids_int32 = env_ids.to(dtype=torch.int32)
             self.gym.set_actor_root_state_tensor_indexed(self.sim,
                                                     gymtorch.unwrap_tensor(temp_root_state),
@@ -157,6 +147,7 @@ class MIT_Humanoid(LeggedRobot):
         # Penalize z axis base linear velocity w. squared exp
         return self.sqrdexp(self.base_lin_vel[:, 2]  \
                             * self.cfg.normalization.obs_scales.lin_vel)
+
 
     def _reward_tracking_ang_vel(self):
         # Tracking of angular velocity commands (yaw)
@@ -192,12 +183,10 @@ class MIT_Humanoid(LeggedRobot):
         return torch.exp(-error/self.cfg.rewards.tracking_sigma)
 
 
-
     def _reward_dof_vel(self):
         # Penalize dof velocities
         return torch.sum(self.sqrdexp(self.dof_vel  \
                             / self.cfg.normalization.obs_scales.dof_vel), dim=1)
-
 
 
     def _reward_symm_legs(self):

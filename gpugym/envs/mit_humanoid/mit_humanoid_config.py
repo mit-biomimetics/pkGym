@@ -28,9 +28,7 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from gpugym.envs.base.legged_robot_config import LeggedRobotCfg
-from gpugym.envs.base.legged_robot_config import LeggedRobotCfgPPO
-
+from gpugym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
@@ -132,27 +130,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
                           [-0.1, 0.1],  # pitch
                           [-0.1, 0.1]]  # yaw
 
-        # dof_pos_high = [0., 0., -0.25,  0.71, -0.39,
-        #                 0., 0., 0., 0.,
-        #                 0., 0., -0.25,  0.71, -0.39,
-        #                 0., 0., 0., 0.]  # DOF dimensions
-        # dof_pos_low = [0., 0., -0.29,  0.67, -0.43,
-        #                 0., 0., 0., 0.,
-        #                 0., 0., -0.29,  0.67, -0.43,
-        #                 0., 0., 0., 0.]  # DOF dimensions
-        # dof_vel_high = [0.1, 0.1, 0.1, 0.1, 0.1,
-        #                 0.1, 0.1, 0.1, 0.1,
-        #                 0.1, 0.1, 0.1, 0.1, 0.1,
-        #                 0.1, 0.1, 0.1, 0.1]  # DOF dimensions
-        # dof_vel_low = [-0.1, -0.1, -0.1, -0.1, -0.1,
-        #                 -0.1, -0.1, -0.1, -0.1,
-        #                 -0.1, -0.1, -0.1, -0.1, -0.1,
-        #                 -0.1, -0.1, -0.1, -0.1]  # DOF dimensions
-        # com_pos_high = [0., 0., 0.72, 0., 0., 0.]  # COM dimensions, in euler angles because randomizing in quat is confusing
-        # com_pos_low = [0., 0., 0.7, 0., 0., 0.]  # x, y ,z, roll, pitch, yaw
-        # com_vel_high = [0.25, 0.1, 0.2, 0.1, 0.1, 0.1]
-        # com_vel_low = [-0.1, -0.1, -0.2, -0.1, -0.1, -0.1]
-
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
         stiffness = {'hip_yaw': 60.,
@@ -196,9 +173,10 @@ class MITHumanoidCfg(LeggedRobotCfg):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_sf.urdf'
         foot_name = 'foot'
         penalize_contacts_on = ['base', 'arm']
-        terminate_after_contacts_on = ['base' ]
+        terminate_after_contacts_on = ['base']
         flip_visual_attachments = False
         self_collisions = 1 # 1 to disagble, 0 to enable...bitwise filter
+        collapse_fixed_joints = False
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
         disable_gravity = False
