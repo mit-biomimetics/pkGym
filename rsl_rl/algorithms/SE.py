@@ -71,6 +71,11 @@ class StateEstimatorMod:
         # Compute the predicted states
         SE_prediction = self.state_estimator.evaluate(obs)
 
+        # TODO: Build heirachical SE, separating estimating vel height and contact force
+        # vel_z_prediction = self.state_estimator_vel.evaluate(obs)
+        # contact_force_prediction = self.state_estimator_force.evaluate(torch.cat(vel_z_prediction,obs))
+        # SE_prediction = torch.cat(vel_z_prediction, contact_force_prediction)
+
         # Store transition values
         self.transition.observations = obs                 # only raw state observation
         self.transition.SE_prediction = SE_prediction
@@ -82,7 +87,6 @@ class StateEstimatorMod:
         self.transition.dones = dones
         self.transition.SE_targets = infos['SE_targets']
 
-        # TODO: implement function, check delete new_actor_obs and new_critic_obs is ok
         # Store transitions to rollout and longterm
         self.rollout.add_transitions(self.transition)
         self.LTstorage.add_transitions(self.transition)

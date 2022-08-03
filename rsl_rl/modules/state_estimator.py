@@ -22,6 +22,8 @@ class StateEstimator(nn.Module):
                 layers.append(nn.Linear(hidden_dims[l], num_outputs))
             else:
                 layers.append(nn.Linear(hidden_dims[l], hidden_dims[l + 1]))
+                if l == 0: # add a dropout on the first layer
+                    layers.append(nn.Dropout(p=0.5))
                 layers.append(activation)
         self.estimator = nn.Sequential(*layers)
 
