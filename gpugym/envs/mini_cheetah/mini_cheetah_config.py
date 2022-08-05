@@ -236,5 +236,6 @@ class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
         run_name = ''
         experiment_name = 'mini_cheetah'
         max_iterations = 1000  # number of policy updates
+        SE_learner = 'none'
         algorithm_class_name = 'PPO'
         num_steps_per_env = 24 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)

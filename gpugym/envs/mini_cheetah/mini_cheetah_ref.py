@@ -96,6 +96,9 @@ class MiniCheetahRef(MiniCheetah):
             raise NameError(f"Unknown controller type: {control_type}")
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
 
+    def get_se_observations(self):
+        return self.se_obs_buf
+
 
     def compute_observations(self):
         """ Computes observations

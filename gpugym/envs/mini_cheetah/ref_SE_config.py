@@ -259,7 +259,7 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         desired_kl = 0.01
         max_grad_norm = 1.
         # PPO_plus params
-        storage_size = 4000
+        # storage_size = 4000
         # PPO_SE params
 
     class state_estimator_nn:
@@ -276,5 +276,6 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         run_name = ''
         experiment_name = 'se_ref_D'
         max_iterations = 10000  # number of policy updates
-        algorithm_class_name = 'PPO_SE'
+        SE_learner = 'modular_SE'
+        algorithm_class_name = 'PPO'
         num_steps_per_env = 32 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)

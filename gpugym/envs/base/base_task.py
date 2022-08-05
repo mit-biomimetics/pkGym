@@ -105,9 +105,6 @@ class BaseTask():
 
     def get_observations(self):
         return self.obs_buf
-
-    def get_se_observations(self):
-        return self.se_obs_buf
     
     def get_privileged_observations(self):
         return self.privileged_obs_buf
