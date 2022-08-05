@@ -10,19 +10,6 @@ from rsl_rl.storage import RolloutStorage
 # recurrent only
 
 class LongTermStorage:
-    # class Transition():
-    #     def __init__(self):
-    #         self.next_obs = None
-    #         self.next_critic_obs = None
-
-        # def clear_rollout(self):
-        #     self.
-
-        # def clear(self):
-        #     self.__init__()
-
-    # def __init__(self, num_envs, num_transitions_per_env, actor_obs_shape, critic_obs_shape, actions_shape, device='cpu'):
-
 
     # * initialization with State Estimator
     def __init__(self, num_envs, num_transitions_per_env, LT_storage_size,
@@ -149,7 +136,7 @@ class LongTermStorage:
         # For off-policy, this will need to be redone each time.
         # V(s) - (r + gamma * V(s'))
         # and Q(s, a) = r + gamma * V(s')
-        return None
+        raise NotImplementedError
 
     # def mini_batch_generator(self, num_mini_batches, num_epochs=8):
     #     # ! this will be different

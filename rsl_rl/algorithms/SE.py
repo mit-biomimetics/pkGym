@@ -5,10 +5,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from rsl_rl.modules import StateEstimator
+from rsl_rl.modules import StateEstimatorNN
 from rsl_rl.storage import LTStorageSE, RolloutSE
 
-class StateEstimatorMod:
+class StateEstimator:
     """ This class provides a learned state estimator.
     predict() function provides state estimation for RL given the observation
     update() function optimize for the nn params
@@ -21,7 +21,7 @@ class StateEstimatorMod:
     TODO: maybe use LSTM later?
 
     """
-    state_estimator: StateEstimator
+    state_estimator: StateEstimatorNN
     def __init__(self,
                  state_estimator,    # network
                  learning_rate=1e-3,
@@ -53,7 +53,6 @@ class StateEstimatorMod:
 
     def init_storage(self, num_envs, num_transitions_per_env, raw_obs_shape, se_shape):
 
-        # TODO: implement this function, do we need action?? is it torque??
         self.transition = TransitionSE()
         self.rollout    = RolloutSE(num_envs, num_transitions_per_env, raw_obs_shape,
                         se_shape, device=self.device)

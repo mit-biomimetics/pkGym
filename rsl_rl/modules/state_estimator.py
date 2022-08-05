@@ -3,13 +3,13 @@ import torch.nn as nn
 from torch.distributions import Normal
 from torch.nn.modules import rnn
 
-class StateEstimator(nn.Module):
+class StateEstimatorNN(nn.Module):
     is_recurrent = False
     def __init__(self,  num_inputs, num_outputs=4, hidden_dims=[256, 128],
                  activation='elu', **kwargs):
         if kwargs:
             print("StateEstimator.__init__ got unexpected arguments, which will be ignored: " + str([key for key in kwargs.keys()]))
-        super(StateEstimator, self).__init__()
+        super(StateEstimatorNN, self).__init__()
 
         activation = get_activation(activation)
 

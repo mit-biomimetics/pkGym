@@ -51,6 +51,10 @@ class RolloutSE(RolloutStorageBase):
         # if self.privileged_observations is not None: self.privileged_observations[self.step].copy_(transition.critic_observations)
         self.SE_targets[self.step].copy_(transition.SE_targets)
         self.dones[self.step].copy_(transition.dones.view(-1, 1))
+        # self.observations[self.step] = transition.observations
+        # # if self.privileged_observations is not None: self.privileged_observations[self.step].copy_(transition.critic_observations)
+        # self.SE_targets[self.step] = transition.SE_targets
+        # self.dones[self.step] = transition.dones.view(-1, 1)
         self.step += 1
 
     def clear(self):
