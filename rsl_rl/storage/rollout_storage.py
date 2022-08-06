@@ -46,18 +46,17 @@ class RolloutStorage:
             self.action_mean = None
             self.action_sigma = None
             self.hidden_states = None
-            self.SE_targets = None
         
         def clear(self):
             self.__init__()
 
-    def __init__(self, num_envs, num_transitions_per_env, obs_shape, privileged_obs_shape, actions_shape, se_shape, device='cpu'):
+    def __init__(self, num_envs, num_transitions_per_env, obs_shape, privileged_obs_shape, actions_shape, device='cpu'):
+
         self.device = device
 
         self.obs_shape = obs_shape
         self.privileged_obs_shape = privileged_obs_shape
         self.actions_shape = actions_shape
-        self.se_shape = se_shape
 
         # Core
         self.observations = torch.zeros(num_transitions_per_env, num_envs, *obs_shape, device=self.device)
@@ -68,11 +67,7 @@ class RolloutStorage:
         self.rewards = torch.zeros(num_transitions_per_env, num_envs, 1, device=self.device)
         self.actions = torch.zeros(num_transitions_per_env, num_envs, *actions_shape, device=self.device)
         self.dones = torch.zeros(num_transitions_per_env, num_envs, 1, device=self.device).byte()
-        if se_shape is not None:
-            self.SE_targets = torch.zeros(num_transitions_per_env, num_envs,
-                                          *se_shape, device=self.device)
-        else:
-            self.SE_targets = None
+
         # For PPO
         self.actions_log_prob = torch.zeros(num_transitions_per_env, num_envs, 1, device=self.device)
         self.values = torch.zeros(num_transitions_per_env, num_envs, 1, device=self.device)
@@ -106,8 +101,6 @@ class RolloutStorage:
         self.mu[self.step].copy_(transition.action_mean)
         self.sigma[self.step].copy_(transition.action_sigma)
         self._save_hidden_states(transition.hidden_states)
-        if self.SE_targets is not None:
-            self.SE_targets[self.step].copy_(transition.SE_targets)
         self.step += 1
 
     def _save_hidden_states(self, hidden_states):
@@ -172,46 +165,25 @@ class RolloutStorage:
         advantages = self.advantages.flatten(0, 1)
         old_mu = self.mu.flatten(0, 1)
         old_sigma = self.sigma.flatten(0, 1)
-        if self.SE_targets is not None:
-            SE_targets = self.SE_targets.flatten(0, 1)
-            for epoch in range(num_epochs):
-                for i in range(num_mini_batches):
-                    start = i*mini_batch_size
-                    end = (i+1)*mini_batch_size
-                    batch_idx = indices[start:end]
 
-                    obs_batch = observations[batch_idx]
-                    critic_observations_batch = critic_observations[batch_idx]
-                    actions_batch = actions[batch_idx]
-                    target_values_batch = values[batch_idx]
-                    returns_batch = returns[batch_idx]
-                    old_actions_log_prob_batch = old_actions_log_prob[batch_idx]
-                    advantages_batch = advantages[batch_idx]
-                    old_mu_batch = old_mu[batch_idx]
-                    old_sigma_batch = old_sigma[batch_idx]
-                    SE_target_batch = SE_targets[batch_idx]
-                    yield obs_batch, critic_observations_batch, actions_batch, target_values_batch, advantages_batch, returns_batch, \
-                        old_actions_log_prob_batch, old_mu_batch, old_sigma_batch, SE_target_batch, (None, None), None
+        for epoch in range(num_epochs):
+            for i in range(num_mini_batches):
 
-        else:  # without SE targets
-            for epoch in range(num_epochs):
-                for i in range(num_mini_batches):
+                start = i*mini_batch_size
+                end = (i+1)*mini_batch_size
+                batch_idx = indices[start:end]
 
-                    start = i*mini_batch_size
-                    end = (i+1)*mini_batch_size
-                    batch_idx = indices[start:end]
-
-                    obs_batch = observations[batch_idx]
-                    critic_observations_batch = critic_observations[batch_idx]
-                    actions_batch = actions[batch_idx]
-                    target_values_batch = values[batch_idx]
-                    returns_batch = returns[batch_idx]
-                    old_actions_log_prob_batch = old_actions_log_prob[batch_idx]
-                    advantages_batch = advantages[batch_idx]
-                    old_mu_batch = old_mu[batch_idx]
-                    old_sigma_batch = old_sigma[batch_idx]
-                    yield obs_batch, critic_observations_batch, actions_batch, target_values_batch, advantages_batch, returns_batch, \
-                        old_actions_log_prob_batch, old_mu_batch, old_sigma_batch, (None, None), None
+                obs_batch = observations[batch_idx]
+                critic_observations_batch = critic_observations[batch_idx]
+                actions_batch = actions[batch_idx]
+                target_values_batch = values[batch_idx]
+                returns_batch = returns[batch_idx]
+                old_actions_log_prob_batch = old_actions_log_prob[batch_idx]
+                advantages_batch = advantages[batch_idx]
+                old_mu_batch = old_mu[batch_idx]
+                old_sigma_batch = old_sigma[batch_idx]
+                yield obs_batch, critic_observations_batch, actions_batch, target_values_batch, advantages_batch, returns_batch, \
+                       old_actions_log_prob_batch, old_mu_batch, old_sigma_batch, (None, None), None
 
     # for RNNs only
     def reccurent_mini_batch_generator(self, num_mini_batches, num_epochs=8):
