@@ -75,7 +75,8 @@ class OnPolicyRunner:
             self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
    
         if self.cfg["SE_learner"] == "modular_SE": 
-            self.state_estimator_nn = StateEstimatorNN(self.env.num_obs, **self.se_nn_cfg) # network
+            self.state_estimator_nn = StateEstimatorNN(self.env.num_obs,
+                                                       **self.se_nn_cfg)
             self.state_estimator_nn.to(self.device)
             self.state_estimator = StateEstimator(self.state_estimator_nn ,device=self.device, **self.se_cfg)
 
@@ -125,10 +126,10 @@ class OnPolicyRunner:
             #                     [self.env.num_actions],
             #                     [self.se_cfg['num_outputs']])
             self.alg.init_storage(self.env.num_envs,
-                                self.num_steps_per_env,
-                                [self.env.num_obs + self.se_nn_cfg['num_outputs']],
-                                [self.env.num_privileged_obs],            # TODO: read from cfg
-                                [self.env.num_actions])
+                            self.num_steps_per_env,
+                            [self.env.num_obs + self.se_nn_cfg['num_outputs']],
+                            [self.env.num_privileged_obs],
+                            [self.env.num_actions])
             # SE only stores raw_obs (71) and se output (4)
             self.state_estimator.init_storage(self.env.num_envs,
                                 self.num_steps_per_env,
@@ -136,10 +137,10 @@ class OnPolicyRunner:
                                 [self.se_nn_cfg['num_outputs']])
         else:
             self.alg.init_storage(self.env.num_envs,
-                                self.num_steps_per_env,
-                                [self.env.num_obs],
-                                [self.env.num_privileged_obs],
-                                [self.env.num_actions])
+                                  self.num_steps_per_env,
+                                  [self.env.num_obs],
+                                  [self.env.num_privileged_obs],
+                                  [self.env.num_actions])
 
 
     def configure_wandb(self, wandb):

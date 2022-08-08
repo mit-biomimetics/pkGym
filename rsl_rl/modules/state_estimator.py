@@ -6,25 +6,32 @@ from torch.nn.modules import rnn
 class StateEstimatorNN(nn.Module):
     is_recurrent = False
     def __init__(self,  num_inputs, num_outputs=4, hidden_dims=[256, 128],
-                 activation='elu', **kwargs):
+                 activation='elu', dropouts=None, **kwargs):
         if kwargs:
             print("StateEstimator.__init__ got unexpected arguments, which will be ignored: " + str([key for key in kwargs.keys()]))
         super(StateEstimatorNN, self).__init__()
 
         activation = get_activation(activation)
+        if dropouts is None:
+            dropouts = [0]*len(hidden_dims)
 
         # Policy
         layers = []
-        layers.append(nn.Linear(num_inputs, hidden_dims[0]))
-        layers.append(activation)
-        for l in range(len(hidden_dims)):
-            if l == len(hidden_dims) - 1:
-                layers.append(nn.Linear(hidden_dims[l], num_outputs))
-            else:
-                layers.append(nn.Linear(hidden_dims[l], hidden_dims[l + 1]))
-                if l == 0: # add a dropout on the first layer
-                    layers.append(nn.Dropout(p=0.5))
-                layers.append(activation)
+        if not hidden_dims:  # handle no hidden layers
+            layers.append(nn.Linear(num_inputs, num_outputs))
+        else:
+            layers.append(nn.Linear(num_inputs, hidden_dims[0]))
+            if dropouts[0] > 0:
+                        layers.append(nn.Dropout(p=dropouts[0]))
+            layers.append(activation)
+            for l in range(len(hidden_dims)):
+                if l == len(hidden_dims) - 1:
+                    layers.append(nn.Linear(hidden_dims[l], num_outputs))
+                else:
+                    layers.append(nn.Linear(hidden_dims[l], hidden_dims[l + 1]))
+                    if dropouts[l+1] > 0:
+                        layers.append(nn.Dropout(p=dropouts[l+1]))
+                    layers.append(activation)
         self.estimator = nn.Sequential(*layers)
 
         print(f"State Estimator MLP: {self.estimator}")
