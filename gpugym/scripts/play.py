@@ -91,7 +91,6 @@ def play(args):
             se_prediction = state_estimator.predict(se_obs)
             obs     = torch.cat((se_prediction.detach(), obs.detach()),
                                       dim=1)
-``
 
         actions = policy(obs.detach())
         obs, _, rews, dones, infos = env.step(actions.detach())
