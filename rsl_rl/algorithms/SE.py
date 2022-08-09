@@ -56,11 +56,12 @@ class StateEstimator:
         self.transition = TransitionSE()
         self.rollout    = RolloutSE(num_envs, num_transitions_per_env, raw_obs_shape,
                         se_shape, device=self.device)
-        self.LTstorage  = LTStorageSE(num_envs, num_transitions_per_env, self.SE_LT_size,
-                                        raw_obs_shape,
-                                        se_shape,
-                                        # self.LT_priv_obs_only,
-                                        self.device)
+        self.LTstorage  = LTStorageSE(num_envs,
+                                      num_transitions_per_env,
+                                      self.SE_LT_size,
+                                      raw_obs_shape,
+                                      se_shape,
+                                      self.device)
 
 
     def predict(self, obs):

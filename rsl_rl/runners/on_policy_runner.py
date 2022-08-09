@@ -60,7 +60,7 @@ class OnPolicyRunner:
         actor_critic_class = eval(self.cfg["policy_class_name"]) # ActorCritic
 
         if self.cfg["SE_learner"] == "modular_SE":    # if using SE
-            num_actor_obs = self.env.num_obs + self.se_nn_cfg['num_outputs']  
+            num_actor_obs = self.env.num_obs + self.se_nn_cfg['num_outputs']
         else:
             num_actor_obs = self.env.num_obs
         actor_critic: ActorCritic = actor_critic_class(num_actor_obs,
@@ -73,15 +73,14 @@ class OnPolicyRunner:
         if self.cfg["algorithm_class_name"] == "PPO":
             alg_class = eval(self.cfg["algorithm_class_name"]) # PPO
             self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
-   
+        else:
+            raise("No idea what algorithm you want from me here.")
+
         if self.cfg["SE_learner"] == "modular_SE": 
-            self.state_estimator_nn = StateEstimatorNN(self.env.num_obs,
+            self.state_estimator_nn = StateEstimatorNN(self.env.num_se_obs,
                                                        **self.se_nn_cfg)
             self.state_estimator_nn.to(self.device)
             self.state_estimator = StateEstimator(self.state_estimator_nn ,device=self.device, **self.se_cfg)
-
-        else:
-            print("No idea what algorithm you want from me here.")
 
         self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
@@ -133,7 +132,7 @@ class OnPolicyRunner:
             # SE only stores raw_obs (71) and se output (4)
             self.state_estimator.init_storage(self.env.num_envs,
                                 self.num_steps_per_env,
-                                [self.env.num_obs],
+                                [self.env.num_se_obs],
                                 [self.se_nn_cfg['num_outputs']])
         else:
             self.alg.init_storage(self.env.num_envs,
@@ -197,6 +196,7 @@ class OnPolicyRunner:
                     # * step simulation
                     actor_env_obs, priv_obs, rewards, dones, infos = self.env.step(actions)
 
+                    # todo this is wrong
                     if self.cfg["SE_learner"] == "modular_SE": 
                         critic_obs = torch.cat((infos['SE_targets'], actor_env_obs), dim=1)
                     else:
@@ -396,24 +396,17 @@ class OnPolicyRunner:
 
         return loaded_dict['infos']
 
+
+    def get_state_estimator(self, device=None):
+        self.state_estimator.state_estimator.eval()
+        if device is not None:
+            self.state_estimator.state_estimator.to(device)
+        return self.state_estimator
+
+
     def get_inference_policy(self, device=None):
-
-        if self.cfg["SE_learner"] == "modular_SE": 
-            self.alg.actor_critic.eval()
-            self.state_estimator.state_estimator.eval()
-            if device is not None:
-                self.alg.actor_critic.to(device)
-                self.state_estimator.state_estimator.to(device)
-            return self.se_policy_act
-        else:
-            self.alg.actor_critic.eval() # switch to evaluation mode (dropout for example)
-            if device is not None:
-                self.alg.actor_critic.to(device)
-            return self.alg.actor_critic.act_inference
-
-    def se_policy_act(self, obs):
-        state_prediction = self.state_estimator.state_estimator.evaluate(obs)
-        actor_obs = torch.cat((state_prediction.detach(),
-                                    obs), dim=1)
-        actions = self.alg.actor_critic.act_inference(actor_obs)
-        return actions
+        # switch to evaluation mode (dropout for example)
+        self.alg.actor_critic.eval()
+        if device is not None:
+            self.alg.actor_critic.to(device)
+        return self.alg.actor_critic.act_inference
