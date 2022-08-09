@@ -2,7 +2,7 @@
 from gpugym.envs.mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahCfgPPO
 
 BASE_HEIGHT_REF = 0.32
-SE_target = 8
+SE_target = 4
 
 class SERefCfg(MiniCheetahCfg):
     class env(MiniCheetahCfg.env):
@@ -12,6 +12,8 @@ class SERefCfg(MiniCheetahCfg):
         # TODO: distinguish se_obs and actor_env_obs
         num_env_obs = 71                         # raw obs from sim: all the sensor info that go in
         num_observations = 71 + num_se_targets   # actor obs = num_observations + SE target (optional)
+        # optional
+        num_se_obs = 30
         num_privileged_obs = num_observations # TODO: test use num_observations   # critic obs: for now is the same as actors'
         episode_length_s = 15.
 
@@ -264,18 +266,21 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
 
     class state_estimator_nn:
         num_outputs = SE_target           # how many quantities we are estimating, match the extras[SE_target] dimension
-        hidden_dims = [256, 128]  # None will default to 256, 128
+        hidden_dims = [256, 128, 64]  # None will default to 256, 128
+        # dropouts: randomly zeros output of a node.
+        # specify the probability of a dropout. 0 means no dropouts. Done per layer, including initial layer. Should have length len(hidden_dims)
+        dropouts = [0., 0.1, 0.1]
 
     class state_estimator:
         # num_outputs = 4
-        num_learning_epochs = 6
-        num_mini_batches = 6  # mini batch size = num_envs*nsteps / nminibatches
+        num_learning_epochs = 10
+        num_mini_batches = 1  # mini batch size = num_envs*nsteps / nminibatches
 
 
     class runner(MiniCheetahCfgPPO.runner):
         run_name = ''
         experiment_name = 'se_ref_D'
-        max_iterations = 10000  # number of policy updates
+        max_iterations = 1000  # number of policy updates
         SE_learner = 'modular_SE'
         algorithm_class_name = 'PPO'
         num_steps_per_env = 32 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)

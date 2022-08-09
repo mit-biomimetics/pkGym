@@ -31,7 +31,9 @@ class MiniCheetahRef(MiniCheetah):
         #                         dtype=torch.float,
         #                         device=self.device, requires_grad=False)
         self.obs_scales.dof_pos = torch.tile(to_torch(self.obs_scales.dof_pos), (4,))
-        self.se_obs_buf = torch.zeros(self.num_envs, self.num_obs, device=self.device, dtype=torch.float)
+        if cfg.env.num_se_obs:
+            self.num_se_obs = cfg.env.num_se_obs
+            self.se_obs_buf = torch.zeros(self.num_envs, cfg.env.num_se_obs, device=self.device, dtype=torch.float)
         self.se_noise_scale_vec = self._get_se_noise_scale_vec(self.cfg)
 
         # * reference traj
@@ -148,7 +150,7 @@ class MiniCheetahRef(MiniCheetah):
 
         self.obs_buf = torch.cat((self.base_ang_vel*self.obs_scales.ang_vel,
                                   self.projected_gravity,
-                                  self.commands[:, :3]*self.commands_scale, # TODO: try using no command
+                                  self.commands[:, :3]*self.commands_scale,
                                   dof_pos,
                                   self.dof_vel*self.obs_scales.dof_vel,
                                   self.ctrl_hist,
@@ -156,7 +158,12 @@ class MiniCheetahRef(MiniCheetah):
                                   torch.sin(self.phase)),
                                   dim=-1)
 
-        self.se_obs_buf = self.obs_buf # NOTE: can be modified as needed 
+        # * SE observations
+        self.se_obs_buf = torch.cat((self.base_ang_vel*self.obs_scales.ang_vel,
+                                  self.projected_gravity,
+                                  dof_pos,
+                                  self.dof_vel*self.obs_scales.dof_vel),
+                                  dim=-1)
 
         # ! noise_scale_vec must be of correct order! Check def below
         # * add noise if needed
@@ -168,10 +175,13 @@ class MiniCheetahRef(MiniCheetah):
 
         if self.cfg.env.num_se_targets:
             self.extras["SE_targets"] = torch.cat((base_z,
-                                self.base_lin_vel * self.obs_scales.lin_vel,
-                                # self.contact_forces[:,self.feet_indices,:].view(-1, 12)),
-                                self.contact_forces[:,self.feet_indices,2].view(-1, 4)),  # grf-z only
+                                self.base_lin_vel * self.obs_scales.lin_vel),  # grf-z only
                                 dim=-1)
+            # self.extras["SE_targets"] = torch.cat((base_z,
+            #                     self.base_lin_vel * self.obs_scales.lin_vel,
+            #                     # self.contact_forces[:,self.feet_indices,:].view(-1, 12)),
+            #                     self.contact_forces[:,self.feet_indices,2].view(-1, 4)),  # grf-z only
+            #                     dim=-1)
 
     def _get_noise_scale_vec(self, cfg):
         '''
