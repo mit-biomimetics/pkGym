@@ -71,9 +71,10 @@ def play(args):
         print('Exported policy as jit script to: ', path)
         if SE_ON:
             se_path = os.path.join(path, 'se_1.jit')
-            se_model = copy.deepcopy(ppo_runner.alg.state_estimator.estimator).to('cpu')
+            se_model = copy.deepcopy(state_estimator.state_estimator).to('cpu')
             traced_script_module = torch.jit.script(se_model)
             traced_script_module.save(se_path)
+            # lets_test = torch.jit.script(se_model)
 
     logger = Logger(env.dt)
     robot_index = 0 # which robot is used for logging
@@ -105,7 +106,7 @@ def play(args):
 
 
 if __name__ == '__main__':
-    EXPORT_POLICY = False  # TODO: turn that into true
+    EXPORT_POLICY = True  # TODO: turn that into true
     RECORD_FRAMES = False
     MOVE_CAMERA = False
     args = get_args()
