@@ -11,10 +11,10 @@ class SERefCfg(MiniCheetahCfg):
         num_actions = 12
         # TODO: distinguish se_obs and actor_env_obs
         num_env_obs = 71                         # raw obs from sim: all the sensor info that go in
-        num_observations = 71 + num_se_targets   # actor obs = num_observations + SE target (optional)
+        # num_observations = 71 + num_se_targets   # actor obs = num_observations + SE target (optional)
         # optional
         num_se_obs = 30
-        num_privileged_obs = num_observations # TODO: test use num_observations   # critic obs: for now is the same as actors'
+        num_privileged_obs = None
         episode_length_s = 15.
 
     class terrain(MiniCheetahCfg.terrain):
@@ -260,16 +260,17 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         lam = 0.99
         desired_kl = 0.01
         max_grad_norm = 1.
-        # PPO_plus params
-        # storage_size = 4000
-        # PPO_SE params
 
     class state_estimator_nn:
-        num_outputs = SE_target           # how many quantities we are estimating, match the extras[SE_target] dimension
+        # how many quantities we are estimating,
+        # match the extras[SE_target] dimension
+        num_outputs = SE_target
         hidden_dims = [256, 128, 64]  # None will default to 256, 128
         # dropouts: randomly zeros output of a node.
-        # specify the probability of a dropout. 0 means no dropouts. Done per layer, including initial layer. Should have length len(hidden_dims)
-        dropouts = [0., 0.1, 0.1]
+        # specify the probability of a dropout, 0 means no dropouts.
+        # Done per layer, including initial layer (input-first, no last-output)
+        # len(dropouts) == len(hidden_dims)
+        dropouts = [0.1, 0.1, 0.1]
 
     class state_estimator:
         # num_outputs = 4
