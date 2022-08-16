@@ -35,14 +35,14 @@ from torch.nn.modules import rnn
 
 class ActorCritic(nn.Module):
     is_recurrent = False
-    def __init__(self,  num_actor_obs,
-                        num_critic_obs,
-                        num_actions,
-                        actor_hidden_dims=[256, 256, 256],
-                        critic_hidden_dims=[256, 256, 256],
-                        activation='elu',
-                        init_noise_std=1.0,
-                        **kwargs):
+    def __init__(self, num_actor_obs,
+                       num_critic_obs,
+                       num_actions,
+                       actor_hidden_dims=[256, 256, 256],
+                       critic_hidden_dims=[256, 256, 256],
+                       activation='elu',
+                       init_noise_std=1.0,
+                       **kwargs):
         if kwargs:
             print("ActorCritic.__init__ got unexpected arguments, which will be ignored: " + str([key for key in kwargs.keys()]))
         super(ActorCritic, self).__init__()
