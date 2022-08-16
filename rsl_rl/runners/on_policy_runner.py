@@ -38,7 +38,7 @@ import wandb
 import torch
 
 from rsl_rl.algorithms import PPO, StateEstimator
-from rsl_rl.modules import ActorCritic, ActorCriticRecurrent
+from rsl_rl.modules import ActorCritic
 from rsl_rl.modules import StateEstimatorNN
 from rsl_rl.env import VecEnv
 
