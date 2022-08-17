@@ -26,19 +26,19 @@ class MiniCheetahRef(MiniCheetah):
         self.omega = 2*torch.pi*cfg.control.gait_freq
         
         self.num_states = 13 + 2*self.num_dof + 1
-        # self.SE_targets = torch.zeros(self.num_envs,
-        #                         self.cfg.env.num_se_targets,
-        #                         dtype=torch.float,
-        #                         device=self.device, requires_grad=False)
-        self.obs_scales.dof_pos = torch.tile(to_torch(self.obs_scales.dof_pos), (4,))
+        self.obs_scales.dof_pos = torch.tile(to_torch(self.obs_scales.dof_pos),
+                                             (4,))
         if cfg.env.num_se_obs:
             self.num_se_obs = cfg.env.num_se_obs
-            self.se_obs_buf = torch.zeros(self.num_envs, cfg.env.num_se_obs, device=self.device, dtype=torch.float)
+            self.se_obs_buf = torch.zeros(self.num_envs, cfg.env.num_se_obs,
+                                          device=self.device,
+                                          dtype=torch.float)
         self.se_noise_scale_vec = self._get_se_noise_scale_vec(self.cfg)
 
         # * reference traj
         csv_path = self.cfg.init_state.ref_traj.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
-        self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy())  # ! check that this works out
+        # todo check that this works out
+        self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy())
 
 
     def _custom_reset(self, env_ids):
@@ -46,8 +46,10 @@ class MiniCheetahRef(MiniCheetah):
 
 
     def _post_physics_step_callback(self):
-        """ Callback called before computing terminations, rewards, and observations, phase-dynamics
-            Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
+        """ Callback called before computing terminations, rewards, and
+         observations, phase-dynamics.
+            Default behaviour: Compute ang vel command based on target and
+             heading, compute measured terrain heights and randomly push robots
         """
         self.phase = torch.fmod(self.phase+self.dt*self.omega, 2*torch.pi)
 
@@ -63,8 +65,10 @@ class MiniCheetahRef(MiniCheetah):
 
     def _compute_torques(self, actions):
         """ Compute torques from actions.
-            Actions can be interpreted as position or velocity targets given to a PD controller, or directly as scaled torques.
-            [NOTE]: torques must have the same dimension as the number of DOFs, even if some DOFs are not actuated.
+            Actions can be interpreted as position or velocity targets given to
+             a PD controller, or directly as scaled torques.
+            [NOTE]: torques must have the same dimension as the number of DOFs,
+            even if some DOFs are not actuated.
 
         Args:
             actions (torch.Tensor): Actions
@@ -118,35 +122,14 @@ class MiniCheetahRef(MiniCheetah):
         # phase
         base_z = self.root_states[:, 2].unsqueeze(1)*self.obs_scales.base_z
         dof_pos = (self.dof_pos-self.default_dof_pos) \
-                        *self.obs_scales.dof_pos
+                   * self.obs_scales.dof_pos
 
         # * update commanded action history buffer
         control_type = self.cfg.control.control_type
-        if control_type in ['T', 'Td']:
-            ndof = self.num_dof
-            self.ctrl_hist[:, 2 * ndof:] = self.ctrl_hist[:, ndof:2 * ndof]
-            self.ctrl_hist[:, ndof:2 * ndof] = self.ctrl_hist[:, :ndof]
-            # self.ctrl_hist[:, :nact] = self.actions*self.obs_scales.action_scale
-            self.ctrl_hist[:, :ndof] = self.dof_vel * to_torch(self.obs_scales.dof_vel)
-        else:
-            nact = self.num_actions
-            self.ctrl_hist[:, 2 * nact:] = self.ctrl_hist[:, nact:2 * nact]
-            self.ctrl_hist[:, nact:2 * nact] = self.ctrl_hist[:, :nact]
-            # self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale + self.default_dof_pos
-            self.ctrl_hist[:, :nact] = self.action_avg
-
-        # self.obs_buf = torch.cat((base_z,
-        #                           self.base_lin_vel*self.obs_scales.lin_vel,
-        #                           self.base_ang_vel*self.obs_scales.ang_vel,
-        #                           self.projected_gravity,
-        #                           self.commands[:, :3]*self.commands_scale,
-        #                           dof_pos,
-        #                           self.dof_vel*self.obs_scales.dof_vel,
-        #                           self.actions,
-        #                           self.ctrl_hist,
-        #                           torch.cos(self.phase*2*torch.pi),
-        #                           torch.sin(self.phase*2*torch.pi)),
-        #                          dim=-1)
+        nact = self.num_actions
+        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
+        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
+        self.ctrl_hist[:, :nact] = self.action_avg
 
         self.obs_buf = torch.cat((self.base_ang_vel*self.obs_scales.ang_vel,
                                   self.projected_gravity,
@@ -171,11 +154,12 @@ class MiniCheetahRef(MiniCheetah):
             self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
                             * self.noise_scale_vec
             self.se_obs_buf += (2*torch.rand_like(self.se_obs_buf) - 1) \
-                           * self.se_noise_scale_vec
+                                * self.se_noise_scale_vec
 
-        if self.cfg.env.num_se_targets:
+        if self.cfg.env.learn_SE:
+            # * store (privileged) targets for learning the state-estimator
             self.extras["SE_targets"] = torch.cat((base_z,
-                                self.base_lin_vel * self.obs_scales.lin_vel),  # grf-z only
+                                self.base_lin_vel * self.obs_scales.lin_vel),
                                 dim=-1)
             # self.extras["SE_targets"] = torch.cat((base_z,
             #                     self.base_lin_vel * self.obs_scales.lin_vel,
@@ -198,7 +182,6 @@ class MiniCheetahRef(MiniCheetah):
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         ns_lvl = self.cfg.noise.noise_level
-        # noise_vec[1:4] = noise_scales.lin_vel*ns_lvl*self.obs_scales.lin_vel
         noise_vec[0:3] = to_torch(noise_scales.ang_vel)*ns_lvl*self.obs_scales.ang_vel
         noise_vec[3:6] = noise_scales.gravity*ns_lvl
         noise_vec[6:9] = 0.  # commands
@@ -225,17 +208,10 @@ class MiniCheetahRef(MiniCheetah):
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         ns_lvl = self.cfg.noise.noise_level
-        # noise_vec[1:4] = noise_scales.lin_vel*ns_lvl*self.obs_scales.lin_vel
         noise_vec[0:3] = to_torch(noise_scales.ang_vel)*ns_lvl*self.obs_scales.ang_vel
         noise_vec[3:6] = noise_scales.gravity*ns_lvl
-        noise_vec[6:9] = 0.  # commands
-        noise_vec[9:21] = noise_scales.dof_pos*ns_lvl \
-            *self.obs_scales.dof_pos
-        noise_vec[21:33] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel
-
-        if self.cfg.terrain.measure_heights:
-            noise_vec[66:187] = noise_scales.height_measurements*ns_lvl \
-                                * self.obs_scales.height_measurements
+        noise_vec[6:18] = noise_scales.dof_pos*ns_lvl*self.obs_scales.dof_pos
+        noise_vec[18:30] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel
         return noise_vec
 
 
@@ -334,7 +310,6 @@ class MiniCheetahRef(MiniCheetah):
         # REWARDS EACH LEG INDIVIDUALLY BASED ON ITS POSITION IN THE CYCLE
         # dof position error
         error = self.get_ref() + self.default_dof_pos - self.dof_pos
-        # print(self.get_ref() + self.default_dof_pos)
         error *= self.obs_scales.dof_pos
         reward = torch.sum(self.sqrdexp(error) - torch.abs(error)*0.2, dim=1)/12.  # normalize by n_dof
         # * only when commanded velocity is higher
@@ -342,7 +317,7 @@ class MiniCheetahRef(MiniCheetah):
 
     def get_ref(self):
         leg_frame = torch.zeros_like(self.torques)
-        # offest by half cycle (trot)
+        # offset by half cycle (trot)
         ph_off = torch.fmod(self.phase+torch.pi, 2*torch.pi)
         phd_idx = (torch.round(self.phase* \
                             (self.leg_ref.size(dim=0)/(2*np.pi)-1))).long()
@@ -364,31 +339,10 @@ class MiniCheetahRef(MiniCheetah):
         return (rew_vel+rew_pos-rew_base_vel)*self.switch()
 
     def _reward_tracking_lin_vel(self):
-        # Tracking of linear velocity commands (xy axes)
+        # Tracking linear velocity commands (xy axes)
         # just use lin_vel?
         error = self.commands[:, :2] - self.base_lin_vel[:, :2]
         # * scale by (1+|cmd|): if cmd=0, no scaling.
         error *= 1./(1. + torch.abs(self.commands[:, :2]))
         error = torch.sum(torch.square(error), dim=1)
         return torch.exp(-error/self.cfg.rewards.tracking_sigma)*(1-self.switch())
-
-    # def _reward_symm_legs(self):
-    #     error = 0.
-    #     for i in range(2, 5):
-    #         error += self.sqrdexp((self.dof_pos[:, i]+self.dof_pos[:, i+9]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     for i in range(0, 2):
-    #         error += self.sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     return error
-
-    # def _reward_symm_arms(self):
-    #     error = 0.
-    #     for i in range(6, 8):
-    #         error += self.sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     error += self.sqrdexp((self.dof_pos[:, 5]+self.dof_pos[:, 14]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     error += self.sqrdexp((self.dof_pos[:, 8]+self.dof_pos[:, 17]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     return error

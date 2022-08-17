@@ -247,7 +247,7 @@ class LeggedRobot(BaseTask):
                                   self.commands[:, :3]*self.commands_scale,
                                   dof_pos,
                                   self.dof_vel*self.obs_scales.dof_vel,
-                                  self.actions),
+                                  self.ctrl_hist),
                                  dim=-1)
         # add perceptive inputs if not blind
         if self.cfg.terrain.measure_heights:
@@ -260,8 +260,8 @@ class LeggedRobot(BaseTask):
             self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
                             * self.noise_scale_vec
 
-        # ! set up SE targets if needed (custom to each robot)
-
+        # * set up SE targets if needed (e.g. see mini_cheetah_ref.py).
+        # self.se_obs_buf = torch.cat((obs), dim=-1)
 
     def create_sim(self):
         """ Creates simulation, terrain and evironments
@@ -514,15 +514,16 @@ class LeggedRobot(BaseTask):
 
 
     def reset_to_storage(self, env_ids):
-        # # * without replacement
-        # # indices = torch.randperm(len(self.X0_conds.shape[0]))[:len(env_ids)]]
-        # # * with replacement
-        # # more general because it allows buffer to be less than envs
+        """
+        Reset agents drawn from a buffer of initial conditions (`X0_conds`).
+        """
+        # * uncomment to draw samples _without_ replacement
+        # indices = torch.randperm(len(self.X0_conds.shape[0]))[:len(env_ids)]]
+        # * uncomment to draw samples with replacement
+        # more general because it allows buffer to be smaller than num envs
         idx = torch.randint(self.X0_conds.shape[0], (len(env_ids),))
         self.root_states[env_ids] = self.X0_conds[idx, :13]
-        # self.dof_pos[env_ids] = torch.zeros_like(self.dof_pos[env_ids])
         self.dof_pos[env_ids] = self.X0_conds[idx, 13:13+self.num_dof]
-        # self.dof_vel[env_ids] = torch.zeros_like(self.dof_vel[env_ids])
         self.dof_vel[env_ids] = self.X0_conds[idx,
                                         13+self.num_dof:13+2*self.num_dof]
 
@@ -738,16 +739,20 @@ class LeggedRobot(BaseTask):
             # todo check for consistency (low first, high second)
 
         # * init storage, if used
-        # todo different size than num_envs
-        # ! overload for specific
         if self.cfg.init_state.reset_mode == "reset_to_storage":
             self._initialize_storage()
 
 
     def _initialize_storage(self):
-         # * init storage, if used
-        # todo different size than num_envs
-        # ! overload for specific
+        """
+        Initialize a buffer of states (`X0_conds`) from which initial
+        conditions can be drawn. By default, this buffer account for the root
+        and joint states and is simply filled with the default positions and
+        zero-velocity (this is thus equivalent to `reset_to_basic`).
+        Overload to set up a specific distribution (e.g. ref trajs) and/or add
+        other states (e.g. commands, phase, etc.).
+        """
+        
         if self.cfg.init_state.reset_mode == "reset_to_storage":
             self.X0_conds = torch.zeros(self.cfg.init_state.storage_size,
                                         self.num_states,
@@ -756,8 +761,9 @@ class LeggedRobot(BaseTask):
             self.X0_conds[:, 13:13+self.num_dof] = self.default_dof_pos
 
     def _prepare_reward_function(self):
-        """ Prepares a list of reward functions, whcih will be called to compute the total reward.
-            Looks for self._reward_<REWARD_NAME>, where <REWARD_NAME> are names of all non zero reward scales in the cfg.
+        """ Prepares a list of reward functions, whcih will be called to
+        compute the total reward. Looks for self._reward_<REWARD_NAME>, where
+        <REWARD_NAME> are names of all non zero reward scales in the cfg.
         """
         # remove zero scales + multiply non-zero ones by dt
         for key in list(self.reward_scales.keys()):

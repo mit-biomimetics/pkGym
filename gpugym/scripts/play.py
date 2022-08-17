@@ -51,7 +51,10 @@ def play(args):
     env_cfg.domain_rand.push_robots = True
     env_cfg.domain_rand.push_interval_s = 5
     env_cfg.domain_rand.max_push_vel_xy = 0.05
-
+    env_cfg.commands.ranges.lin_vel_x = [-env_cfg.commands.max_curriculum_x,
+                                  env_cfg.commands.max_curriculum_x]
+    env_cfg.commands.ranges.lin_vel_yaw = [-env_cfg.commands.max_curriculum_ang,
+                                  env_cfg.commands.max_curriculum_ang]
     # prepare environment
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
     obs = env.get_observations()
@@ -106,7 +109,7 @@ def play(args):
 
 
 if __name__ == '__main__':
-    EXPORT_POLICY = True  # TODO: turn that into true
+    EXPORT_POLICY = True
     RECORD_FRAMES = False
     MOVE_CAMERA = False
     args = get_args()

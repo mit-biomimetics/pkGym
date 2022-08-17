@@ -21,13 +21,7 @@ class MiniCheetah(LeggedRobot):
         # * init buffer for phase variable
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
-        
         self.num_states = 13 + 2*self.num_dof + 1
-        # self.SE_targets = torch.zeros(self.num_envs,
-        #                         self.cfg.env.num_se_targets,
-        #                         dtype=torch.float,
-        #                         device=self.device, requires_grad=False)
-        # self.obs_scales.dof_pos = torch.tile(to_torch(self.obs_scales.dof_pos), (4,))
 
         # * reference traj
         csv_path = self.cfg.init_state.ref_traj.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
@@ -108,11 +102,6 @@ class MiniCheetah(LeggedRobot):
         if self.add_noise:
             self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
                             * self.noise_scale_vec
-
-        if self.cfg.env.num_se_targets:
-            self.extras["SE_targets"] = torch.cat((base_z,
-                                  self.base_lin_vel*self.obs_scales.lin_vel),
-                                  dim=-1)
 
     def _get_noise_scale_vec(self, cfg):
         '''
