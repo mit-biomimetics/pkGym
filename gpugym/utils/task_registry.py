@@ -143,8 +143,6 @@ class TaskRegistry():
             log_dir = os.path.join(log_root, datetime.now().strftime('%b%d_%H-%M-%S') + '_' + train_cfg.runner.run_name)
         
         train_cfg_dict = class_to_dict(train_cfg)
-
-        # return different runner when different algorithms are used
         runner = OnPolicyRunner(env, train_cfg_dict, log_dir, device=args.rl_device)
 
         #save resume path before creating a new log_dir

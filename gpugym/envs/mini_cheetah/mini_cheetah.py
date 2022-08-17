@@ -12,8 +12,6 @@ from typing import Tuple, Dict
 from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
 from gpugym.envs import LeggedRobot
 
-from gpugym import LEGGED_GYM_ROOT_DIR
-import pandas as pd
 
 class MiniCheetah(LeggedRobot):
 
@@ -23,9 +21,21 @@ class MiniCheetah(LeggedRobot):
                                  device=self.device, requires_grad=False)
         self.num_states = 13 + 2*self.num_dof + 1
 
-        # * reference traj
-        csv_path = self.cfg.init_state.ref_traj.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
-        self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy())  # ! check that this works out
+    def _initialize_storage(self):
+        """
+        Initialize a buffer of states (`X0_conds`) from which initial
+        conditions can be drawn. By default, this buffer account for the root
+        and joint states and is simply filled with the default positions and
+        zero-velocity (this is thus equivalent to `reset_to_basic`).
+        Overload to set up a specific distribution (e.g. ref trajs) and/or add
+        other states (e.g. commands, phase, etc.).
+        """
+        # +1 for the phase
+        self.X0_conds = torch.zeros(self.cfg.init_state.storage_size,
+                                    self.num_states+1,
+                                    device=self.device, requires_grad=False)
+        self.X0_conds[:, :13] = self.base_init_state
+        self.X0_conds[:, 13:13+self.num_dof] = self.default_dof_pos
 
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
@@ -118,7 +128,6 @@ class MiniCheetah(LeggedRobot):
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         ns_lvl = self.cfg.noise.noise_level
-        # noise_vec[1:4] = noise_scales.lin_vel*ns_lvl*self.obs_scales.lin_vel
         noise_vec[0:3] = to_torch(noise_scales.ang_vel)*ns_lvl*self.obs_scales.ang_vel
         noise_vec[3:6] = noise_scales.gravity*ns_lvl
         noise_vec[6:9] = 0.  # commands
@@ -229,77 +238,3 @@ class MiniCheetah(LeggedRobot):
 
     def _reward_dof_near_home(self):
         return torch.sum(self.sqrdexp((self.dof_pos - self.default_dof_pos) * self.cfg.normalization.obs_scales.dof_pos), dim=1)
-
-    # def _reward_symm_legs(self):
-    #     error = 0.
-    #     for i in range(2, 5):
-    #         error += self.sqrdexp((self.dof_pos[:, i]+self.dof_pos[:, i+9]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     for i in range(0, 2):
-    #         error += self.sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     return error
-
-    # def _reward_symm_arms(self):
-    #     error = 0.
-    #     for i in range(6, 8):
-    #         error += self.sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     error += self.sqrdexp((self.dof_pos[:, 5]+self.dof_pos[:, 14]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     error += self.sqrdexp((self.dof_pos[:, 8]+self.dof_pos[:, 17]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     return error
-    def _reward_reference_traj(self):
-        # REWARDS EACH LEG INDIVIDUALLY BASED ON ITS POSITION IN THE CYCLE
-        # dof position error
-        error = self.get_ref() + self.default_dof_pos - self.dof_pos
-        # print(self.get_ref() + self.default_dof_pos)
-        error *= self.obs_scales.dof_pos
-        reward = torch.sum(self.sqrdexp(error) - torch.abs(error)*0.2, dim=1)/12.  # normalize by n_dof
-        # * only when commanded velocity is higher
-        return reward*(1-self.switch())
-
-
-######################### added from mini_cheetah_ref.py ####################
-    def _reward_stance_grf(self):
-        # Reward non-zero grf during stance (pi to 2pi)
-        grf = torch.gt(torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1), 50.)
-        ph_off = torch.gt(self.phase, torch.pi)  # should this be in swing?
-        rew = grf*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1).int()
-
-        return torch.sum(rew, dim=1)*(1-self.switch())
-
-    def _reward_swing_grf(self):
-        # Reward non-zero grf during swing (0 to pi)
-        grf = torch.gt(torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1), 50.)
-        ph_off = torch.lt(self.phase, torch.pi)  # should this be in swing?
-        rew = grf*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1).int()
-        return torch.sum(rew, dim=1)*(1-self.switch())
-
-    def get_ref(self):
-        leg_frame = torch.zeros_like(self.torques)
-        # offest by half cycle (trot)
-        ph_off = torch.fmod(self.phase+torch.pi, 2*torch.pi)
-        phd_idx = (torch.round(self.phase* \
-                            (self.leg_ref.size(dim=0)/(2*np.pi)-1))).long()
-        pho_idx = (torch.round(ph_off* \
-                            (self.leg_ref.size(dim=0)/(2*np.pi)-1))).long()
-        leg_frame[:, 0:3] += self.leg_ref[phd_idx.squeeze(), :]
-        leg_frame[:, 3:6] += self.leg_ref[pho_idx.squeeze(), :]
-        leg_frame[:, 6:9] += self.leg_ref[pho_idx.squeeze(), :]
-        leg_frame[:, 9:12] += self.leg_ref[phd_idx.squeeze(), :]
-        return leg_frame
-
-    def _reward_stand_still(self):
-        # Penalize motion at zero commands
-        # * normalize angles so we care about being within 5 deg
-        rew_pos = torch.mean(self.sqrdexp((self.dof_pos - self.default_dof_pos)/torch.pi*36), dim=1)
-        rew_vel = torch.mean(self.sqrdexp(self.dof_vel), dim=1)
-        rew_base_vel = torch.mean(torch.square(self.base_lin_vel), dim=1)
-        rew_base_vel += torch.mean(torch.square(self.base_ang_vel), dim=1)
-        return (rew_vel+rew_pos-rew_base_vel)*self.switch()
-
-    def switch(self):
-        c_vel = torch.linalg.norm(self.commands, dim=1)
-        return torch.exp(-torch.square(torch.max(torch.zeros_like(c_vel), c_vel-0.1))/0.1)

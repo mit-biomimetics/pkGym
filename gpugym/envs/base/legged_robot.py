@@ -752,13 +752,11 @@ class LeggedRobot(BaseTask):
         Overload to set up a specific distribution (e.g. ref trajs) and/or add
         other states (e.g. commands, phase, etc.).
         """
-        
-        if self.cfg.init_state.reset_mode == "reset_to_storage":
-            self.X0_conds = torch.zeros(self.cfg.init_state.storage_size,
-                                        self.num_states,
-                                        device=self.device, requires_grad=False)
-            self.X0_conds[:, :13] = self.base_init_state
-            self.X0_conds[:, 13:13+self.num_dof] = self.default_dof_pos
+        self.X0_conds = torch.zeros(self.cfg.init_state.storage_size,
+                                    self.num_states,
+                                    device=self.device, requires_grad=False)
+        self.X0_conds[:, :13] = self.base_init_state
+        self.X0_conds[:, 13:13+self.num_dof] = self.default_dof_pos
 
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, whcih will be called to

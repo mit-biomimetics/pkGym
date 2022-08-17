@@ -158,6 +158,9 @@ class MiniCheetahRef(MiniCheetah):
 
         if self.cfg.env.learn_SE:
             # * store (privileged) targets for learning the state-estimator
+            # We are piggy-backing this into the `extras`, which is originally
+            # used just to send back and forth information for rsl_rl to print
+            # statistics (e.g. average return of each reward function).
             self.extras["SE_targets"] = torch.cat((base_z,
                                 self.base_lin_vel * self.obs_scales.lin_vel),
                                 dim=-1)
@@ -213,43 +216,6 @@ class MiniCheetahRef(MiniCheetah):
         noise_vec[6:18] = noise_scales.dof_pos*ns_lvl*self.obs_scales.dof_pos
         noise_vec[18:30] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel
         return noise_vec
-
-
-    def update_X0(self, X0, from_obs=False):
-        """
-        Needs to match any scaling or other changes made in observations
-        """
-
-        if not from_obs:
-            self.X0_conds = X0
-            return
-        # * otherwise, unscale and handle obs to get back to states
-
-        n_new = min(X0.shape[0], self.X0_conds.shape[0])
-        base_z = X0[:n_new, 0:1]
-        base_lin_vel = X0[:n_new, 1:4]/self.obs_scales.lin_vel
-        base_ang_vel = X0[:n_new, 4:7]/self.obs_scales.ang_vel
-        prj_grv = X0[:n_new, 7:10]  # ! I think? Check...
-        dof_pos = X0[:n_new, 10:22]
-        dof_vel = X0[:n_new, 34:46]/self.obs_scales.dof_vel
-        phase = torch.atan2(X0[:n_new, 46:47], X0[:n_new, 47:48])
-
-        # from prj_grv to roll and pitch
-        pitch = torch.atan2(-prj_grv[:, 1], prj_grv[:, 2])
-        roll = torch.atan2(prj_grv[:, 0], prj_grv[:, 2]/torch.cos(pitch))
-
-        base_quat = quat_from_euler_xyz(roll, pitch, torch.zeros_like(roll))
-        base_pos = torch.cat((torch.zeros_like(base_z),
-                            torch.zeros_like(base_z),
-                            base_z), dim=1)
-        self.X0_conds[:n_new, :3] = base_pos
-        self.X0_conds[:n_new, 3:7] = base_quat
-        self.X0_conds[:n_new, 7:10] = base_lin_vel
-        self.X0_conds[:n_new, 10:13] = base_ang_vel
-        self.X0_conds[:n_new, 13:25] = dof_pos
-        self.X0_conds[:n_new, 25:37] = dof_vel
-        self.X0_conds[:n_new, 37:38] = phase
-
 
     def update_command_curriculum(self, env_ids):
         """ Implements a curriculum of increasing commands
