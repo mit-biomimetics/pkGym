@@ -37,10 +37,10 @@ from torch.utils.tensorboard import SummaryWriter
 import wandb
 import torch
 
-from rsl_rl.algorithms import PPO
-from rsl_rl.modules import ActorCritic, ActorCriticRecurrent
+from rsl_rl.algorithms import PPO, StateEstimator
+from rsl_rl.modules import ActorCritic
+from rsl_rl.modules import StateEstimatorNN
 from rsl_rl.env import VecEnv
-
 
 class OnPolicyRunner:
 
@@ -50,30 +50,45 @@ class OnPolicyRunner:
                  log_dir=None,
                  device='cpu'):
 
-        self.cfg=train_cfg["runner"]
-        self.alg_cfg = train_cfg["algorithm"]
-        self.policy_cfg = train_cfg["policy"]
+        self.parse_train_cfg(train_cfg)
         self.device = device
         self.env = env
+
+        actor_critic_class = eval(self.cfg["policy_class_name"]) # ActorCritic
+        num_actor_obs = self.env.num_obs
+        if self.cfg["SE_learner"] == "modular_SE":    # if using SE
+            num_actor_obs += self.se_nn_cfg['num_outputs']
         if self.env.num_privileged_obs is not None:
             num_critic_obs = self.env.num_privileged_obs 
         else:
-            num_critic_obs = self.env.num_obs
-        actor_critic_class = eval(self.cfg["policy_class_name"]) # ActorCritic
-        actor_critic: ActorCritic = actor_critic_class( self.env.num_obs,
-                                                        num_critic_obs,
-                                                        self.env.num_actions,
-                                                        **self.policy_cfg).to(self.device)
-        alg_class = eval(self.cfg["algorithm_class_name"]) # PPO
-        self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
+            num_critic_obs = num_actor_obs
+        actor_critic: ActorCritic = actor_critic_class(num_actor_obs,
+                                            num_critic_obs,
+                                            self.env.num_actions,
+                                            **self.policy_cfg).to(self.device)
+
+        # ! this is hardcoded
+        if self.cfg["algorithm_class_name"] == "PPO":
+            alg_class = eval(self.cfg["algorithm_class_name"]) # PPO
+            self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
+        else:
+            raise("No idea what algorithm you want from me here.")
+
+        if self.cfg["SE_learner"] == "modular_SE": 
+            self.state_estimator_nn = StateEstimatorNN(self.env.num_se_obs,
+                                                       **self.se_nn_cfg)
+            self.state_estimator_nn.to(self.device)
+            self.state_estimator = StateEstimator(self.state_estimator_nn ,device=self.device, **self.se_cfg)
+
         self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
 
         # init storage and model
-        self.alg.init_storage(self.env.num_envs, self.num_steps_per_env, [self.env.num_obs], [self.env.num_privileged_obs], [self.env.num_actions])
+        self.init_storage()
 
         # Log
         self.log_dir = log_dir
+        self.SE_path = os.path.join(self.log_dir, 'SE')   # log_dir for SE
         self.wandb = None
         self.do_wandb = False
         self.writer = None
@@ -81,39 +96,62 @@ class OnPolicyRunner:
         self.tot_time = 0
         self.current_learning_iteration = 0
 
-        # Grabbed from cfg
-        self.num_learning_iterations = None
-        self.init_at_random_ep_len = None
-
         _, _ = self.env.reset()
+
+
+    def parse_train_cfg(self, train_cfg):
+        self.cfg=train_cfg['runner']
+        self.alg_cfg = train_cfg['algorithm']
+        self.policy_cfg = train_cfg['policy']
+        if 'state_estimator' in train_cfg:
+            self.se_cfg = train_cfg['state_estimator']
+            self.se_nn_cfg = train_cfg['state_estimator_nn']
+        else:
+            self.se_cfg = None
+
+
+    def init_storage(self):
+        
+        actor_obs_shape = self.env.num_obs
+        if self.cfg["SE_learner"] == "modular_SE":
+            self.state_estimator.init_storage(self.env.num_envs,
+                                              self.num_steps_per_env,
+                                              [self.env.num_se_obs],
+                                              [self.se_nn_cfg['num_outputs']])
+            actor_obs_shape += self.se_nn_cfg['num_outputs']
+        self.alg.init_storage(self.env.num_envs,
+                              self.num_steps_per_env,
+                              actor_obs_shape=[actor_obs_shape],
+                              critic_obs_shape=[self.env.num_privileged_obs],
+                              action_shape=[self.env.num_actions])
+
 
     def configure_wandb(self, wandb):
         self.wandb = wandb
         self.do_wandb = True
         self.wandb.watch((self.alg.actor_critic.actor, self.alg.actor_critic.critic), log_freq=100, log_graph=True)
 
-    def configure_learn(self, num_learning_iterations, init_at_random_ep_len):
-        self.num_learning_iterations = num_learning_iterations
-        self.init_at_random_ep_len = init_at_random_ep_len
 
     def reset_learn(self):
         self.current_learning_iteration = 0
 
-    def learn(self, num_learning_iterations=None, init_at_random_ep_len=False):
-        if self.num_learning_iterations is not None:
-            num_learning_iterations = self.num_learning_iterations
-        if self.init_at_random_ep_len is not None:
-            init_at_random_ep_len = self.init_at_random_ep_len
+
+    def learn(self, num_learning_iterations, init_at_random_ep_len=False):
         # initialize writer
         if self.log_dir is not None and self.writer is None:
             self.writer = SummaryWriter(log_dir=self.log_dir, flush_secs=10)
         if init_at_random_ep_len:
             self.env.episode_length_buf = torch.randint_like(self.env.episode_length_buf, high=int(self.env.max_episode_length))
-        obs = self.env.get_observations()
+        actor_obs = self.env.get_observations()
+        if self.cfg["SE_learner"] == "modular_SE":
+            se_obs = self.env.get_se_observations()
+            se_estimate = self.state_estimator.predict(se_obs)
+            actor_obs = torch.cat((se_estimate, actor_obs), dim=1)
         privileged_obs = self.env.get_privileged_observations()
-        critic_obs = privileged_obs if privileged_obs is not None else obs
-        obs, critic_obs = obs.to(self.device), critic_obs.to(self.device)
-        self.alg.actor_critic.train() # switch to train mode (for dropout for example)
+        critic_obs = actor_obs if privileged_obs is None else privileged_obs
+        actor_obs, critic_obs = actor_obs.to(self.device), critic_obs.to(self.device)
+        # switch to train mode (e.g. for dropouts)
+        self.alg.actor_critic.train()
 
         ep_infos = []
         success_counts_infos = []
@@ -126,17 +164,30 @@ class OnPolicyRunner:
         tot_iter = self.current_learning_iteration + num_learning_iterations
         for it in range(self.current_learning_iteration, tot_iter):
             start = time.time()
-            # Rollout
+            # * Rollout
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
-                    actions = self.alg.act(obs, critic_obs)
-                    obs, privileged_obs, rewards, dones, infos = self.env.step(actions)
-                    critic_obs = privileged_obs if privileged_obs is not None else obs
-                    obs, critic_obs, rewards, dones = obs.to(self.device), critic_obs.to(self.device), rewards.to(self.device), dones.to(self.device)
-                    self.alg.process_env_step(rewards, dones, infos)
-                    
+                    actions = self.alg.act(actor_obs, critic_obs)                        # compute SE prediction and actions and values
+                    # * step simulation
+                    actor_obs, priv_obs, rewards, dones, infos = self.env.step(actions)
+                    if self.cfg["SE_learner"] == "modular_SE":
+                        se_obs = self.env.get_se_observations()
+                        se_estimate = self.state_estimator.predict(se_obs)
+                        actor_obs = torch.cat((se_estimate, actor_obs), dim=1)
+                    critic_obs = actor_obs if privileged_obs is None else privileged_obs
+                    actor_obs, critic_obs, rewards, dones = actor_obs.to(self.device), critic_obs.to(self.device), rewards.to(self.device), dones.to(self.device)
+
+                    # * add data-point to storage
+                    if self.cfg["SE_learner"] == "modular_SE": 
+                        self.state_estimator.process_env_step(dones, infos,
+                                                              se_obs,
+                                                              se_estimate)
+    
+                    if self.cfg["algorithm_class_name"] == "PPO":
+                        self.alg.process_env_step(rewards, dones, infos)
+
                     if self.log_dir is not None:
-                        # Book keeping
+                        # * Book keeping
                         if 'episode' in infos:
                             ep_infos.append(infos['episode'])
                         if 'success counts' in infos and 'episode counts' in infos:
@@ -153,21 +204,29 @@ class OnPolicyRunner:
                 stop = time.time()
                 collection_time = stop - start
 
-                # Learning step
+                # * Learning step
                 start = stop
                 self.alg.compute_returns(critic_obs)
-            
+
             mean_value_loss, mean_surrogate_loss = self.alg.update()
+            if self.cfg["SE_learner"] == "modular_SE":
+                SE_loss = self.state_estimator.update()
             stop = time.time()
             learn_time = stop - start
             if self.log_dir is not None:
                 self.log(locals())
             if it % self.save_interval == 0:
                 self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(it)))
+                if self.cfg["SE_learner"] == "modular_SE": 
+                    if not os.path.exists(self.SE_path):
+                        os.makedirs(self.SE_path)
+                    self.save_SE(os.path.join(self.SE_path, 'SE_{}.pt'.format(it)))
             ep_infos.clear()
-            self.current_learning_iteration += 1
-
+        self.current_learning_iteration += num_learning_iterations
+        # * save
         self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.current_learning_iteration)))
+        if self.cfg["SE_learner"] == "modular_SE": 
+            self.save_SE(os.path.join(self.SE_path, 'SE_{}.pt'.format(self.current_learning_iteration)))
 
     def log(self, locs, width=80, pad=35):
         self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
@@ -216,6 +275,8 @@ class OnPolicyRunner:
 
         self.writer.add_scalar('Loss/value_function', locs['mean_value_loss'], locs['it'])
         self.writer.add_scalar('Loss/surrogate', locs['mean_surrogate_loss'], locs['it'])
+        if self.cfg["SE_learner"] == "modular_SE": 
+            self.writer.add_scalar('Loss/SE_loss', locs['SE_loss'], locs['it'])
         self.writer.add_scalar('Loss/learning_rate', self.alg.learning_rate, locs['it'])
         self.writer.add_scalar('Policy/mean_noise_std', mean_std.item(), locs['it'])
         self.writer.add_scalar('Perf/total_fps', fps, locs['it'])
@@ -279,16 +340,39 @@ class OnPolicyRunner:
             'infos': infos,
             }, path)
 
+    def save_SE(self, path, infos=None):
+        torch.save({
+            'model_state_dict': self.state_estimator.state_estimator.state_dict(),
+            'optimizer_state_dict': self.state_estimator.SE_optimizer.state_dict(),
+            'iter': self.current_learning_iteration,
+            'infos': infos,
+            }, path)
+
     def load(self, path, load_optimizer=True):
         loaded_dict = torch.load(path)
         self.alg.actor_critic.load_state_dict(loaded_dict['model_state_dict'])
         if load_optimizer:
             self.alg.optimizer.load_state_dict(loaded_dict['optimizer_state_dict'])
         self.current_learning_iteration = loaded_dict['iter']
+
+        if self.cfg["SE_learner"] == "modular_SE": 
+            SE_path = path.replace("/model_", "/SE/SE_")
+            SEloaded_dict = torch.load(SE_path)
+            self.state_estimator.state_estimator.load_state_dict(SEloaded_dict['model_state_dict'])
+
         return loaded_dict['infos']
 
+
+    def get_state_estimator(self, device=None):
+        self.state_estimator.state_estimator.eval()
+        if device is not None:
+            self.state_estimator.state_estimator.to(device)
+        return self.state_estimator
+
+
     def get_inference_policy(self, device=None):
-        self.alg.actor_critic.eval() # switch to evaluation mode (dropout for example)
+        # switch to evaluation mode (dropout for example)
+        self.alg.actor_critic.eval()
         if device is not None:
             self.alg.actor_critic.to(device)
         return self.alg.actor_critic.act_inference
