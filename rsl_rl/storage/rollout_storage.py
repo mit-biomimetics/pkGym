@@ -30,9 +30,11 @@
 
 import torch
 
-from .storage_base import StorageBase
+from .base_storage import BaseStorage
 
-class RolloutStorage(StorageBase):
+class RolloutStorage(BaseStorage):
+    """ A standard rollout storage, implemented for for PPO.
+    """
     class Transition:
         def __init__(self):
             self.observations = None
@@ -44,7 +46,6 @@ class RolloutStorage(StorageBase):
             self.actions_log_prob = None
             self.action_mean = None
             self.action_sigma = None
-            self.hidden_states = None
         
         def clear(self):
             self.__init__()
@@ -90,7 +91,8 @@ class RolloutStorage(StorageBase):
 
         self.num_transitions_per_env = num_transitions_per_env
         self.num_envs = num_envs
-
+        # fill count indexes the current fill of the storage.
+        # for rollout storage, this implicitly indicates the step as well.
         self.fill_count = 0
 
     def add_transitions(self, transition: Transition):

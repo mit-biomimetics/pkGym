@@ -1,10 +1,17 @@
 import torch
 import torch.nn as nn
 from torch.distributions import Normal
-from torch.nn.modules import rnn
 
 class StateEstimatorNN(nn.Module):
-    is_recurrent = False
+    """ Set up a neural network for state-estimation
+    
+    Keyword arguments:
+    num_inputs -- the number of observations used
+    num_outputs -- the number of estimated states
+    hidden_dims -- list of hidden layers and their sizes (default [256, 128])
+    activation -- activation type (default 'elu')
+    dropouts -- list of dropout rate for each layer (default None)
+    """
     def __init__(self,  num_inputs, num_outputs, hidden_dims=[256, 128],
                  activation='elu', dropouts=None, **kwargs):
         if kwargs:

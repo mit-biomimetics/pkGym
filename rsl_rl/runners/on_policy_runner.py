@@ -180,8 +180,8 @@ class OnPolicyRunner:
                     # * add data-point to storage
                     if self.cfg["SE_learner"] == "modular_SE": 
                         self.state_estimator.process_env_step(dones, infos,
-                                                              actor_obs,
-                                                              critic_obs)
+                                                              se_obs,
+                                                              se_estimate)
     
                     if self.cfg["algorithm_class_name"] == "PPO":
                         self.alg.process_env_step(rewards, dones, infos)

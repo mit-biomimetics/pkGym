@@ -1,3 +1,5 @@
+# ! This file is deprecated and will soon be replaced (in the works).
+# temporarily left here for reference.
 
 # * keep track of obs across entire training run
 # for off-policy algorithms, initial conditions

@@ -1,9 +1,8 @@
-from .storage_base import StorageBase
+from .base_storage import BaseStorage
 import torch
 
-class RolloutSE(StorageBase):
-    """ This class stores rollout data for each update.
-    i.e. all the transition data in one ITERATION. It will be used to update the policy
+class SERolloutStorage(BaseStorage):
+    """ Store episodic data for supervised learning of the state-estimator.
     """
 
     class Transition:
@@ -13,7 +12,6 @@ class RolloutSE(StorageBase):
             self.dones = None
             self.values = None
             self.hidden_states = None
-            self.SE_prediction = None
             self.SE_targets = None
 
         def clear(self):
@@ -38,9 +36,6 @@ class RolloutSE(StorageBase):
                                  device=self.device).byte()
 
     def add_transitions(self, transition: Transition):
-        """ Add current transition to LT storage
-        Store variables according to the __init__ 
-        """
         if self.fill_count >= self.num_transitions_per_env:
             raise AssertionError("Rollout buffer overflow")
         self.observations[self.fill_count].copy_(transition.observations)
@@ -74,43 +69,4 @@ class RolloutSE(StorageBase):
                 obs_batch = observations[batch_idx]
                 # critic_observations_batch = critic_observations[batch_idx]
                 SE_target_batch = SE_targets[batch_idx]
-                yield obs_batch, SE_target_batch  # hid_states and mask
-
-# class LTStorageSE(LTStorageBase):
-#     """ This class stores LONGTERM data needed for certain algorithm
-#     1. Define transition (fill_count): should be complete data and parameters for single fill_count
-#     1. Define the full buffer to store the data
-#     2. Add data from transition
-#     """
-
-#     def __init__(self, num_envs, num_transitions_per_env, LT_storage_size,
-#                  actor_obs_shape, critic_obs_shape, se_shape=None,
-#                  device='cpu'):
-        
-#         self.num_envs = num_envs
-#         self.num_transitions_per_env = num_transitions_per_env  # num of steps for envs
-#         self.device = device
-#         self.LT_storage_size = LT_storage_size
-        
-#         self.actor_obs_shape = actor_obs_shape
-#         self.critic_obs_shape = critic_obs_shape
-        
-#         # LT storage data you want to store
-#         self.actor_obs = torch.zeros(LT_storage_size, *actor_obs_shape,
-#                                 device=self.device)
-#         self.dones = torch.zeros(LT_storage_size, 1,
-#                                     device=self.device).byte()
-#         # other parameters
-#         self.data_count = 0
-    
-#     # TODO: add transisions and batch later
-#     def add_transitions(self, transition: TransitionBase):
-#         """ Add current transition to LT storage
-#         Store variables according to the __init__ 
-#         """
-#         pass
-
-#     def mini_batch_generator(self):
-#         """ Generate mini batch for learning
-#         """
-#         pass
+                yield obs_batch, SE_target_batch
