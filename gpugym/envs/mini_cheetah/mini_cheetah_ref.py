@@ -25,7 +25,6 @@ class MiniCheetahRef(MiniCheetah):
         
         self.omega = 2*torch.pi*cfg.control.gait_freq
         
-        self.num_states = 13 + 2*self.num_dof + 1
         self.obs_scales.dof_pos = torch.tile(to_torch(self.obs_scales.dof_pos),
                                              (4,))
         if cfg.env.num_se_obs:

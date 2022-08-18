@@ -614,9 +614,6 @@ class FixedRobot(BaseTask):
         dof_props_asset = self.gym.get_asset_dof_properties(robot_asset)
         rigid_shape_props_asset = self.gym.get_asset_rigid_shape_properties(robot_asset)
 
-        # * default assumption are no non-physics states, and no floating base
-        self.num_states = 2*self.num_dof
-
         # save body names from the asset
         body_names = self.gym.get_asset_rigid_body_names(robot_asset)
         self.dof_names = self.gym.get_asset_dof_names(robot_asset)

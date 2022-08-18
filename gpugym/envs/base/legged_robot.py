@@ -825,7 +825,6 @@ class LeggedRobot(BaseTask):
         self.num_bodies = self.gym.get_asset_rigid_body_count(robot_asset)
         dof_props_asset = self.gym.get_asset_dof_properties(robot_asset)
         rigid_shape_props_asset = self.gym.get_asset_rigid_shape_properties(robot_asset)
-        self.num_states = 13 + 2*self.num_dof  # can be replaced in custom_init
 
         # save body names from the asset
         body_names = self.gym.get_asset_rigid_body_names(robot_asset)

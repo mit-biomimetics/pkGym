@@ -19,7 +19,6 @@ class MiniCheetah(LeggedRobot):
         # * init buffer for phase variable
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
-        self.num_states = 13 + 2*self.num_dof + 1
 
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
