@@ -7,7 +7,7 @@ class SERefCfg(MiniCheetahCfg):
     class env(MiniCheetahCfg.env):
         num_envs = 4096
         num_actions = 12
-        num_env_obs = 71
+        num_observations = 71
         num_privileged_obs = None
         episode_length_s = 15.
 
