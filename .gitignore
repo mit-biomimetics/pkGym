@@ -3,3 +3,7 @@ gpugym/scripts/wandb/
 .idea/
 gpuGym.egg-info/
 __pycache__
+wandb/
+.vscode/
+gpugym/wandb
+*.DS_Store

@@ -11,6 +11,7 @@ class FixedRobotCfg(BaseConfig):
         root_height = 2.
         send_timeouts = True # send time out information to the algorithm
         episode_length_s = 20 # episode length in seconds
+        num_env_obs = None # States observed from env, used only when SE is used
 
     class terrain:
         mesh_type = 'none'
@@ -36,7 +37,7 @@ class FixedRobotCfg(BaseConfig):
     class init_state:
 
         reset_mode = "reset_to_basic" 
-        # default setup chooses how the initial conditions are chosen. 
+        # reset_mode chooses how the initial conditions are chosen. 
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
 

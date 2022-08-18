@@ -32,7 +32,7 @@ from gpugym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgP
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 3000
+        num_envs = 6000
         num_observations = 49+3*18  # 121
         num_actions = 18
         episode_length_s = 100  # episode length in seconds
@@ -44,8 +44,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
         measure_heights = False
 
     class commands(LeggedRobotCfg.commands):
-        curriculum = False
-        max_curriculum = 1.
+        curriculum = True
+        max_curriculum = 3.
         num_commands = 4 # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
         resampling_time = 10. # time before command are changed[s]
         heading_command = True # if true: compute ang vel command from heading error
@@ -59,6 +59,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         reset_mode = "reset_to_range" # default setup chooses how the initial conditions are chosen.
                                 # "reset_to_basic" = a single position with some randomized noise on top. 
                                 # "reset_to_range" = a range of joint positions and velocities.
+                                #  "reset_to_traj" = feed in a trajectory to sample from. 
         penetration_check = False  # disable to not check for penetration on initial conds.
 
         #default for normalization and basic initialization 
@@ -156,7 +157,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         # * exponential average decay for action scale
         exp_avg_decay = 0.35  # set to None to disable
         # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 5  # ! substeps?
+        decimation = 10  # ! substeps?
 
     class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_friction = True
@@ -217,23 +218,23 @@ class MITHumanoidCfg(LeggedRobotCfg):
             tracking_lin_vel = 0.5  # 0.02
             orientation = 1.5  # 0.1
             torques = -5.e-6  # -5.e-7
-            base_height = 0.75  # 1.
+            base_height = 1.5  # 1.
             feet_air_time = 0.0  # 1.0  # rewards keeping feet in the air
             collision = 0.  # -1.
-            action_rate = -0.00  # -0.01
-            action_rate2 = -0.000  # -0.001
+            action_rate = -0.1
+            action_rate2 = -0.001  # -0.001
             feet_contact_forces = -0.1
             lin_vel_z = 0.  # 0.5
             ang_vel_xy = -0.0  # -0.1
             feet_stumble = -0.
-            dof_vel = 0.001  # 0.01
+            dof_vel = 0.0  # 0.01
             dof_acc = 0.0
             stand_still = 0. # 1.5
             dof_pos_limits = -0.0
             no_fly = 0.0
             symm_legs = 0.0
             symm_arms = 0.0
-            dof_near_home = 2.5  # 1.
+            dof_near_home = 0.5  # 1.
 
     class normalization(LeggedRobotCfg.normalization):
             class obs_scales(LeggedRobotCfg.normalization.obs_scales):
@@ -255,7 +256,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
     class noise(LeggedRobotCfg.noise):
         add_noise = True
-        noise_level = 0.01  # scales other values
+        noise_level = 0.25  # scales other values
 
         class noise_scales(LeggedRobotCfg.noise.noise_scales):
             base_z = 0.05
@@ -294,8 +295,9 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
         max_grad_norm = 1.
 
     class runner(LeggedRobotCfgPPO.runner):
-        num_steps_per_env = 50
-        max_iterations = 500
+        num_steps_per_env = 24
+        max_iterations = 5000
+        algorithm_class_name = 'PPO'
         run_name = 'Standing'
         experiment_name = 'MIT_Humanoid_Stand'
         save_interval = 50
@@ -303,4 +305,4 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
     class policy( LeggedRobotCfgPPO.policy ):
         actor_hidden_dims = [256, 256, 128]
         critic_hidden_dims = [512, 256]
-        activation = 'elu' # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+        activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid

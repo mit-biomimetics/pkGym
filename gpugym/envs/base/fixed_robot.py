@@ -48,6 +48,7 @@ class FixedRobot(BaseTask):
             self._custom_init(cfg)
         self.init_done = True
 
+
     def step(self, actions):
         """ Apply actions, simulate, call self.post_physics_step() and pre_physics_step()
 
@@ -95,11 +96,13 @@ class FixedRobot(BaseTask):
         return self.obs_buf, self.privileged_obs_buf, self.rew_buf, \
             self.reset_buf, self.extras
 
+
     def pre_physics_step(self):
             """
             Nothing by default
             """
             return 0
+
 
     def post_physics_step(self):
         """ check terminations, compute observations and rewards
@@ -130,6 +133,7 @@ class FixedRobot(BaseTask):
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
 
+
     def check_termination(self):
         """
         Check if the task has been terminated.
@@ -138,6 +142,7 @@ class FixedRobot(BaseTask):
         if hasattr(self, "_custom_termination"):
             self._custom_termination()
         self.reset_buf |= self.time_out_buf
+
 
     def reset_idx(self, env_ids):
         """ Reset some environments.
@@ -175,6 +180,7 @@ class FixedRobot(BaseTask):
         if self.cfg.env.send_timeouts:
             self.extras["time_outs"] = self.time_out_buf
 
+
     def compute_reward(self):
         """
         Compute the reward for the current state.
@@ -192,6 +198,7 @@ class FixedRobot(BaseTask):
             rew = self._reward_termination() * self.reward_scales["termination"]
             self.rew_buf += rew
             self.episode_sums["termination"] += rew
+
 
     def compute_observations(self):
         """
@@ -215,6 +222,7 @@ class FixedRobot(BaseTask):
             self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
                             * self.noise_scale_vec
 
+
     def _get_noise_scale_vec(self, cfg):
         """
         Sets a vector used to scale the noise added to the observations.
@@ -232,6 +240,7 @@ class FixedRobot(BaseTask):
         self.add_noise = self.cfg.noise.add_noise
         return noise_vec
 
+
     def create_sim(self):
         """
         Create the simulator.
@@ -244,6 +253,7 @@ class FixedRobot(BaseTask):
         self._create_ground_plane()
         self._create_envs()
 
+
     def set_camera(self, position, lookat):
         """
         Set the camera position and lookat.
@@ -252,8 +262,7 @@ class FixedRobot(BaseTask):
         cam_target = gymapi.Vec3(lookat[0], lookat[1], lookat[2])
         self.gym.viewer_camera_look_at(self.viewer, None, cam_pos, cam_target)
 
-    #------------- Callbacks --------------
-
+    # ------------- Callbacks --------------
     def _process_rigid_shape_props(self, props, env_id):
         """
         Process rigid shape properties.
@@ -274,6 +283,7 @@ class FixedRobot(BaseTask):
             for s in range(len(props)):
                 props[s].friction = self.friction_coeffs[env_id]
         return props
+
 
     def _process_dof_props(self, props, env_id):
         """ Callback allowing to store/change/randomize the DOF properties of each environment.
@@ -392,7 +402,7 @@ class FixedRobot(BaseTask):
         self.dof_pos[env_ids] = self.default_dof_pos
         self.dof_vel[env_ids] = 0
 
-    
+
     def reset_to_range(self, env_ids):
         """
         Reset to a uniformly random distribution of states, sampled from a
@@ -527,6 +537,7 @@ class FixedRobot(BaseTask):
                         self.dof_vel_range[i, :] = to_torch(vals)
             # todo check for consistency (low first, high second)
 
+
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, which will be called to 
             compute the total reward.
@@ -556,6 +567,7 @@ class FixedRobot(BaseTask):
                                                requires_grad=False)
                              for name in self.reward_scales.keys()}
 
+
     def _create_ground_plane(self):
         """ Adds a ground plane to the simulation, sets friction and restitution based on the cfg.
         """
@@ -566,6 +578,7 @@ class FixedRobot(BaseTask):
         plane_params.dynamic_friction = self.cfg.terrain.dynamic_friction
         plane_params.restitution = self.cfg.terrain.restitution
         self.gym.add_ground(self.sim, plane_params)
+
 
     def _create_envs(self):
         """ Creates environments:
@@ -668,6 +681,7 @@ class FixedRobot(BaseTask):
         for i in range(len(termination_contact_names)):
             self.termination_contact_indices[i] = self.gym.find_actor_rigid_body_handle(self.envs[0], self.actor_handles[0], termination_contact_names[i])
 
+
     def _get_env_origins(self):  # TODO: do without terrain
         """ Sets environment origins. On rough terrain the origins are defined by the terrain platforms.
             Otherwise create a grid.
@@ -684,6 +698,7 @@ class FixedRobot(BaseTask):
         self.env_origins[:, 0] = spacing * xx.flatten()[:self.num_envs]
         self.env_origins[:, 1] = spacing * yy.flatten()[:self.num_envs]
         self.env_origins[:, 2] = self.cfg.env.root_height
+
 
     def _parse_cfg(self, cfg):
         self.dt = self.cfg.control.decimation * self.sim_params.dt

@@ -188,7 +188,7 @@ class CartpoleCfg(FixedRobotCfg):
 
     class sim:
         # These values now match the original cartpole example experiment when using RL_games
-        dt = 0.0166 # 1/60 s
+        dt = 0.001 # 1/60 s
         substeps = 2
         gravity = [0., 0., -9.81]  # [m/s^2]
         up_axis = 1  # 0 is y, 1 is z
@@ -244,7 +244,7 @@ class CartpoleCfgPPO(FixedRobotCfgPPO):
         num_mini_batches = 4  # mini batch size = num_envs*nsteps / nminibatches
         learning_rate = 1.e-3  # 5.e-4
         schedule = 'adaptive'  # could be adaptive, fixed
-        gamma = 0.99
+        gamma = 0.999
         lam = 0.95
         desired_kl = 0.01
         max_grad_norm = 1.

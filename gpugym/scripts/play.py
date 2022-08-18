@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -30,7 +30,7 @@
 
 from gpugym import LEGGED_GYM_ROOT_DIR
 import os
-
+import copy
 import isaacgym
 from gpugym.envs import *
 from gpugym.utils import  get_args, export_policy_as_jit, task_registry, Logger
@@ -46,12 +46,17 @@ def play(args):
     env_cfg.terrain.num_rows = 5
     env_cfg.terrain.num_cols = 5
     env_cfg.terrain.curriculum = False
-    env_cfg.noise.add_noise = False
+    env_cfg.noise.add_noise = True
     env_cfg.domain_rand.randomize_friction = False
-    env_cfg.domain_rand.push_robots = False
-    env_cfg.domain_rand.push_interval_s = 2
-    env_cfg.domain_rand.max_push_vel_xy = 1.0
-
+    env_cfg.domain_rand.push_robots = True
+    env_cfg.domain_rand.push_interval_s = 5
+    env_cfg.domain_rand.max_push_vel_xy = 0.05
+    if hasattr(env_cfg.commands, "max_curriculum_x"):
+        env_cfg.commands.ranges.lin_vel_x = [-env_cfg.commands.max_curriculum_x,
+                                             env_cfg.commands.max_curriculum_x]
+    if hasattr(env_cfg.commands, "max_curriculum_yaw"):
+        env_cfg.commands.ranges.lin_vel_yaw = [-env_cfg.commands.max_curriculum_ang,
+                                               env_cfg.commands.max_curriculum_ang]
     # prepare environment
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
     obs = env.get_observations()
@@ -59,12 +64,22 @@ def play(args):
     train_cfg.runner.resume = True
     ppo_runner, train_cfg = task_registry.make_alg_runner(env=env, name=args.task, args=args, train_cfg=train_cfg)
     policy = ppo_runner.get_inference_policy(device=env.device)
-
+    if train_cfg.runner.SE_learner == "modular_SE":
+        SE_ON = True
+        state_estimator = ppo_runner.get_state_estimator(device=env.device)
+    else:
+        SE_ON = False
     # export policy as a jit module (used to run it from C++)
     if EXPORT_POLICY:
         path = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name, 'exported', 'policies')
         export_policy_as_jit(ppo_runner.alg.actor_critic, path)
         print('Exported policy as jit script to: ', path)
+        if SE_ON:
+            se_path = os.path.join(path, 'se_1.jit')
+            se_model = copy.deepcopy(state_estimator.state_estimator).to('cpu')
+            traced_script_module = torch.jit.script(se_model)
+            traced_script_module.save(se_path)
+            # lets_test = torch.jit.script(se_model)
 
     logger = Logger(env.dt)
     robot_index = 0 # which robot is used for logging
@@ -77,6 +92,12 @@ def play(args):
     img_idx = 0
 
     for i in range(10*int(env.max_episode_length)):
+        if SE_ON:
+            se_obs = env.get_se_observations()
+            se_prediction = state_estimator.predict(se_obs)
+            obs     = torch.cat((se_prediction.detach(), obs.detach()),
+                                      dim=1)
+
         actions = policy(obs.detach())
         obs, _, rews, dones, infos = env.step(actions.detach())
         if RECORD_FRAMES:
@@ -88,32 +109,6 @@ def play(args):
             camera_position += camera_vel * env.dt
             env.set_camera(camera_position, camera_position + camera_direction)
 
-        # if i < stop_state_log:
-        #     logger.log_states(
-        #         {
-        #             'dof_pos_target': actions[robot_index, joint_index].item() * env.cfg.control.action_scale,
-        #             'dof_pos': env.dof_pos[robot_index, joint_index].item(),
-        #             'dof_vel': env.dof_vel[robot_index, joint_index].item(),
-        #             'dof_torque': env.torques[robot_index, joint_index].item(),
-        #             'command_x': env.commands[robot_index, 0].item(),
-        #             'command_y': env.commands[robot_index, 1].item(),
-        #             'command_yaw': env.commands[robot_index, 2].item(),
-        #             'base_vel_x': env.base_lin_vel[robot_index, 0].item(),
-        #             'base_vel_y': env.base_lin_vel[robot_index, 1].item(),
-        #             'base_vel_z': env.base_lin_vel[robot_index, 2].item(),
-        #             'base_vel_yaw': env.base_ang_vel[robot_index, 2].item(),
-        #             'contact_forces_z': env.contact_forces[robot_index, env.feet_indices, 2].cpu().numpy()
-        #         }
-        #     )
-        # elif i==stop_state_log:
-        #     logger.plot_states()
-        # if  0 < i < stop_rew_log:
-        #     if infos["episode"]:
-        #         num_episodes = torch.sum(env.reset_buf).item()
-        #         if num_episodes>0:
-        #             logger.log_rewards(infos["episode"], num_episodes)
-        # elif i==stop_rew_log:
-        #     logger.print_rewards()
 
 if __name__ == '__main__':
     EXPORT_POLICY = True

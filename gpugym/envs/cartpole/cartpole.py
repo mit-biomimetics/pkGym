@@ -42,9 +42,7 @@ class Cartpole(FixedRobot):
         self.cfg = cfg
 
         self.reset_dist = self.cfg.env.reset_dist
-
         self.max_push_effort = self.cfg.env.max_effort
-        self.max_episode_length = 500  # 500
 
         # HANDLE AUGMENTATIONS
         self.augmentations = self.cfg.env.augmentations

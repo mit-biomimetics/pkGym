@@ -5,10 +5,10 @@ BASE_HEIGHT_REF = 0.33
 
 class MiniCheetahCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 2**12  # (n_robots in Rudin 2021 paper - batch_size = n_steps * n_robots)
-        num_actions = 12  # 12 for the 12 actuated DoFs of the mini cheetah
-        num_observations = 87
-        episode_length_s = 4.
+        num_envs = 2**12
+        num_actions = 12
+        num_observations = 75
+        episode_length_s = 10.
 
     class terrain(LeggedRobotCfg.terrain):
         curriculum = False
@@ -74,6 +74,10 @@ class MiniCheetahCfg(LeggedRobotCfg):
                           [0., 0.],  # roll
                           [0., 0.],  # pitch
                           [0., 0.]]  # yaw
+                          
+        # TODO: add new traj
+        ref_traj = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/trajectories/single_leg.csv"
+        ref_type = "Pos"
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
@@ -111,8 +115,8 @@ class MiniCheetahCfg(LeggedRobotCfg):
     class asset(LeggedRobotCfg.asset):
         file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah.urdf"
         foot_name = "foot"
-        penalize_contacts_on = ["shank", "thigh"]
-        terminate_after_contacts_on = ["base", "hip"]
+        penalize_contacts_on = []
+        terminate_after_contacts_on = ["base"]
         collapse_fixed_joints = False  # merge bodies connected by fixed joints.
         self_collisions = 1  # added blindly from the AnymalCFlatCFG.  1 to disable, 0 to enable...bitwise filter
         flip_visual_attachments = False
@@ -154,8 +158,10 @@ class MiniCheetahCfg(LeggedRobotCfg):
     class commands(LeggedRobotCfg.commands):
         heading_command = False
         resampling_time = 4.
+        curriculum = True
+        max_curriculum = 3.
         class ranges(LeggedRobotCfg.commands.ranges):
-            lin_vel_x = [0., 0.] # min max [m/s]
+            lin_vel_x = [0., 1.] # min max [m/s]
             lin_vel_y = [0., 0]   # min max [m/s]
             ang_vel_yaw = [0.*3.14, 0.*3.14]    # min max [rad/s]
             heading = [0., 0.]
@@ -182,15 +188,14 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
     class noise(LeggedRobotCfg.noise):
         add_noise = True
-        noise_level = 0.1  # scales other values
+        noise_level = 1  # scales other values
 
         class noise_scales(LeggedRobotCfg.noise.noise_scales):
-            dof_pos = 0.01
-            dof_vel = 0.01
-            lin_vel = 0.1
-            ang_vel = 0.2
-            gravity = 0.05
-            height_measurements = 0.1
+            dof_pos = 0.005  # can be made very low
+            dof_vel = 0.005
+            ang_vel = [0.3, 0.15, 0.4]  # 0.027, 0.14, 0.37
+            gravity = 0.02
+            # height_measurements = 0.1
     
     class sim:
         dt =  0.002
@@ -206,9 +211,25 @@ class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
 
     class algorithm( LeggedRobotCfgPPO.algorithm):
+        # training params
+        value_loss_coef = 1.0
+        use_clipped_value_loss = True
+        clip_param = 0.2
         entropy_coef = 0.01
+        num_learning_epochs = 5
+        num_mini_batches = 4 # mini batch size = num_envs*nsteps / nminibatches
+        learning_rate = 1.e-3 #5.e-4
+        schedule = 'adaptive' # could be adaptive, fixed
+        gamma = 0.99
+        lam = 0.95
+        desired_kl = 0.01
+        max_grad_norm = 1.
+
 
     class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
         experiment_name = 'mini_cheetah'
-        max_iterations = 500  # number of policy updates
+        max_iterations = 1000  # number of policy updates
+        SE_learner = 'none'
+        algorithm_class_name = 'PPO'
+        num_steps_per_env = 24 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)

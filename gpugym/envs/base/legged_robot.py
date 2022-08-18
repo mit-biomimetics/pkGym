@@ -41,7 +41,6 @@ import torch
 from torch import Tensor
 from typing import Tuple, Dict
 
-from gpugym import LEGGED_GYM_ROOT_DIR
 from gpugym.envs.base.base_task import BaseTask
 from gpugym.utils.terrain import Terrain
 from gpugym.utils.math import *
@@ -73,12 +72,12 @@ class LeggedRobot(BaseTask):
 
         if not self.headless:
             self.set_camera(self.cfg.viewer.pos, self.cfg.viewer.lookat)
-        self._init_buffers()
-        self._prepare_reward_function()
+
         if hasattr(self, "_custom_init"):
             self._custom_init(cfg)
+        self._init_buffers()
+        self._prepare_reward_function()
         self.init_done = True
-
 
     def step(self, actions):
         """ Apply actions, simulate, call self.post_physics_step()
@@ -95,7 +94,6 @@ class LeggedRobot(BaseTask):
         # step physics and render each frame
         self.render()
         for _ in range(self.cfg.control.decimation):
-
             if self.cfg.control.exp_avg_decay:
                 self.action_avg = exp_avg_filter(self.actions, self.action_avg,
                                                 self.cfg.control.exp_avg_decay)
@@ -155,11 +153,6 @@ class LeggedRobot(BaseTask):
         env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
         self.reset_idx(env_ids)
         self.compute_observations() # in some cases a simulation step might be required to refresh some obs (for example body positions)
-
-        nact = self.num_actions
-        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
-        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
-        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale
 
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
@@ -243,13 +236,18 @@ class LeggedRobot(BaseTask):
 
         dof_pos = (self.dof_pos-self.default_dof_pos)*self.obs_scales.dof_pos
 
+        nact = self.num_actions
+        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
+        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
+        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale
+
         self.obs_buf = torch.cat((self.base_lin_vel*self.obs_scales.lin_vel,
                                   self.base_ang_vel*self.obs_scales.ang_vel,
                                   self.projected_gravity,
                                   self.commands[:, :3]*self.commands_scale,
                                   dof_pos,
                                   self.dof_vel*self.obs_scales.dof_vel,
-                                  self.actions),
+                                  self.ctrl_hist),
                                  dim=-1)
         # add perceptive inputs if not blind
         if self.cfg.terrain.measure_heights:
@@ -262,6 +260,8 @@ class LeggedRobot(BaseTask):
             self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
                             * self.noise_scale_vec
 
+        # * set up SE targets if needed (e.g. see mini_cheetah_ref.py).
+        # self.se_obs_buf = torch.cat((obs), dim=-1)
 
     def create_sim(self):
         """ Creates simulation, terrain and evironments
@@ -717,8 +717,9 @@ class LeggedRobot(BaseTask):
 
 
     def _prepare_reward_function(self):
-        """ Prepares a list of reward functions, whcih will be called to compute the total reward.
-            Looks for self._reward_<REWARD_NAME>, where <REWARD_NAME> are names of all non zero reward scales in the cfg.
+        """ Prepares a list of reward functions, whcih will be called to
+        compute the total reward. Looks for self._reward_<REWARD_NAME>, where
+        <REWARD_NAME> are names of all non zero reward scales in the cfg.
         """
         # remove zero scales + multiply non-zero ones by dt
         for key in list(self.reward_scales.keys()):

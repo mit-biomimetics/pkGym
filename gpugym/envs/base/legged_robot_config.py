@@ -39,6 +39,7 @@ class LeggedRobotCfg(BaseConfig):
         env_spacing = 3.  # not used with heightfields/trimeshes 
         send_timeouts = True  # send time out information to the algorithm
         episode_length_s = 20  # episode length in seconds
+        num_env_obs = None # States observed from env, used only when SE is used
 
     class terrain:
         mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
@@ -88,7 +89,7 @@ class LeggedRobotCfg(BaseConfig):
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
 
-        # * root defaults
+        # * default COM for basic initialization 
         pos = [0.0, 0.0, 1.] # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
@@ -194,7 +195,7 @@ class LeggedRobotCfg(BaseConfig):
 
     class noise:
         add_noise = True
-        noise_level = 1.0 # scales other values
+        noise_level = 1.0  # scales other values
         class noise_scales:
             dof_pos = 0.01
             dof_vel = 1.5
@@ -261,7 +262,7 @@ class LeggedRobotCfgPPO(BaseConfig):
         algorithm_class_name = 'PPO'
         num_steps_per_env = 24 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)
         max_iterations = 1500 # number of policy updates
-
+        SE_learner = None
         # logging
         save_interval = 50 # check for potential saves every this many iterations
         run_name = ''

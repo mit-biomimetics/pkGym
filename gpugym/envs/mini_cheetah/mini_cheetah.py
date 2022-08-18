@@ -12,6 +12,7 @@ from typing import Tuple, Dict
 from gpugym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
 from gpugym.envs import LeggedRobot
 
+
 class MiniCheetah(LeggedRobot):
 
     def _custom_init(self, cfg):
@@ -54,17 +55,10 @@ class MiniCheetah(LeggedRobot):
 
         # * update commanded action history buffer
         control_type = self.cfg.control.control_type
-        if control_type in ['T', 'Td']:
-            ndof = self.num_dof
-            self.ctrl_hist[:, 2 * ndof:] = self.ctrl_hist[:, ndof:2 * ndof]
-            self.ctrl_hist[:, ndof:2 * ndof] = self.ctrl_hist[:, :ndof]
-            # self.ctrl_hist[:, :nact] = self.actions*self.obs_scales.action_scale
-            self.ctrl_hist[:, :ndof] = self.dof_vel * self.obs_scales.dof_vel
-        else:
-            nact = self.num_actions
-            self.ctrl_hist[:, 2 * nact:] = self.ctrl_hist[:, nact:2 * nact]
-            self.ctrl_hist[:, nact:2 * nact] = self.ctrl_hist[:, :nact]
-            self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale + self.default_dof_pos
+        nact = self.num_actions
+        self.ctrl_hist[:, 2 * nact:] = self.ctrl_hist[:, nact:2 * nact]
+        self.ctrl_hist[:, nact:2 * nact] = self.ctrl_hist[:, :nact]
+        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale + self.default_dof_pos
 
         self.obs_buf = torch.cat((base_z,
                                   self.base_lin_vel*self.obs_scales.lin_vel,
@@ -73,7 +67,6 @@ class MiniCheetah(LeggedRobot):
                                   self.commands[:, :3]*self.commands_scale,
                                   dof_pos,
                                   self.dof_vel*self.obs_scales.dof_vel,
-                                  self.actions,
                                   self.ctrl_hist,
                                   torch.cos(self.phase*2*torch.pi),
                                   torch.sin(self.phase*2*torch.pi)),
@@ -94,21 +87,20 @@ class MiniCheetah(LeggedRobot):
             cfg (Dict): Environment config file
 
         Returns:
-            [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
+            [torch.Tensor]: Vector of scales used to multiply a uniform
+            distribution in [-1, 1]
         '''
         noise_vec = torch.zeros_like(self.obs_buf[0])
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         ns_lvl = self.cfg.noise.noise_level
         noise_vec[1:4] = noise_scales.lin_vel*ns_lvl*self.obs_scales.lin_vel
-        noise_vec[4:7] = noise_scales.ang_vel*ns_lvl*self.obs_scales.ang_vel
+        noise_vec[4:7] = to_torch(noise_scales.ang_vel)*ns_lvl*self.obs_scales.ang_vel
         noise_vec[7:10] = noise_scales.gravity*ns_lvl
         noise_vec[10:13] = 0.  # commands
         noise_vec[13:25] = noise_scales.dof_pos*ns_lvl*self.obs_scales.dof_pos
         noise_vec[25:37] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel
-        noise_vec[37:49] = 0.  # previous actions
-        noise_vec[49:85] = 0.
-        noise_vec[85:87] = 0.  # phase # * could add noise, to make u_ff robust
+
         if self.cfg.terrain.measure_heights:
             noise_vec[66:187] = noise_scales.height_measurements*ns_lvl \
                                 * self.obs_scales.height_measurements
@@ -132,8 +124,8 @@ class MiniCheetah(LeggedRobot):
 
     def _reward_orientation(self):
         # Penalize non flat base orientation
-        error = torch.sum(torch.square(self.projected_gravity[:, :2]), dim=1)
-        return torch.exp(-error/self.cfg.rewards.tracking_sigma)
+        error = torch.square(self.projected_gravity[:, :2])/self.cfg.rewards.tracking_sigma
+        return torch.sum(torch.exp(-error), dim=1)
         # return self.sqrdexp(self.projected_gravity[:, 2]+1.)
 
     def _reward_base_height(self):
@@ -161,24 +153,3 @@ class MiniCheetah(LeggedRobot):
 
     def _reward_dof_near_home(self):
         return torch.sum(self.sqrdexp((self.dof_pos - self.default_dof_pos) * self.cfg.normalization.obs_scales.dof_pos), dim=1)
-
-    # def _reward_symm_legs(self):
-    #     error = 0.
-    #     for i in range(2, 5):
-    #         error += self.sqrdexp((self.dof_pos[:, i]+self.dof_pos[:, i+9]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     for i in range(0, 2):
-    #         error += self.sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     return error
-
-    # def _reward_symm_arms(self):
-    #     error = 0.
-    #     for i in range(6, 8):
-    #         error += self.sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     error += self.sqrdexp((self.dof_pos[:, 5]+self.dof_pos[:, 14]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     error += self.sqrdexp((self.dof_pos[:, 8]+self.dof_pos[:, 17]) \
-    #                     / self.cfg.normalization.obs_scales.dof_pos)
-    #     return error
