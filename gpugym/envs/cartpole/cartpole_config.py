@@ -73,7 +73,6 @@ class CartpoleCfg(FixedRobotCfg):
         # default setup chooses how the initial conditions are chosen. 
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
-        # "reset_to_storage" = reset from a storage of initial conditions
 
         # * initial conditiosn for reset_to_range
         dof_pos_range = {'slider_to_cart': [-2.5, 2.5],

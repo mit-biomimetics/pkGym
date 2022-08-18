@@ -50,9 +50,6 @@ class Cartpole(FixedRobot):
         # HANDLE HIERARCHICAL REWARDS
         self.reward_hierarchy = cfg.rewards.hierarchy
 
-        if self.cfg.init_state.reset_mode == "reset_to_storage":
-            self.X0_conds[:, 1] = torch.pi
-
 
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics

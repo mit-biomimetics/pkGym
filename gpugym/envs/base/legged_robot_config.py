@@ -88,11 +88,6 @@ class LeggedRobotCfg(BaseConfig):
         # reset setup chooses how the initial conditions are chosen. 
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
-        # "reset_to_storage" = uniformly sample from a set of initial conditons
-        # note, reset_to_storage needs to implemented manually for your environment
-        
-        # * storage parameters
-        storage_size = 4000
 
         # * default COM for basic initialization 
         pos = [0.0, 0.0, 1.] # x,y,z [m]

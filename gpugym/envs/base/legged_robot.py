@@ -513,29 +513,6 @@ class LeggedRobot(BaseTask):
                                     device=self.device)
 
 
-    def reset_to_storage(self, env_ids):
-        """
-        Reset agents drawn from a buffer of initial conditions (`X0_conds`).
-        """
-        # * uncomment to draw samples _without_ replacement
-        # indices = torch.randperm(len(self.X0_conds.shape[0]))[:len(env_ids)]]
-        # * uncomment to draw samples with replacement
-        # more general because it allows buffer to be smaller than num envs
-        idx = torch.randint(self.X0_conds.shape[0], (len(env_ids),))
-        self.root_states[env_ids] = self.X0_conds[idx, :13]
-        self.dof_pos[env_ids] = self.X0_conds[idx, 13:13+self.num_dof]
-        self.dof_vel[env_ids] = self.X0_conds[idx,
-                                        13+self.num_dof:13+2*self.num_dof]
-
-
-    def update_X0(self, X0, from_obs=False):
-        """
-        Update batch of possible initial conditions.
-        Overload if observations are not just states.
-        """
-        self.X0_conds = X0
-
-
     def _push_robots(self):
         """ Random pushes the robots. Emulates an impulse by setting a randomized base velocity. 
         """
@@ -738,25 +715,6 @@ class LeggedRobot(BaseTask):
                     dtype=torch.float, device=self.device, requires_grad=False)
             # todo check for consistency (low first, high second)
 
-        # * init storage, if used
-        if self.cfg.init_state.reset_mode == "reset_to_storage":
-            self._initialize_storage()
-
-
-    def _initialize_storage(self):
-        """
-        Initialize a buffer of states (`X0_conds`) from which initial
-        conditions can be drawn. By default, this buffer account for the root
-        and joint states and is simply filled with the default positions and
-        zero-velocity (this is thus equivalent to `reset_to_basic`).
-        Overload to set up a specific distribution (e.g. ref trajs) and/or add
-        other states (e.g. commands, phase, etc.).
-        """
-        self.X0_conds = torch.zeros(self.cfg.init_state.storage_size,
-                                    self.num_states,
-                                    device=self.device, requires_grad=False)
-        self.X0_conds[:, :13] = self.base_init_state
-        self.X0_conds[:, 13:13+self.num_dof] = self.default_dof_pos
 
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, whcih will be called to

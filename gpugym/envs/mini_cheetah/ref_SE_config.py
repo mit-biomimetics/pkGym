@@ -48,9 +48,6 @@ class SERefCfg(MiniCheetahCfg):
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
 
-        # * storage parameters
-        storage_size = 4000
-
         # * default COM for basic initialization 
         pos = [0.0, 0.0, 0.33]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]

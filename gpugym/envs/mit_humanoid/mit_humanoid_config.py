@@ -56,12 +56,11 @@ class MITHumanoidCfg(LeggedRobotCfg):
             heading = [0, 0]
 
     class init_state(LeggedRobotCfg.init_state):
-        reset_mode = "reset_to_storage" # default setup chooses how the initial conditions are chosen.
+        reset_mode = "reset_to_range" # default setup chooses how the initial conditions are chosen.
                                 # "reset_to_basic" = a single position with some randomized noise on top. 
                                 # "reset_to_range" = a range of joint positions and velocities.
                                 #  "reset_to_traj" = feed in a trajectory to sample from. 
         penetration_check = False  # disable to not check for penetration on initial conds.
-        storage_size = 4000
 
         #default for normalization and basic initialization 
         # -0.27, 0.638, -0.35;
@@ -294,8 +293,6 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
         lam = 0.95
         desired_kl = 0.01
         max_grad_norm = 1.
-        # PPO_plus
-        # storage_size = 12000
 
     class runner(LeggedRobotCfgPPO.runner):
         num_steps_per_env = 24

@@ -21,22 +21,6 @@ class MiniCheetah(LeggedRobot):
                                  device=self.device, requires_grad=False)
         self.num_states = 13 + 2*self.num_dof + 1
 
-    def _initialize_storage(self):
-        """
-        Initialize a buffer of states (`X0_conds`) from which initial
-        conditions can be drawn. By default, this buffer account for the root
-        and joint states and is simply filled with the default positions and
-        zero-velocity (this is thus equivalent to `reset_to_basic`).
-        Overload to set up a specific distribution (e.g. ref trajs) and/or add
-        other states (e.g. commands, phase, etc.).
-        """
-        # +1 for the phase
-        self.X0_conds = torch.zeros(self.cfg.init_state.storage_size,
-                                    self.num_states+1,
-                                    device=self.device, requires_grad=False)
-        self.X0_conds[:, :13] = self.base_init_state
-        self.X0_conds[:, 13:13+self.num_dof] = self.default_dof_pos
-
     def _post_physics_step_callback(self):
         """ Callback called before computing terminations, rewards, and observations, phase-dynamics
             Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
@@ -72,30 +56,10 @@ class MiniCheetah(LeggedRobot):
 
         # * update commanded action history buffer
         control_type = self.cfg.control.control_type
-        if control_type in ['T', 'Td']:
-            ndof = self.num_dof
-            self.ctrl_hist[:, 2 * ndof:] = self.ctrl_hist[:, ndof:2 * ndof]
-            self.ctrl_hist[:, ndof:2 * ndof] = self.ctrl_hist[:, :ndof]
-            # self.ctrl_hist[:, :nact] = self.actions*self.obs_scales.action_scale
-            self.ctrl_hist[:, :ndof] = self.dof_vel * self.obs_scales.dof_vel
-        else:
-            nact = self.num_actions
-            self.ctrl_hist[:, 2 * nact:] = self.ctrl_hist[:, nact:2 * nact]
-            self.ctrl_hist[:, nact:2 * nact] = self.ctrl_hist[:, :nact]
-            self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale + self.default_dof_pos
-
-        # self.obs_buf = torch.cat((base_z,
-        #                           self.base_lin_vel*self.obs_scales.lin_vel,
-        #                           self.base_ang_vel*self.obs_scales.ang_vel,
-        #                           self.projected_gravity,
-        #                           self.commands[:, :3]*self.commands_scale,
-        #                           dof_pos,
-        #                           self.dof_vel*self.obs_scales.dof_vel,
-        #                           self.actions,
-        #                           self.ctrl_hist,
-        #                           torch.cos(self.phase*2*torch.pi),
-        #                           torch.sin(self.phase*2*torch.pi)),
-        #                          dim=-1)
+        nact = self.num_actions
+        self.ctrl_hist[:, 2 * nact:] = self.ctrl_hist[:, nact:2 * nact]
+        self.ctrl_hist[:, nact:2 * nact] = self.ctrl_hist[:, :nact]
+        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale + self.default_dof_pos
 
         self.obs_buf = torch.cat((self.base_ang_vel*self.obs_scales.ang_vel,
                                   self.projected_gravity,
@@ -122,7 +86,8 @@ class MiniCheetah(LeggedRobot):
             cfg (Dict): Environment config file
 
         Returns:
-            [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
+            [torch.Tensor]: Vector of scales used to multiply a uniform
+            distribution in [-1, 1]
         '''
         noise_vec = torch.zeros_like(self.obs_buf[0])
         self.add_noise = self.cfg.noise.add_noise
@@ -138,58 +103,6 @@ class MiniCheetah(LeggedRobot):
             noise_vec[66:187] = noise_scales.height_measurements*ns_lvl \
                                 * self.obs_scales.height_measurements
         return noise_vec
-
-
-    def update_X0(self, X0, from_obs=False):
-        """
-        Needs to match any scaling or other changes made in observations
-        """
-
-        if not from_obs:
-            self.X0_conds = X0
-            return
-        # * otherwise, unscale and handle obs to get back to states
-
-        n_new = min(X0.shape[0], self.X0_conds.shape[0])
-        base_z = X0[:n_new, 0:1]
-        base_lin_vel = X0[:n_new, 1:4]/self.obs_scales.lin_vel
-        base_ang_vel = X0[:n_new, 4:7]/self.obs_scales.ang_vel
-        prj_grv = X0[:n_new, 7:10]  # ! I think? Check...
-        dof_pos = X0[:n_new, 10:22]
-        dof_vel = X0[:n_new, 34:46]/self.obs_scales.dof_vel
-        phase = torch.atan2(X0[:n_new, 46:47], X0[:n_new, 47:48])
-
-        # from prj_grv to roll and pitch
-        pitch = torch.atan2(-prj_grv[:, 1], prj_grv[:, 2])
-        roll = torch.atan2(prj_grv[:, 0], prj_grv[:, 2]/torch.cos(pitch))
-
-        base_quat = quat_from_euler_xyz(roll, pitch, torch.zeros_like(roll))
-        base_pos = torch.cat((torch.zeros_like(base_z),
-                            torch.zeros_like(base_z),
-                            base_z), dim=1)
-        self.X0_conds[:n_new, :3] = base_pos
-        self.X0_conds[:n_new, 3:7] = base_quat
-        self.X0_conds[:n_new, 7:10] = base_lin_vel
-        self.X0_conds[:n_new, 10:13] = base_ang_vel
-        self.X0_conds[:n_new, 13:25] = dof_pos
-        self.X0_conds[:n_new, 25:37] = dof_vel
-        self.X0_conds[:n_new, 37:38] = phase
-
-    
-    def reset_to_storage(self, env_ids):
-        # also reset phase
-        # # * with replacement
-        # # more general because it allows buffer to be less than envs
-        idx = torch.randint(self.X0_conds.shape[0], (len(env_ids),))
-        self.root_states[env_ids] = self.X0_conds[idx, :13]
-        # self.dof_pos[env_ids] = torch.zeros_like(self.dof_pos[env_ids])
-        self.dof_pos[env_ids] = self.X0_conds[idx, 13:13+self.num_dof]
-        # self.dof_vel[env_ids] = torch.zeros_like(self.dof_vel[env_ids])
-        self.dof_vel[env_ids] = self.X0_conds[idx,
-                                            13+self.num_dof:13+2*self.num_dof]
-        self.phase[env_ids] = self.X0_conds[idx, 37:38]  # keep it vertical (or unsqueeze)
-
-
 
     def sqrdexp(self, x):
         """ shorthand helper for squared exponential

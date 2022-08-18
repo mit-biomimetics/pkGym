@@ -419,27 +419,6 @@ class FixedRobot(BaseTask):
                         device=self.device)
 
 
-    def reset_to_storage(self, env_ids):
-        """
-        Reset, drawn from a storage of initial conditions
-        """
-        # * without replacement
-        # indices = torch.randperm(len(self.X0_conds.shape[0]))[:len(env_ids)]]
-        # * with replacement
-        # more general because it allows buffer to be less than envs
-        indices = torch.randint(self.X0_conds.shape[0], (len(env_ids),))
-        self.dof_pos[env_ids] = self.X0_conds[indices, :self.num_dof]
-        self.dof_vel[env_ids] = self.X0_conds[indices, self.num_dof:]
-
-
-    def update_X0(self, X0, from_obs=False):
-        """
-        Update batch of possible initial conditions.
-        Overload if observations are not just states.
-        """
-        self.X0_conds = X0
-
-
     def _push_robots(self):
         """
         Needs to be implemented for each robot, depending where you want the push to happen.
@@ -557,13 +536,6 @@ class FixedRobot(BaseTask):
                     if joint in self.dof_names[i]:
                         self.dof_vel_range[i, :] = to_torch(vals)
             # todo check for consistency (low first, high second)
-
-        # * init storage, if used
-        # todo different size than num_envs
-        # ! overload for specific
-        if self.cfg.init_state.reset_mode == "reset_to_storage":
-            self.X0_conds = torch.zeros(self.num_envs, self.num_states,
-                                        device=self.device, requires_grad=False)
 
 
     def _prepare_reward_function(self):
