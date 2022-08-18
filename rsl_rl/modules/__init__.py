@@ -29,5 +29,4 @@
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
 from .actor_critic import ActorCritic
-from .actor_critic_recurrent import ActorCriticRecurrent
 from .state_estimator import StateEstimatorNN
