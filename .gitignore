@@ -6,3 +6,4 @@ __pycache__
 wandb/
 .vscode/
 gpugym/wandb
+*.DS_Store
