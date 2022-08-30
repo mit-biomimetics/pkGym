@@ -47,6 +47,50 @@ pip install -r requirements
 
 ---
 
+### CUDA Installation for Ubuntu 20.04 and above
+#### Inspired by: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
+
+1. Ensure Kernel Headers and Dev packages are installed
+```bash
+sudo apt-get install linux-headers-$(uname -r)
+```
+
+2. Install nvidia-cuda-toolkit
+```bash
+sudo apt install nvidia-cuda-toolkit
+```
+
+3. Remove outdated Signing Key
+```bash
+sudo apt-key del 7fa2af80
+```
+
+4. Install CUDA
+```bash
+# ubuntu2004 or ubuntu2204 or newer.
+DISTRO=ubuntu2204
+# Likely what you want, but check if you need otherse
+ARCH=x86_64
+wget https://developer.download.nvidia.com/compute/cuda/repos/$DISTRO/$ARCH/cuda-keyring_1.0-1_all.deb
+sudo dpkg -i cuda-keyring_1.0-1_all.deb
+sudo apt-get update
+sudo apt-get install cuda
+```
+
+5. Reboot, and you're good.
+```bash
+sudo reboot
+```
+
+6. Use these commands to check your installation
+```bash
+nvidia-smi
+nvcc --version
+```
+
+**Troubleshooting Docs**
+https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#ubuntu-installation
+
 ### CODE STRUCTURE ###
 1. Each environment is defined by an env file (`legged_robot.py`) and a config file (`legged_robot_config.py`). The config file contains two classes: one containing all the environment parameters (`LeggedRobotCfg`) and one for the training parameters (`LeggedRobotCfgPPo`).  
 2. Both env and config classes use inheritance.  
