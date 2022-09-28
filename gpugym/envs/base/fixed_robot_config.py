@@ -181,6 +181,7 @@ class FixedRobotCfgPPO(BaseConfig):
         algorithm_class_name = 'PPO'
         num_steps_per_env = 24 # per iteration
         max_iterations = 1500 # number of policy updates
+        SE_learner = None
 
         # logging
         save_interval = 50 # check for potential saves every this many iterations
