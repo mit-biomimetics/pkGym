@@ -113,10 +113,10 @@ class MiniCheetahCfg(LeggedRobotCfg):
         max_push_vel_xy = 0.05
 
     class asset(LeggedRobotCfg.asset):
-        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah.urdf"
+        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah_simple.urdf"
         foot_name = "foot"
         penalize_contacts_on = []
-        terminate_after_contacts_on = ["base"]
+        terminate_after_contacts_on = ["base", "thigh"]
         collapse_fixed_joints = False  # merge bodies connected by fixed joints.
         self_collisions = 1  # added blindly from the AnymalCFlatCFG.  1 to disable, 0 to enable...bitwise filter
         flip_visual_attachments = False

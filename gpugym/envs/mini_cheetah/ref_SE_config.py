@@ -108,7 +108,7 @@ class SERefCfg(MiniCheetahCfg):
         file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah_simple.urdf"
         foot_name = "foot"
         penalize_contacts_on = ["shank"]
-        terminate_after_contacts_on = ["base"]
+        terminate_after_contacts_on = ["base", "thigh"]
         collapse_fixed_joints = False
         fix_base_link = False
         self_collisions = 1  # 1 to disable, 0 to enable...bitwise filter
