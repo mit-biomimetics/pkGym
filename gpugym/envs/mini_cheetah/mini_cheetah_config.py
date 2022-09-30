@@ -161,10 +161,10 @@ class MiniCheetahCfg(LeggedRobotCfg):
         curriculum = True
         max_curriculum = 3.
         class ranges(LeggedRobotCfg.commands.ranges):
-            lin_vel_x = [0., 1.] # min max [m/s]
-            lin_vel_y = [0., 0]   # min max [m/s]
-            ang_vel_yaw = [0.*3.14, 0.*3.14]    # min max [rad/s]
-            heading = [0., 0.]
+            lin_vel_x = [0., 1.]  # min max [m/s]
+            lin_vel_y = 0.   # max [m/s]
+            yaw_vel = 0.  # max [rad/s]
+            heading = 0.
 
     class normalization(LeggedRobotCfg.normalization):
             class obs_scales(LeggedRobotCfg.normalization.obs_scales):

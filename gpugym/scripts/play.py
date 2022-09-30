@@ -1,11 +1,12 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES.
+# All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
-# 1. Redistributions of source code must retain the above copyright notice, this
-# list of conditions and the following disclaimer.
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
 #
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 # this list of conditions and the following disclaimer in the documentation
@@ -34,44 +35,36 @@ import copy
 import isaacgym
 from gpugym.envs import *
 from gpugym.utils import  get_args, export_policy_as_jit, task_registry, Logger
-
+from gpugym.utils import KeyboardInterface, GamepadInterface
 import numpy as np
 import torch
-
+from isaacgym import gymapi
 
 def play(args):
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
     # override some parameters for testing
     env_cfg.env.num_envs = min(env_cfg.env.num_envs, 16)
-    env_cfg.terrain.num_rows = 5
-    env_cfg.terrain.num_cols = 5
-    env_cfg.terrain.curriculum = False
-    env_cfg.noise.add_noise = True
-    env_cfg.domain_rand.randomize_friction = False
-    env_cfg.domain_rand.push_robots = True
-    env_cfg.domain_rand.push_interval_s = 5
-    env_cfg.domain_rand.max_push_vel_xy = 0.05
-    if hasattr(env_cfg.commands, "max_curriculum_x"):
-        env_cfg.commands.ranges.lin_vel_x = [-env_cfg.commands.max_curriculum_x,
-                                             env_cfg.commands.max_curriculum_x]
-    if hasattr(env_cfg.commands, "max_curriculum_yaw"):
-        env_cfg.commands.ranges.lin_vel_yaw = [-env_cfg.commands.max_curriculum_ang,
-                                               env_cfg.commands.max_curriculum_ang]
-    # prepare environment
+
+    # * prepare environment
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
     obs = env.get_observations()
-    # load policy
+    # * load policy
     train_cfg.runner.resume = True
-    ppo_runner, train_cfg = task_registry.make_alg_runner(env=env, name=args.task, args=args, train_cfg=train_cfg)
+    ppo_runner, train_cfg = task_registry.make_alg_runner(env=env,
+                                                          name=args.task,
+                                                          args=args,
+                                                          train_cfg=train_cfg)
     policy = ppo_runner.get_inference_policy(device=env.device)
     if train_cfg.runner.SE_learner == "modular_SE":
         SE_ON = True
         state_estimator = ppo_runner.get_state_estimator(device=env.device)
     else:
         SE_ON = False
-    # export policy as a jit module (used to run it from C++)
+    # * export policy as a jit module (used to run it from C++)
     if EXPORT_POLICY:
-        path = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name, 'exported', 'policies')
+        path = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs',
+                            train_cfg.runner.experiment_name,
+                            'exported', 'policies')
         export_policy_as_jit(ppo_runner.alg.actor_critic, path)
         print('Exported policy as jit script to: ', path)
         if SE_ON:
@@ -79,40 +72,25 @@ def play(args):
             se_model = copy.deepcopy(state_estimator.state_estimator).to('cpu')
             traced_script_module = torch.jit.script(se_model)
             traced_script_module.save(se_path)
-            # lets_test = torch.jit.script(se_model)
 
-    logger = Logger(env.dt)
-    robot_index = 0 # which robot is used for logging
-    joint_index = 4 # which joint is used for logging
-    stop_state_log = 100 # number of steps before plotting states
-    stop_rew_log = env.max_episode_length + 1 # number of steps before print average episode rewards
-    camera_position = np.array(env_cfg.viewer.pos, dtype=np.float64)
-    camera_vel = np.array([1., 1., 0.])
-    camera_direction = np.array(env_cfg.viewer.lookat) - np.array(env_cfg.viewer.pos)
-    img_idx = 0
+    # * set up interface: GamepadInterface(env) or KeyboardInterface(env)
+    # interface = GamepadInterface(env)
+    interface = KeyboardInterface(env)
 
     for i in range(10*int(env.max_episode_length)):
+        # * handle interface
+        # * handle state-estimation
         if SE_ON:
             se_obs = env.get_se_observations()
             se_prediction = state_estimator.predict(se_obs)
-            obs     = torch.cat((se_prediction.detach(), obs.detach()),
-                                      dim=1)
+            obs = torch.cat((se_prediction.detach(), obs.detach()), dim=1)
 
         actions = policy(obs.detach())
+        interface.update(env)
         obs, _, rews, dones, infos = env.step(actions.detach())
-        if RECORD_FRAMES:
-            if i % 2:
-                filename = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name, 'exported', 'frames', f"{img_idx}.png")
-                env.gym.write_viewer_image_to_file(env.viewer, filename)
-                img_idx += 1 
-        if MOVE_CAMERA:
-            camera_position += camera_vel * env.dt
-            env.set_camera(camera_position, camera_position + camera_direction)
 
 
 if __name__ == '__main__':
     EXPORT_POLICY = True
-    RECORD_FRAMES = False
-    MOVE_CAMERA = False
     args = get_args()
     play(args)

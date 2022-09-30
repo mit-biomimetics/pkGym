@@ -46,14 +46,14 @@ class MITHumanoidCfg(LeggedRobotCfg):
     class commands(LeggedRobotCfg.commands):
         curriculum = True
         max_curriculum = 3.
-        num_commands = 4 # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
-        resampling_time = 10. # time before command are changed[s]
-        heading_command = True # if true: compute ang vel command from heading error
+        num_commands = 4  # default: lin_vel_x, lin_vel_y, yaw_vel, heading (in heading mode yaw_vel is recomputed from heading error)
+        resampling_time = 10.  # time before command are changed[s]
+        heading_command = True  # if true: compute ang vel command from heading error
         class ranges:
             lin_vel_x = [0., 0.]  # min max [m/s]
-            lin_vel_y = [0., 0]   # min max [m/s]
-            ang_vel_yaw = [0., 0.]    # min max [rad/s]
-            heading = [0, 0]
+            lin_vel_y = 0.  # max [m/s]
+            yaw_vel = 0.  # max [rad/s]
+            heading = 0.
 
     class init_state(LeggedRobotCfg.init_state):
         reset_mode = "reset_to_range" # default setup chooses how the initial conditions are chosen.

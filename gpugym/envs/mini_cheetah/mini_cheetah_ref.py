@@ -1,7 +1,6 @@
 from gpugym import LEGGED_GYM_ROOT_DIR
 
 from time import time
-# import numpy as np
 import os
 
 from isaacgym.torch_utils import *
@@ -15,6 +14,7 @@ from gpugym.utils.math import *
 from gpugym.envs import LeggedRobot, MiniCheetah
 
 import pandas as pd
+import numpy as np
 
 class MiniCheetahRef(MiniCheetah):
 
@@ -228,8 +228,10 @@ class MiniCheetahRef(MiniCheetah):
             self.command_ranges["lin_vel_x"][1] = np.clip(self.command_ranges["lin_vel_x"][1] + 0.5, 0., self.cfg.commands.max_curriculum_x)
             # also increase heading if it is good
             if torch.mean(self.episode_sums["tracking_ang_vel"][env_ids]) / self.max_episode_length > 0.8 * self.reward_scales["tracking_ang_vel"]:
-                self.command_ranges["ang_vel_yaw"][0] = np.clip(self.command_ranges["ang_vel_yaw"][0] - 0.15, -self.cfg.commands.max_curriculum_ang, 0.)
-                self.command_ranges["ang_vel_yaw"][1] = np.clip(self.command_ranges["ang_vel_yaw"][1] + 0.15, 0., self.cfg.commands.max_curriculum_ang)
+                yaw_cmd = self.command_ranges["yaw_vel"]
+                self.command_ranges["yaw_vel"] = np.clip(yaw_cmd + 0.15,
+                                        0.,
+                                        self.cfg.commands.max_curriculum_ang)
 
 
     def _resample_commands(self, env_ids):
@@ -238,12 +240,24 @@ class MiniCheetahRef(MiniCheetah):
         Args:
             env_ids (List[int]): Environments ids for which new commands are needed
         """
-        self.commands[env_ids, 0] = torch_rand_float(self.command_ranges["lin_vel_x"][0], self.command_ranges["lin_vel_x"][1], (len(env_ids), 1), device=self.device).squeeze(1)
-        self.commands[env_ids, 1] = torch_rand_float(self.command_ranges["lin_vel_y"][0], self.command_ranges["lin_vel_y"][1], (len(env_ids), 1), device=self.device).squeeze(1)
+        self.commands[env_ids, 0] = torch_rand_float(self.command_ranges["lin_vel_x"][0],
+                                                     self.command_ranges["lin_vel_x"][1],
+                                                     (len(env_ids), 1),
+                                                     device=self.device).squeeze(1)
+        self.commands[env_ids, 1] = torch_rand_float(-self.command_ranges["lin_vel_y"],
+                                                     self.command_ranges["lin_vel_y"],
+                                                     (len(env_ids), 1),
+                                                     device=self.device).squeeze(1)
         if self.cfg.commands.heading_command:
-            self.commands[env_ids, 3] = torch_rand_float(self.command_ranges["heading"][0], self.command_ranges["heading"][1], (len(env_ids), 1), device=self.device).squeeze(1)
+            self.commands[env_ids, 3] = torch_rand_float(self.command_ranges["heading"],
+                                                         self.command_ranges["heading"],
+                                                         (len(env_ids), 1),
+                                                         device=self.device).squeeze(1)
         else:
-            self.commands[env_ids, 2] = torch_rand_float(self.command_ranges["ang_vel_yaw"][0], self.command_ranges["ang_vel_yaw"][1], (len(env_ids), 1), device=self.device).squeeze(1)
+            self.commands[env_ids, 2] = torch_rand_float(-self.command_ranges["yaw_vel"],
+                                                         self.command_ranges["yaw_vel"],
+                                                         (len(env_ids), 1),
+                                                         device=self.device).squeeze(1)
 
         # * with 10% chance, reset to 0 commands
             self.commands[env_ids, :3] *= (torch_rand_float(0, 1, (len(env_ids), 1), device=self.device).squeeze(1) < 0.9).unsqueeze(1)
@@ -285,9 +299,9 @@ class MiniCheetahRef(MiniCheetah):
         # offset by half cycle (trot)
         ph_off = torch.fmod(self.phase+torch.pi, 2*torch.pi)
         phd_idx = (torch.round(self.phase* \
-                            (self.leg_ref.size(dim=0)/(2*np.pi)-1))).long()
+                            (self.leg_ref.size(dim=0)/(2*torch.pi)-1))).long()
         pho_idx = (torch.round(ph_off* \
-                            (self.leg_ref.size(dim=0)/(2*np.pi)-1))).long()
+                            (self.leg_ref.size(dim=0)/(2*torch.pi)-1))).long()
         leg_frame[:, 0:3] += self.leg_ref[phd_idx.squeeze(), :]
         leg_frame[:, 3:6] += self.leg_ref[pho_idx.squeeze(), :]
         leg_frame[:, 6:9] += self.leg_ref[pho_idx.squeeze(), :]

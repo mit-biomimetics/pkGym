@@ -53,7 +53,7 @@ class AnymalCFlatCfg( AnymalCRoughCfg ):
         heading_command = False
         resampling_time = 4.
         class ranges( AnymalCRoughCfg.commands.ranges ):
-            ang_vel_yaw = [-1.5, 1.5]
+            yaw_vel = 1.5
 
     class domain_rand( AnymalCRoughCfg.domain_rand ):
         friction_range = [0., 1.5] # on ground planes the friction combination mode is averaging, i.e total friction = (foot_friction + 1.)/2.

@@ -156,10 +156,10 @@ class SERefCfg(MiniCheetahCfg):
         max_curriculum_x = 4.
         max_curriculum_ang = 2.5
         class ranges(MiniCheetahCfg.commands.ranges):
-            lin_vel_x = [0., 1.] # min max [m/s]
-            lin_vel_y = [-0., 0.]   # min max [m/s]
-            ang_vel_yaw = [-0.5*3.14, 0.5*3.14]    # min max [rad/s]
-            heading = [0., 0.]
+            lin_vel_x = [-1., 2.] # min max [m/s]
+            lin_vel_y = 1.   # max [m/s]
+            yaw_vel = 3.14/2.    # max [rad/s]
+            heading = 0.
 
     class normalization(MiniCheetahCfg.normalization):
             class obs_scales(MiniCheetahCfg.normalization.obs_scales): 
