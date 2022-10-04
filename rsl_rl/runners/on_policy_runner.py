@@ -169,7 +169,7 @@ class OnPolicyRunner:
                 for i in range(self.num_steps_per_env):
                     actions = self.alg.act(actor_obs, critic_obs)                        # compute SE prediction and actions and values
                     # * step simulation
-                    actor_obs, priv_obs, rewards, dones, infos = self.env.step(actions)
+                    actor_obs, privileged_obs, rewards, dones, infos = self.env.step(actions)
                     if self.cfg["SE_learner"] == "modular_SE":
                         se_obs = self.env.get_se_observations()
                         se_estimate = self.state_estimator.predict(se_obs)
