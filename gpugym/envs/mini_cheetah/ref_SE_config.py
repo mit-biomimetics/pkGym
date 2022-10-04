@@ -8,7 +8,7 @@ class SERefCfg(MiniCheetahCfg):
         num_envs = 4096
         num_actions = 12
         num_observations = 71
-        num_privileged_obs = None
+        num_privileged_obs = 71  # same but without noise
         episode_length_s = 15.
 
         # * if learn state-estimator is set to True, also set the config

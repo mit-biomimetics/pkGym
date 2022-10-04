@@ -124,7 +124,7 @@ class MiniCheetahRef(MiniCheetah):
                    * self.obs_scales.dof_pos
 
         # * update commanded action history buffer
-        control_type = self.cfg.control.control_type
+
         nact = self.num_actions
         self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
         self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
@@ -139,6 +139,17 @@ class MiniCheetahRef(MiniCheetah):
                                   torch.cos(self.phase),
                                   torch.sin(self.phase)),
                                   dim=-1)
+
+        if self.privileged_obs_buf is not None:
+            self.privileged_obs_buf = torch.cat((self.base_ang_vel*self.obs_scales.ang_vel,
+                                                self.projected_gravity,
+                                                self.commands[:, :3]*self.commands_scale,
+                                                dof_pos,
+                                                self.dof_vel*self.obs_scales.dof_vel,
+                                                self.ctrl_hist,
+                                                torch.cos(self.phase),
+                                                torch.sin(self.phase)),
+                                                dim=-1)
 
         # * SE observations
         self.se_obs_buf = torch.cat((self.base_ang_vel*self.obs_scales.ang_vel,
