@@ -36,8 +36,8 @@ class StateEstimator:
         # SE network and optimizer
         self.state_estimator = state_estimator
         self.state_estimator.to(self.device)
-        self.SE_optimizer = optim.Adam(self.state_estimator.parameters(),
-                                       lr=learning_rate)
+        self.optimizer = optim.Adam(self.state_estimator.parameters(),
+                                    lr=learning_rate)
         self.SE_loss_fn = nn.MSELoss()
 
 
@@ -65,20 +65,22 @@ class StateEstimator:
         """ Update the SE neural network weights via supervised learning """
         generator = self.storage.mini_batch_generator(self.num_mini_batches,
                                                       self.num_learning_epochs)
-        mean_SE_loss = 0
+        mean_loss = 0
         for obs_batch, SE_target_batch in generator:
 
             SE_estimate_batch = self.state_estimator.evaluate(obs_batch)
 
             SE_loss = self.SE_loss_fn(SE_estimate_batch, SE_target_batch)
-            self.SE_optimizer.zero_grad()
+            self.optimizer.zero_grad()
             SE_loss.backward()
-            self.SE_optimizer.step()
-            mean_SE_loss += SE_loss.item()
+            self.optimizer.step()
+            mean_loss += SE_loss.item()
 
         num_updates = self.num_learning_epochs * self.num_mini_batches
-        mean_SE_loss /= num_updates
+        mean_loss /= num_updates
         self.storage.clear()
 
-        return mean_SE_loss
+        return mean_loss
 
+    def export(self, path):
+        self.state_estimator.export(path)

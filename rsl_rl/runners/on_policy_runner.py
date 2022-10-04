@@ -343,7 +343,7 @@ class OnPolicyRunner:
     def save_SE(self, path, infos=None):
         torch.save({
             'model_state_dict': self.state_estimator.state_estimator.state_dict(),
-            'optimizer_state_dict': self.state_estimator.SE_optimizer.state_dict(),
+            'optimizer_state_dict': self.state_estimator.optimizer.state_dict(),
             'iter': self.current_learning_iteration,
             'infos': infos,
             }, path)
@@ -375,4 +375,10 @@ class OnPolicyRunner:
         self.alg.actor_critic.eval()
         if device is not None:
             self.alg.actor_critic.to(device)
-        return self.alg.actor_critic.act_inference
+        return self.alg.actor_critic.actor.act_inference
+
+
+    def export(self, path):
+        self.alg.actor_critic.export_policy(path)
+        if self.se_cfg is not None:
+            self.state_estimator.export(path)

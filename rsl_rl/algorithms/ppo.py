@@ -63,8 +63,9 @@ class PPO:
         # * PPO components
         self.actor_critic = actor_critic
         self.actor_critic.to(self.device)
-        self.storage = None # initialized later
-        self.optimizer = optim.Adam(self.actor_critic.parameters(), lr=learning_rate)
+        self.storage = None  # initialized later
+        self.optimizer = optim.Adam(self.actor_critic.parameters(),
+                                    lr=learning_rate)
         self.transition = RolloutStorage.Transition()
 
         # * PPO parameters
@@ -113,8 +114,7 @@ class PPO:
         # * Record the transition
         self.storage.add_transitions(self.transition)
         self.transition.clear()
-        self.actor_critic.reset(dones)
-    
+
     def compute_returns(self, last_critic_obs):
         last_values= self.actor_critic.evaluate(last_critic_obs).detach()
         self.storage.compute_returns(last_values, self.gamma, self.lam)
