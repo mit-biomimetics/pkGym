@@ -34,7 +34,7 @@ import os
 import copy
 import isaacgym
 from gpugym.envs import *
-from gpugym.utils import  get_args, export_policy_as_jit, task_registry, Logger
+from gpugym.utils import  get_args, task_registry, Logger
 from gpugym.utils import KeyboardInterface, GamepadInterface
 import numpy as np
 import torch
@@ -63,15 +63,8 @@ def play(args):
     # * export policy as a jit module (used to run it from C++)
     if EXPORT_POLICY:
         path = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs',
-                            train_cfg.runner.experiment_name,
-                            'exported', 'policies')
-        export_policy_as_jit(ppo_runner.alg.actor_critic, path)
-        print('Exported policy as jit script to: ', path)
-        if SE_ON:
-            se_path = os.path.join(path, 'se_1.jit')
-            se_model = copy.deepcopy(state_estimator.state_estimator).to('cpu')
-            traced_script_module = torch.jit.script(se_model)
-            traced_script_module.save(se_path)
+                            train_cfg.runner.experiment_name, 'exported')
+        ppo_runner.export(path)
 
     # * set up interface: GamepadInterface(env) or KeyboardInterface(env)
     # interface = GamepadInterface(env)
