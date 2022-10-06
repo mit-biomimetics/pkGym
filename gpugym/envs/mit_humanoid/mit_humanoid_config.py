@@ -50,7 +50,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         resampling_time = 10.  # time before command are changed[s]
         heading_command = True  # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [0., 0.]  # min max [m/s]
+            lin_vel_x = [0., 4.]  # min max [m/s]
             lin_vel_y = 0.  # max [m/s]
             yaw_vel = 0.  # max [rad/s]
             heading = 0.
@@ -94,33 +94,33 @@ class MITHumanoidCfg(LeggedRobotCfg):
         # initialization for random range setup
 
         dof_pos_range = {'hip_yaw': [0., 0.],
-                        'hip_abad': [0., 0.],
-                        'hip_pitch': [-0.29, -0.25],
-                        'knee': [0.67, 0.71],
-                        'ankle': [-0.43, -0.39],
-                        'shoulder_pitch': [0., 0.],
-                        'shoulder_abad': [0., 0.],
-                        'shoulder_yaw': [0., 0.],
-                        'elbow': [0., 0.]
-                        }
+                         'hip_abad': [0., 0.],
+                         'hip_pitch': [-0.29, -0.25],
+                         'knee': [0.67, 0.71],
+                         'ankle': [-0.43, -0.39],
+                         'shoulder_pitch': [0., 0.],
+                         'shoulder_abad': [0., 0.],
+                         'shoulder_yaw': [0., 0.],
+                         'elbow': [0., 0.]
+                         }
         
-        dof_vel_range = {'hip_yaw': [0., 0.],
-                        'hip_abad': [0., 0.],
-                        'hip_pitch': [-0.29, -0.25],
-                        'knee': [0.67, 0.71],
-                        'ankle': [-0.43, -0.39],
-                        'shoulder_pitch': [0., 0.],
-                        'shoulder_abad': [0., 0.],
-                        'shoulder_yaw': [0., 0.],
-                        'elbow': [0., 0.]
-                        }
+        dof_vel_range = {'hip_yaw': [-0., 0.1],
+                         'hip_abad': [-0., 0.1],
+                         'hip_pitch': [-0.1, -0.1],
+                         'knee': [-0.05, 0.05],
+                         'ankle': [-0.05, 0.05],
+                         'shoulder_pitch': [0., 0.],
+                         'shoulder_abad': [0., 0.],
+                         'shoulder_yaw': [0., 0.],
+                         'elbow': [0., 0.]
+                         }
 
         root_pos_range = [[0., 0.],  # x
                           [0., 0.],  # y
                           [0.7, 0.72],  # z
-                          [0., 0.],  # roll
-                          [0., 0.],  # pitch
-                          [0., 0.]]  # yaw
+                          [-0.1, 0.1],  # roll
+                          [-0.1, 0.1],  # pitch
+                          [-0.1, 0.1]]  # yaw
 
         root_vel_range = [[-0.1, 0.1],  # x
                           [-0.1, 0.1],  # y
@@ -131,31 +131,31 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
     class control(LeggedRobotCfg.control):
         # PD Drive parameters:
-        stiffness = {'hip_yaw': 60.,
-                     'hip_abad': 60.,
-                     'hip_pitch': 60.,
-                     'knee': 60.,
-                     'ankle': 40.,
-                     'shoulder_pitch': 10.,
-                     'shoulder_abad': 10.,
-                     'shoulder_yaw': 10.,
-                     'elbow': 10.,
+        stiffness = {'hip_yaw': 30.,
+                     'hip_abad': 30.,
+                     'hip_pitch': 30.,
+                     'knee': 30.,
+                     'ankle': 30.,
+                     'shoulder_pitch': 40.,
+                     'shoulder_abad': 40.,
+                     'shoulder_yaw': 40.,
+                     'elbow': 40.,
                     }  # [N*m/rad]
         damping = {'hip_yaw': 5.,
                    'hip_abad': 5.,
                    'hip_pitch': 5.,
                    'knee': 5.,
-                   'ankle': 0.1,
-                   'shoulder_pitch': 0.5,
-                   'shoulder_abad': 0.5,
-                   'shoulder_yaw': 0.5,
-                   'elbow': 0.5,
+                   'ankle': 5.,
+                   'shoulder_pitch': 5.,
+                   'shoulder_abad': 5.,
+                   'shoulder_yaw': 5.,
+                   'elbow': 5.,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
 
         # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = 0.5
+        action_scale = 1.
         # * exponential average decay for action scale
-        exp_avg_decay = 0.35  # set to None to disable
+        exp_avg_decay = None  # set to None to disable
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 10  # ! substeps?
 
@@ -212,6 +212,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
                                1.0,  # right_shoulder_abad
                                1.0,  # right_shoulder_yaw
                                1.0]  # right_elbow
+        make_PBRS = ["base_height",
+                     "orientation"]
         class weights(LeggedRobotCfg.rewards.weights):
             termination = -2.  # -1
             tracking_ang_vel = 0.5  # 0.0001
@@ -296,10 +298,10 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
 
     class runner(LeggedRobotCfgPPO.runner):
         num_steps_per_env = 24
-        max_iterations = 5000
+        max_iterations = 1000
         algorithm_class_name = 'PPO'
         run_name = 'Standing'
-        experiment_name = 'MIT_Humanoid_Stand'
+        experiment_name = 'Humanoid'
         save_interval = 50
 
     class policy( LeggedRobotCfgPPO.policy ):

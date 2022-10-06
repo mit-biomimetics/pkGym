@@ -85,6 +85,9 @@ class LeggedRobot(BaseTask):
         Args:
             actions (torch.Tensor): Tensor of shape (num_envs, num_actions_per_env)
         """
+
+        self.reset_reward_buffer()
+        self.compute_PBRS_reward()
         if self.cfg.asset.disable_actions:
             self.actions[:] = 0.
         else:
@@ -150,6 +153,7 @@ class LeggedRobot(BaseTask):
         # compute observations, rewards, resets, ...
         self.check_termination()
         self.compute_reward()
+        self.compute_PBRS_reward(gamma=1)
         env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
         self.reset_idx(env_ids)
         self.compute_observations() # in some cases a simulation step might be required to refresh some obs (for example body positions)
@@ -215,7 +219,6 @@ class LeggedRobot(BaseTask):
             Calls each reward function which had a non-zero weight (processed in self._prepare_reward_function())
             adds each terms to the episode sums and to the total reward
         """
-        self.rew_buf[:] = 0.
         for i in range(len(self.reward_functions)):
             name = self.reward_names[i]
             rew = self.reward_functions[i]() * self.reward_weights[name]
@@ -229,6 +232,26 @@ class LeggedRobot(BaseTask):
             self.rew_buf += rew
             self.episode_sums["termination"] += rew
 
+    def compute_PBRS_reward(self, gamma=-1):
+        """ Compute PBRS rewards
+            Potential-based reward shaping: r_PBRS = gamma*r(s') - r(s).
+            gamma defaults to -1, as a shortcut for -r(s).
+            NOTE: if in doubt, use gamma=1 for r(s'), as using the true
+            discount rate can lead to unstable learning.
+            Args:
+                gamma: used to set the sign, and desired gamma
+        """
+        for i in range(len(self.PBRS_reward_functions)):
+            name = self.PBRS_reward_names[i]
+            rew = self.PBRS_reward_functions[i]() * self.reward_weights[name]
+            self.rew_buf += gamma * rew
+            self.episode_sums[name] += rew
+        if self.cfg.rewards.only_positive_rewards:
+            self.rew_buf[:] = torch.clip(self.rew_buf[:], min=0.)
+        # add termination reward after clipping
+
+    def reset_reward_buffer(self):
+        self.rew_buf[:] = 0.
 
     def compute_observations(self):
         """ Computes observations
@@ -734,24 +757,34 @@ class LeggedRobot(BaseTask):
         compute the total reward. Looks for self._reward_<REWARD_NAME>, where
         <REWARD_NAME> are names of all non zero reward weights in the cfg.
         """
-        # remove zero weights + multiply non-zero ones by dt
-        for key in list(self.reward_weights.keys()):
-            weight = self.reward_weights[key]
-            if weight==0:
-                self.reward_weights.pop(key) 
-            else:
-                self.reward_weights[key] *= self.dt
-        # prepare list of functions
+
+        # * prepare list of functions
         self.reward_functions = []
         self.reward_names = []
-        for name, weight in self.reward_weights.items():
-            if name=="termination":
-                continue
-            self.reward_names.append(name)
-            name = '_reward_' + name
-            self.reward_functions.append(getattr(self, name))
 
-        # reward episode sums
+        self.PBRS_reward_functions = []
+        self.PBRS_reward_names = []
+        self.PBRS_reward_weights = {}
+
+        # * remove zero weights, split between DRS and PBRS
+        # * + multiply non-zero ones by dt for DRS
+        for name in list(self.reward_weights.keys()):
+            weight = self.reward_weights[name]
+            if weight==0:
+                self.reward_weights.pop(name) 
+            else:
+                if name=="termination":
+                    continue
+                elif name in self.cfg.rewards.make_PBRS:
+                    self.PBRS_reward_names.append(name)
+                    self.PBRS_reward_functions.append(getattr(self,
+                                                              '_reward_'+name))
+                else:
+                    self.reward_weights[name] *= self.dt
+                    self.reward_names.append(name)
+                    self.reward_functions.append(getattr(self, '_reward_'+name))
+
+        # * reward episode sums
         self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float,
                                                device=self.device,
                                                requires_grad=False)
