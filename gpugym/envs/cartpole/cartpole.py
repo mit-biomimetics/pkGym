@@ -107,18 +107,14 @@ class Cartpole(FixedRobot):
 
         pole_pos_raw = self.sqrdexp(pole_pos, self.cfg.rewards.spaces.pole_pos)
 
-        pole_pos_reward = self.cfg.rewards.scales.pole_pos * pole_pos_raw
-
-        return pole_pos_reward.squeeze(dim=-1)
+        return pole_pos_raw.squeeze(dim=-1)
 
     def _reward_pole_vel(self):
         pole_vel = self.dof_vel[:, 1]
 
         pole_vel_raw = self.sqrdexp(pole_vel, self.cfg.rewards.spaces.pole_vel)
 
-        pole_vel_reward = self.cfg.rewards.scales.pole_vel * pole_vel_raw
-
-        return pole_vel_reward.squeeze(dim=-1)
+        return pole_vel_raw.squeeze(dim=-1)
 
     def _reward_cart_pos(self):
         cart_pos = self.dof_pos[:, 0]
@@ -129,10 +125,10 @@ class Cartpole(FixedRobot):
         if self.cfg.rewards.sub_spaces.pole_pos is not None:
             pole_pos_activation = self.sqrdexp(pole_pos, self.cfg.rewards.sub_spaces.pole_pos)
 
-            cart_pos_reward = self.cfg.rewards.scales.cart_pos * pole_pos_activation * pole_cart_raw
+            cart_pos_reward = pole_pos_activation * pole_cart_raw
 
         else:
-            cart_pos_reward = self.cfg.rewards.scales.cart_pos * pole_cart_raw
+            cart_pos_reward = pole_cart_raw
 
         return cart_pos_reward.squeeze(dim=-1)
 
@@ -141,9 +137,7 @@ class Cartpole(FixedRobot):
 
         actuation_raw = self.sqrdexp(actuation, self.cfg.rewards.spaces.actuation)
 
-        actuation_reward = self.cfg.rewards.scales.actuation * actuation_raw
-
-        return actuation_reward.squeeze(dim=-1)
+        return actuation_raw.squeeze(dim=-1)
 
     def compute_observations(self, env_ids=None):
 

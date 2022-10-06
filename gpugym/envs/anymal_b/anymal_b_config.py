@@ -35,7 +35,7 @@ class AnymalBRoughCfg( AnymalCRoughCfg ):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/anymal_b/urdf/anymal_b.urdf'
         foot_name = 'FOOT'
     class rewards( AnymalCRoughCfg.rewards ):
-        class scales ( AnymalCRoughCfg.rewards.scales ):
+        class weights ( AnymalCRoughCfg.rewards.weights ):
             pass
 
 class AnymalBRoughCfgPPO( AnymalCRoughCfgPPO ):

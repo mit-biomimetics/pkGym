@@ -89,7 +89,7 @@ class CassieRoughCfg( LeggedRobotCfg ):
         soft_torque_limit = 0.9
         max_contact_force = 300.
         only_positive_rewards = False
-        class scales( LeggedRobotCfg.rewards.scales ):
+        class weights( LeggedRobotCfg.rewards.weights ):
             termination = -200.
             tracking_ang_vel = 1.0
             torques = -5.e-6

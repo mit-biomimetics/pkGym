@@ -188,14 +188,14 @@ class FixedRobot(BaseTask):
         self.rew_buf[:] = 0.
         for i in range(len(self.reward_functions)):
             name = self.reward_names[i]
-            rew = self.reward_functions[i]() * self.reward_scales[name]
+            rew = self.reward_functions[i]() * self.reward_weights[name]
             self.rew_buf += rew
             self.episode_sums[name] += rew
         if self.cfg.rewards.only_positive_rewards:
             self.rew_buf[:] = torch.clip(self.rew_buf[:], min=0.)
         # add termination reward after clipping
-        if "termination" in self.reward_scales:
-            rew = self._reward_termination() * self.reward_scales["termination"]
+        if "termination" in self.reward_weights:
+            rew = self._reward_termination() * self.reward_weights["termination"]
             self.rew_buf += rew
             self.episode_sums["termination"] += rew
 
@@ -542,19 +542,19 @@ class FixedRobot(BaseTask):
         """ Prepares a list of reward functions, which will be called to 
             compute the total reward.
             Looks for self._reward_<REWARD_NAME>, where <REWARD_NAME> are names
-            of all non zero reward scales in the cfg.
+            of all non zero reward weights in the cfg.
         """
-        # remove zero scales + multiply non-zero ones by dt
-        for key in list(self.reward_scales.keys()):
-            scale = self.reward_scales[key]
-            if scale==0:
-                self.reward_scales.pop(key) 
+        # remove zero weights + multiply non-zero ones by dt
+        for key in list(self.reward_weights.keys()):
+            weight = self.reward_weights[key]
+            if weight==0:
+                self.reward_weights.pop(key) 
             else:
-                self.reward_scales[key] *= self.dt
+                self.reward_weights[key] *= self.dt
         # prepare list of functions
         self.reward_functions = []
         self.reward_names = []
-        for name, scale in self.reward_scales.items():
+        for name, weight in self.reward_weights.items():
             if name=="termination":
                 continue
             self.reward_names.append(name)
@@ -565,7 +565,7 @@ class FixedRobot(BaseTask):
         self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float,
                                                device=self.device,
                                                requires_grad=False)
-                             for name in self.reward_scales.keys()}
+                             for name in self.reward_weights.keys()}
 
 
     def _create_ground_plane(self):
@@ -703,7 +703,7 @@ class FixedRobot(BaseTask):
     def _parse_cfg(self, cfg):
         self.dt = self.cfg.control.decimation * self.sim_params.dt
         self.obs_scales = self.cfg.normalization.obs_scales
-        self.reward_scales = class_to_dict(self.cfg.rewards.scales)
+        self.reward_weights = class_to_dict(self.cfg.rewards.weights)
         # self.command_ranges = class_to_dict(self.cfg.commands.ranges)
         self.max_episode_length_s = self.cfg.env.episode_length_s
         self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)

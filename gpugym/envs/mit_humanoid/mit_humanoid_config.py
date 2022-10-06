@@ -212,7 +212,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
                                1.0,  # right_shoulder_abad
                                1.0,  # right_shoulder_yaw
                                1.0]  # right_elbow
-        class scales(LeggedRobotCfg.rewards.scales):
+        class weights(LeggedRobotCfg.rewards.weights):
             termination = -2.  # -1
             tracking_ang_vel = 0.5  # 0.0001
             tracking_lin_vel = 0.5  # 0.02

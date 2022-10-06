@@ -85,7 +85,7 @@ class FixedRobotCfg(BaseConfig):
         max_push_vel_xy = 1.
 
     class rewards:
-        class scales:
+        class weights:
             termination = -0.0
             torques = -0.00001
             dof_vel = -0.

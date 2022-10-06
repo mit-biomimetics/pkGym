@@ -135,7 +135,7 @@ class CartpoleCfg(FixedRobotCfg):
             actuation = None  # Assuming max effort is 10.0
             termination = None
 
-        class scales:
+        class weights:
             termination = -20.0
             pole_pos = 5
             pole_vel = 0.01

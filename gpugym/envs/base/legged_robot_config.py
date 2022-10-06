@@ -158,7 +158,7 @@ class LeggedRobotCfg(BaseConfig):
         max_push_vel_xy = 1.
 
     class rewards:
-        class scales:
+        class weights:
             termination = .0
             tracking_lin_vel = .0
             tracking_ang_vel = 0.

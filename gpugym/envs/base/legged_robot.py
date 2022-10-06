@@ -212,20 +212,20 @@ class LeggedRobot(BaseTask):
 
     def compute_reward(self):
         """ Compute rewards
-            Calls each reward function which had a non-zero scale (processed in self._prepare_reward_function())
+            Calls each reward function which had a non-zero weight (processed in self._prepare_reward_function())
             adds each terms to the episode sums and to the total reward
         """
         self.rew_buf[:] = 0.
         for i in range(len(self.reward_functions)):
             name = self.reward_names[i]
-            rew = self.reward_functions[i]() * self.reward_scales[name]
+            rew = self.reward_functions[i]() * self.reward_weights[name]
             self.rew_buf += rew
             self.episode_sums[name] += rew
         if self.cfg.rewards.only_positive_rewards:
             self.rew_buf[:] = torch.clip(self.rew_buf[:], min=0.)
         # add termination reward after clipping
-        if "termination" in self.reward_scales:
-            rew = self._reward_termination() * self.reward_scales["termination"]
+        if "termination" in self.reward_weights:
+            rew = self._reward_termination() * self.reward_weights["termination"]
             self.rew_buf += rew
             self.episode_sums["termination"] += rew
 
@@ -564,7 +564,7 @@ class LeggedRobot(BaseTask):
             env_ids (List[int]): ids of environments being reset
         """
         # If the tracking reward is above 80% of the maximum, increase the range of commands
-        if torch.mean(self.episode_sums["tracking_lin_vel"][env_ids]) / self.max_episode_length > 0.8 * self.reward_scales["tracking_lin_vel"]:
+        if torch.mean(self.episode_sums["tracking_lin_vel"][env_ids]) / self.max_episode_length > 0.8 * self.reward_weights["tracking_lin_vel"]:
             self.command_ranges["lin_vel_x"][0] = np.clip(self.command_ranges["lin_vel_x"][0] - 0.5, -self.cfg.commands.max_curriculum, 0.)
             self.command_ranges["lin_vel_x"][1] = np.clip(self.command_ranges["lin_vel_x"][1] + 0.5, 0., self.cfg.commands.max_curriculum)
 
@@ -732,19 +732,19 @@ class LeggedRobot(BaseTask):
     def _prepare_reward_function(self):
         """ Prepares a list of reward functions, whcih will be called to
         compute the total reward. Looks for self._reward_<REWARD_NAME>, where
-        <REWARD_NAME> are names of all non zero reward scales in the cfg.
+        <REWARD_NAME> are names of all non zero reward weights in the cfg.
         """
-        # remove zero scales + multiply non-zero ones by dt
-        for key in list(self.reward_scales.keys()):
-            scale = self.reward_scales[key]
-            if scale==0:
-                self.reward_scales.pop(key) 
+        # remove zero weights + multiply non-zero ones by dt
+        for key in list(self.reward_weights.keys()):
+            weight = self.reward_weights[key]
+            if weight==0:
+                self.reward_weights.pop(key) 
             else:
-                self.reward_scales[key] *= self.dt
+                self.reward_weights[key] *= self.dt
         # prepare list of functions
         self.reward_functions = []
         self.reward_names = []
-        for name, scale in self.reward_scales.items():
+        for name, weight in self.reward_weights.items():
             if name=="termination":
                 continue
             self.reward_names.append(name)
@@ -755,7 +755,7 @@ class LeggedRobot(BaseTask):
         self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float,
                                                device=self.device,
                                                requires_grad=False)
-                             for name in self.reward_scales.keys()}
+                             for name in self.reward_weights.keys()}
 
 
     def _create_ground_plane(self):
@@ -924,7 +924,7 @@ class LeggedRobot(BaseTask):
     def _parse_cfg(self, cfg):
         self.dt = self.cfg.control.decimation * self.sim_params.dt
         self.obs_scales = self.cfg.normalization.obs_scales
-        self.reward_scales = class_to_dict(self.cfg.rewards.scales)
+        self.reward_weights = class_to_dict(self.cfg.rewards.weights)
         self.command_ranges = class_to_dict(self.cfg.commands.ranges)
         if self.cfg.terrain.mesh_type not in ['heightfield', 'trimesh']:
             self.cfg.terrain.curriculum = False

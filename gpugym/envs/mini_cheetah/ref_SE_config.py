@@ -127,7 +127,7 @@ class SERefCfg(MiniCheetahCfg):
         only_positive_rewards = False
         base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.3
-        class scales(MiniCheetahCfg.rewards.scales):
+        class weights(MiniCheetahCfg.rewards.weights):
             termination = -15.
             tracking_lin_vel = 4.0
             tracking_ang_vel = 1.0

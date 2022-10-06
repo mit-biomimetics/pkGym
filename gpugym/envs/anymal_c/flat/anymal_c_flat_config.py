@@ -43,7 +43,7 @@ class AnymalCFlatCfg( AnymalCRoughCfg ):
 
     class rewards( AnymalCRoughCfg.rewards ):
         max_contact_force = 350.
-        class scales ( AnymalCRoughCfg.rewards.scales ):
+        class weights ( AnymalCRoughCfg.rewards.weights ):
             orientation = -5.0
             torques = -0.000025
             feet_air_time = 2.
