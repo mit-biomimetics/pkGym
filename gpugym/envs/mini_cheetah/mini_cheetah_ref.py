@@ -275,10 +275,11 @@ class MiniCheetahRef(MiniCheetah):
         # * set small commands to zero
         self.commands[env_ids, :3] *= (torch.norm(self.commands[env_ids, :3], dim=1) > 0.2).unsqueeze(1)
 
-    
+
     def switch(self):
         c_vel = torch.linalg.norm(self.commands, dim=1)
-        return torch.exp(-torch.square(torch.max(torch.zeros_like(c_vel), c_vel-0.1))/0.1)
+        return torch.exp(-torch.square(torch.max(torch.zeros_like(c_vel),
+                                                 c_vel-0.1))/0.1)
 
 
     def _reward_swing_grf(self):
@@ -287,7 +288,8 @@ class MiniCheetahRef(MiniCheetah):
         ph_off = torch.lt(self.phase, torch.pi)  # should this be in swing?
         rew = grf*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1).int()
         return torch.sum(rew, dim=1)*(1-self.switch())
-    
+
+
     def _reward_stance_grf(self):
         # Reward non-zero grf during stance (pi to 2pi)
         grf = torch.gt(torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1), 50.)
@@ -295,6 +297,7 @@ class MiniCheetahRef(MiniCheetah):
         rew = grf*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1).int()
 
         return torch.sum(rew, dim=1)*(1-self.switch())
+
 
     def _reward_reference_traj(self):
         # REWARDS EACH LEG INDIVIDUALLY BASED ON ITS POSITION IN THE CYCLE
@@ -304,6 +307,7 @@ class MiniCheetahRef(MiniCheetah):
         reward = torch.sum(self.sqrdexp(error) - torch.abs(error)*0.2, dim=1)/12.  # normalize by n_dof
         # * only when commanded velocity is higher
         return reward*(1-self.switch())
+
 
     def get_ref(self):
         leg_frame = torch.zeros_like(self.torques)
@@ -319,6 +323,7 @@ class MiniCheetahRef(MiniCheetah):
         leg_frame[:, 9:12] += self.leg_ref[phd_idx.squeeze(), :]
         return leg_frame
 
+
     def _reward_stand_still(self):
         # Penalize motion at zero commands
         # * normalize angles so we care about being within 5 deg
@@ -327,6 +332,7 @@ class MiniCheetahRef(MiniCheetah):
         rew_base_vel = torch.mean(torch.square(self.base_lin_vel), dim=1)
         rew_base_vel += torch.mean(torch.square(self.base_ang_vel), dim=1)
         return (rew_vel+rew_pos-rew_base_vel)*self.switch()
+
 
     def _reward_tracking_lin_vel(self):
         # Tracking linear velocity commands (xy axes)

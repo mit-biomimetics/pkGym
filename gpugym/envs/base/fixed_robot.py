@@ -191,8 +191,6 @@ class FixedRobot(BaseTask):
             rew = self.reward_functions[i]() * self.reward_weights[name]
             self.rew_buf += rew
             self.episode_sums[name] += rew
-        if self.cfg.rewards.only_positive_rewards:
-            self.rew_buf[:] = torch.clip(self.rew_buf[:], min=0.)
         # add termination reward after clipping
         if "termination" in self.reward_weights:
             rew = self._reward_termination() * self.reward_weights["termination"]

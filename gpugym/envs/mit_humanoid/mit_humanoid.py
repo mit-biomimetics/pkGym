@@ -23,6 +23,8 @@ class MIT_Humanoid(LeggedRobot):
             body_id = self.gym.find_actor_rigid_body_handle(self.envs[0], self.actor_handles[0], body_name)
             body_ids.append(body_id)
         self.end_eff_ids = to_torch(body_ids, device=self.device, dtype=torch.long)
+        # phase
+
 
     def compute_observations(self):
         """ Computes observations

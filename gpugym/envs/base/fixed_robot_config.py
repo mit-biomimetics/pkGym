@@ -62,12 +62,12 @@ class FixedRobotCfg(BaseConfig):
         disable_gravity = False
         disable_actions = False
         disable_motors = False
-        collapse_fixed_joints = True # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
-        fix_base_link = True # fix the base of the robot
-        default_dof_drive_mode = 3 # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
-        self_collisions = 0 # 1 to disable, 0 to enable...bitwise filter
-        replace_cylinder_with_capsule = True # replace collision cylinders with capsules, leads to faster/more stable simulation
-        flip_visual_attachments = True # Some .obj meshes must be flipped from y-up to z-up
+        collapse_fixed_joints = True  # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
+        fix_base_link = True  # fix the base of the robot
+        default_dof_drive_mode = 3  # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
+        self_collisions = 0  # 1 to disable, 0 to enable...bitwise filter
+        replace_cylinder_with_capsule = True  # replace collision cylinders with capsules, leads to faster/more stable simulation
+        flip_visual_attachments = True  # Some .obj meshes must be flipped from y-up to z-up
 
         density = 0.001
         angular_damping = 0.
@@ -93,7 +93,6 @@ class FixedRobotCfg(BaseConfig):
             action_rate = -0.01
             dof_pos_limits = -1.
 
-        only_positive_rewards = False # if true negative total rewards are clipped at zero (avoids early termination problems)
         tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
         soft_dof_pos_limit = 1. # percentage of urdf limits, values above this limit are penalized
         soft_dof_vel_limit = 1.

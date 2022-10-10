@@ -123,10 +123,12 @@ class SERefCfg(MiniCheetahCfg):
         soft_torque_limit = 0.9
         max_contact_force = 600.
 
-        # clip total rewards to [0, inf)
-        only_positive_rewards = False
         base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.3
+        make_PBRS = ["base_height",
+                     "lin_vel_z",
+                     "orientation"
+                     ]
         class weights(MiniCheetahCfg.rewards.weights):
             termination = -15.
             tracking_lin_vel = 4.0
@@ -141,7 +143,7 @@ class SERefCfg(MiniCheetahCfg):
             collision = -0.25
             action_rate = -0.01  # -0.01
             action_rate2 = -0.001  # -0.001
-            stand_still = 0.5
+            stand_still = 2.5
             dof_pos_limits = 0.
             feet_contact_forces = 0.
             dof_near_home = 0.
@@ -208,7 +210,7 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         value_loss_coef = 1.0
         use_clipped_value_loss = True
         clip_param = 0.2
-        entropy_coef = 0.01
+        entropy_coef = 0.05
         num_learning_epochs = 6
         num_mini_batches = 6  # mini batch size = num_envs*nsteps/nminibatches
         learning_rate = 5.e-5

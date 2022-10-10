@@ -82,7 +82,6 @@ class AnymalCRoughCfg( LeggedRobotCfg ):
     class rewards( LeggedRobotCfg.rewards ):
         base_height_target = 0.5
         max_contact_force = 500.
-        only_positive_rewards = True
         class weights( LeggedRobotCfg.rewards.weights ):
             pass
 
