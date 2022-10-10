@@ -87,7 +87,8 @@ class LeggedRobot(BaseTask):
         """
 
         self.reset_buffers()
-        self.compute_PBRS_reward()
+        # potential-based shaping step 1: -r(s) part of \gamma*r(s') - r(s)
+        self.compute_reward(self.PBRS_reward_names, gamma=-1)
         if self.cfg.asset.disable_actions:
             self.actions[:] = 0.
         else:
@@ -150,14 +151,17 @@ class LeggedRobot(BaseTask):
 
         self._post_physics_step_callback()
 
-        # compute observations, rewards, resets, ...
         self.check_termination()
-        self.compute_reward()
-        self.compute_PBRS_reward(gamma=1)
+        self.compute_reward(self.reward_names)
+
+        # potential-based shaping step 2: \gamma*r(s') part of \gamma*r(s') - r(s)
+        # in practice, settings gamma=gamma is unstable.
+        self.compute_reward(self.PBRS_reward_names, gamma=1)
+
         env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
         self.reset_idx(env_ids)
-        self.compute_observations() # in some cases a simulation step might be required to refresh some obs (for example body positions)
 
+        self.compute_observations()
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
 
@@ -214,35 +218,11 @@ class LeggedRobot(BaseTask):
             self.extras["time_outs"] = self.time_out_buf
 
 
-    def compute_reward(self):
-        """ Compute rewards
-            Calls each reward function which had a non-zero weight (processed in self._prepare_reward_function())
-            adds each terms to the episode sums and to the total reward
-        """
-        
-        for name in self.reward_names:
-            rew = self.reward_weights[name] * self.eval_reward(name)
-            self.rew_buf += rew
-            self.episode_sums[name] += rew
-
-        if "termination" in self.reward_weights:
-            rew = self._reward_termination() * self.reward_weights["termination"]
-            self.rew_buf += rew
-            self.episode_sums["termination"] += rew
-
-    def compute_PBRS_reward(self, gamma=-1):
-        """ Compute PBRS rewards
-            Potential-based reward shaping: r_PBRS = gamma*r(s') - r(s).
-            gamma defaults to -1, as a shortcut for -r(s).
-            NOTE: if in doubt, use gamma=1 for r(s'), as using the true
-            discount rate can lead to unstable learning.
-            Args:
-                gamma: used to set the sign, and desired gamma
-        """
-        for name in self.PBRS_reward_names:
+    def compute_reward(self, reward_names, gamma=1):
+        for name in reward_names:
             rew = gamma*self.reward_weights[name] * self.eval_reward(name)
-            self.rew_buf += rew
-            self.episode_sums[name] += rew
+            self.rew_buf += ~self.reset_buf * rew
+            self.episode_sums[name] += ~self.reset_buf * rew
 
 
     def eval_reward(self, name):
@@ -617,6 +597,7 @@ class LeggedRobot(BaseTask):
             noise_vec[48:235] = noise_scales.height_measurements* noise_level * self.obs_scales.height_measurements
         return noise_vec
 
+
     #----------------------------------------
     def _init_buffers(self):
         """ Initialize torch tensors which will contain simulation states and processed quantities
@@ -769,20 +750,20 @@ class LeggedRobot(BaseTask):
             if weight==0:
                 self.reward_weights.pop(name) 
             else:
-                if name=="termination":
-                    continue
-                elif name in self.cfg.rewards.make_PBRS:
+                if name in self.cfg.rewards.make_PBRS:
                     self.PBRS_reward_names.append(name)
                 else:
-                    self.reward_weights[name] *= self.dt
+                    if name != "termination":
+                        self.reward_weights[name] *= self.dt
                     self.reward_names.append(name)
-                    # self.reward_functions.append(getattr(self, '_reward_'+name))
+
 
         # * reward episode sums
         self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float,
                                                device=self.device,
                                                requires_grad=False)
                              for name in self.reward_weights.keys()}
+
 
     def _create_ground_plane(self):
         """ Adds a ground plane to the simulation, sets friction and restitution based on the cfg.
@@ -813,6 +794,7 @@ class LeggedRobot(BaseTask):
 
         self.gym.add_heightfield(self.sim, self.terrain.heightsamples, hf_params)
         self.height_samples = torch.tensor(self.terrain.heightsamples).view(self.terrain.tot_rows, self.terrain.tot_cols).to(self.device)
+
 
     def _create_trimesh(self):
         """ Adds a triangle mesh terrain to the simulation, sets parameters based on the cfg.
