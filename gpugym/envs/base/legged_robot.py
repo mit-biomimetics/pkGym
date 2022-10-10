@@ -219,12 +219,12 @@ class LeggedRobot(BaseTask):
             Calls each reward function which had a non-zero weight (processed in self._prepare_reward_function())
             adds each terms to the episode sums and to the total reward
         """
-        for i in range(len(self.reward_functions)):
-            name = self.reward_names[i]
-            rew = self.reward_functions[i]() * self.reward_weights[name]
+        
+        for name in self.reward_names:
+            rew = self.reward_weights[name] * self.eval_reward(name)
             self.rew_buf += rew
             self.episode_sums[name] += rew
-        # add termination reward after clipping
+
         if "termination" in self.reward_weights:
             rew = self._reward_termination() * self.reward_weights["termination"]
             self.rew_buf += rew
@@ -239,12 +239,15 @@ class LeggedRobot(BaseTask):
             Args:
                 gamma: used to set the sign, and desired gamma
         """
-        for i in range(len(self.PBRS_reward_functions)):
-            name = self.PBRS_reward_names[i]
-            rew = self.PBRS_reward_functions[i]() * self.reward_weights[name]
-            self.rew_buf += gamma * rew
-            self.episode_sums[name] += gamma*rew
-        # add termination reward after clipping
+        for name in self.PBRS_reward_names:
+            rew = gamma*self.reward_weights[name] * self.eval_reward(name)
+            self.rew_buf += rew
+            self.episode_sums[name] += rew
+
+
+    def eval_reward(self, name):
+        return eval("self._reward_"+name+"()")
+
 
     def reset_buffers(self):
         self.rew_buf[:] = 0.
@@ -741,7 +744,7 @@ class LeggedRobot(BaseTask):
                 for i in range(self.num_dof):
                     if joint in self.dof_names[i]:
                         self.dof_vel_range[i, :] = to_torch(vals)
-            
+
             self.root_pos_range = torch.tensor(self.cfg.init_state.root_pos_range,
                     dtype=torch.float, device=self.device, requires_grad=False)
             self.root_vel_range = torch.tensor(self.cfg.init_state.root_vel_range,
@@ -755,13 +758,9 @@ class LeggedRobot(BaseTask):
         <REWARD_NAME> are names of all non zero reward weights in the cfg.
         """
 
-        # * prepare list of functions
-        self.reward_functions = []
+        # * prepare dicts of functions
         self.reward_names = []
-
-        self.PBRS_reward_functions = []
         self.PBRS_reward_names = []
-        self.PBRS_reward_weights = {}
 
         # * remove zero weights, split between DRS and PBRS
         # * + multiply non-zero ones by dt for DRS
@@ -774,19 +773,16 @@ class LeggedRobot(BaseTask):
                     continue
                 elif name in self.cfg.rewards.make_PBRS:
                     self.PBRS_reward_names.append(name)
-                    self.PBRS_reward_functions.append(getattr(self,
-                                                              '_reward_'+name))
                 else:
                     self.reward_weights[name] *= self.dt
                     self.reward_names.append(name)
-                    self.reward_functions.append(getattr(self, '_reward_'+name))
+                    # self.reward_functions.append(getattr(self, '_reward_'+name))
 
         # * reward episode sums
         self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float,
                                                device=self.device,
                                                requires_grad=False)
                              for name in self.reward_weights.keys()}
-
 
     def _create_ground_plane(self):
         """ Adds a ground plane to the simulation, sets friction and restitution based on the cfg.
