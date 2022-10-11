@@ -57,8 +57,8 @@ class SERefCfg(MiniCheetahCfg):
         # * initialization for random range setup
 
         dof_pos_range = {'haa': [-0.05, 0.05],
-                        'hfe': [-0.85, -0.6],
-                        'kfe': [-1.45, 1.72]}
+                        'hfe': [-0.85, -0.75],
+                        'kfe': [-1.55, 1.65]}
 
         dof_vel_range = {'haa': [-0.1, 0.1],
                         'hfe': [-0.1, 0.1],
@@ -67,15 +67,15 @@ class SERefCfg(MiniCheetahCfg):
         root_pos_range = [[0., 0.],  # x
                           [0., 0.],  # y
                           [0.33, 0.35],  # z
-                          [0., 0.],  # roll
-                          [0., 0.],  # pitch
-                          [0., 0.]]  # yaw
-        root_vel_range = [[-0.0, 0.0],  # x
-                          [0., 0.],  # y
-                          [-0.0, 0.0],  # z
-                          [0., 0.],  # roll
-                          [0., 0.],  # pitch
-                          [0., 0.]]  # yaw
+                          [-0.1, 0.1],  # roll
+                          [-0.1, 0.1],  # pitch
+                          [-0.1, 0.1]]  # yaw
+        root_vel_range = [[-0.5, 1.0],  # x
+                          [-0.01, 0.01],  # y
+                          [-0.2, 0.2],  # z
+                          [-0.1, 0.1],  # roll
+                          [-0.1, 0.1],  # pitch
+                          [-0.1, 0.1]]  # yaw
 
         ref_traj = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/trajectories/single_leg.csv"
         ref_type = "Pos"

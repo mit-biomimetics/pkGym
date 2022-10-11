@@ -89,6 +89,7 @@ class LeggedRobot(BaseTask):
         self.reset_buffers()
         # potential-based shaping step 1: -r(s) part of \gamma*r(s') - r(s)
         self.compute_reward(self.PBRS_reward_names, gamma=-1)
+
         if self.cfg.asset.disable_actions:
             self.actions[:] = 0.
         else:
@@ -126,10 +127,10 @@ class LeggedRobot(BaseTask):
 
 
     def pre_physics_step(self):
-        """
-        Nothing by default
-        """
-        return 0
+        nact = self.num_actions
+        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
+        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
+        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale
 
 
     def post_physics_step(self):
@@ -221,8 +222,10 @@ class LeggedRobot(BaseTask):
     def compute_reward(self, reward_names, gamma=1):
         for name in reward_names:
             rew = gamma*self.reward_weights[name] * self.eval_reward(name)
-            self.rew_buf += ~self.reset_buf * rew
-            self.episode_sums[name] += ~self.reset_buf * rew
+            if name != "termination":
+                rew *= ~self.reset_buf
+            self.rew_buf += rew
+            self.episode_sums[name] += rew
 
 
     def eval_reward(self, name):
@@ -233,17 +236,12 @@ class LeggedRobot(BaseTask):
         self.rew_buf[:] = 0.
         self.reset_buf[:] = False
 
+
     def compute_observations(self):
         """ Computes observations
         """
 
         dof_pos = (self.dof_pos-self.default_dof_pos)*self.obs_scales.dof_pos
-
-        nact = self.num_actions
-        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
-        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
-        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale
-
         self.obs_buf = torch.cat((self.base_lin_vel*self.obs_scales.lin_vel,
                                   self.base_ang_vel*self.obs_scales.ang_vel,
                                   self.projected_gravity,
