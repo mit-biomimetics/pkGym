@@ -114,7 +114,53 @@ class BaseTask():
         self.reset_idx(torch.arange(self.num_envs, device=self.device))
         obs, privileged_obs, _, _, _ = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
         return obs, privileged_obs
-    
+
+    def reset_buffers(self):
+        self.rew_buf[:] = 0.
+        self.reset_buf[:] = False
+
+    def _prepare_reward_function(self):
+        """ Prepares a list of reward functions, whcih will be called to
+        compute the total reward. Looks for self._reward_<REWARD_NAME>, where
+        <REWARD_NAME> are names of all non zero reward weights in the cfg.
+        """
+
+        # * prepare dicts of functions
+        self.reward_names = []
+        self.PBRS_reward_names = []
+
+        # * remove zero weights, split between DRS and PBRS
+        # * + multiply non-zero ones by dt for DRS
+        for name in list(self.reward_weights.keys()):
+            weight = self.reward_weights[name]
+            if weight==0:
+                self.reward_weights.pop(name) 
+            else:
+                if name in self.cfg.rewards.make_PBRS:
+                    self.PBRS_reward_names.append(name)
+                else:
+                    if name != "termination":
+                        self.reward_weights[name] *= self.dt
+                    self.reward_names.append(name)
+
+
+        # * reward episode sums
+        self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float,
+                                               device=self.device,
+                                               requires_grad=False)
+                             for name in self.reward_weights.keys()}
+
+    def compute_reward(self, reward_names, gamma=1):
+        for name in reward_names:
+            rew = gamma*self.reward_weights[name] * self.eval_reward(name)
+            if name != "termination":
+                rew *= ~self.reset_buf
+            self.rew_buf += rew
+            self.episode_sums[name] += rew
+
+    def eval_reward(self, name):
+        return eval("self._reward_"+name+"()")
+
     def step(self, actions):
         raise NotImplementedError
 

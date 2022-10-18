@@ -51,9 +51,11 @@ class FixedRobotCfg(BaseConfig):
         action_scale = 0.5
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 4
+        exp_avg_decay = None
 
         actuated_joints_mask = []  # for each dof: 1 if actuated, 0 if passive
         # Empty implies no chance in the _compute_torques step
+
 
     class asset:
         file = ""
@@ -97,6 +99,9 @@ class FixedRobotCfg(BaseConfig):
         soft_dof_pos_limit = 1. # percentage of urdf limits, values above this limit are penalized
         soft_dof_vel_limit = 1.
         soft_torque_limit = 1.  # ! may want to turn this off
+        # fill this list with names to turn into potential-based rewards
+        # NOTE: formally these should only depend on state
+        make_PBRS = []
 
     class normalization:
         clip_observations = 1000.

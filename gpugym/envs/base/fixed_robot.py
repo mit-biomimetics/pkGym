@@ -55,6 +55,11 @@ class FixedRobot(BaseTask):
         Args:
             actions (torch.Tensor): Tensor of shape (num_envs, num_actions_per_env)
         """
+
+        self.reset_buffers()
+        # potential-based shaping step 1: -r(s) part of \gamma*r(s') - r(s)
+        self.compute_reward(self.PBRS_reward_names, gamma=-1)
+
         if self.cfg.asset.disable_actions:
             self.actions[:] = 0.
         else:
@@ -64,9 +69,16 @@ class FixedRobot(BaseTask):
         # step physics and render each frame
         self.render()
         for _ in range(self.cfg.control.decimation):
-            self.torques = self._compute_torques(self.actions).view(self.torques.shape)
+            # self.torques = self._compute_torques(self.actions).view(self.torques.shape)
+            if self.cfg.control.exp_avg_decay:
+                self.action_avg = exp_avg_filter(self.actions, self.action_avg,
+                                                self.cfg.control.exp_avg_decay)
+                self.torques = self._compute_torques(self.action_avg).view(self.torques.shape)
+            else:
+                self.torques = self._compute_torques(self.actions).view(self.torques.shape)
+
             if self.cfg.asset.disable_motors:
-                torques[:] = 0.
+                self.torques[:] = 0.
             # todo double-check this
             # Deals with passive joints that IsaacGym thinks are active...
             torques_to_gym_tensor = torch.zeros(size=(self.num_envs, self.num_dof), device=self.device)
@@ -125,7 +137,11 @@ class FixedRobot(BaseTask):
 
         # compute observations, rewards, resets, ...
         self.check_termination()
-        self.compute_reward()
+        self.compute_reward(self.reward_names)
+        # potential-based shaping step 2: \gamma*r(s') part of \gamma*r(s') - r(s)
+        # in practice, settings gamma=gamma is unstable.
+        self.compute_reward(self.PBRS_reward_names, gamma=1)
+
         env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
         self.reset_idx(env_ids)
         self.compute_observations()  # in some cases a simulation step might be required to refresh some obs (for example body positions)
@@ -179,23 +195,6 @@ class FixedRobot(BaseTask):
         # send timeout info to the algorithm
         if self.cfg.env.send_timeouts:
             self.extras["time_outs"] = self.time_out_buf
-
-
-    def compute_reward(self):
-        """
-        Compute the reward for the current state.
-        """
-        self.rew_buf[:] = 0.
-        for i in range(len(self.reward_functions)):
-            name = self.reward_names[i]
-            rew = self.reward_functions[i]() * self.reward_weights[name]
-            self.rew_buf += rew
-            self.episode_sums[name] += rew
-        # add termination reward after clipping
-        if "termination" in self.reward_weights:
-            rew = self._reward_termination() * self.reward_weights["termination"]
-            self.rew_buf += rew
-            self.episode_sums["termination"] += rew
 
 
     def compute_observations(self):
@@ -536,36 +535,6 @@ class FixedRobot(BaseTask):
             # todo check for consistency (low first, high second)
 
 
-    def _prepare_reward_function(self):
-        """ Prepares a list of reward functions, which will be called to 
-            compute the total reward.
-            Looks for self._reward_<REWARD_NAME>, where <REWARD_NAME> are names
-            of all non zero reward weights in the cfg.
-        """
-        # remove zero weights + multiply non-zero ones by dt
-        for key in list(self.reward_weights.keys()):
-            weight = self.reward_weights[key]
-            if weight==0:
-                self.reward_weights.pop(key) 
-            else:
-                self.reward_weights[key] *= self.dt
-        # prepare list of functions
-        self.reward_functions = []
-        self.reward_names = []
-        for name, weight in self.reward_weights.items():
-            if name=="termination":
-                continue
-            self.reward_names.append(name)
-            name = '_reward_' + name
-            self.reward_functions.append(getattr(self, name))
-
-        # reward episode sums
-        self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float,
-                                               device=self.device,
-                                               requires_grad=False)
-                             for name in self.reward_weights.keys()}
-
-
     def _create_ground_plane(self):
         """ Adds a ground plane to the simulation, sets friction and restitution based on the cfg.
         """
@@ -666,10 +635,6 @@ class FixedRobot(BaseTask):
                                                      recomputeInertia=True)
             self.envs.append(env_handle)
             self.actor_handles.append(robot_handle)
-
-        # self.feet_indices = torch.zeros(len(feet_names), dtype=torch.long, device=self.device, requires_grad=False)
-        # for i in range(len(feet_names)):
-        #     self.feet_indices[i] = self.gym.find_actor_rigid_body_handle(self.envs[0], self.actor_handles[0], feet_names[i])
 
         self.penalised_contact_indices = torch.zeros(len(penalized_contact_names), dtype=torch.long, device=self.device, requires_grad=False)
         for i in range(len(penalized_contact_names)):

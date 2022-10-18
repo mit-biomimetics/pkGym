@@ -154,7 +154,6 @@ class LeggedRobot(BaseTask):
 
         self.check_termination()
         self.compute_reward(self.reward_names)
-
         # potential-based shaping step 2: \gamma*r(s') part of \gamma*r(s') - r(s)
         # in practice, settings gamma=gamma is unstable.
         self.compute_reward(self.PBRS_reward_names, gamma=1)
@@ -217,24 +216,6 @@ class LeggedRobot(BaseTask):
         # send timeout info to the algorithm
         if self.cfg.env.send_timeouts:
             self.extras["time_outs"] = self.time_out_buf
-
-
-    def compute_reward(self, reward_names, gamma=1):
-        for name in reward_names:
-            rew = gamma*self.reward_weights[name] * self.eval_reward(name)
-            if name != "termination":
-                rew *= ~self.reset_buf
-            self.rew_buf += rew
-            self.episode_sums[name] += rew
-
-
-    def eval_reward(self, name):
-        return eval("self._reward_"+name+"()")
-
-
-    def reset_buffers(self):
-        self.rew_buf[:] = 0.
-        self.reset_buf[:] = False
 
 
     def compute_observations(self):
@@ -731,36 +712,36 @@ class LeggedRobot(BaseTask):
             # todo check for consistency (low first, high second)
 
 
-    def _prepare_reward_function(self):
-        """ Prepares a list of reward functions, whcih will be called to
-        compute the total reward. Looks for self._reward_<REWARD_NAME>, where
-        <REWARD_NAME> are names of all non zero reward weights in the cfg.
-        """
+    # def _prepare_reward_function(self):
+    #     """ Prepares a list of reward functions, whcih will be called to
+    #     compute the total reward. Looks for self._reward_<REWARD_NAME>, where
+    #     <REWARD_NAME> are names of all non zero reward weights in the cfg.
+    #     """
 
-        # * prepare dicts of functions
-        self.reward_names = []
-        self.PBRS_reward_names = []
+    #     # * prepare dicts of functions
+    #     self.reward_names = []
+    #     self.PBRS_reward_names = []
 
-        # * remove zero weights, split between DRS and PBRS
-        # * + multiply non-zero ones by dt for DRS
-        for name in list(self.reward_weights.keys()):
-            weight = self.reward_weights[name]
-            if weight==0:
-                self.reward_weights.pop(name) 
-            else:
-                if name in self.cfg.rewards.make_PBRS:
-                    self.PBRS_reward_names.append(name)
-                else:
-                    if name != "termination":
-                        self.reward_weights[name] *= self.dt
-                    self.reward_names.append(name)
+    #     # * remove zero weights, split between DRS and PBRS
+    #     # * + multiply non-zero ones by dt for DRS
+    #     for name in list(self.reward_weights.keys()):
+    #         weight = self.reward_weights[name]
+    #         if weight==0:
+    #             self.reward_weights.pop(name) 
+    #         else:
+    #             if name in self.cfg.rewards.make_PBRS:
+    #                 self.PBRS_reward_names.append(name)
+    #             else:
+    #                 if name != "termination":
+    #                     self.reward_weights[name] *= self.dt
+    #                 self.reward_names.append(name)
 
 
-        # * reward episode sums
-        self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float,
-                                               device=self.device,
-                                               requires_grad=False)
-                             for name in self.reward_weights.keys()}
+    #     # * reward episode sums
+    #     self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float,
+    #                                            device=self.device,
+    #                                            requires_grad=False)
+    #                          for name in self.reward_weights.keys()}
 
 
     def _create_ground_plane(self):
