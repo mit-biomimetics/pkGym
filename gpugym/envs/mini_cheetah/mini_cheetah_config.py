@@ -130,9 +130,11 @@ class MiniCheetahCfg(LeggedRobotCfg):
         soft_torque_limit = 0.9
         max_contact_force = 600.
 
+        # if true negative total rewards are clipped at zero (avoids early termination problems)
+        only_positive_rewards = False
         base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.25
-        class weights(LeggedRobotCfg.rewards.weights):
+        class scales(LeggedRobotCfg.rewards.weights):
             termination = -1.
             tracking_lin_vel = 1.0
             tracking_ang_vel = 1.0

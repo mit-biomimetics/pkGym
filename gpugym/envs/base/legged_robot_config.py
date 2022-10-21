@@ -241,11 +241,7 @@ class LeggedRobotCfgPPO(BaseConfig):
         init_noise_std = 1.0
         actor_hidden_dims = [512, 256, 128]
         critic_hidden_dims = [512, 256, 128]
-        activation = 'elu' # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
-        # only for 'ActorCriticRecurrent':
-        # rnn_type = 'lstm'
-        # rnn_hidden_size = 512
-        # rnn_num_layers = 1
+        activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
 
     class algorithm:
         # training params

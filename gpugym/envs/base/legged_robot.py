@@ -217,8 +217,7 @@ class LeggedRobot(BaseTask):
         if self.cfg.env.send_timeouts:
             self.extras["time_outs"] = self.time_out_buf
 
-
-    def compute_observations(self):
+    def compute_observations(self):  # ! to be removed
         """ Computes observations
         """
 
@@ -608,7 +607,7 @@ class LeggedRobot(BaseTask):
         # initialize some data used later on
         self.common_step_counter = 0
         self.extras = {}
-        self.noise_scale_vec = self._get_noise_scale_vec(self.cfg)
+        # self.noise_scale_vec = self._get_noise_scale_vec(self.cfg)
         self.gravity_vec = to_torch(get_axis_params(-1., self.up_axis_idx),
                                 device=self.device).repeat((self.num_envs, 1))
         self.forward_vec = to_torch([1., 0., 0.],

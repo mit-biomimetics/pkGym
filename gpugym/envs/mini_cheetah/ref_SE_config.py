@@ -7,8 +7,8 @@ class SERefCfg(MiniCheetahCfg):
     class env(MiniCheetahCfg.env):
         num_envs = 4096
         num_actions = 12
-        num_observations = 71
-        num_privileged_obs = 71  # same but without noise
+        num_observations = 72  # ! should no longer be needed
+        num_privileged_obs = None  # same but without noise
         episode_length_s = 15.
 
         # * if learn state-estimator is set to True, also set the config
@@ -205,6 +205,26 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
         activation = 'elu'
 
+        actor_obs = ["base_ang_vel",
+                     "projected_gravity",
+                     "commands",
+                     "dof_pos",
+                     "dof_vel",
+                     "ctrl_hist",
+                     "phase_obs"
+                     ]
+
+        critic_obs = ["base_height",
+                      "base_lin_vel",
+                      "base_ang_vel",
+                      "projected_gravity",
+                      "commands",
+                      "dof_pos",
+                      "dof_vel",
+                      "ctrl_hist",
+                      "phase_obs"
+                      ]
+
     class algorithm( MiniCheetahCfgPPO.algorithm):
         # training params
         value_loss_coef = 1.0
@@ -233,7 +253,13 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
     class state_estimator:
         num_learning_epochs = 10
         num_mini_batches = 1  # mini batch size = num_envs*nsteps / nminibatches
-
+        obs = ["base_ang_vel",
+               "projected_gravity",
+               "dof_pos",
+               "dof_vel"]
+        targets = ["base_height",
+                   "base_lin_vel"]
+        # TODO pull in state_estimator_nn into here.
 
     class runner(MiniCheetahCfgPPO.runner):
         run_name = ''

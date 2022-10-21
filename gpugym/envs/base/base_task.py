@@ -101,7 +101,10 @@ class BaseTask():
 
     def get_observations(self):
         return self.obs_buf
-    
+
+    def get_obs(self, obs_list):
+        return torch.cat([getattr(self, name) for name in obs_list], dim=-1)
+
     def get_privileged_observations(self):
         return self.privileged_obs_buf
 

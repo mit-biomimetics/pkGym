@@ -45,7 +45,6 @@ def train(args):
     ppo_runner, train_cfg = task_registry.make_alg_runner(env=env, name=args.task, args=args)
 
     experiment_name = f'{args.task}'
-
     log_root = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name)
     log_dir = os.path.join(log_root, datetime.now().strftime('%b%d_%H-%M-%S') + '_' + train_cfg.runner.run_name)
 
