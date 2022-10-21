@@ -8,10 +8,6 @@ class SERolloutStorage(BaseStorage):
     class Transition:
         def __init__(self):
             self.observations = None
-            # self.critic_observations = None
-            self.dones = None
-            self.values = None
-            self.hidden_states = None
             self.SE_targets = None
 
         def clear(self):
@@ -19,7 +15,7 @@ class SERolloutStorage(BaseStorage):
 
     def __init__(self, num_envs, num_transitions_per_env, actor_obs_shape,
                  se_shape, device='cpu'):
-        
+
         self.device = device
         self.num_transitions_per_env = num_transitions_per_env
         self.num_envs = num_envs
@@ -27,20 +23,17 @@ class SERolloutStorage(BaseStorage):
 
         self.actor_obs_shape = actor_obs_shape    # raw states for actor
         self.se_shape = se_shape                  # SE prediction states
-    
+
         self.observations = torch.zeros(num_transitions_per_env, num_envs,
                                         *actor_obs_shape, device=self.device)
         self.SE_targets = torch.zeros(num_transitions_per_env, num_envs,
                                       *se_shape, device=self.device)
-        self.dones = torch.zeros(num_transitions_per_env, num_envs, 1,
-                                 device=self.device).byte()
 
     def add_transitions(self, transition: Transition):
         if self.fill_count >= self.num_transitions_per_env:
             raise AssertionError("Rollout buffer overflow")
         self.observations[self.fill_count].copy_(transition.observations)
         self.SE_targets[self.fill_count].copy_(transition.SE_targets)
-        self.dones[self.fill_count].copy_(transition.dones.view(-1, 1))
         self.fill_count += 1
 
     def clear(self):

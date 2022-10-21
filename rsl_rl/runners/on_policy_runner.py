@@ -111,7 +111,6 @@ class OnPolicyRunner:
 
 
     def init_storage(self):
-        
         actor_obs_shape = self.env.num_obs
         if self.cfg["SE_learner"] == "modular_SE":
             self.state_estimator.init_storage(self.env.num_envs,
@@ -142,15 +141,14 @@ class OnPolicyRunner:
             self.writer = SummaryWriter(log_dir=self.log_dir, flush_secs=10)
         if init_at_random_ep_len:
             self.env.episode_length_buf = torch.randint_like(self.env.episode_length_buf, high=int(self.env.max_episode_length))
-        actor_obs = self.env.get_observations()
+        # actor_obs = self.env.get_observations()
+        actor_obs = self.get_obs(self.policy_cfg["actor_obs"])
         if self.cfg["SE_learner"] == "modular_SE":
-            se_obs = self.env.get_se_observations()
-            se_estimate = self.state_estimator.predict(se_obs)
-            actor_obs = torch.cat((se_estimate, actor_obs), dim=1)
-        privileged_obs = self.env.get_privileged_observations()
-        critic_obs = actor_obs if privileged_obs is None else privileged_obs
-        actor_obs, critic_obs = actor_obs.to(self.device), critic_obs.to(self.device)
-        # switch to train mode (e.g. for dropouts)
+            SE_obs = self.get_obs(self.se_cfg["obs"])
+            SE_estimate = self.state_estimator.predict(SE_obs)
+            actor_obs = torch.cat((SE_estimate, actor_obs), dim=1)
+        critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
+
         self.alg.actor_critic.train()
 
         ep_infos = []
@@ -169,20 +167,22 @@ class OnPolicyRunner:
                 for i in range(self.num_steps_per_env):
                     actions = self.alg.act(actor_obs, critic_obs)                        # compute SE prediction and actions and values
                     # * step simulation
-                    actor_obs, privileged_obs, rewards, dones, infos = self.env.step(actions)
+                    # actor_obs, privileged_obs, rewards, dones, infos = self.env.step(actions)
+                    self.env.step(actions)
+                    actor_obs = self.get_obs(self.policy_cfg["actor_obs"])
+                    critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
+                    dones = self.get_dones()
+                    infos = self.get_infos()
+                    rewards = self.get_rewards()
                     if self.cfg["SE_learner"] == "modular_SE":
-                        se_obs = self.env.get_se_observations()
-                        se_estimate = self.state_estimator.predict(se_obs)
-                        actor_obs = torch.cat((se_estimate, actor_obs), dim=1)
-                    critic_obs = actor_obs if privileged_obs is None else privileged_obs
-                    actor_obs, critic_obs, rewards, dones = actor_obs.to(self.device), critic_obs.to(self.device), rewards.to(self.device), dones.to(self.device)
+                        SE_obs = self.get_obs(self.se_cfg["obs"])
+                        SE_estimate = self.state_estimator.predict(SE_obs)
+                        actor_obs = torch.cat((SE_estimate, actor_obs), dim=1)
 
-                    # * add data-point to storage
-                    if self.cfg["SE_learner"] == "modular_SE": 
-                        self.state_estimator.process_env_step(dones, infos,
-                                                              se_obs,
-                                                              se_estimate)
-    
+                        SE_targets = self.get_obs(self.se_cfg["targets"])
+                        self.state_estimator.process_env_step(SE_obs,
+                                                              SE_targets)
+
                     if self.cfg["algorithm_class_name"] == "PPO":
                         self.alg.process_env_step(rewards, dones, infos)
 
@@ -227,6 +227,27 @@ class OnPolicyRunner:
         self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.current_learning_iteration)))
         if self.cfg["SE_learner"] == "modular_SE": 
             self.save_SE(os.path.join(self.SE_path, 'SE_{}.pt'.format(self.current_learning_iteration)))
+
+
+    def get_obs(self, obs_list):
+        return self.env.get_obs(obs_list).to(self.device)
+
+
+    def get_rewards(self):
+        # TODO change this (on gpugym side) to actually compute a reward tensor on
+        # the fly, and return in. And get rid of the need for a buffer.
+        # This means moving prepare rewards etc. to on_policy_runner
+        return self.env.rew_buf.to(self.device)
+
+
+
+    def get_dones(self):
+        return self.env.reset_buf.to(self.device)
+
+
+    def get_infos(self):
+        return self.env.extras
+
 
     def log(self, locs, width=80, pad=35):
         self.tot_timesteps += self.num_steps_per_env * self.env.num_envs

@@ -16,11 +16,12 @@ class StateEstimator:
     """
     state_estimator: StateEstimatorNN
     def __init__(self,
-                 state_estimator,    # network
+                 state_estimator,    # nn module
                  learning_rate=1e-3,
                  num_mini_batches=1,
                  num_learning_epochs=1,
                  device='cpu',
+                 **kwargs
                  ):
 
         # general parameters
@@ -47,16 +48,15 @@ class StateEstimator:
                                         obs_shape, se_shape,
                                         device=self.device)
 
+
     def predict(self, obs):
         return self.state_estimator.evaluate(obs)
 
 
-    def process_env_step(self, dones, infos, obs, SE_estimate):
+    def process_env_step(self, obs, SE_targets):
         # Record the transition
-        self.transition.dones = dones
-        self.transition.SE_targets = infos['SE_targets']
+        self.transition.SE_targets = SE_targets
         self.transition.observations = obs
-
         self.storage.add_transitions(self.transition)
         self.transition.clear()
 
