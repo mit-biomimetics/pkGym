@@ -55,13 +55,11 @@ class OnPolicyRunner:
         self.env = env
 
         actor_critic_class = eval(self.cfg["policy_class_name"]) # ActorCritic
-        num_actor_obs = self.env.num_obs
+        num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
         if self.cfg["SE_learner"] == "modular_SE":    # if using SE
-            num_actor_obs += self.se_nn_cfg['num_outputs']
-        if self.env.num_privileged_obs is not None:
-            num_critic_obs = self.env.num_privileged_obs 
-        else:
-            num_critic_obs = num_actor_obs
+            num_actor_obs += self.get_obs_size(self.se_cfg["targets"])
+        num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
+
         actor_critic: ActorCritic = actor_critic_class(num_actor_obs,
                                             num_critic_obs,
                                             self.env.num_actions,
@@ -74,11 +72,16 @@ class OnPolicyRunner:
         else:
             raise("No idea what algorithm you want from me here.")
 
-        if self.cfg["SE_learner"] == "modular_SE": 
-            self.state_estimator_nn = StateEstimatorNN(self.env.num_se_obs,
-                                                       **self.se_nn_cfg)
-            self.state_estimator_nn.to(self.device)
-            self.state_estimator = StateEstimator(self.state_estimator_nn ,device=self.device, **self.se_cfg)
+        if self.cfg["SE_learner"] == "modular_SE":
+            num_SE_obs = self.get_obs_size(self.se_cfg["obs"])
+            num_SE_outputs = self.get_obs_size(self.se_cfg["targets"])
+            state_estimator_nn = StateEstimatorNN(num_SE_obs,
+                                                  num_SE_outputs,
+                                                  **self.se_cfg["neural_net"])
+            state_estimator_nn.to(self.device)
+            self.state_estimator = StateEstimator(state_estimator_nn,
+                                                  device=self.device,
+                                                  **self.se_cfg)
 
         self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
@@ -96,32 +99,35 @@ class OnPolicyRunner:
         self.tot_time = 0
         self.current_learning_iteration = 0
 
-        _, _ = self.env.reset()
+        self.env.reset()
 
 
     def parse_train_cfg(self, train_cfg):
-        self.cfg=train_cfg['runner']
+        self.cfg = train_cfg['runner']
         self.alg_cfg = train_cfg['algorithm']
         self.policy_cfg = train_cfg['policy']
         if 'state_estimator' in train_cfg:
             self.se_cfg = train_cfg['state_estimator']
-            self.se_nn_cfg = train_cfg['state_estimator_nn']
         else:
             self.se_cfg = None
 
 
     def init_storage(self):
-        actor_obs_shape = self.env.num_obs
+        num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
         if self.cfg["SE_learner"] == "modular_SE":
+            num_SE_obs = self.get_obs_size(self.se_cfg["obs"])
+            num_SE_outputs = self.get_obs_size(self.se_cfg["targets"])
             self.state_estimator.init_storage(self.env.num_envs,
                                               self.num_steps_per_env,
-                                              [self.env.num_se_obs],
-                                              [self.se_nn_cfg['num_outputs']])
-            actor_obs_shape += self.se_nn_cfg['num_outputs']
+                                              [num_SE_obs],
+                                              [num_SE_outputs])
+            num_actor_obs += num_SE_outputs
+        num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
+
         self.alg.init_storage(self.env.num_envs,
                               self.num_steps_per_env,
-                              actor_obs_shape=[actor_obs_shape],
-                              critic_obs_shape=[self.env.num_privileged_obs],
+                              actor_obs_shape=[num_actor_obs],
+                              critic_obs_shape=[num_critic_obs],
                               action_shape=[self.env.num_actions])
 
 
@@ -231,6 +237,11 @@ class OnPolicyRunner:
 
     def get_obs(self, obs_list):
         return self.env.get_obs(obs_list).to(self.device)
+
+
+    def get_obs_size(self, obs_list):
+        # todo make unit-test to assert len(shape)==1 always
+        return self.get_obs(obs_list)[0].shape[0]
 
 
     def get_rewards(self):
