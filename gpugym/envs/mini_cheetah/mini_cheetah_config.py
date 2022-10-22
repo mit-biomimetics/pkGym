@@ -7,7 +7,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         num_envs = 2**12
         num_actions = 12
-        num_observations = 75
         episode_length_s = 10.
 
     class terrain(LeggedRobotCfg.terrain):

@@ -47,7 +47,7 @@ def play(args):
 
     # * prepare environment
     env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
-    obs = env.get_observations()
+    obs = env.get_obs(train_cfg.policy.actor_obs)
     # * load policy
     train_cfg.runner.resume = True
     ppo_runner, train_cfg = task_registry.make_alg_runner(env=env,
@@ -74,14 +74,14 @@ def play(args):
         # * handle interface
         # * handle state-estimation
         if SE_ON:
-            se_obs = env.get_se_observations()
-            se_prediction = state_estimator.predict(se_obs)
-            obs = torch.cat((se_prediction.detach(), obs.detach()), dim=1)
+            SE_obs = env.get_obs(train_cfg.state_estimator.obs)
+            SE_prediction = state_estimator.predict(SE_obs)
+            obs = torch.cat((SE_prediction.detach(), obs.detach()), dim=1)
 
         actions = policy(obs.detach())
         interface.update(env)
-        obs, _, rews, dones, infos = env.step(actions.detach())
-
+        env.step(actions.detach())
+        obs = env.get_obs(train_cfg.policy.actor_obs)
 
 if __name__ == '__main__':
     EXPORT_POLICY = True

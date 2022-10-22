@@ -7,8 +7,6 @@ class SERefCfg(MiniCheetahCfg):
     class env(MiniCheetahCfg.env):
         num_envs = 4096
         num_actions = 12
-        num_observations = 72  # ! should no longer be needed
-        num_privileged_obs = None  # same but without noise
         episode_length_s = 15.
 
         # * if learn state-estimator is set to True, also set the config
@@ -152,7 +150,6 @@ class SERefCfg(MiniCheetahCfg):
             stance_grf = 1.5
 
     class commands(MiniCheetahCfg.commands):
-        heading_command = False
         resampling_time = 4.
         curriculum = True
         max_curriculum_x = 4.
@@ -161,7 +158,6 @@ class SERefCfg(MiniCheetahCfg):
             lin_vel_x = [-1., 2.] # min max [m/s]
             lin_vel_y = 1.   # max [m/s]
             yaw_vel = 3.14/2.    # max [rad/s]
-            heading = 0.
 
     class normalization(MiniCheetahCfg.normalization):
             class obs_scales(MiniCheetahCfg.normalization.obs_scales): 
@@ -239,17 +235,6 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         lam = 0.99
         desired_kl = 0.01
         max_grad_norm = 1.
-
-    class state_estimator_nn:
-        # how many quantities we are estimating:
-        num_outputs = 4
-        hidden_dims = [256, 128, 64]  # None will default to 256, 128
-        # dropouts: randomly zeros output of a node.
-        # specify the probability of a dropout, 0 means no dropouts.
-        # Done per layer, including initial layer (input-first, no last-output)
-        # len(dropouts) == len(hidden_dims)
-        dropouts = [0.1, 0.1, 0.1]
-
     class state_estimator:
         num_learning_epochs = 10
         num_mini_batches = 1  # mini batch size = num_envs*nsteps / nminibatches
@@ -259,6 +244,16 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
                "dof_vel"]
         targets = ["base_height",
                    "base_lin_vel"]
+        # * neural network params
+        class neural_net:
+            activation = "elu"
+            hidden_dims = [256, 128, 64]  # None will default to 256, 128
+            # dropouts: randomly zeros output of a node.
+            # specify the probability of a dropout, 0 means no dropouts.
+            # Done per layer, including initial layer (input-first, no last-output)
+            # len(dropouts) == len(hidden_dims)
+            dropouts = [0.1, 0.1, 0.1]
+
         # TODO pull in state_estimator_nn into here.
 
     class runner(MiniCheetahCfgPPO.runner):

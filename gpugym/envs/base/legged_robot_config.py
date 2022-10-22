@@ -32,14 +32,11 @@ from .base_config import BaseConfig
 
 class LeggedRobotCfg(BaseConfig):
     class env:
-        num_envs = 4096  # (n_robots in Rudin 2021 paper - batch_size = n_steps * n_robots)
-        num_observations = 235
-        num_privileged_obs = None  # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
+        num_envs = 4096
         num_actions = 12
         env_spacing = 3.  # not used with heightfields/trimeshes 
         send_timeouts = True  # send time out information to the algorithm
         episode_length_s = 20  # episode length in seconds
-        num_env_obs = None # States observed from env, used only when SE is used
 
     class terrain:
         mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
@@ -69,15 +66,13 @@ class LeggedRobotCfg(BaseConfig):
     class commands:
         curriculum = False
         max_curriculum = 1.
-        num_commands = 4  # default: lin_vel_x, lin_vel_y, yaw_vel, heading (in heading mode yaw_vel is recomputed from heading error)
+        num_commands = 3  # default: lin_vel_x, lin_vel_y, yaw_vel, heading (in heading mode yaw_vel is recomputed from heading error)
         resampling_time = 10.  # time before command are changed[s]
-        heading_command = True  # if true: compute ang vel command from heading error
 
         class ranges:
             lin_vel_x = [-1.0, 1.0]  # min max [m/s]
             lin_vel_y = 1.  # max [m/s]
             yaw_vel = 1    # max [rad/s]
-            heading = 3.14
 
     class init_state:
 

@@ -29,13 +29,6 @@ class MiniCheetahRef(MiniCheetah):
         self.base_height = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
 
-        if cfg.env.num_se_obs:
-            self.num_se_obs = cfg.env.num_se_obs
-            self.se_obs_buf = torch.zeros(self.num_envs, cfg.env.num_se_obs,
-                                          device=self.device,
-                                          dtype=torch.float)
-        # self.se_noise_scale_vec = self._get_se_noise_scale_vec(self.cfg)
-
         # * reference traj
         csv_path = self.cfg.init_state.ref_traj.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
         # todo check that this works out
@@ -46,23 +39,33 @@ class MiniCheetahRef(MiniCheetah):
         self.action_avg[env_ids] = 0.
 
 
-    def _post_physics_step_callback(self):
+    def post_physics_step(self):
         """ Callback called before computing terminations, rewards, and
          observations, phase-dynamics.
             Default behaviour: Compute ang vel command based on target and
              heading, compute measured terrain heights and randomly push robots
         """
+        super().post_physics_step()
         self.phase = torch.fmod(self.phase+self.dt*self.omega, 2*torch.pi)
 
-        env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
+        env_ids = (self.episode_length_buf
+                   % int(self.cfg.commands.resampling_time
+                         / self.dt)==0).nonzero(as_tuple=False).flatten()
         self._resample_commands(env_ids)
-        if self.cfg.commands.heading_command:
-            forward = quat_apply(self.base_quat, self.forward_vec)
-            heading = torch.atan2(forward[:, 1], forward[:, 0])
-            self.commands[:, 2] = torch.clip(0.5*wrap_to_pi(self.commands[:, 3] - heading), -1., 1.)
 
         if self.cfg.domain_rand.push_robots and (self.common_step_counter % self.cfg.domain_rand.push_interval == 0):
             self._push_robots()
+
+        self.base_height = self.root_states[:, 2].unsqueeze(1)
+
+        nact = self.num_actions
+        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
+        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
+        self.ctrl_hist[:, :nact] = self.action_avg
+
+        # ? unsqueeze
+        self.phase_obs = torch.cat([torch.cos(self.phase),
+                                    torch.sin(self.phase)], dim=-1)
 
     def _compute_torques(self, actions):
         """ Compute torques from actions.
@@ -102,136 +105,6 @@ class MiniCheetahRef(MiniCheetah):
         else:
             raise NameError(f"Unknown controller type: {control_type}")
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
-
-    # def get_se_observations(self):
-    #     return self.se_obs_buf
-
-
-    def update_states(self):
-        self.base_height = self.root_states[:, 2].unsqueeze(1)
-
-        nact = self.num_actions
-        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
-        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
-        self.ctrl_hist[:, :nact] = self.action_avg
-        
-        # ? unsqueeze
-        self.phase_obs = torch.cat([torch.cos(self.phase),
-                                    torch.sin(self.phase)], dim = -1)
-
-    def compute_observations(self):
-        """ Computes observations
-        """
-
-        # base_height
-        # base lin vel
-        # base ang vel
-        # projected gravity vec
-        # commands
-        # joint pos
-        # joint vel
-        # actions
-        # actions (n-1, n-2)
-        # phase
-        base_height = self.root_states[:, 2].unsqueeze(1)
-
-        # * update commanded action history buffer
-
-        nact = self.num_actions
-        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
-        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
-        self.ctrl_hist[:, :nact] = self.action_avg
-
-        self.obs_buf = torch.cat((self.base_ang_vel*self.obs_scales.ang_vel,
-                                  self.projected_gravity,
-                                  self.commands[:, :3]*self.commands_scale,
-                                  self.dof_pos,
-                                  self.dof_vel*self.obs_scales.dof_vel,
-                                  self.ctrl_hist,
-                                  torch.cos(self.phase),
-                                  torch.sin(self.phase)),
-                                  dim=-1)
-
-        if self.privileged_obs_buf is not None:
-            self.privileged_obs_buf = torch.cat((self.base_ang_vel*self.obs_scales.ang_vel,
-                                                self.projected_gravity,
-                                                self.commands[:, :3]*self.commands_scale,
-                                                self.dof_pos,
-                                                self.dof_vel*self.obs_scales.dof_vel,
-                                                self.ctrl_hist,
-                                                torch.cos(self.phase),
-                                                torch.sin(self.phase)),
-                                                dim=-1)
-
-        # * SE observations
-        self.se_obs_buf = torch.cat((self.base_ang_vel*self.obs_scales.ang_vel,
-                                  self.projected_gravity,
-                                  self.dof_pos,
-                                  self.dof_vel*self.obs_scales.dof_vel),
-                                  dim=-1)
-
-        # ! noise_scale_vec must be of correct order! Check def below
-
-        if self.cfg.env.learn_SE:
-            # * store (privileged) targets for learning the state-estimator
-            # We are piggy-backing this into the `extras`, which is originally
-            # used just to send back and forth information for rsl_rl to print
-            # statistics (e.g. average return of each reward function).
-            self.extras["SE_targets"] = torch.cat((base_height,
-                                self.base_lin_vel * self.obs_scales.lin_vel),
-                                dim=-1)
-            # self.extras["SE_targets"] = torch.cat((base_height,
-            #                     self.base_lin_vel * self.obs_scales.lin_vel,
-            #                     # self.contact_forces[:,self.feet_indices,:].view(-1, 12)),
-            #                     self.contact_forces[:,self.feet_indices,2].view(-1, 4)),  # grf-z only
-            #                     dim=-1)
-
-    # def _get_noise_scale_vec(self, cfg):
-    #     '''
-    #     Sets a vector used to scale the noise added to the observations.
-    #         [NOTE]: Must be adapted when changing the observations structure
-
-    #     Args:
-    #         cfg (Dict): Environment config file
-
-    #     Returns:
-    #         [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
-    #     '''
-    #     noise_vec = torch.zeros_like(self.obs_buf[0])
-    #     self.add_noise = self.cfg.noise.add_noise
-    #     noise_scales = self.cfg.noise.noise_scales
-    #     ns_lvl = self.cfg.noise.noise_level
-    #     noise_vec[0:3] = to_torch(noise_scales.ang_vel)*ns_lvl*self.obs_scales.ang_vel
-    #     noise_vec[3:6] = noise_scales.gravity*ns_lvl
-    #     noise_vec[6:9] = 0.  # commands
-    #     noise_vec[9:21] = noise_scales.dof_pos*ns_lvl \
-    #         *self.obs_scales.dof_pos
-    #     noise_vec[21:33] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel
-
-    #     if self.cfg.terrain.measure_heights:
-    #         noise_vec[66:187] = noise_scales.height_measurements*ns_lvl \
-    #                             * self.obs_scales.height_measurements
-    #     return noise_vec
-
-    # def _get_se_noise_scale_vec(self, cfg):
-    #     '''
-    #     Sets a vector used to scale the noise added to the observations.
-    #         [NOTE]: Must be adapted when changing the observations structure
-    #         Default is set to the same as _get_noise_scale_vec
-    #     Args:
-    #         cfg (Dict): Environment config file
-    #     Returns:
-    #         [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
-    #     '''
-    #     noise_vec = torch.zeros_like(self.se_obs_buf[0])
-    #     self.add_noise = self.cfg.noise.add_noise
-    #     noise_scales = self.cfg.noise.noise_scales
-    #     ns_lvl = self.cfg.noise.noise_level
-    #     noise_vec[0:3] = to_torch(noise_scales.ang_vel)*ns_lvl*self.obs_scales.ang_vel
-    #     noise_vec[3:6] = noise_scales.gravity*ns_lvl
-    #     noise_vec[6:18] = noise_scales.dof_pos*ns_lvl*self.obs_scales.dof_pos
-    #     noise_vec[18:30] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel
-    #     return noise_vec
 
     def update_command_curriculum(self, env_ids):
         """ Implements a curriculum of increasing commands

@@ -58,9 +58,6 @@ class BaseTask():
             self.graphics_device_id = -1
 
         self.num_envs = cfg.env.num_envs
-        self.num_envs = cfg.env.num_envs
-        self.num_obs = cfg.env.num_observations
-        self.num_privileged_obs = cfg.env.num_privileged_obs
         self.num_actions = cfg.env.num_actions
 
         # optimization flags for pytorch JIT
@@ -68,16 +65,11 @@ class BaseTask():
         torch._C._jit_set_profiling_executor(False)
 
         # allocate buffers
-        self.obs_buf = torch.zeros(self.num_envs, self.num_obs, device=self.device, dtype=torch.float)
+        # todo rew_buf will be removed
         self.rew_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
         self.reset_buf = torch.ones(self.num_envs, device=self.device, dtype=torch.long)
         self.episode_length_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
         self.time_out_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
-        if self.num_privileged_obs is not None:
-            self.privileged_obs_buf = torch.zeros(self.num_envs, self.num_privileged_obs, device=self.device, dtype=torch.float)
-        else: 
-            self.privileged_obs_buf = None
-            # self.num_privileged_obs = self.num_obs
 
         self.extras = {}
 
@@ -99,14 +91,8 @@ class BaseTask():
             self.gym.subscribe_viewer_keyboard_event(
                 self.viewer, gymapi.KEY_V, "toggle_viewer_sync")
 
-    def get_observations(self):
-        return self.obs_buf
-
     def get_obs(self, obs_list):
         return torch.cat([getattr(self, name) for name in obs_list], dim=-1)
-
-    def get_privileged_observations(self):
-        return self.privileged_obs_buf
 
     def reset_idx(self, env_ids):
         """Reset selected robots"""
@@ -115,8 +101,8 @@ class BaseTask():
     def reset(self):
         """ Reset all robots"""
         self.reset_idx(torch.arange(self.num_envs, device=self.device))
-        obs, privileged_obs, _, _, _ = self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
-        return obs, privileged_obs
+        self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
+
 
     def reset_buffers(self):
         self.rew_buf[:] = 0.

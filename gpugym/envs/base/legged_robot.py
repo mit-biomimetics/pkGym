@@ -114,16 +114,19 @@ class LeggedRobot(BaseTask):
             if self.device == 'cpu':
                 self.gym.fetch_results(self.sim, True)
             self.gym.refresh_dof_state_tensor(self.sim)
+
         self.post_physics_step()
 
-        # return clipped obs, clipped states (None), rewards, dones and infos
-        clip_obs = self.cfg.normalization.clip_observations
-        self.obs_buf = torch.clip(self.obs_buf, -clip_obs, clip_obs)
-        if self.privileged_obs_buf is not None:
-            self.privileged_obs_buf = torch.clip(self.privileged_obs_buf,
-                                                 -clip_obs, clip_obs)
-        return self.obs_buf, self.privileged_obs_buf, self.rew_buf, \
-            self.reset_buf, self.extras
+        self.check_termination()
+        self.compute_reward(self.reward_names)
+        # potential-based shaping step 2: \gamma*r(s') part of \gamma*r(s') - r(s)
+        # in practice, settings gamma=gamma is unstable.
+        self.compute_reward(self.PBRS_reward_names, gamma=1)
+
+        env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
+        self.reset_idx(env_ids)
+
+
 
 
     def pre_physics_step(self):
@@ -152,16 +155,6 @@ class LeggedRobot(BaseTask):
 
         self._post_physics_step_callback()
 
-        self.check_termination()
-        self.compute_reward(self.reward_names)
-        # potential-based shaping step 2: \gamma*r(s') part of \gamma*r(s') - r(s)
-        # in practice, settings gamma=gamma is unstable.
-        self.compute_reward(self.PBRS_reward_names, gamma=1)
-
-        env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
-        self.reset_idx(env_ids)
-
-        self.compute_observations()
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
 
@@ -217,32 +210,6 @@ class LeggedRobot(BaseTask):
         if self.cfg.env.send_timeouts:
             self.extras["time_outs"] = self.time_out_buf
 
-    def compute_observations(self):  # ! to be removed
-        """ Computes observations
-        """
-
-        dof_pos = (self.dof_pos-self.default_dof_pos)*self.obs_scales.dof_pos
-        self.obs_buf = torch.cat((self.base_lin_vel*self.obs_scales.lin_vel,
-                                  self.base_ang_vel*self.obs_scales.ang_vel,
-                                  self.projected_gravity,
-                                  self.commands[:, :3]*self.commands_scale,
-                                  dof_pos,
-                                  self.dof_vel*self.obs_scales.dof_vel,
-                                  self.ctrl_hist),
-                                 dim=-1)
-        # add perceptive inputs if not blind
-        if self.cfg.terrain.measure_heights:
-            heights = torch.clip(self.root_states[:, 2].unsqueeze(1) - 0.5 - self.measured_heights, -1, 1.)*self.obs_scales.height_measurements
-            self.obs_buf = torch.cat((self.obs_buf, heights), dim=-1)
-
-        # ! noise_scale_vec must be of correct order!
-        # add noise if needed
-        if self.add_noise:
-            self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
-                            * self.noise_scale_vec
-
-        # * set up SE targets if needed (e.g. see mini_cheetah_ref.py).
-        # self.se_obs_buf = torch.cat((obs), dim=-1)
 
     def create_sim(self):
         """ Creates simulation, terrain and evironments
@@ -548,33 +515,6 @@ class LeggedRobot(BaseTask):
         if torch.mean(self.episode_sums["tracking_lin_vel"][env_ids]) / self.max_episode_length > 0.8 * self.reward_weights["tracking_lin_vel"]:
             self.command_ranges["lin_vel_x"][0] = np.clip(self.command_ranges["lin_vel_x"][0] - 0.5, -self.cfg.commands.max_curriculum, 0.)
             self.command_ranges["lin_vel_x"][1] = np.clip(self.command_ranges["lin_vel_x"][1] + 0.5, 0., self.cfg.commands.max_curriculum)
-
-
-    def _get_noise_scale_vec(self, cfg):
-        """ Sets a vector used to scale the noise added to the observations.
-            [NOTE]: Must be adapted when changing the observations structure
-
-        Args:
-            cfg (Dict): Environment config file
-
-        Returns:
-            [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
-        """
-        noise_vec = torch.zeros_like(self.obs_buf[0])
-        self.add_noise = self.cfg.noise.add_noise
-        noise_scales = self.cfg.noise.noise_scales
-        noise_level = self.cfg.noise.noise_level
-        noise_vec[:3] = noise_scales.lin_vel * noise_level * self.obs_scales.lin_vel
-        noise_vec[3:6] = noise_scales.ang_vel * noise_level * self.obs_scales.ang_vel
-        noise_vec[6:9] = noise_scales.gravity * noise_level
-        noise_vec[9:12] = 0. # commands
-        noise_vec[12:24] = noise_scales.dof_pos * noise_level * self.obs_scales.dof_pos
-        noise_vec[24:36] = noise_scales.dof_vel * noise_level * self.obs_scales.dof_vel
-        noise_vec[36:48] = 0. # previous actions
-        if self.cfg.terrain.measure_heights:
-            noise_vec[48:235] = noise_scales.height_measurements* noise_level * self.obs_scales.height_measurements
-        return noise_vec
-
 
     #----------------------------------------
     def _init_buffers(self):
