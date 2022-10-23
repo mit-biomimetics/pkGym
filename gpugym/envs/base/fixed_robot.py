@@ -206,10 +206,10 @@ class FixedRobot(BaseTask):
         self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
         self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale  + self.default_act_pos
 
-        dof_pos = (self.dof_pos-self.default_dof_pos)*self.obs_scales.dof_pos
+        dof_pos = (self.dof_pos-self.default_dof_pos)*self.scales.dof_pos
 
         self.obs_buf = torch.cat((dof_pos,
-                                  self.dof_vel*self.obs_scales.dof_vel,
+                                  self.dof_vel*self.scales.dof_vel,
                                   self.ctrl_hist),
                                  dim=-1)
 
@@ -665,7 +665,7 @@ class FixedRobot(BaseTask):
 
     def _parse_cfg(self, cfg):
         self.dt = self.cfg.control.decimation * self.sim_params.dt
-        self.obs_scales = self.cfg.normalization.obs_scales
+        self.scales = self.cfg.normalization
         self.reward_weights = class_to_dict(self.cfg.rewards.weights)
         # self.command_ranges = class_to_dict(self.cfg.commands.ranges)
         self.max_episode_length_s = self.cfg.env.episode_length_s

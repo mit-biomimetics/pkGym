@@ -50,8 +50,8 @@ class MiniCheetah(LeggedRobot):
         # actions
         # actions (n-1, n-2)
         # phase
-        base_z = self.root_states[:, 2].unsqueeze(1)*self.obs_scales.base_z
-        dof_pos = (self.dof_pos-self.default_dof_pos)*self.obs_scales.dof_pos
+        base_z = self.root_states[:, 2].unsqueeze(1)*self.scales["base_z"]
+        dof_pos = (self.dof_pos-self.default_dof_pos)*self.scales["dof_pos"]
 
         # * update commanded action history buffer
         control_type = self.cfg.control.control_type
@@ -61,12 +61,12 @@ class MiniCheetah(LeggedRobot):
         self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale + self.default_dof_pos
 
         self.obs_buf = torch.cat((base_z,
-                                  self.base_lin_vel*self.obs_scales.lin_vel,
-                                  self.base_ang_vel*self.obs_scales.ang_vel,
+                                  self.base_lin_vel*self.scales["lin_vel"],
+                                  self.base_ang_vel*self.scales["ang_vel"],
                                   self.projected_gravity,
                                   self.commands[:, :3]*self.commands_scale,
                                   dof_pos,
-                                  self.dof_vel*self.obs_scales.dof_vel,
+                                  self.dof_vel*self.scales["dof_vel"],
                                   self.ctrl_hist,
                                   torch.cos(self.phase*2*torch.pi),
                                   torch.sin(self.phase*2*torch.pi)),
@@ -94,16 +94,16 @@ class MiniCheetah(LeggedRobot):
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         ns_lvl = self.cfg.noise.noise_level
-        noise_vec[1:4] = noise_scales.lin_vel*ns_lvl*self.obs_scales.lin_vel
-        noise_vec[4:7] = to_torch(noise_scales.ang_vel)*ns_lvl*self.obs_scales.ang_vel
+        noise_vec[1:4] = noise_scales.lin_vel*ns_lvl*self.scales["lin_vel"]
+        noise_vec[4:7] = to_torch(noise_scales.ang_vel)*ns_lvl*self.scales["ang_vel"]
         noise_vec[7:10] = noise_scales.gravity*ns_lvl
         noise_vec[10:13] = 0.  # commands
-        noise_vec[13:25] = noise_scales.dof_pos*ns_lvl*self.obs_scales.dof_pos
-        noise_vec[25:37] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel
+        noise_vec[13:25] = noise_scales.dof_pos*ns_lvl*self.scales["dof_pos"]
+        noise_vec[25:37] = noise_scales.dof_vel*ns_lvl*self.scales["dof_vel"]
 
         if self.cfg.terrain.measure_heights:
             noise_vec[66:187] = noise_scales.height_measurements*ns_lvl \
-                                * self.obs_scales.height_measurements
+                                * self.scales["height_measurements"]
         return noise_vec
 
     def sqrdexp(self, x):
@@ -113,18 +113,19 @@ class MiniCheetah(LeggedRobot):
 
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity w. squared exp
-        return self.sqrdexp(self.base_lin_vel[:, 2]  \
-                            * self.cfg.normalization.obs_scales.lin_vel)
+        return self.sqrdexp(self.base_lin_vel[:, 2]
+                            * self.scales["base_lin_vel"])
 
     def _reward_ang_vel_xy(self):
         # Penalize xy axes base angular velocity
-        error = self.sqrdexp(self.base_ang_vel[:, :2] \
-                             * self.cfg.normalization.obs_scales.ang_vel)
+        error = self.sqrdexp(self.base_ang_vel[:, :2]
+                             * self.scales["base_ang_vel"])
         return torch.sum(error, dim=1)
 
     def _reward_orientation(self):
         # Penalize non flat base orientation
-        error = torch.square(self.projected_gravity[:, :2])/self.cfg.rewards.tracking_sigma
+        error = torch.square(self.projected_gravity[:, :2]) \
+                / self.cfg.rewards.tracking_sigma
         return torch.sum(torch.exp(-error), dim=1)
         # return self.sqrdexp(self.projected_gravity[:, 2]+1.)
 
@@ -134,7 +135,7 @@ class MiniCheetah(LeggedRobot):
         """
         base_height = self.root_states[:, 2].unsqueeze(1)
         error = (base_height-self.cfg.rewards.base_height_target)
-        error *= self.obs_scales.base_z
+        error *= self.scales["base_height"]
         error = torch.clamp(error, max=0, min=None).flatten()
         return torch.exp(-torch.square(error)/self.cfg.rewards.tracking_sigma)
 
@@ -149,7 +150,7 @@ class MiniCheetah(LeggedRobot):
 
     def _reward_dof_vel(self):
         # Penalize dof velocities
-        return torch.sum(self.sqrdexp(self.dof_vel * self.cfg.normalization.obs_scales.dof_vel), dim=1)
+        return torch.sum(self.sqrdexp(self.dof_vel * self.scales["dof_vel"]), dim=1)
 
     def _reward_dof_near_home(self):
-        return torch.sum(self.sqrdexp((self.dof_pos - self.default_dof_pos) * self.cfg.normalization.obs_scales.dof_pos), dim=1)
+        return torch.sum(self.sqrdexp((self.dof_pos - self.default_dof_pos) * self.scales["dof_pos"]), dim=1)

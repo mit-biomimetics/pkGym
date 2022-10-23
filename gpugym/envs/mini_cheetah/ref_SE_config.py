@@ -1,5 +1,7 @@
 
 from gpugym.envs.mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahCfgPPO
+import torch
+from isaacgym.torch_utils import to_torch
 
 BASE_HEIGHT_REF = 0.32
 
@@ -12,7 +14,7 @@ class SERefCfg(MiniCheetahCfg):
         # * if learn state-estimator is set to True, also set the config
         #  below for `state_estimator_nn` and `state_estimator`
         learn_SE = True
-        num_se_obs = 30
+        # num_se_obs = 30
     class terrain(MiniCheetahCfg.terrain):
         curriculum = False
         mesh_type = 'plane'
@@ -124,8 +126,7 @@ class SERefCfg(MiniCheetahCfg):
         base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.3
         make_PBRS = ["base_height",
-                     "reference_traj",
-                     "rew_orientation"
+                     "orientation"
                      ]
         class weights(MiniCheetahCfg.rewards.weights):
             termination = -15.
@@ -158,20 +159,31 @@ class SERefCfg(MiniCheetahCfg):
             lin_vel_x = [-1., 2.] # min max [m/s]
             lin_vel_y = 1.   # max [m/s]
             yaw_vel = 3.14/2.    # max [rad/s]
+            
+    
+    class scaling(MiniCheetahCfg.scaling):
+        base_lin_vel = 1/BASE_HEIGHT_REF
+        dof_pos = 4*[10., 1., 0.5]  # hip-abad, hip-pitch, knee
+        base_ang_vel = 1./3.14*(BASE_HEIGHT_REF/9.81)**0.5
+        commands = 1
+        dof_vel = 0.01  # ought to be roughly max expected speed.
+        base_height = BASE_HEIGHT_REF
 
-    class normalization(MiniCheetahCfg.normalization):
-            class obs_scales(MiniCheetahCfg.normalization.obs_scales): 
-                # * helper fcts
-                # * dimensionless time: sqrt(L/g) or sqrt(I/[mgL]), with I=I0+mL^2
-                v_leg = BASE_HEIGHT_REF
-                dimless_time = (v_leg/9.81)**0.5
-                base_z = 1./v_leg
-                lin_vel = 1./v_leg  # virtual leg lengths per second
-                ang_vel = 1./3.14*dimless_time
-                dof_pos = [10., 1., 0.5]  # [50, 10., 5.]
-                dof_vel = 0.01 # 0.05  # ought to be roughly max expected speed.
-                height_measurements = 1./v_leg
-            clip_actions = 100.
+    # class normalization(MiniCheetahCfg.normalization):
+    #     class obs_scales(MiniCheetahCfg.normalization.obs_scales): 
+
+    #         base_ang_vel = 1./3.14*(BASE_HEIGHT_REF/9.81)**0.5
+    #         commands = 1
+    #         dof_vel = 0.01  # ought to be roughly max expected speed.
+    #         base_height = BASE_HEIGHT_REF
+
+                # v_leg = BASE_HEIGHT_REF
+                # dimless_time = (v_leg/9.81)**0.5
+                # base_z = 1./v_leg
+                # lin_vel = 1./v_leg  # virtual leg lengths per second
+                # base_ang_vel = 1./3.14*dimless_time
+                # dof_pos = [10., 1., 0.5]  # [50, 10., 5.]
+                # height_measurements = 1./v_leg
 
     class noise(MiniCheetahCfg.noise):
         add_noise = True
@@ -204,18 +216,17 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         actor_obs = ["base_ang_vel",
                      "projected_gravity",
                      "commands",
-                     "dof_pos",
+                     "dof_pos_obs",
                      "dof_vel",
                      "ctrl_hist",
                      "phase_obs"
                      ]
 
-        critic_obs = ["base_height",
-                      "base_lin_vel",
+        critic_obs = [  # ! put back in prived obs (height, lin_vel)
                       "base_ang_vel",
                       "projected_gravity",
                       "commands",
-                      "dof_pos",
+                      "dof_pos_obs",
                       "dof_vel",
                       "ctrl_hist",
                       "phase_obs"

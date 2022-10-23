@@ -183,15 +183,8 @@ class LeggedRobotCfg(BaseConfig):
         # NOTE: formally these should only depend on state
         make_PBRS = []
 
-    class normalization:
-        class obs_scales:
-            lin_vel = 2.0
-            ang_vel = 0.25
-            dof_pos = 1.0
-            dof_vel = 0.05
-            height_measurements = 5.0
-        clip_observations = 100.
-        clip_actions = 100.
+    class scaling:
+        commands = 1
 
     class noise:
         add_noise = True

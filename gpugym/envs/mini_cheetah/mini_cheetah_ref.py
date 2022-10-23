@@ -19,20 +19,22 @@ import numpy as np
 class MiniCheetahRef(MiniCheetah):
 
     def _custom_init(self, cfg):
-        # * init buffer for phase variable
-        self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
-                                 device=self.device, requires_grad=False)
-        self.phase_obs = torch.zeros(self.num_envs, 2, dtype=torch.float,
-                                     device=self.device, requires_grad=False)
-        self.omega = 2*torch.pi*cfg.control.gait_freq
-
-        self.base_height = torch.zeros(self.num_envs, 1, dtype=torch.float,
-                                 device=self.device, requires_grad=False)
-
         # * reference traj
         csv_path = self.cfg.init_state.ref_traj.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
         # todo check that this works out
         self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy())
+        self.omega = 2*torch.pi*cfg.control.gait_freq
+
+    def _init_buffers(self):
+        super()._init_buffers()
+        self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False)
+        self.phase_obs = torch.zeros(self.num_envs, 2, dtype=torch.float,
+                                     device=self.device, requires_grad=False)
+        self.dof_pos_obs = torch.zeros_like(self.dof_pos, requires_grad=False)
+
+        self.base_height = torch.zeros(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False)
 
 
     def _custom_reset(self, env_ids):
@@ -66,6 +68,38 @@ class MiniCheetahRef(MiniCheetah):
         # ? unsqueeze
         self.phase_obs = torch.cat([torch.cos(self.phase),
                                     torch.sin(self.phase)], dim=-1)
+
+        self.dof_pos_obs = (self.dof_pos-self.default_dof_pos)
+
+
+    # def compute_observations(self):
+    #     """ Computes observations
+    #     """
+
+    #     # base_height
+    #     # base lin vel
+    #     # base ang vel
+    #     # projected gravity vec
+    #     # commands
+    #     # joint pos
+    #     # joint vel
+    #     # actions
+    #     # actions (n-1, n-2)
+    #     # phase
+    #     base_height = self.root_states[:, 2].unsqueeze(1)
+
+    #     # * update commanded action history buffer
+
+    #     self.obs_buf = torch.cat((self.base_ang_vel*self.scales["base_ang_vel"],
+    #                               self.projected_gravity,
+    #                               self.commands[:, :3]*self.scales["commands"],
+    #                               self.dof_pos,
+    #                               self.dof_vel*self.scales["dof_vel"],
+    #                               self.ctrl_hist,
+    #                               torch.cos(self.phase),
+    #                               torch.sin(self.phase)),
+    #                               dim=-1)
+
 
     def _compute_torques(self, actions):
         """ Compute torques from actions.
@@ -182,7 +216,6 @@ class MiniCheetahRef(MiniCheetah):
         # REWARDS EACH LEG INDIVIDUALLY BASED ON ITS POSITION IN THE CYCLE
         # dof position error
         error = self.get_ref() + self.default_dof_pos - self.dof_pos
-        # error *= self.obs_scales.dof_pos
         reward = torch.sum(self.sqrdexp(error) - torch.abs(error)*0.2, dim=1)/12.  # normalize by n_dof
         # * only when commanded velocity is higher
         return reward*(1-self.switch())

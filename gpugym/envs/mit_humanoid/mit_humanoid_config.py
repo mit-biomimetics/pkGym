@@ -236,7 +236,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             symm_arms = 0.0
             dof_near_home = 0.5  # 1.
 
-    class normalization(LeggedRobotCfg.normalization):
+    class scaling(LeggedRobotCfg.scaling):
             class obs_scales(LeggedRobotCfg.normalization.obs_scales):
                 # * helper fcts
                 # * dimensionless time: sqrt(L/g) or sqrt(I/[mgL]), with I=I0+mL^2

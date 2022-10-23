@@ -165,25 +165,26 @@ class MiniCheetahCfg(LeggedRobotCfg):
             yaw_vel = 0.  # max [rad/s]
             heading = 0.
 
-    class normalization(LeggedRobotCfg.normalization):
-            class obs_scales(LeggedRobotCfg.normalization.obs_scales):
-                # * helper fcts
-                # * dimensionless time: sqrt(L/g) or sqrt(I/[mgL]), with I=I0+mL^2
-                v_leg = BASE_HEIGHT_REF
-                dimless_time = (v_leg/9.81)**0.5
-                # lin_vel = 1/v_leg*dimless_time
-                base_z = 1./v_leg
-                lin_vel = 1./v_leg  # virtual leg lengths per second
-                # ang_vel = 0.25
-                ang_vel = 1./3.14*dimless_time
-                dof_pos = 1./3.14
-                dof_vel = 0.01 # 0.05  # ought to be roughly max expected speed.
+    class scaling(LeggedRobotCfg.scaling):
+        base_ang_vel = 1./3.14*(BASE_HEIGHT_REF/9.81)**0.5
+        commands = 1
+        dof_vel = 0.01  # ought to be roughly max expected speed.
+        base_height = BASE_HEIGHT_REF
+        dof_pos = [10., 1., 0.5]
+        # class obs_scales(LeggedRobotCfg.normalization.obs_scales):
+        #     # * helper fcts
+        #     # * dimensionless time: sqrt(L/g) or sqrt(I/[mgL]), with I=I0+mL^2
+        #     v_leg = BASE_HEIGHT_REF
+        #     dimless_time = (v_leg/9.81)**0.5
+        #     # lin_vel = 1/v_leg*dimless_time
+        #     base_z = 1./v_leg
+        #     lin_vel = 1./v_leg  # virtual leg lengths per second
+        #     # ang_vel = 0.25
+        #     ang_vel = 1./3.14*dimless_time
+        #     dof_pos = 1./3.14
+        #     dof_vel = 0.01 # 0.05  # ought to be roughly max expected speed.
 
-                action_scale = 1e-3
-
-                height_measurements = 1./v_leg
-            # clip_observations = 100.
-            clip_actions = 1000.
+        #     action_scale = 1e-3
 
     class noise(LeggedRobotCfg.noise):
         add_noise = True

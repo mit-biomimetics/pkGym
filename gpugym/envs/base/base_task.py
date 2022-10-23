@@ -91,8 +91,13 @@ class BaseTask():
             self.gym.subscribe_viewer_keyboard_event(
                 self.viewer, gymapi.KEY_V, "toggle_viewer_sync")
 
+
     def get_obs(self, obs_list):
-        return torch.cat([getattr(self, name) for name in obs_list], dim=-1)
+        obs = torch.cat([getattr(self, name)*self.scales[name]
+                         if name in self.scales.keys() else
+                         getattr(self, name) for name in obs_list], dim=-1)
+        return obs
+        # return torch.cat([getattr(self, name) for name in obs_list], dim=-1)
 
     def reset_idx(self, env_ids):
         """Reset selected robots"""

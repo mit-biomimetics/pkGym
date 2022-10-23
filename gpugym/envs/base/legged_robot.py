@@ -67,6 +67,7 @@ class LeggedRobot(BaseTask):
         self.height_samples = None
         self.debug_viz = False
         self.init_done = False
+        self.device = sim_device  # todo CRIME: remove this from __init__ then
         self._parse_cfg(self.cfg)
         super().__init__(self.cfg, sim_params, physics_engine, sim_device, headless)
 
@@ -93,8 +94,7 @@ class LeggedRobot(BaseTask):
         if self.cfg.asset.disable_actions:
             self.actions[:] = 0.
         else:
-            clip_actions = self.cfg.normalization.clip_actions
-            self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
+            self.actions = actions.to(self.device)
         self.pre_physics_step()
         # step physics and render each frame
         self.render()
@@ -570,11 +570,6 @@ class LeggedRobot(BaseTask):
                                     self.cfg.commands.num_commands,
                                     dtype=torch.float, device=self.device,
                                     requires_grad=False) # x vel, y vel, yaw vel, heading
-        self.commands_scale = torch.tensor([self.obs_scales.lin_vel,
-                                            self.obs_scales.lin_vel,
-                                            self.obs_scales.ang_vel],
-                                           device=self.device,
-                                           requires_grad=False,)
         self.feet_air_time = torch.zeros(self.num_envs,
                                          self.feet_indices.shape[0],
                                          dtype=torch.float,
@@ -849,7 +844,8 @@ class LeggedRobot(BaseTask):
 
     def _parse_cfg(self, cfg):
         self.dt = self.cfg.control.decimation * self.sim_params.dt
-        self.obs_scales = self.cfg.normalization.obs_scales
+        self.scales = class_to_dict(self.cfg.scaling)
+        self._convert_scales_to_torch()
         self.reward_weights = class_to_dict(self.cfg.rewards.weights)
         self.command_ranges = class_to_dict(self.cfg.commands.ranges)
         if self.cfg.terrain.mesh_type not in ['heightfield', 'trimesh']:
@@ -858,6 +854,13 @@ class LeggedRobot(BaseTask):
         self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
 
         self.cfg.domain_rand.push_interval = np.ceil(self.cfg.domain_rand.push_interval_s / self.dt)
+
+
+    def _convert_scales_to_torch(self):
+        for key in self.scales.keys():
+            if type(self.scales[key]) == list:
+                self.scales[key] = to_torch(self.scales[key],
+                                            device=self.device)
 
 
     def _draw_debug_vis(self):
