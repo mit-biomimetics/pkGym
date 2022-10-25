@@ -79,6 +79,7 @@ class LeggedRobot(BaseTask):
         self._init_buffers()
         self._prepare_reward_function()
         self.init_done = True
+        self.reset()
 
     def step(self, actions):
         """ Apply actions, simulate, call self.post_physics_step()
@@ -130,10 +131,7 @@ class LeggedRobot(BaseTask):
 
 
     def pre_physics_step(self):
-        nact = self.num_actions
-        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
-        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
-        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale
+        return None
 
 
     def post_physics_step(self):
@@ -434,7 +432,7 @@ class LeggedRobot(BaseTask):
         """
         #dof 
         self.dof_pos[env_ids] = self.default_dof_pos  #torch_rand_float(0.5, 1.5, (len(env_ids), self.num_dof), device=self.device)
-        self.dof_vel[env_ids] = 0 
+        self.dof_vel[env_ids] = 0
         self.root_states[env_ids] = self.base_init_state
 
 

@@ -20,22 +20,6 @@ class MiniCheetah(LeggedRobot):
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
 
-    def _post_physics_step_callback(self):
-        """ Callback called before computing terminations, rewards, and observations, phase-dynamics
-            Default behaviour: Compute ang vel command based on target and heading, compute measured terrain heights and randomly push robots
-        """
-        self.phase = torch.fmod(self.phase+self.dt, 1.)
-
-        env_ids = (self.episode_length_buf % int(self.cfg.commands.resampling_time / self.dt)==0).nonzero(as_tuple=False).flatten()
-        self._resample_commands(env_ids)
-        if self.cfg.commands.heading_command:
-            forward = quat_apply(self.base_quat, self.forward_vec)
-            heading = torch.atan2(forward[:, 1], forward[:, 0])
-            self.commands[:, 2] = torch.clip(0.5*wrap_to_pi(self.commands[:, 3] - heading), -1., 1.)
-
-        if self.cfg.domain_rand.push_robots and (self.common_step_counter % self.cfg.domain_rand.push_interval == 0):
-            self._push_robots()
-
     def compute_observations(self):
         """ Computes observations
         """

@@ -127,7 +127,7 @@ class BaseTask():
         # * + multiply non-zero ones by dt for DRS
         for name in list(self.reward_weights.keys()):
             weight = self.reward_weights[name]
-            if weight==0:
+            if weight == 0:
                 self.reward_weights.pop(name) 
             else:
                 if name in self.cfg.rewards.make_PBRS:

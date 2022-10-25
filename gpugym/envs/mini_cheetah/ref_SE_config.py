@@ -43,7 +43,7 @@ class SERefCfg(MiniCheetahCfg):
             "rh_kfe": 1.596976,
         }
 
-        reset_mode = "reset_to_basic" 
+        reset_mode = "reset_to_range" 
         # reset setup chooses how the initial conditions are chosen. 
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
@@ -56,17 +56,17 @@ class SERefCfg(MiniCheetahCfg):
 
         # * initialization for random range setup
 
-        dof_pos_range = {'haa': [-0.05, 0.05],
-                        'hfe': [-0.85, -0.75],
-                        'kfe': [-1.55, 1.65]}
+        dof_pos_range = {'haa': [-0.0, 0.05],
+                         'hfe': [-0.85, -0.7],
+                         'kfe': [-1.6, 1.6]}
 
         dof_vel_range = {'haa': [-0.1, 0.1],
-                        'hfe': [-0.1, 0.1],
-                        'kfe': [-0.1, 0.1]}
+                         'hfe': [-0.1, 0.1],
+                         'kfe': [-0.1, 0.1]}
 
         root_pos_range = [[0., 0.],  # x
                           [0., 0.],  # y
-                          [0.33, 0.35],  # z
+                          [0.34, 0.35],  # z
                           [-0.1, 0.1],  # roll
                           [-0.1, 0.1],  # pitch
                           [-0.1, 0.1]]  # yaw
@@ -88,9 +88,9 @@ class SERefCfg(MiniCheetahCfg):
         # Control type: "P" (position + damping) or "Td" (torque + damping)
         control_type = "P"
         action_scale = 0.75
-        exp_avg_decay = 0.15  # set to None to disable
+        exp_avg_decay = None  # set to None to disable
         # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 10
+        decimation = 5
 
     class domain_rand(MiniCheetahCfg.domain_rand):
         randomize_friction = True
@@ -125,9 +125,9 @@ class SERefCfg(MiniCheetahCfg):
 
         base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.3
-        make_PBRS = ["base_height",
-                     "orientation"
-                     ]
+        # make_PBRS = ["base_height",
+        #              "orientation"
+        #              ]
         class weights(MiniCheetahCfg.rewards.weights):
             termination = -15.
             tracking_lin_vel = 4.0
@@ -146,9 +146,9 @@ class SERefCfg(MiniCheetahCfg):
             dof_pos_limits = 0.
             feet_contact_forces = 0.
             dof_near_home = 0.
-            reference_traj = 0.5
-            swing_grf = -0.75
-            stance_grf = 1.5
+            reference_traj = 0.25
+            swing_grf = -0.15
+            stance_grf = 0.15
 
     class commands(MiniCheetahCfg.commands):
         resampling_time = 4.
@@ -156,37 +156,21 @@ class SERefCfg(MiniCheetahCfg):
         max_curriculum_x = 4.
         max_curriculum_ang = 2.5
         class ranges(MiniCheetahCfg.commands.ranges):
-            lin_vel_x = [-1., 2.] # min max [m/s]
+            lin_vel_x = [-1., 2.]  # min max [m/s]
             lin_vel_y = 1.   # max [m/s]
             yaw_vel = 3.14/2.    # max [rad/s]
-            
-    
+
     class scaling(MiniCheetahCfg.scaling):
         base_lin_vel = 1/BASE_HEIGHT_REF
         dof_pos = 4*[10., 1., 0.5]  # hip-abad, hip-pitch, knee
         base_ang_vel = 1./3.14*(BASE_HEIGHT_REF/9.81)**0.5
-        commands = 1
+        commands = [base_lin_vel, base_lin_vel, base_ang_vel]
         dof_vel = 0.01  # ought to be roughly max expected speed.
         base_height = BASE_HEIGHT_REF
 
-    # class normalization(MiniCheetahCfg.normalization):
-    #     class obs_scales(MiniCheetahCfg.normalization.obs_scales): 
-
-    #         base_ang_vel = 1./3.14*(BASE_HEIGHT_REF/9.81)**0.5
-    #         commands = 1
-    #         dof_vel = 0.01  # ought to be roughly max expected speed.
-    #         base_height = BASE_HEIGHT_REF
-
-                # v_leg = BASE_HEIGHT_REF
-                # dimless_time = (v_leg/9.81)**0.5
-                # base_z = 1./v_leg
-                # lin_vel = 1./v_leg  # virtual leg lengths per second
-                # base_ang_vel = 1./3.14*dimless_time
-                # dof_pos = [10., 1., 0.5]  # [50, 10., 5.]
-                # height_measurements = 1./v_leg
-
     class noise(MiniCheetahCfg.noise):
-        add_noise = True
+        # ! needs to be moved
+        add_noise = False
         noise_level = 1.  # scales other values
 
         class noise_scales(MiniCheetahCfg.noise.noise_scales):
@@ -196,12 +180,12 @@ class SERefCfg(MiniCheetahCfg):
             gravity = 0.05
 
     class sim:
-        dt =  0.001
+        dt = 0.002
         substeps = 1
         gravity = [0., 0., -9.81]  # [m/s^2]
 
 class SERefCfgPPO(MiniCheetahCfgPPO):
-    seed = -1
+    seed = 2
     do_wandb = True
 
     class wandb:
@@ -223,6 +207,8 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
                      ]
 
         critic_obs = [  # ! put back in prived obs (height, lin_vel)
+                      "base_height",
+                      "base_lin_vel",
                       "base_ang_vel",
                       "projected_gravity",
                       "commands",
@@ -243,7 +229,7 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         learning_rate = 5.e-5
         schedule = 'adaptive'  # can be adaptive, fixed
         gamma = 0.99
-        lam = 0.99
+        lam = 0.95
         desired_kl = 0.01
         max_grad_norm = 1.
     class state_estimator:

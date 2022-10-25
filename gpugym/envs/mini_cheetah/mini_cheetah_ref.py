@@ -39,6 +39,9 @@ class MiniCheetahRef(MiniCheetah):
 
     def _custom_reset(self, env_ids):
         self.action_avg[env_ids] = 0.
+        self.phase[env_ids] = torch_rand_float(0, torch.pi,
+                                               shape=self.phase[env_ids].shape,
+                                               device=self.device)
 
 
     def post_physics_step(self):
@@ -69,7 +72,8 @@ class MiniCheetahRef(MiniCheetah):
         self.phase_obs = torch.cat([torch.cos(self.phase),
                                     torch.sin(self.phase)], dim=-1)
 
-        self.dof_pos_obs = (self.dof_pos-self.default_dof_pos)
+        self.dof_pos_obs = (self.dof_pos-self.default_dof_pos) \
+                            * self.scales["dof_pos"]
 
 
     # def compute_observations(self):
