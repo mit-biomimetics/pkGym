@@ -99,8 +99,6 @@ class OnPolicyRunner:
         self.tot_time = 0
         self.current_learning_iteration = 0
 
-        self.env.reset()
-
 
     def parse_train_cfg(self, train_cfg):
         self.cfg = train_cfg['runner']
