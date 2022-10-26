@@ -50,9 +50,9 @@ class OnPolicyRunner:
                  log_dir=None,
                  device='cpu'):
 
-        self.parse_train_cfg(train_cfg)
         self.device = device
         self.env = env
+        self.parse_train_cfg(train_cfg)
 
         actor_critic_class = eval(self.cfg["policy_class_name"]) # ActorCritic
         num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
@@ -103,11 +103,20 @@ class OnPolicyRunner:
     def parse_train_cfg(self, train_cfg):
         self.cfg = train_cfg['runner']
         self.alg_cfg = train_cfg['algorithm']
+        self.remove_zero_weighted_rewards(train_cfg['policy']['reward']['weights'])
         self.policy_cfg = train_cfg['policy']
+
         if 'state_estimator' in train_cfg:
             self.se_cfg = train_cfg['state_estimator']
         else:
             self.se_cfg = None
+
+
+    def remove_zero_weighted_rewards(self, reward_weights):
+        # todo put this method into a helper
+        for name in list(reward_weights.keys()):
+            if reward_weights[name] == 0:
+                reward_weights.pop(name)
 
 
     def init_storage(self):
@@ -177,7 +186,9 @@ class OnPolicyRunner:
                     critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
                     dones = self.get_dones()
                     infos = self.get_infos()
-                    rewards = self.get_rewards()
+                    rewards = self.get_rewards(self.policy_cfg["reward"]["weights"],
+                                               modifier=self.env.dt)
+                    rewards += self.get_rewards(self.policy_cfg["reward"]["termination_weight"])
                     if self.cfg["SE_learner"] == "modular_SE":
                         SE_obs = self.get_obs(self.se_cfg["obs"])
                         SE_estimate = self.state_estimator.predict(SE_obs)
@@ -242,12 +253,12 @@ class OnPolicyRunner:
         return self.get_obs(obs_list)[0].shape[0]
 
 
-    def get_rewards(self):
+    def get_rewards(self, reward_weights, modifier=1):
         # TODO change this (on gpugym side) to actually compute a reward tensor on
         # the fly, and return in. And get rid of the need for a buffer.
         # This means moving prepare rewards etc. to on_policy_runner
-        return self.env.rew_buf.to(self.device)
-
+        # return self.env.rew_buf.to(self.device)
+        return self.env.compute_reward(reward_weights, modifier).to(self.device)
 
 
     def get_dones(self):
