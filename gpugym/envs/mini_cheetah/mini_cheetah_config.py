@@ -133,31 +133,12 @@ class MiniCheetahCfg(LeggedRobotCfg):
         only_positive_rewards = False
         base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.25
-        class scales(LeggedRobotCfg.rewards.weights):
-            termination = -1.
-            tracking_lin_vel = 1.0
-            tracking_ang_vel = 1.0
-            lin_vel_z = -0.
-            ang_vel_xy = 0.0
-            orientation = 1.0
-            torques = -5.e-7
-            dof_vel = 0.
-            base_height = 1.
-            feet_air_time = 0.  # rewards keeping feet in the air
-            collision = -0.
-            action_rate = -0.001  # -0.01
-            action_rate2 = -0.0001  # -0.001
-            stand_still = 0.
-            dof_pos_limits = 0.
-            feet_contact_forces = 0.
-            dof_near_home = 1.
-            # symm_legs = 0.0
-            # symm_arms = 0.0
 
     class commands(LeggedRobotCfg.commands):
         heading_command = False
         resampling_time = 4.
         curriculum = True
+
         max_curriculum = 3.
         class ranges(LeggedRobotCfg.commands.ranges):
             lin_vel_x = [0., 1.]  # min max [m/s]
@@ -196,9 +177,9 @@ class MiniCheetahCfg(LeggedRobotCfg):
             ang_vel = [0.3, 0.15, 0.4]  # 0.027, 0.14, 0.37
             gravity = 0.02
             # height_measurements = 0.1
-    
+
     class sim:
-        dt =  0.002
+        dt = 0.002
         substeps = 1
         gravity = [0., 0., -9.81]  # [m/s^2]
 
@@ -209,6 +190,25 @@ class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
         actor_hidden_dims = [256, 256, 256]
         critic_hidden_dims = [256, 256, 256]
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+        class reward(LeggedRobotCfgPPO.policy.reward):
+            make_PBRS = []
+
+            class weights(LeggedRobotCfgPPO.policy.reward.weights):
+                termination = -1.
+                tracking_lin_vel = 1.0
+                tracking_ang_vel = 1.0
+                lin_vel_z = -0.
+                ang_vel_xy = 0.0
+                orientation = 1.0
+                torques = -5.e-7
+                dof_vel = 0.
+                base_height = 1.
+                action_rate = -0.001  # -0.01
+                action_rate2 = -0.0001  # -0.001
+                stand_still = 0.
+                dof_pos_limits = 0.
+                feet_contact_forces = 0.
+                dof_near_home = 1.
 
     class algorithm( LeggedRobotCfgPPO.algorithm):
         # training params

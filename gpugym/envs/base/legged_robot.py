@@ -77,7 +77,7 @@ class LeggedRobot(BaseTask):
         if hasattr(self, "_custom_init"):
             self._custom_init(cfg)
         self._init_buffers()
-        self._prepare_reward_function()
+        # self._prepare_reward_function()  # todo remove
         self.init_done = True
         self.reset()
 
@@ -90,7 +90,7 @@ class LeggedRobot(BaseTask):
 
         self.reset_buffers()
         # potential-based shaping step 1: -r(s) part of \gamma*r(s') - r(s)
-        self.compute_reward(self.PBRS_reward_names, gamma=-1)
+        # self.compute_reward(self.PBRS_reward_names, gamma=-1)
 
         if self.cfg.asset.disable_actions:
             self.actions[:] = 0.
@@ -103,9 +103,9 @@ class LeggedRobot(BaseTask):
             if self.cfg.control.exp_avg_decay:
                 self.action_avg = exp_avg_filter(self.actions, self.action_avg,
                                                 self.cfg.control.exp_avg_decay)
-                self.torques = self._compute_torques(self.action_avg).view(self.torques.shape)
             else:
-                self.torques = self._compute_torques(self.actions).view(self.torques.shape)
+                self.action_avg = self.actions
+            self.torques = self._compute_torques(self.action_avg).view(self.torques.shape)
 
             if self.cfg.asset.disable_motors:
                 self.torques[:] = 0.
@@ -119,10 +119,10 @@ class LeggedRobot(BaseTask):
         self.post_physics_step()
 
         self.check_termination()
-        self.compute_reward(self.reward_names)
+        # self.compute_reward(self.reward_names)
         # potential-based shaping step 2: \gamma*r(s') part of \gamma*r(s') - r(s)
         # in practice, settings gamma=gamma is unstable.
-        self.compute_reward(self.PBRS_reward_names, gamma=1)
+        # self.compute_reward(self.PBRS_reward_names, gamma=1)
 
         env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
         self.reset_idx(env_ids)
@@ -177,12 +177,12 @@ class LeggedRobot(BaseTask):
         """
         if len(env_ids) == 0:
             return
-        # update curriculum
-        if self.cfg.terrain.curriculum:
-            self._update_terrain_curriculum(env_ids)
-        # avoid updating command curriculum at each step since the maximum command is common to all envs
-        if self.cfg.commands.curriculum and (self.common_step_counter % self.max_episode_length==0):
-            self.update_command_curriculum(env_ids)
+        # # update curriculum
+        # if self.cfg.terrain.curriculum:
+        #     self._update_terrain_curriculum(env_ids)
+        # # avoid updating command curriculum at each step since the maximum command is common to all envs
+        # if self.cfg.commands.curriculum and (self.common_step_counter % self.max_episode_length==0):
+        #     self.update_command_curriculum(env_ids)
 
         # reset robot states
         self._reset_system(env_ids)
@@ -196,14 +196,14 @@ class LeggedRobot(BaseTask):
         self.reset_buf[env_ids] = 1
         # fill extras
         self.extras["episode"] = {}
-        for key in self.episode_sums.keys():
-            self.extras["episode"]['rew_' + key] = torch.mean(self.episode_sums[key][env_ids]) / self.max_episode_length_s
-            self.episode_sums[key][env_ids] = 0.
+        # for key in self.episode_sums.keys():
+        #     self.extras["episode"]['rew_' + key] = torch.mean(self.episode_sums[key][env_ids]) / self.max_episode_length_s
+        #     self.episode_sums[key][env_ids] = 0.
         # log additional curriculum info
-        if self.cfg.terrain.curriculum:
-            self.extras["episode"]["terrain_level"] = torch.mean(self.terrain_levels.float())
-        if self.cfg.commands.curriculum:
-            self.extras["episode"]["max_command_x"] = self.command_ranges["lin_vel_x"][1]
+        # if self.cfg.terrain.curriculum:
+        #     self.extras["episode"]["terrain_level"] = torch.mean(self.terrain_levels.float())
+        # if self.cfg.commands.curriculum:
+        #     self.extras["episode"]["max_command_x"] = self.command_ranges["lin_vel_x"][1]
         # send timeout info to the algorithm
         if self.cfg.env.send_timeouts:
             self.extras["time_outs"] = self.time_out_buf
@@ -480,39 +480,39 @@ class LeggedRobot(BaseTask):
         self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self.root_states))
 
 
-    def _update_terrain_curriculum(self, env_ids):
-        """ Implements the game-inspired curriculum.
+    # def _update_terrain_curriculum(self, env_ids):
+    #     """ Implements the game-inspired curriculum.
 
-        Args:
-            env_ids (List[int]): ids of environments being reset
-        """
-        # Implement Terrain curriculum
-        if not self.init_done:
-            # don't change on initial reset
-            return
-        distance = torch.norm(self.root_states[env_ids, :2] - self.env_origins[env_ids, :2], dim=1)
-        # robots that walked far enough progress to harder terains
-        move_up = distance > self.terrain.env_length / 2
-        # robots that walked less than half of their required distance go to simpler terrains
-        move_down = (distance < torch.norm(self.commands[env_ids, :2], dim=1)*self.max_episode_length_s*0.5) * ~move_up
-        self.terrain_levels[env_ids] += 1 * move_up - 1 * move_down
-        # Robots that solve the last level are sent to a random one
-        self.terrain_levels[env_ids] = torch.where(self.terrain_levels[env_ids]>=self.max_terrain_level,
-                                                   torch.randint_like(self.terrain_levels[env_ids], self.max_terrain_level),
-                                                   torch.clip(self.terrain_levels[env_ids], 0)) # (the minumum level is zero)
-        self.env_origins[env_ids] = self.terrain_origins[self.terrain_levels[env_ids], self.terrain_types[env_ids]]
+    #     Args:
+    #         env_ids (List[int]): ids of environments being reset
+    #     """
+    #     # Implement Terrain curriculum
+    #     if not self.init_done:
+    #         # don't change on initial reset
+    #         return
+    #     distance = torch.norm(self.root_states[env_ids, :2] - self.env_origins[env_ids, :2], dim=1)
+    #     # robots that walked far enough progress to harder terains
+    #     move_up = distance > self.terrain.env_length / 2
+    #     # robots that walked less than half of their required distance go to simpler terrains
+    #     move_down = (distance < torch.norm(self.commands[env_ids, :2], dim=1)*self.max_episode_length_s*0.5) * ~move_up
+    #     self.terrain_levels[env_ids] += 1 * move_up - 1 * move_down
+    #     # Robots that solve the last level are sent to a random one
+    #     self.terrain_levels[env_ids] = torch.where(self.terrain_levels[env_ids]>=self.max_terrain_level,
+    #                                                torch.randint_like(self.terrain_levels[env_ids], self.max_terrain_level),
+    #                                                torch.clip(self.terrain_levels[env_ids], 0)) # (the minumum level is zero)
+    #     self.env_origins[env_ids] = self.terrain_origins[self.terrain_levels[env_ids], self.terrain_types[env_ids]]
 
 
-    def update_command_curriculum(self, env_ids):
-        """ Implements a curriculum of increasing commands
+    # def update_command_curriculum(self, env_ids):
+    #     """ Implements a curriculum of increasing commands
 
-        Args:
-            env_ids (List[int]): ids of environments being reset
-        """
-        # If the tracking reward is above 80% of the maximum, increase the range of commands
-        if torch.mean(self.episode_sums["tracking_lin_vel"][env_ids]) / self.max_episode_length > 0.8 * self.reward_weights["tracking_lin_vel"]:
-            self.command_ranges["lin_vel_x"][0] = np.clip(self.command_ranges["lin_vel_x"][0] - 0.5, -self.cfg.commands.max_curriculum, 0.)
-            self.command_ranges["lin_vel_x"][1] = np.clip(self.command_ranges["lin_vel_x"][1] + 0.5, 0., self.cfg.commands.max_curriculum)
+    #     Args:
+    #         env_ids (List[int]): ids of environments being reset
+    #     """
+    #     # If the tracking reward is above 80% of the maximum, increase the range of commands
+    #     if torch.mean(self.episode_sums["tracking_lin_vel"][env_ids]) / self.max_episode_length > 0.8 * self.reward_weights["tracking_lin_vel"]:
+    #         self.command_ranges["lin_vel_x"][0] = np.clip(self.command_ranges["lin_vel_x"][0] - 0.5, -self.cfg.commands.max_curriculum, 0.)
+    #         self.command_ranges["lin_vel_x"][1] = np.clip(self.command_ranges["lin_vel_x"][1] + 0.5, 0., self.cfg.commands.max_curriculum)
 
     #----------------------------------------
     def _init_buffers(self):
@@ -589,10 +589,9 @@ class LeggedRobot(BaseTask):
             self.height_points = self._init_height_points()
         self.measured_heights = 0
 
-        if self.cfg.control.exp_avg_decay:
-            self.action_avg = torch.zeros(self.num_envs, self.num_actions,
-                                            dtype=torch.float,
-                                            device=self.device, requires_grad=False)
+        self.action_avg = torch.zeros(self.num_envs, self.num_actions,
+                                        dtype=torch.float,
+                                        device=self.device, requires_grad=False)
 
         # joint positions offsets and PD gains
         self.default_dof_pos = torch.zeros(self.num_dof, dtype=torch.float,
@@ -820,8 +819,7 @@ class LeggedRobot(BaseTask):
             self.custom_origins = True
             self.env_origins = torch.zeros(self.num_envs, 3, device=self.device, requires_grad=False)
             # put robots at the origins defined by the terrain
-            max_init_level = self.cfg.terrain.max_init_terrain_level
-            if not self.cfg.terrain.curriculum: max_init_level = self.cfg.terrain.num_rows - 1
+            max_init_level = self.cfg.terrain.num_rows - 1
             self.terrain_levels = torch.randint(0, max_init_level+1, (self.num_envs,), device=self.device)
             self.terrain_types = torch.div(torch.arange(self.num_envs, device=self.device), (self.num_envs/self.cfg.terrain.num_cols), rounding_mode='floor').to(torch.long)
             self.max_terrain_level = self.cfg.terrain.num_rows
@@ -844,10 +842,10 @@ class LeggedRobot(BaseTask):
         self.dt = self.cfg.control.decimation * self.sim_params.dt
         self.scales = class_to_dict(self.cfg.scaling)
         self._convert_scales_to_torch()
-        self.reward_weights = class_to_dict(self.cfg.rewards.weights)
+        # self.reward_weights = class_to_dict(self.cfg.rewards.weights) # todo remove
         self.command_ranges = class_to_dict(self.cfg.commands.ranges)
-        if self.cfg.terrain.mesh_type not in ['heightfield', 'trimesh']:
-            self.cfg.terrain.curriculum = False
+        # if self.cfg.terrain.mesh_type not in ['heightfield', 'trimesh']:
+        #     self.cfg.terrain.curriculum = False
         self.max_episode_length_s = self.cfg.env.episode_length_s
         self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
 
@@ -996,7 +994,7 @@ class LeggedRobot(BaseTask):
 
     def _reward_termination(self):
         # Terminal reward / penalty
-        return self.reset_buf * ~self.time_out_buf
+        return -1.*(self.reset_buf * ~self.time_out_buf)
 
 
     def _reward_dof_pos_limits(self):

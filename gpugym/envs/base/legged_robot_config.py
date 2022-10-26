@@ -154,34 +154,12 @@ class LeggedRobotCfg(BaseConfig):
         max_push_vel_xy = 1.
 
     class rewards:
-        class weights:
-            termination = .0
-            tracking_lin_vel = .0
-            tracking_ang_vel = 0.
-            lin_vel_z = 0
-            ang_vel_xy = 0.
-            orientation = 0.
-            torques = 0.
-            dof_vel = 0.
-            base_height = 0.
-            feet_air_time = 0.
-            collision = 0.
-            feet_stumble = 0.0
-            action_rate = 0.
-            action_rate2 = 0.
-            stand_still = 0.
-            dof_pos_limits = 0.
-
         tracking_sigma = 0.25  # tracking reward = exp(-error^2/sigma)
         soft_dof_pos_limit = 1.  # percentage of urdf limits, values above this limit are penalized
         soft_dof_vel_limit = 1.
         soft_torque_limit = 1.  # ! may want to turn this off
         base_height_target = 1.
         max_contact_force = 100.  # forces above this value are penalized
-
-        # fill this list with names to turn into potential-based rewards
-        # NOTE: formally these should only depend on state
-        make_PBRS = []
 
     class scaling:
         commands = 1
@@ -230,6 +208,25 @@ class LeggedRobotCfgPPO(BaseConfig):
         actor_hidden_dims = [512, 256, 128]
         critic_hidden_dims = [512, 256, 128]
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+
+        class reward:
+            make_PBRS = []
+            class weights:
+                termination = .0
+                tracking_lin_vel = .0
+                tracking_ang_vel = 0.
+                lin_vel_z = 0
+                ang_vel_xy = 0.
+                orientation = 0.
+                torques = 0.
+                dof_vel = 0.
+                base_height = 0.
+                feet_air_time = 0.
+                collision = 0.
+                action_rate = 0.
+                action_rate2 = 0.
+                stand_still = 0.
+                dof_pos_limits = 0.
 
     class algorithm:
         # training params

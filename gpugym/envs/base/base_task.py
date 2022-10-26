@@ -66,7 +66,7 @@ class BaseTask():
 
         # allocate buffers
         # todo rew_buf will be removed
-        self.rew_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
+        # self.rew_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
         self.reset_buf = torch.ones(self.num_envs, device=self.device, dtype=torch.long)
         self.episode_length_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
         self.time_out_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
@@ -110,50 +110,52 @@ class BaseTask():
 
 
     def reset_buffers(self):
-        self.rew_buf[:] = 0.
         self.reset_buf[:] = False
 
-    def _prepare_reward_function(self):
-        """ Prepares a list of reward functions, whcih will be called to
-        compute the total reward. Looks for self._reward_<REWARD_NAME>, where
-        <REWARD_NAME> are names of all non zero reward weights in the cfg.
-        """
+    # def _prepare_reward_function(self):
+    #     """ Prepares a list of reward functions, whcih will be called to
+    #     compute the total reward. Looks for self._reward_<REWARD_NAME>, where
+    #     <REWARD_NAME> are names of all non zero reward weights in the cfg.
+    #     """
 
-        # * prepare dicts of functions
-        self.reward_names = []
-        self.PBRS_reward_names = []
+    #     # * prepare dicts of functions
+    #     self.weights]
+    #     self.PBRS_reward_names = []
 
-        # * remove zero weights, split between DRS and PBRS
-        # * + multiply non-zero ones by dt for DRS
-        for name in list(self.reward_weights.keys()):
-            weight = self.reward_weights[name]
-            if weight == 0:
-                self.reward_weights.pop(name) 
-            else:
-                if name in self.cfg.rewards.make_PBRS:
-                    self.PBRS_reward_names.append(name)
-                else:
-                    if name != "termination":
-                        self.reward_weights[name] *= self.dt
-                    self.reward_names.append(name)
+    #     # * remove zero weights, split between DRS and PBRS
+    #     # * + multiply non-zero ones by dt for DRS
+    #     for name in list(self.reward_weights.keys()):
+    #         weight = self.reward_weights[name]
+    #         if weight == 0:
+    #             self.reward_weights.pop(name) 
+    #         else:
+    #             if name in self.cfg.rewards.make_PBRS:
+    #                 self.PBRS_reward_names.append(name)
+    #             else:
+    #                 if name != "termination":
+    #                     self.reward_weights[name] *= self.dt
+    #                 self.weightsend(name)
+        # # * reward episode sums
+        # self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float,
+        #                                        device=self.device,
+        #                                        requires_grad=False)
+        #                      for name in self.reward_weights.keys()}
 
+    def compute_reward(self, reward_weights, modifier=1):
+        ''' Compute and return a torch tensor of rewards
+        reward_weights: dict with keys matching reward names, and values matching weights
+        modifier: additional weight applied to all weights, e.g. used for gamma in PBRS
+        '''
+        reward = torch.zeros(self.num_envs,
+                              device=self.device, dtype=torch.float)
+        for name, weight in reward_weights.items():
+            reward += weight*self.eval_reward(name)
+        # reward *= ~self.reset_buf  # ? do we want to have this?
+        return modifier*reward
 
-        # * reward episode sums
-        self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float,
-                                               device=self.device,
-                                               requires_grad=False)
-                             for name in self.reward_weights.keys()}
-
-    def compute_reward(self, reward_names, gamma=1):
-        for name in reward_names:
-            rew = gamma*self.reward_weights[name] * self.eval_reward(name)
-            if name != "termination":
-                rew *= ~self.reset_buf
-            self.rew_buf += rew
-            self.episode_sums[name] += rew
 
     def eval_reward(self, name):
-        return eval("self._reward_"+name+"()")
+        return eval('self._reward_'+name+'()')
 
     def step(self, actions):
         raise NotImplementedError

@@ -117,7 +117,7 @@ class SERefCfg(MiniCheetahCfg):
         disable_actions = False  # neural networks output set to 0
         disable_motors = False  # all torques set to 0
 
-    class rewards(MiniCheetahCfg.rewards):
+    class reward(MiniCheetahCfgPPO.policy.reward):
         soft_dof_pos_limit = 0.9
         soft_dof_vel_limit = 0.9
         soft_torque_limit = 0.9
@@ -128,7 +128,7 @@ class SERefCfg(MiniCheetahCfg):
         # make_PBRS = ["base_height",
         #              "orientation"
         #              ]
-        class weights(MiniCheetahCfg.rewards.weights):
+        class weights():
             termination = -15.
             tracking_lin_vel = 4.0
             tracking_ang_vel = 1.0
@@ -138,7 +138,6 @@ class SERefCfg(MiniCheetahCfg):
             torques = -5.e-7
             dof_vel = 0.
             base_height = 1.5
-            feet_air_time = 0.  # rewards keeping feet in the air
             collision = -0.25
             action_rate = -0.01  # -0.01
             action_rate2 = -0.001  # -0.001
@@ -217,6 +216,31 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
                       "ctrl_hist",
                       "phase_obs"
                       ]
+
+        class reward:
+            make_PBRS = []
+
+            class weights:
+                tracking_lin_vel = 4.0
+                tracking_ang_vel = 1.0
+                lin_vel_z = 0.6
+                ang_vel_xy = 0.0
+                orientation = 1.75
+                torques = -5.e-7
+                dof_vel = 0.
+                base_height = 1.5
+                collision = -0.25
+                action_rate = -0.01  # -0.01
+                action_rate2 = -0.001  # -0.001
+                stand_still = 0.5
+                dof_pos_limits = 0.
+                feet_contact_forces = 0.
+                dof_near_home = 0.
+                reference_traj = 0.25
+                swing_grf = -0.15
+                stance_grf = 0.15
+            class termination_weight:
+                termination = 15
 
     class algorithm( MiniCheetahCfgPPO.algorithm):
         # training params
