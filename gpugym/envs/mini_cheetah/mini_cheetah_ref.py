@@ -25,7 +25,8 @@ class MiniCheetahRef(MiniCheetah):
         
         self.omega = 2*torch.pi*cfg.control.gait_freq
         
-        self.obs_scales.dof_pos = torch.tile(to_torch(self.obs_scales.dof_pos),
+        self.obs_scales.dof_pos = torch.tile(to_torch(self.obs_scales.dof_pos,
+                                                      device=self.device),
                                              (4,))
         if cfg.env.num_se_obs:
             self.num_se_obs = cfg.env.num_se_obs
@@ -37,7 +38,8 @@ class MiniCheetahRef(MiniCheetah):
         # * reference traj
         csv_path = self.cfg.init_state.ref_traj.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
         # todo check that this works out
-        self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy())
+        self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy(),
+                                device=self.device)
 
 
     def _custom_reset(self, env_ids):
@@ -195,7 +197,8 @@ class MiniCheetahRef(MiniCheetah):
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         ns_lvl = self.cfg.noise.noise_level
-        noise_vec[0:3] = to_torch(noise_scales.ang_vel)*ns_lvl*self.obs_scales.ang_vel
+        noise_vec[0:3] = to_torch(noise_scales.ang_vel, device=self.device) \
+                         * ns_lvl*self.obs_scales.ang_vel
         noise_vec[3:6] = noise_scales.gravity*ns_lvl
         noise_vec[6:9] = 0.  # commands
         noise_vec[9:21] = noise_scales.dof_pos*ns_lvl \
@@ -221,7 +224,8 @@ class MiniCheetahRef(MiniCheetah):
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         ns_lvl = self.cfg.noise.noise_level
-        noise_vec[0:3] = to_torch(noise_scales.ang_vel)*ns_lvl*self.obs_scales.ang_vel
+        noise_vec[0:3] = to_torch(noise_scales.ang_vel, device=self.device) \
+                         * ns_lvl*self.obs_scales.ang_vel
         noise_vec[3:6] = noise_scales.gravity*ns_lvl
         noise_vec[6:18] = noise_scales.dof_pos*ns_lvl*self.obs_scales.dof_pos
         noise_vec[18:30] = noise_scales.dof_vel*ns_lvl*self.obs_scales.dof_vel

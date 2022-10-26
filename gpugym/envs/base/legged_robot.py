@@ -715,12 +715,14 @@ class LeggedRobot(BaseTask):
             for joint, vals in self.cfg.init_state.dof_pos_range.items():
                 for i in range(self.num_dof):
                     if joint in self.dof_names[i]:
-                        self.dof_pos_range[i, :] = to_torch(vals)
+                        self.dof_pos_range[i, :] = to_torch(vals,
+                                                            device=self.device)
 
             for joint, vals in self.cfg.init_state.dof_vel_range.items():
                 for i in range(self.num_dof):
                     if joint in self.dof_names[i]:
-                        self.dof_vel_range[i, :] = to_torch(vals)
+                        self.dof_vel_range[i, :] = to_torch(vals,
+                                                            device=self.device)
             
             self.root_pos_range = torch.tensor(self.cfg.init_state.root_pos_range,
                     dtype=torch.float, device=self.device, requires_grad=False)
