@@ -220,6 +220,7 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
         class reward:
             make_PBRS = []
 
+            # TODO this could be directly a dict... but we're moving to json soonish?
             class weights:
                 tracking_lin_vel = 4.0
                 tracking_ang_vel = 1.0

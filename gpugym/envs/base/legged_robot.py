@@ -100,11 +100,6 @@ class LeggedRobot(BaseTask):
         # step physics and render each frame
         self.render()
         for _ in range(self.cfg.control.decimation):
-            if self.cfg.control.exp_avg_decay:
-                self.action_avg = exp_avg_filter(self.actions, self.action_avg,
-                                                self.cfg.control.exp_avg_decay)
-            else:
-                self.action_avg = self.actions
             self.torques = self._compute_torques(self.action_avg).view(self.torques.shape)
 
             if self.cfg.asset.disable_motors:
@@ -161,7 +156,7 @@ class LeggedRobot(BaseTask):
         """ Check if environments need to be reset
         """
         self.reset_buf = torch.any(torch.norm(self.contact_forces[:, self.termination_contact_indices, :], dim=-1) > 1., dim=1)
-        self.time_out_buf = self.episode_length_buf > self.max_episode_length # no terminal reward for time-outs
+        self.time_out_buf = self.episode_length_buf > self.max_episode_length  # no terminal reward for time-outs
         self.reset_buf |= self.time_out_buf
 
 
@@ -186,8 +181,6 @@ class LeggedRobot(BaseTask):
 
         # reset robot states
         self._reset_system(env_ids)
-        if hasattr(self, "_custom_reset"):
-            self._custom_reset(env_ids)
         self._resample_commands(env_ids)
         # reset buffers
         self.ctrl_hist[env_ids] = 0.
@@ -195,7 +188,7 @@ class LeggedRobot(BaseTask):
         self.episode_length_buf[env_ids] = 0
         self.reset_buf[env_ids] = 1
         # fill extras
-        self.extras["episode"] = {}
+        # self.extras["episode"] = {}
         # for key in self.episode_sums.keys():
         #     self.extras["episode"]['rew_' + key] = torch.mean(self.episode_sums[key][env_ids]) / self.max_episode_length_s
         #     self.episode_sums[key][env_ids] = 0.
@@ -456,10 +449,6 @@ class LeggedRobot(BaseTask):
                                     self.root_pos_range[:, 0],
                                     self.root_pos_range[:, 1],
                                     device=self.device)
-
-        quat = quat_from_euler_xyz(random_com_pos[:, 3],
-                                        random_com_pos[:, 4],
-                                        random_com_pos[:, 5]) 
 
         self.root_states[env_ids, 0:7] = torch.cat((random_com_pos[:, 0:3],
                                     quat_from_euler_xyz(random_com_pos[:, 3],

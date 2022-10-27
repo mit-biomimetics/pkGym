@@ -37,12 +37,18 @@ class MiniCheetahRef(MiniCheetah):
                                  device=self.device, requires_grad=False)
 
 
-    def _custom_reset(self, env_ids):
+    # def _custom_reset(self, env_ids):
+    #     self.action_avg[env_ids] = 0.
+    #     self.phase[env_ids] = torch_rand_float(0, torch.pi,
+    #                                            shape=self.phase[env_ids].shape,
+    #                                            device=self.device)
+
+    def _reset_system(self, env_ids):
+        super()._reset_system(env_ids)
         self.action_avg[env_ids] = 0.
         self.phase[env_ids] = torch_rand_float(0, torch.pi,
                                                shape=self.phase[env_ids].shape,
                                                device=self.device)
-
 
     def post_physics_step(self):
         """ Callback called before computing terminations, rewards, and
@@ -51,16 +57,8 @@ class MiniCheetahRef(MiniCheetah):
              heading, compute measured terrain heights and randomly push robots
         """
         super().post_physics_step()
+
         self.phase = torch.fmod(self.phase+self.dt*self.omega, 2*torch.pi)
-
-        env_ids = (self.episode_length_buf
-                   % int(self.cfg.commands.resampling_time
-                         / self.dt)==0).nonzero(as_tuple=False).flatten()
-        self._resample_commands(env_ids)
-
-        if self.cfg.domain_rand.push_robots and (self.common_step_counter % self.cfg.domain_rand.push_interval == 0):
-            self._push_robots()
-
         self.base_height = self.root_states[:, 2].unsqueeze(1)
 
         nact = self.num_actions
@@ -72,7 +70,7 @@ class MiniCheetahRef(MiniCheetah):
         self.phase_obs = torch.cat([torch.cos(self.phase),
                                     torch.sin(self.phase)], dim=-1)
 
-        self.dof_pos_obs = (self.dof_pos-self.default_dof_pos) \
+        self.dof_pos_obs = (self.dof_pos - self.default_dof_pos) \
                             * self.scales["dof_pos"]
 
 

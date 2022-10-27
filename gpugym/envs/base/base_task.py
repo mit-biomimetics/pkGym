@@ -99,9 +99,11 @@ class BaseTask():
         return obs
         # return torch.cat([getattr(self, name) for name in obs_list], dim=-1)
 
+
     def reset_idx(self, env_ids):
         """Reset selected robots"""
         raise NotImplementedError
+
 
     def reset(self):
         """ Reset all robots"""
@@ -111,35 +113,6 @@ class BaseTask():
 
     def reset_buffers(self):
         self.reset_buf[:] = False
-
-    # def _prepare_reward_function(self):
-    #     """ Prepares a list of reward functions, whcih will be called to
-    #     compute the total reward. Looks for self._reward_<REWARD_NAME>, where
-    #     <REWARD_NAME> are names of all non zero reward weights in the cfg.
-    #     """
-
-    #     # * prepare dicts of functions
-    #     self.weights]
-    #     self.PBRS_reward_names = []
-
-    #     # * remove zero weights, split between DRS and PBRS
-    #     # * + multiply non-zero ones by dt for DRS
-    #     for name in list(self.reward_weights.keys()):
-    #         weight = self.reward_weights[name]
-    #         if weight == 0:
-    #             self.reward_weights.pop(name) 
-    #         else:
-    #             if name in self.cfg.rewards.make_PBRS:
-    #                 self.PBRS_reward_names.append(name)
-    #             else:
-    #                 if name != "termination":
-    #                     self.reward_weights[name] *= self.dt
-    #                 self.weightsend(name)
-        # # * reward episode sums
-        # self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float,
-        #                                        device=self.device,
-        #                                        requires_grad=False)
-        #                      for name in self.reward_weights.keys()}
 
     def compute_reward(self, reward_weights, modifier=1):
         ''' Compute and return a torch tensor of rewards
