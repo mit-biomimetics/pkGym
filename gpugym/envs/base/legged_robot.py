@@ -100,7 +100,7 @@ class LeggedRobot(BaseTask):
         # step physics and render each frame
         self.render()
         for _ in range(self.cfg.control.decimation):
-            self.torques = self._compute_torques(self.action_avg).view(self.torques.shape)
+            self.torques = self._compute_torques(actions).view(self.torques.shape)
 
             if self.cfg.asset.disable_motors:
                 self.torques[:] = 0.
@@ -949,7 +949,7 @@ class LeggedRobot(BaseTask):
 
     def _reward_torques(self):
         # Penalize torques
-        return torch.sum(torch.square(self.torques), dim=1)
+        return -torch.sum(torch.square(self.torques), dim=1)
 
 
     def _reward_dof_vel(self):
@@ -963,7 +963,7 @@ class LeggedRobot(BaseTask):
         dt2 = (self.dt*self.cfg.control.decimation)**2
         error = torch.square(self.ctrl_hist[:, :nact] \
                             - self.ctrl_hist[:, nact:2*nact])/dt2
-        return torch.sum(error, dim=1)
+        return -torch.sum(error, dim=1)
 
 
     def _reward_action_rate2(self):
@@ -973,12 +973,12 @@ class LeggedRobot(BaseTask):
         error = torch.square(self.ctrl_hist[:, :nact]  \
                             - 2*self.ctrl_hist[:, nact:2*nact]  \
                             + self.ctrl_hist[:, 2*nact:])/dt2
-        return torch.sum(error, dim=1)
+        return -torch.sum(error, dim=1)
 
 
     def _reward_collision(self):
         # Penalize collisions on selected bodies
-        return torch.sum(1.*(torch.norm(self.contact_forces[:, self.penalised_contact_indices, :], dim=-1) > 0.1), dim=1)
+        return -torch.sum(1.*(torch.norm(self.contact_forces[:, self.penalised_contact_indices, :], dim=-1) > 0.1), dim=1)
 
 
     def _reward_termination(self):

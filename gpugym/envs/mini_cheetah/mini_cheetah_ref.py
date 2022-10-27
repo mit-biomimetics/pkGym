@@ -64,7 +64,7 @@ class MiniCheetahRef(MiniCheetah):
         nact = self.num_actions
         self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
         self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
-        self.ctrl_hist[:, :nact] = self.action_avg
+        self.ctrl_hist[:, :nact] = self.actions
 
         # ? unsqueeze
         self.phase_obs = torch.cat([torch.cos(self.phase),
@@ -120,10 +120,10 @@ class MiniCheetahRef(MiniCheetah):
 
         if self.cfg.control.exp_avg_decay:
             self.action_avg = exp_avg_filter(self.actions, self.action_avg,
-                                            self.cfg.control.exp_avg_decay)
+                                             self.cfg.control.exp_avg_decay)
             actions = self.action_avg
 
-        if self.cfg.control.control_type=="P":
+        if self.cfg.control.control_type == "P":
 
             torques = self.p_gains*(actions * self.cfg.control.action_scale \
                                     + self.default_dof_pos \
@@ -199,19 +199,19 @@ class MiniCheetahRef(MiniCheetah):
 
     def _reward_swing_grf(self):
         # Reward non-zero grf during swing (0 to pi)
-        grf = torch.gt(torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1), 50.)
-        ph_off = torch.lt(self.phase, torch.pi)  # should this be in swing?
-        rew = grf*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1).int()
-        return torch.sum(rew, dim=1)*(1-self.switch())
+        in_contact = torch.gt(torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1), 50.)
+        ph_off = torch.lt(self.phase, torch.pi)
+        rew = in_contact*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1)
+        return -torch.sum(rew.float(), dim=1)*(1-self.switch())
 
 
     def _reward_stance_grf(self):
         # Reward non-zero grf during stance (pi to 2pi)
-        grf = torch.gt(torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1), 50.)
+        in_contact = torch.gt(torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1), 50.)
         ph_off = torch.gt(self.phase, torch.pi)  # should this be in swing?
-        rew = grf*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1).int()
+        rew = in_contact*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1)
 
-        return torch.sum(rew, dim=1)*(1-self.switch())
+        return torch.sum(rew.float(), dim=1)*(1-self.switch())
 
 
     def _reward_reference_traj(self):

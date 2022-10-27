@@ -227,19 +227,19 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
                 lin_vel_z = 0.6
                 ang_vel_xy = 0.0
                 orientation = 1.75
-                torques = -5.e-7
+                torques = 5.e-7
                 dof_vel = 0.
                 base_height = 1.5
-                collision = -0.25
-                action_rate = -0.01  # -0.01
-                action_rate2 = -0.001  # -0.001
-                stand_still = 0.5
+                collision = 0.25
+                action_rate = 0.01  # -0.01
+                action_rate2 = 0.001  # -0.001
+                stand_still = 0.
                 dof_pos_limits = 0.
                 feet_contact_forces = 0.
                 dof_near_home = 0.
                 reference_traj = 0.25
-                swing_grf = -0.15
-                stance_grf = 0.15
+                swing_grf = 0.5
+                stance_grf = 1.
             class termination_weight:
                 termination = 15
 
