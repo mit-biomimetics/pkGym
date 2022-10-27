@@ -165,7 +165,7 @@ class SERefCfg(MiniCheetahCfg):
         base_ang_vel = 1./3.14*(BASE_HEIGHT_REF/9.81)**0.5
         commands = [base_lin_vel, base_lin_vel, base_ang_vel]
         dof_vel = 0.01  # ought to be roughly max expected speed.
-        base_height = BASE_HEIGHT_REF
+        base_height = 1/BASE_HEIGHT_REF
 
     class noise(MiniCheetahCfg.noise):
         # ! needs to be moved
@@ -229,7 +229,7 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
                 orientation = 1.75
                 torques = 5.e-7
                 dof_vel = 0.
-                base_height = 1.5
+                min_base_height = 1.5
                 collision = 0.25
                 action_rate = 0.01  # -0.01
                 action_rate2 = 0.001  # -0.001

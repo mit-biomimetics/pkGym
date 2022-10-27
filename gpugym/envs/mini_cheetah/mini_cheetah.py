@@ -113,7 +113,7 @@ class MiniCheetah(LeggedRobot):
         return torch.sum(torch.exp(-error), dim=1)
         # return self.sqrdexp(self.projected_gravity[:, 2]+1.)
 
-    def _reward_base_height(self):
+    def _reward_min_base_height(self):
         """
         Squared exponential saturating at base_height target
         """
