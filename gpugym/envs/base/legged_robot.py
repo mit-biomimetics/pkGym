@@ -685,8 +685,17 @@ class LeggedRobot(BaseTask):
                                            requires_grad=False)
         for i in range(self.num_dof):
             name = self.dof_names[i]
-            angle = self.cfg.init_state.default_joint_angles[name]
-            self.default_dof_pos[i] = self.cfg.init_state.default_joint_angles[name]
+            angles = self.cfg.init_state.default_joint_angles
+
+            found = False
+            for dof_name in angles.keys():
+                if dof_name in name:
+                    self.default_dof_pos[i] = angles[dof_name]
+                    found = True
+            if not found:
+                self.default_dof_pos[i] = 0.0
+                print(f"Default dof pos of joint {name} was not defined, setting to zero")
+
             found = False
             for dof_name in self.cfg.control.stiffness.keys():
                 if dof_name in name:
