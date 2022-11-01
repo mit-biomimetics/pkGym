@@ -78,8 +78,9 @@ class MiniCheetah(LeggedRobot):
         self.add_noise = self.cfg.noise.add_noise
         noise_scales = self.cfg.noise.noise_scales
         ns_lvl = self.cfg.noise.noise_level
-        noise_vec[1:4] = noise_scales.lin_vel*ns_lvl*self.scales["lin_vel"]
-        noise_vec[4:7] = to_torch(noise_scales.ang_vel)*ns_lvl*self.scales["ang_vel"]
+        noise_vec[1:4] = noise_scales.lin_vel * ns_lvl * self.scales["lin_vel"]
+        noise_vec[4:7] = to_torch(noise_scales.ang_vel, device=self.device) \
+                         * ns_lvl*self.scales["ang_vel"]
         noise_vec[7:10] = noise_scales.gravity*ns_lvl
         noise_vec[10:13] = 0.  # commands
         noise_vec[13:25] = noise_scales.dof_pos*ns_lvl*self.scales["dof_pos"]

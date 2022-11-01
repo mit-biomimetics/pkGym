@@ -588,8 +588,17 @@ class LeggedRobot(BaseTask):
                                            requires_grad=False)
         for i in range(self.num_dof):
             name = self.dof_names[i]
-            angle = self.cfg.init_state.default_joint_angles[name]
-            self.default_dof_pos[i] = self.cfg.init_state.default_joint_angles[name]
+            angles = self.cfg.init_state.default_joint_angles
+
+            found = False
+            for dof_name in angles.keys():
+                if dof_name in name:
+                    self.default_dof_pos[i] = angles[dof_name]
+                    found = True
+            if not found:
+                self.default_dof_pos[i] = 0.0
+                print(f"Default dof pos of joint {name} was not defined, setting to zero")
+
             found = False
             for dof_name in self.cfg.control.stiffness.keys():
                 if dof_name in name:
@@ -618,13 +627,15 @@ class LeggedRobot(BaseTask):
             for joint, vals in self.cfg.init_state.dof_pos_range.items():
                 for i in range(self.num_dof):
                     if joint in self.dof_names[i]:
-                        self.dof_pos_range[i, :] = to_torch(vals)
+                        self.dof_pos_range[i, :] = to_torch(vals,
+                                                            device=self.device)
 
             for joint, vals in self.cfg.init_state.dof_vel_range.items():
                 for i in range(self.num_dof):
                     if joint in self.dof_names[i]:
-                        self.dof_vel_range[i, :] = to_torch(vals)
-
+                        self.dof_vel_range[i, :] = to_torch(vals,
+                                                            device=self.device)
+            
             self.root_pos_range = torch.tensor(self.cfg.init_state.root_pos_range,
                     dtype=torch.float, device=self.device, requires_grad=False)
             self.root_vel_range = torch.tensor(self.cfg.init_state.root_vel_range,

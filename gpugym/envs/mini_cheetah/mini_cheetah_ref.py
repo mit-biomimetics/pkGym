@@ -22,8 +22,10 @@ class MiniCheetahRef(MiniCheetah):
         # * reference traj
         csv_path = self.cfg.init_state.ref_traj.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
         # todo check that this works out
-        self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy())
+        self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy(),
+                                device=self.device)
         self.omega = 2*torch.pi*cfg.control.gait_freq
+
 
     def _init_buffers(self):
         super()._init_buffers()
@@ -37,18 +39,13 @@ class MiniCheetahRef(MiniCheetah):
                                  device=self.device, requires_grad=False)
 
 
-    # def _custom_reset(self, env_ids):
-    #     self.action_avg[env_ids] = 0.
-    #     self.phase[env_ids] = torch_rand_float(0, torch.pi,
-    #                                            shape=self.phase[env_ids].shape,
-    #                                            device=self.device)
-
     def _reset_system(self, env_ids):
         super()._reset_system(env_ids)
         self.action_avg[env_ids] = 0.
         self.phase[env_ids] = torch_rand_float(0, torch.pi,
                                                shape=self.phase[env_ids].shape,
                                                device=self.device)
+
 
     def post_physics_step(self):
         """ Callback called before computing terminations, rewards, and
@@ -72,35 +69,6 @@ class MiniCheetahRef(MiniCheetah):
 
         self.dof_pos_obs = (self.dof_pos - self.default_dof_pos) \
                             * self.scales["dof_pos"]
-
-
-    # def compute_observations(self):
-    #     """ Computes observations
-    #     """
-
-    #     # base_height
-    #     # base lin vel
-    #     # base ang vel
-    #     # projected gravity vec
-    #     # commands
-    #     # joint pos
-    #     # joint vel
-    #     # actions
-    #     # actions (n-1, n-2)
-    #     # phase
-    #     base_height = self.root_states[:, 2].unsqueeze(1)
-
-    #     # * update commanded action history buffer
-
-    #     self.obs_buf = torch.cat((self.base_ang_vel*self.scales["base_ang_vel"],
-    #                               self.projected_gravity,
-    #                               self.commands[:, :3]*self.scales["commands"],
-    #                               self.dof_pos,
-    #                               self.dof_vel*self.scales["dof_vel"],
-    #                               self.ctrl_hist,
-    #                               torch.cos(self.phase),
-    #                               torch.sin(self.phase)),
-    #                               dim=-1)
 
 
     def _compute_torques(self, actions):
@@ -141,23 +109,6 @@ class MiniCheetahRef(MiniCheetah):
         else:
             raise NameError(f"Unknown controller type: {control_type}")
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
-
-    # def update_command_curriculum(self, env_ids):
-    #     """ Implements a curriculum of increasing commands
-
-    #     Args:
-    #         env_ids (List[int]): ids of environments being reset
-    #     """
-    #     # If the tracking reward is above 80% of the maximum, increase the range of commands
-    #     if torch.mean(self.episode_sums["tracking_lin_vel"][env_ids]) / self.max_episode_length > 0.8 * self.reward_weights["tracking_lin_vel"]:
-    #         self.command_ranges["lin_vel_x"][0] = np.clip(self.command_ranges["lin_vel_x"][0] - 0.5, -self.cfg.commands.max_curriculum_x, 0.)
-    #         self.command_ranges["lin_vel_x"][1] = np.clip(self.command_ranges["lin_vel_x"][1] + 0.5, 0., self.cfg.commands.max_curriculum_x)
-    #         # also increase heading if it is good
-    #         if torch.mean(self.episode_sums["tracking_ang_vel"][env_ids]) / self.max_episode_length > 0.8 * self.reward_weights["tracking_ang_vel"]:
-    #             yaw_cmd = self.command_ranges["yaw_vel"]
-    #             self.command_ranges["yaw_vel"] = np.clip(yaw_cmd + 0.15,
-    #                                     0.,
-    #                                     self.cfg.commands.max_curriculum_ang)
 
 
     def _resample_commands(self, env_ids):
