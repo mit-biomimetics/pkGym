@@ -181,8 +181,7 @@ class OnPolicyRunner:
                                                dtype=torch.float,
                                                device=self.device,
                                                requires_grad=False)
-                    for name
-                    in self.policy_cfg["reward"]["termination_weight"].keys()})
+                        for name in self.policy_cfg["reward"]["termination_weight"].keys()})
         infos = {}
         infos['episode'] = {key:0 for key
                           in self.policy_cfg["reward"]["weights"].keys()}
