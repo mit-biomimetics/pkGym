@@ -87,7 +87,7 @@ class PPO:
 
     def test_mode(self):
         self.actor_critic.test()
-    
+
     def train_mode(self):
         self.actor_critic.train()
 
@@ -102,7 +102,7 @@ class PPO:
         self.transition.observations = obs
         self.transition.critic_observations = critic_obs
         return self.transition.actions
-    
+
     def process_env_step(self, rewards, dones, infos):
         self.transition.rewards = rewards.clone()
         self.transition.dones = dones

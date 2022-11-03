@@ -42,6 +42,8 @@ from rsl_rl.modules import ActorCritic
 from rsl_rl.modules import StateEstimatorNN
 from rsl_rl.env import VecEnv
 
+from rsl_rl.utils import update_infos_with_episode_sums
+
 class OnPolicyRunner:
 
     def __init__(self,
@@ -141,7 +143,9 @@ class OnPolicyRunner:
     def configure_wandb(self, wandb):
         self.wandb = wandb
         self.do_wandb = True
-        self.wandb.watch((self.alg.actor_critic.actor, self.alg.actor_critic.critic), log_freq=100, log_graph=True)
+        self.wandb.watch((self.alg.actor_critic.actor,
+                          self.alg.actor_critic.critic),
+                         log_freq=100, log_graph=True)
 
 
     def reset_learn(self):
@@ -169,8 +173,26 @@ class OnPolicyRunner:
         episode_counts_infos = []
         rewbuffer = deque(maxlen=100)
         lenbuffer = deque(maxlen=100)
-        cur_reward_sum = torch.zeros(self.env.num_envs, dtype=torch.float, device=self.device)
-        cur_episode_length = torch.zeros(self.env.num_envs, dtype=torch.float, device=self.device)
+        episode_sums = {name: torch.zeros(self.env.num_envs, dtype=torch.float,
+                                               device=self.device,
+                                               requires_grad=False)
+                        for name in self.policy_cfg["reward"]["weights"].keys()}
+        episode_sums.update({name: torch.zeros(self.env.num_envs,
+                                               dtype=torch.float,
+                                               device=self.device,
+                                               requires_grad=False)
+                    for name
+                    in self.policy_cfg["reward"]["termination_weight"].keys()})
+        infos = {}
+        infos['episode'] = {key:0 for key
+                          in self.policy_cfg["reward"]["weights"].keys()}
+        infos['episode'].update({key:0 for key
+                    in self.policy_cfg["reward"]["termination_weight"].keys()})
+        cur_reward_sum = torch.zeros(self.env.num_envs,
+                                     dtype=torch.float, device=self.device)
+        cur_episode_length = torch.zeros(self.env.num_envs,
+                                         dtype=torch.float, device=self.device)
+
 
         tot_iter = self.current_learning_iteration + num_learning_iterations
         for it in range(self.current_learning_iteration, tot_iter):
@@ -178,17 +200,25 @@ class OnPolicyRunner:
             # * Rollout
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
-                    actions = self.alg.act(actor_obs, critic_obs)                        # compute SE prediction and actions and values
-                    # * step simulation
-                    # actor_obs, privileged_obs, rewards, dones, infos = self.env.step(actions)
+                    actions = self.alg.act(actor_obs, critic_obs)
                     self.env.step(actions)
+
                     actor_obs = self.get_obs(self.policy_cfg["actor_obs"])
                     critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
+
                     dones = self.get_dones()
-                    infos = self.get_infos()
-                    rewards = self.get_rewards(self.policy_cfg["reward"]["weights"],
-                                               modifier=self.env.dt)
-                    rewards += self.get_rewards(self.policy_cfg["reward"]["termination_weight"])
+                    infos.update(self.get_infos())
+
+                    rewards = self.get_and_log_rewards(self.policy_cfg["reward"]["weights"],
+                                                       modifier=self.env.dt,
+                                                       episode_sums=episode_sums)
+
+                    rewards += self.get_and_log_rewards(self.policy_cfg["reward"]["termination_weight"],
+                            episode_sums=episode_sums)
+
+                    update_infos_with_episode_sums(infos, episode_sums, dones,
+                                        int(self.env.max_episode_length))
+
                     if self.cfg["SE_learner"] == "modular_SE":
                         SE_obs = self.get_obs(self.se_cfg["obs"])
                         SE_estimate = self.state_estimator.predict(SE_obs)
@@ -254,11 +284,28 @@ class OnPolicyRunner:
 
 
     def get_rewards(self, reward_weights, modifier=1):
-        # TODO change this (on gpugym side) to actually compute a reward tensor on
-        # the fly, and return in. And get rid of the need for a buffer.
-        # This means moving prepare rewards etc. to on_policy_runner
-        # return self.env.rew_buf.to(self.device)
         return self.env.compute_reward(reward_weights, modifier).to(self.device)
+
+
+
+    def get_and_log_rewards(self, reward_weights,
+                            modifier=1,
+                            episode_sums=None):
+        '''
+        Computes each reward on the fly and returns.
+        Also takes care of logging...
+        TODO this should get refactored. Single responsibiliy!
+        '''
+        total_rewards = torch.zeros(self.env.num_envs,
+                                    device=self.device, dtype=torch.float)
+        for name, weight in reward_weights.items():
+            reward = self.env.compute_reward({name: weight},
+                                             modifier).to(self.device)
+            total_rewards += reward
+
+            if name in episode_sums:
+                episode_sums[name] += reward  # keeping only from 1 env
+        return total_rewards
 
 
     def get_dones(self):
@@ -421,5 +468,5 @@ class OnPolicyRunner:
 
     def export(self, path):
         self.alg.actor_critic.export_policy(path)
-        if self.se_cfg is not None:
+        if self.cfg["SE_learner"] is not None:
             self.state_estimator.export(path)
