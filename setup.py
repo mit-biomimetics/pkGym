@@ -9,8 +9,11 @@ setup(
     packages=find_packages(),
     description='Isaac Gym environments for Legged Robots',
     install_requires=['isaacgym',
-                      'rsl-rl',
                       'matplotlib',
                       'pandas',
-                      'tensorboard']
+                      'tensorboard',
+                      'setuptools==59.5.0',
+                      'torch>=1.4.0',
+                      'torchvision>=0.5.0',
+                      'numpy>=1.16.4']
 )

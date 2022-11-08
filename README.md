@@ -10,13 +10,10 @@ Paper: https://arxiv.org/abs/2109.11978
 ### Installation ###
 1. Create a new python virtual env with python 3.6, 3.7 or 3.8 (3.8 recommended)
 2. Clone and initialize this repo
-   - clone `gpu_gym`, then init the [submodules](https://www.atlassian.com/git/tutorials/git-submodule):
-   ```bash
-   cd gpu_gym && git submodule init && git submodule update
-   ```
+   - clone `gpu_gym`
 3. Install GPU Gym Requirements:
 ```bash
-pip install -r requirements
+pip install -r requirements.txt
 ```
 4. Install Isaac Gym
    - Download and install Isaac Gym Preview 3 (Preview 2 will not work!) from https://developer.nvidia.com/isaac-gym
@@ -25,7 +22,7 @@ pip install -r requirements
        - I prefer in the directory with my virtual environment
    - Install `issacgym` requirements
    ```bash
-   cd <issacgym_location>
+   cd <issacgym_python_location>
    pip install -e .
    ```
 5. Run an example to validate
