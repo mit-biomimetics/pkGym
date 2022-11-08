@@ -1,3 +1,0 @@
-[submodule "gpu_rl"]
-	path = gpu_rl
-	url = git@github.com:mit-biomimetics/gpu_rl.git
