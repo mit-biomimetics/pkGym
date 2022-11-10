@@ -98,7 +98,6 @@ class BaseTask():
                          if name in self.scales.keys() else
                          getattr(self, name) for name in obs_list], dim=-1)
         return obs
-        # return torch.cat([getattr(self, name) for name in obs_list], dim=-1)
 
 
     def reset_idx(self, env_ids):

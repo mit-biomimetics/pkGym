@@ -207,7 +207,17 @@ class LeggedRobotCfgPPO(BaseConfig):
         init_noise_std = 1.0
         actor_hidden_dims = [512, 256, 128]
         critic_hidden_dims = [512, 256, 128]
-        activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+        # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+        activation = 'elu'
+
+
+        actor_obs = ["observation_a",
+                     "observation_b",
+                     "these_need_to_be_atributes_of_the_robot_env"]
+
+        actor_obs = ["observation_x",
+                     "observation_y",
+                     "these_can_be_the_same_or_different_than_actor_obs"]
 
         class reward:
             make_PBRS = []

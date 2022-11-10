@@ -203,7 +203,7 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
                      "phase_obs"
                      ]
 
-        critic_obs = [  # ! put back in prived obs (height, lin_vel)
+        critic_obs = [
                       "base_height",
                       "base_lin_vel",
                       "base_ang_vel",
