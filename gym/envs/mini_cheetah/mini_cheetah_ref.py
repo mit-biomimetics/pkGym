@@ -21,7 +21,6 @@ class MiniCheetahRef(MiniCheetah):
     def _custom_init(self, cfg):
         # * reference traj
         csv_path = self.cfg.init_state.ref_traj.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
-        # todo check that this works out
         self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy(),
                                 device=self.device)
         self.omega = 2*torch.pi*cfg.control.gait_freq

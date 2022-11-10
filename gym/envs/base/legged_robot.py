@@ -89,8 +89,6 @@ class LeggedRobot(BaseTask):
         """
 
         self.reset_buffers()
-        # potential-based shaping step 1: -r(s) part of \gamma*r(s') - r(s)
-        # self.compute_reward(self.PBRS_reward_names, gamma=-1)
 
         if self.cfg.asset.disable_actions:
             self.actions[:] = 0.
@@ -110,14 +108,9 @@ class LeggedRobot(BaseTask):
             if self.device == 'cpu':
                 self.gym.fetch_results(self.sim, True)
             self.gym.refresh_dof_state_tensor(self.sim)
-
         self.post_physics_step()
 
         self.check_termination()
-        # self.compute_reward(self.reward_names)
-        # potential-based shaping step 2: \gamma*r(s') part of \gamma*r(s') - r(s)
-        # in practice, settings gamma=gamma is unstable.
-        # self.compute_reward(self.PBRS_reward_names, gamma=1)
 
         env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
         self.reset_idx(env_ids)
@@ -468,41 +461,6 @@ class LeggedRobot(BaseTask):
         self.root_states[:, 7:9] = torch_rand_float(-max_vel, max_vel, (self.num_envs, 2), device=self.device) # lin vel x/y
         self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self.root_states))
 
-
-    # def _update_terrain_curriculum(self, env_ids):
-    #     """ Implements the game-inspired curriculum.
-
-    #     Args:
-    #         env_ids (List[int]): ids of environments being reset
-    #     """
-    #     # Implement Terrain curriculum
-    #     if not self.init_done:
-    #         # don't change on initial reset
-    #         return
-    #     distance = torch.norm(self.root_states[env_ids, :2] - self.env_origins[env_ids, :2], dim=1)
-    #     # robots that walked far enough progress to harder terains
-    #     move_up = distance > self.terrain.env_length / 2
-    #     # robots that walked less than half of their required distance go to simpler terrains
-    #     move_down = (distance < torch.norm(self.commands[env_ids, :2], dim=1)*self.max_episode_length_s*0.5) * ~move_up
-    #     self.terrain_levels[env_ids] += 1 * move_up - 1 * move_down
-    #     # Robots that solve the last level are sent to a random one
-    #     self.terrain_levels[env_ids] = torch.where(self.terrain_levels[env_ids]>=self.max_terrain_level,
-    #                                                torch.randint_like(self.terrain_levels[env_ids], self.max_terrain_level),
-    #                                                torch.clip(self.terrain_levels[env_ids], 0)) # (the minumum level is zero)
-    #     self.env_origins[env_ids] = self.terrain_origins[self.terrain_levels[env_ids], self.terrain_types[env_ids]]
-
-
-    # def update_command_curriculum(self, env_ids):
-    #     """ Implements a curriculum of increasing commands
-
-    #     Args:
-    #         env_ids (List[int]): ids of environments being reset
-    #     """
-    #     # If the tracking reward is above 80% of the maximum, increase the range of commands
-    #     if torch.mean(self.episode_sums["tracking_lin_vel"][env_ids]) / self.max_episode_length > 0.8 * self.reward_weights["tracking_lin_vel"]:
-    #         self.command_ranges["lin_vel_x"][0] = np.clip(self.command_ranges["lin_vel_x"][0] - 0.5, -self.cfg.commands.max_curriculum, 0.)
-    #         self.command_ranges["lin_vel_x"][1] = np.clip(self.command_ranges["lin_vel_x"][1] + 0.5, 0., self.cfg.commands.max_curriculum)
-
     #----------------------------------------
     def _init_buffers(self):
         """ Initialize torch tensors which will contain simulation states and processed quantities
@@ -519,11 +477,11 @@ class LeggedRobot(BaseTask):
         self.gym.refresh_rigid_body_state_tensor(self.sim)
 
         # create some wrapper tensors for different slices
-        
+
         self.root_states = gymtorch.wrap_tensor(actor_root_state)
         self.dof_state = gymtorch.wrap_tensor(dof_state_tensor)
         self._rigid_body_state = gymtorch.wrap_tensor(rigid_body_state)
-        
+
         self._rigid_body_pos = self._rigid_body_state.view(self.num_envs, self.num_bodies, 13)[..., 0:3]
         self.dof_pos = self.dof_state.view(self.num_envs, self.num_dof, 2)[..., 0]
         self.dof_vel = self.dof_state.view(self.num_envs, self.num_dof, 2)[..., 1]
@@ -549,7 +507,6 @@ class LeggedRobot(BaseTask):
         self.actions = torch.zeros(self.num_envs, self.num_actions,
                                    dtype=torch.float, device=self.device,
                                    requires_grad=False)
-        # * additional buffer for last ctrl: whatever is actually used for PD control (which can be shifted compared to action)
         self.ctrl_hist = torch.zeros(self.num_envs, self.num_actions*3,
                                      dtype=torch.float, device=self.device,
                                      requires_grad=False)
@@ -635,44 +592,12 @@ class LeggedRobot(BaseTask):
                     if joint in self.dof_names[i]:
                         self.dof_vel_range[i, :] = to_torch(vals,
                                                             device=self.device)
-            
+
             self.root_pos_range = torch.tensor(self.cfg.init_state.root_pos_range,
                     dtype=torch.float, device=self.device, requires_grad=False)
             self.root_vel_range = torch.tensor(self.cfg.init_state.root_vel_range,
                     dtype=torch.float, device=self.device, requires_grad=False)
             # todo check for consistency (low first, high second)
-
-
-    # def _prepare_reward_function(self):
-    #     """ Prepares a list of reward functions, whcih will be called to
-    #     compute the total reward. Looks for self._reward_<REWARD_NAME>, where
-    #     <REWARD_NAME> are names of all non zero reward weights in the cfg.
-    #     """
-
-    #     # * prepare dicts of functions
-    #     self.reward_names = []
-    #     self.PBRS_reward_names = []
-
-    #     # * remove zero weights, split between DRS and PBRS
-    #     # * + multiply non-zero ones by dt for DRS
-    #     for name in list(self.reward_weights.keys()):
-    #         weight = self.reward_weights[name]
-    #         if weight==0:
-    #             self.reward_weights.pop(name) 
-    #         else:
-    #             if name in self.cfg.rewards.make_PBRS:
-    #                 self.PBRS_reward_names.append(name)
-    #             else:
-    #                 if name != "termination":
-    #                     self.reward_weights[name] *= self.dt
-    #                 self.reward_names.append(name)
-
-
-    #     # * reward episode sums
-    #     self.episode_sums = {name: torch.zeros(self.num_envs, dtype=torch.float,
-    #                                            device=self.device,
-    #                                            requires_grad=False)
-    #                          for name in self.reward_weights.keys()}
 
 
     def _create_ground_plane(self):
