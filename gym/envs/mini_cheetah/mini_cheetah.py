@@ -2,7 +2,6 @@ from time import time
 import numpy as np
 import os
 
-from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
 
 import torch

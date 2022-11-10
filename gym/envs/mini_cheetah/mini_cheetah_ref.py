@@ -3,27 +3,25 @@ from gym import LEGGED_GYM_ROOT_DIR
 from time import time
 import os
 
-from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
-
 import torch
-# from torch.tensor import Tensor
-from typing import Tuple, Dict
 
-from gym.utils.math import *
-from gym.envs import LeggedRobot, MiniCheetah
+from isaacgym.torch_utils import torch_rand_float, to_torch
+from gym.utils.math import exp_avg_filter
+
+from gym.envs import MiniCheetah
 
 import pandas as pd
-import numpy as np
 
 class MiniCheetahRef(MiniCheetah):
 
-    def _custom_init(self, cfg):
+    def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
         # * reference traj
-        csv_path = self.cfg.init_state.ref_traj.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
+        csv_path = cfg.init_state.ref_traj.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
         self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy(),
-                                device=self.device)
+                                device=sim_device)
         self.omega = 2*torch.pi*cfg.control.gait_freq
+        super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
 
 
     def _init_buffers(self):
@@ -70,75 +68,15 @@ class MiniCheetahRef(MiniCheetah):
                             * self.scales["dof_pos"]
 
 
-    def _compute_torques(self, actions):
-        """ Compute torques from actions.
-            Actions can be interpreted as position or velocity targets given to
-             a PD controller, or directly as scaled torques.
-            [NOTE]: torques must have the same dimension as the number of DOFs,
-            even if some DOFs are not actuated.
-
-        Args:
-            actions (torch.Tensor): Actions
-
-        Returns:
-            [torch.Tensor]: Torques sent to the simulation
-        """
-        # pd controller
-
-        if self.cfg.control.exp_avg_decay:
-            self.action_avg = exp_avg_filter(self.actions, self.action_avg,
-                                             self.cfg.control.exp_avg_decay)
-            actions = self.action_avg
-
-        if self.cfg.control.control_type == "P":
-
-            torques = self.p_gains*(actions * self.cfg.control.action_scale \
-                                    + self.default_dof_pos \
-                                    # + self.get_ref() \
-                                    - self.dof_pos) \
-                    - self.d_gains*self.dof_vel
-
-        elif self.cfg.control.control_type=="T":
-            torques = actions * self.cfg.control.action_scale
-
-        elif self.cfg.control.control_type=="Td":
-            torques = actions * self.cfg.control.action_scale \
-                        - self.d_gains*self.dof_vel
-
-        else:
-            raise NameError(f"Unknown controller type: {control_type}")
-        return torch.clip(torques, -self.torque_limits, self.torque_limits)
-
-
     def _resample_commands(self, env_ids):
         """ Randommly select commands of some environments
 
         Args:
             env_ids (List[int]): Environments ids for which new commands are needed
         """
-        self.commands[env_ids, 0] = torch_rand_float(self.command_ranges["lin_vel_x"][0],
-                                                     self.command_ranges["lin_vel_x"][1],
-                                                     (len(env_ids), 1),
-                                                     device=self.device).squeeze(1)
-        self.commands[env_ids, 1] = torch_rand_float(-self.command_ranges["lin_vel_y"],
-                                                     self.command_ranges["lin_vel_y"],
-                                                     (len(env_ids), 1),
-                                                     device=self.device).squeeze(1)
-        if self.cfg.commands.heading_command:
-            self.commands[env_ids, 3] = torch_rand_float(self.command_ranges["heading"],
-                                                         self.command_ranges["heading"],
-                                                         (len(env_ids), 1),
-                                                         device=self.device).squeeze(1)
-        else:
-            self.commands[env_ids, 2] = torch_rand_float(-self.command_ranges["yaw_vel"],
-                                                         self.command_ranges["yaw_vel"],
-                                                         (len(env_ids), 1),
-                                                         device=self.device).squeeze(1)
-
+        super()._resample_commands(env_ids)
         # * with 10% chance, reset to 0 commands
-            self.commands[env_ids, :3] *= (torch_rand_float(0, 1, (len(env_ids), 1), device=self.device).squeeze(1) < 0.9).unsqueeze(1)
-        # * set small commands to zero
-        self.commands[env_ids, :3] *= (torch.norm(self.commands[env_ids, :3], dim=1) > 0.2).unsqueeze(1)
+        self.commands[env_ids, :3] *= (torch_rand_float(0, 1, (len(env_ids), 1), device=self.device).squeeze(1) < 0.9).unsqueeze(1)
 
 
     def switch(self):

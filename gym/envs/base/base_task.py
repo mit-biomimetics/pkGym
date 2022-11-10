@@ -65,11 +65,12 @@ class BaseTask():
         torch._C._jit_set_profiling_executor(False)
 
         # allocate buffers
-        # todo rew_buf will be removed
-        # self.rew_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
-        self.reset_buf = torch.ones(self.num_envs, device=self.device, dtype=torch.long)
-        self.episode_length_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
-        self.time_out_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
+        self.reset_buf = torch.ones(self.num_envs,
+                                    device=self.device, dtype=torch.long)
+        self.episode_length_buf = torch.zeros(self.num_envs,
+                                              device=self.device, dtype=torch.long)
+        self.time_out_buf = torch.zeros(self.num_envs,
+                                        device=self.device, dtype=torch.bool)
 
         self.extras = {}
 

@@ -34,7 +34,10 @@ from warnings import WarningMessage
 import numpy as np
 import os
 
-from isaacgym.torch_utils import *
+from isaacgym.torch_utils import (quat_apply, get_axis_params,
+                                  torch_rand_float, quat_rotate_inverse,
+                                  to_torch, quat_from_euler_xyz)
+
 from isaacgym import gymtorch, gymapi, gymutil
 
 import torch
@@ -43,7 +46,10 @@ from typing import Tuple, Dict
 
 from gym.envs.base.base_task import BaseTask
 from gym.utils.terrain import Terrain
-from gym.utils.math import *
+
+from gym.utils.math import (random_sample, wrap_to_pi, quat_apply_yaw,
+                            exp_avg_filter)
+
 from gym.utils.helpers import class_to_dict
 from .legged_robot_config import LeggedRobotCfg
 
@@ -74,10 +80,7 @@ class LeggedRobot(BaseTask):
         if not self.headless:
             self.set_camera(self.cfg.viewer.pos, self.cfg.viewer.lookat)
 
-        if hasattr(self, "_custom_init"):
-            self._custom_init(cfg)
         self._init_buffers()
-        # self._prepare_reward_function()  # todo remove
         self.init_done = True
         self.reset()
 
@@ -165,12 +168,6 @@ class LeggedRobot(BaseTask):
         """
         if len(env_ids) == 0:
             return
-        # # update curriculum
-        # if self.cfg.terrain.curriculum:
-        #     self._update_terrain_curriculum(env_ids)
-        # # avoid updating command curriculum at each step since the maximum command is common to all envs
-        # if self.cfg.commands.curriculum and (self.common_step_counter % self.max_episode_length==0):
-        #     self.update_command_curriculum(env_ids)
 
         # reset robot states
         self._reset_system(env_ids)
@@ -180,17 +177,6 @@ class LeggedRobot(BaseTask):
         self.feet_air_time[env_ids] = 0.
         self.episode_length_buf[env_ids] = 0
         self.reset_buf[env_ids] = 1
-        # fill extras
-        # self.extras["episode"] = {}
-        # for key in self.episode_sums.keys():
-        #     self.extras["episode"]['rew_' + key] = torch.mean(self.episode_sums[key][env_ids]) / self.max_episode_length_s
-        #     self.episode_sums[key][env_ids] = 0.
-        # log additional curriculum info
-        # if self.cfg.terrain.curriculum:
-        #     self.extras["episode"]["terrain_level"] = torch.mean(self.terrain_levels.float())
-        # if self.cfg.commands.curriculum:
-        #     self.extras["episode"]["max_command_x"] = self.command_ranges["lin_vel_x"][1]
-        # send timeout info to the algorithm
         if self.cfg.env.send_timeouts:
             self.extras["time_outs"] = self.time_out_buf
 
@@ -325,17 +311,11 @@ class LeggedRobot(BaseTask):
                                                      self.command_ranges["lin_vel_y"],
                                                      (len(env_ids), 1),
                                                      device=self.device).squeeze(1)
-        if self.cfg.commands.heading_command:
-            self.commands[env_ids, 3] = torch_rand_float(-self.command_ranges["heading"],
-                                                         self.command_ranges["heading"],
-                                                         (len(env_ids), 1),
-                                                         device=self.device).squeeze(1)
-        else:
-            max_yaw_vel = self.command_ranges["yaw_vel"]
-            self.commands[env_ids, 2] = torch_rand_float(-max_yaw_vel,
-                                                         max_yaw_vel,
-                                                         (len(env_ids), 1),
-                                                         device=self.device).squeeze(1)
+        max_yaw_vel = self.command_ranges["yaw_vel"]
+        self.commands[env_ids, 2] = torch_rand_float(-max_yaw_vel,
+                                                     max_yaw_vel,
+                                                     (len(env_ids), 1),
+                                                     device=self.device).squeeze(1)
 
         # set small commands to zero
         self.commands[env_ids, :2] *= (torch.norm(self.commands[env_ids, :2], dim=1) > 0.2).unsqueeze(1)
@@ -492,7 +472,7 @@ class LeggedRobot(BaseTask):
         # initialize some data used later on
         self.common_step_counter = 0
         self.extras = {}
-        # self.noise_scale_vec = self._get_noise_scale_vec(self.cfg)
+
         self.gravity_vec = to_torch(get_axis_params(-1., self.up_axis_idx),
                                 device=self.device).repeat((self.num_envs, 1))
         self.forward_vec = to_torch([1., 0., 0.],
@@ -767,10 +747,7 @@ class LeggedRobot(BaseTask):
         self.dt = self.cfg.control.decimation * self.sim_params.dt
         self.scales = class_to_dict(self.cfg.scaling)
         self._convert_scales_to_torch()
-        # self.reward_weights = class_to_dict(self.cfg.rewards.weights) # todo remove
         self.command_ranges = class_to_dict(self.cfg.commands.ranges)
-        # if self.cfg.terrain.mesh_type not in ['heightfield', 'trimesh']:
-        #     self.cfg.terrain.curriculum = False
         self.max_episode_length_s = self.cfg.env.episode_length_s
         self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
 

@@ -3,6 +3,7 @@ gpugym/scripts/wandb/
 .idea/
 gpuGym.egg-info/
 __pycache__
+*.pyc 
 wandb/
 .vscode/
 gpugym/wandb

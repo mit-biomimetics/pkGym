@@ -6,7 +6,7 @@ from warnings import WarningMessage
 import numpy as np
 import os
 
-from isaacgym.torch_utils import *
+from isaacgym.torch_utils import to_torch, get_axis_params, torch_rand_float
 from isaacgym import gymtorch, gymapi, gymutil
 
 import torch
@@ -14,7 +14,7 @@ from torch import Tensor
 from typing import Tuple, Dict
 
 from gym.envs.base.base_task import BaseTask
-from gym.utils.math import *
+from gym.utils.math import random_sample, exp_avg_filter
 from gym.utils.helpers import class_to_dict
 
 class FixedRobot(BaseTask):
