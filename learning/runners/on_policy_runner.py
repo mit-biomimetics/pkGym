@@ -42,7 +42,8 @@ from learning.modules import ActorCritic
 from learning.modules import StateEstimatorNN
 from learning.env import VecEnv
 
-from learning.utils import update_infos_with_episode_sums
+from learning.utils import (update_infos_with_episode_sums, 
+                            remove_zero_weighted_rewards)
 
 class OnPolicyRunner:
 
@@ -105,20 +106,13 @@ class OnPolicyRunner:
     def parse_train_cfg(self, train_cfg):
         self.cfg = train_cfg['runner']
         self.alg_cfg = train_cfg['algorithm']
-        self.remove_zero_weighted_rewards(train_cfg['policy']['reward']['weights'])
+        remove_zero_weighted_rewards(train_cfg['policy']['reward']['weights'])
         self.policy_cfg = train_cfg['policy']
 
         if 'state_estimator' in train_cfg:
             self.se_cfg = train_cfg['state_estimator']
         else:
             self.se_cfg = None
-
-
-    def remove_zero_weighted_rewards(self, reward_weights):
-        # todo put this method into a helper
-        for name in list(reward_weights.keys()):
-            if reward_weights[name] == 0:
-                reward_weights.pop(name)
 
 
     def init_storage(self):

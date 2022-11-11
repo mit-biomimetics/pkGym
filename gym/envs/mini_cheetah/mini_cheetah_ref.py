@@ -43,6 +43,7 @@ class MiniCheetahRef(MiniCheetah):
                                                shape=self.phase[env_ids].shape,
                                                device=self.device)
 
+
     def _post_physics_step(self):
         """ Callback called before computing terminations, rewards, and
          observations, phase-dynamics.

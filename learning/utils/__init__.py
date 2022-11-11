@@ -28,5 +28,6 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from .utils import split_and_pad_trajectories, unpad_trajectories
+from .utils import (split_and_pad_trajectories, unpad_trajectories,
+                    remove_zero_weighted_rewards)
 from .logging import update_infos_with_episode_sums

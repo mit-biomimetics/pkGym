@@ -69,3 +69,8 @@ def unpad_trajectories(trajectories, masks):
     """
     # Need to transpose before and after the masking to have proper reshaping
     return trajectories.transpose(1, 0)[masks.transpose(1, 0)].view(-1, trajectories.shape[0], trajectories.shape[-1]).transpose(1, 0)
+
+def remove_zero_weighted_rewards(reward_weights):
+    for name in list(reward_weights.keys()):
+            if reward_weights[name] == 0:
+                reward_weights.pop(name)
