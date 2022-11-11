@@ -153,7 +153,7 @@ class LeggedRobotCfg(BaseConfig):
         push_interval_s = 15
         max_push_vel_xy = 1.
 
-    class rewards:
+    class reward_settings:
         tracking_sigma = 0.25  # tracking reward = exp(-error^2/sigma)
         soft_dof_pos_limit = 1.  # percentage of urdf limits, values above this limit are penalized
         soft_dof_vel_limit = 1.
@@ -200,8 +200,8 @@ class LeggedRobotCfg(BaseConfig):
             default_buffer_size_multiplier = 5
             contact_collection = 2 # 0: never, 1: last sub-step, 2: all sub-steps (default=2)
 
-class LeggedRobotCfgPPO(BaseConfig):
-    seed = 2
+class LeggedRobotRunnerCfg(BaseConfig):
+    seed = -1
     runner_class_name = 'OnPolicyRunner'
     class policy:
         init_noise_std = 1.0

@@ -142,5 +142,4 @@ class MiniCheetahRef(MiniCheetah):
         error = self.commands[:, :2] - self.base_lin_vel[:, :2]
         # * scale by (1+|cmd|): if cmd=0, no scaling.
         error *= 1./(1. + torch.abs(self.commands[:, :2]))
-        error = torch.sum(torch.square(error), dim=1)
-        return torch.exp(-error/self.cfg.rewards.tracking_sigma)*(1-self.switch())
+        return torch.sum(self.sqrdexp(error), dim=1) * (1-self.switch())

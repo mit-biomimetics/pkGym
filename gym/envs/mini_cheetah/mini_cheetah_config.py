@@ -1,5 +1,5 @@
 
-from gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
+from gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotRunnerCfg
 
 BASE_HEIGHT_REF = 0.33
 
@@ -123,14 +123,11 @@ class MiniCheetahCfg(LeggedRobotCfg):
         disable_actions = False  # disable neural networks
         disable_motors = False  # all torques set to 0
 
-    class rewards(LeggedRobotCfg.rewards):
+    class reward_settings(LeggedRobotCfg.reward_settings):
         soft_dof_pos_limit = 0.9
         soft_dof_vel_limit = 0.9
         soft_torque_limit = 0.9
         max_contact_force = 600.
-
-        # if true negative total rewards are clipped at zero (avoids early termination problems)
-        only_positive_rewards = False
         base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.25
 
@@ -183,17 +180,17 @@ class MiniCheetahCfg(LeggedRobotCfg):
         substeps = 1
         gravity = [0., 0., -9.81]  # [m/s^2]
 
-class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
+class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
     seed = -1
     do_wandb = False
-    class policy( LeggedRobotCfgPPO.policy ):
+    class policy( LeggedRobotRunnerCfg.policy ):
         actor_hidden_dims = [256, 256, 256]
         critic_hidden_dims = [256, 256, 256]
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
-        class reward(LeggedRobotCfgPPO.policy.reward):
+        class reward(LeggedRobotRunnerCfg.policy.reward):
             make_PBRS = []
 
-            class weights(LeggedRobotCfgPPO.policy.reward.weights):
+            class weights(LeggedRobotRunnerCfg.policy.reward.weights):
                 termination = -1.
                 tracking_lin_vel = 1.0
                 tracking_ang_vel = 1.0
@@ -210,7 +207,7 @@ class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
                 feet_contact_forces = 0.
                 dof_near_home = 1.
 
-    class algorithm( LeggedRobotCfgPPO.algorithm):
+    class algorithm( LeggedRobotRunnerCfg.algorithm):
         # training params
         value_loss_coef = 1.0
         use_clipped_value_loss = True
@@ -226,7 +223,7 @@ class MiniCheetahCfgPPO(LeggedRobotCfgPPO):
         max_grad_norm = 1.
 
 
-    class runner(LeggedRobotCfgPPO.runner):
+    class runner(LeggedRobotRunnerCfg.runner):
         run_name = ''
         experiment_name = 'mini_cheetah'
         max_iterations = 1000  # number of policy updates

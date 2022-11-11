@@ -1,5 +1,5 @@
 
-from gym.envs.mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahCfgPPO
+from gym.envs.mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahRunnerCfg
 
 BASE_HEIGHT_REF = 0.32
 
@@ -115,7 +115,7 @@ class SERefCfg(MiniCheetahCfg):
         disable_actions = False  # neural networks output set to 0
         disable_motors = False  # all torques set to 0
 
-    class reward(MiniCheetahCfgPPO.policy.reward):
+    class reward_settings(MiniCheetahCfg.reward_settings):
         soft_dof_pos_limit = 0.9
         soft_dof_vel_limit = 0.9
         soft_torque_limit = 0.9
@@ -123,29 +123,7 @@ class SERefCfg(MiniCheetahCfg):
 
         base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.3
-        # make_PBRS = ["base_height",
-        #              "orientation"
-        #              ]
-        class weights():
-            termination = -15.
-            tracking_lin_vel = 4.0
-            tracking_ang_vel = 1.0
-            lin_vel_z = 0.6
-            ang_vel_xy = 0.0
-            orientation = 1.75
-            torques = -5.e-7
-            dof_vel = 0.
-            base_height = 1.5
-            collision = -0.25
-            action_rate = -0.01  # -0.01
-            action_rate2 = -0.001  # -0.001
-            stand_still = 0.5
-            dof_pos_limits = 0.
-            feet_contact_forces = 0.
-            dof_near_home = 0.
-            reference_traj = 0.25
-            swing_grf = -0.15
-            stance_grf = 0.15
+
 
     class commands(MiniCheetahCfg.commands):
         resampling_time = 4.
@@ -181,14 +159,14 @@ class SERefCfg(MiniCheetahCfg):
         substeps = 1
         gravity = [0., 0., -9.81]  # [m/s^2]
 
-class SERefCfgPPO(MiniCheetahCfgPPO):
+class SERefRunnerCfg(MiniCheetahRunnerCfg):
     seed = 2
     do_wandb = True
 
     class wandb:
         what_to_log = {}
 
-    class policy( MiniCheetahCfgPPO.policy ):
+    class policy( MiniCheetahRunnerCfg.policy ):
         actor_hidden_dims = [256, 256, 128]
         critic_hidden_dims = [256, 256, 128]
         # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
@@ -241,7 +219,7 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
             class termination_weight:
                 termination = 15
 
-    class algorithm( MiniCheetahCfgPPO.algorithm):
+    class algorithm( MiniCheetahRunnerCfg.algorithm):
         # training params
         value_loss_coef = 1.0
         use_clipped_value_loss = True
@@ -276,7 +254,7 @@ class SERefCfgPPO(MiniCheetahCfgPPO):
 
         # TODO pull in state_estimator_nn into here.
 
-    class runner(MiniCheetahCfgPPO.runner):
+    class runner(MiniCheetahRunnerCfg.runner):
         run_name = ''
         experiment_name = 'se_ref_D'
         max_iterations = 1000  # number of policy updates

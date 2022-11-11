@@ -29,38 +29,38 @@
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
 from gym import LEGGED_GYM_ROOT_DIR, LEGGED_GYM_ENVS_DIR
-# from gym.envs.a1.a1_config import A1RoughCfg, A1RoughCfgPPO
+# from gym.envs.a1.a1_config import A1RoughCfg, A1RoughRunnerCfg
 from .base.legged_robot import LeggedRobot
 # from .anymal_c.anymal import Anymal
-# from .anymal_c.mixed_terrains.anymal_c_rough_config import AnymalCRoughCfg, AnymalCRoughCfgPPO
-# from .anymal_c.flat.anymal_c_flat_config import AnymalCFlatCfg, AnymalCFlatCfgPPO
-# from .anymal_b.anymal_b_config import AnymalBRoughCfg, AnymalBRoughCfgPPO
+# from .anymal_c.mixed_terrains.anymal_c_rough_config import AnymalCRoughCfg, AnymalCRoughRunnerCfg
+# from .anymal_c.flat.anymal_c_flat_config import AnymalCFlatCfg, AnymalCFlatRunnerCfg
+# from .anymal_b.anymal_b_config import AnymalBRoughCfg, AnymalBRoughRunnerCfg
 # from .cassie.cassie import Cassie
-# from .cassie.cassie_config import CassieRoughCfg, CassieRoughCfgPPO
+# from .cassie.cassie_config import CassieRoughCfg, CassieRoughRunnerCfg
 # from .mit_humanoid.mit_humanoid import MIT_Humanoid
-# from .mit_humanoid.mit_humanoid_config import MITHumanoidCfg, MITHumanoidCfgPPO
+# from .mit_humanoid.mit_humanoid_config import MITHumanoidCfg, MITHumanoidRunnerCfg
 from .mini_cheetah.mini_cheetah import MiniCheetah
-from .mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahCfgPPO
+from .mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahRunnerCfg
 # from .cartpole.cartpole import Cartpole
-# from .cartpole.cartpole_config import CartpoleCfg, CartpoleCfgPPO
+# from .cartpole.cartpole_config import CartpoleCfg, CartpoleRunnerCfg
 
 from .mini_cheetah.mini_cheetah_ref import MiniCheetahRef
-from .mini_cheetah.ref_SE_config import SERefCfg, SERefCfgPPO
+from .mini_cheetah.ref_SE_config import SERefCfg, SERefRunnerCfg
 
 from gym.utils.task_registry import task_registry
 
 # task_registry.register("anymal_c_rough", Anymal, AnymalCRoughCfg(),
-#                        AnymalCRoughCfgPPO())
+#                        AnymalCRoughRunnerCfg())
 # task_registry.register("anymal_c_flat", Anymal, AnymalCFlatCfg(),
-#                        AnymalCFlatCfgPPO())
+#                        AnymalCFlatRunnerCfg())
 # task_registry.register("anymal_b", Anymal, AnymalBRoughCfg(),
-#                        AnymalBRoughCfgPPO())
-# task_registry.register("a1", LeggedRobot, A1RoughCfg(), A1RoughCfgPPO())
-# task_registry.register("cassie", Cassie, CassieRoughCfg(), CassieRoughCfgPPO())
+#                        AnymalBRoughRunnerCfg())
+# task_registry.register("a1", LeggedRobot, A1RoughCfg(), A1RoughRunnerCfg())
+# task_registry.register("cassie", Cassie, CassieRoughCfg(), CassieRoughRunnerCfg())
 # task_registry.register("mit_humanoid", MIT_Humanoid, MITHumanoidCfg(),
-#                        MITHumanoidCfgPPO())
+#                        MITHumanoidRunnerCfg())
 
 
-# task_registry.register("mini_cheetah", MiniCheetah, MiniCheetahCfg(),MiniCheetahCfgPPO())
-task_registry.register("mc_se_ref", MiniCheetahRef, SERefCfg(), SERefCfgPPO())
-# task_registry.register("cartpole", Cartpole, CartpoleCfg(), CartpoleCfgPPO())
+# task_registry.register("mini_cheetah", MiniCheetah, MiniCheetahCfg(),MiniCheetahRunnerCfg())
+task_registry.register("mc_se_ref", MiniCheetahRef, SERefCfg(), SERefRunnerCfg())
+# task_registry.register("cartpole", Cartpole, CartpoleCfg(), CartpoleRunnerCfg())
