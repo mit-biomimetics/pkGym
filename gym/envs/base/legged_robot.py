@@ -78,28 +78,28 @@ class LeggedRobot(BaseTask):
         super().__init__(self.cfg, sim_params, physics_engine, sim_device, headless)
 
         if not self.headless:
-            self.set_camera(self.cfg.viewer.pos, self.cfg.viewer.lookat)
+            self._set_camera(self.cfg.viewer.pos, self.cfg.viewer.lookat)
 
         self._init_buffers()
         self.init_done = True
         self.reset()
 
     def step(self, actions):
-        """ Apply actions, simulate, call self.post_physics_step()
+        """ Apply actions, simulate, call self._post_physics_step()
 
         Args:
             actions (torch.Tensor): Tensor of shape (num_envs, num_actions_per_env)
         """
 
-        self.reset_buffers()
+        self._reset_buffers()
 
         if self.cfg.asset.disable_actions:
             self.actions[:] = 0.
         else:
             self.actions = actions.to(self.device)
-        self.pre_physics_step()
+        self._pre_physics_step()
         # step physics and render each frame
-        self.render()
+        self._render()
         for _ in range(self.cfg.control.decimation):
             self.torques = self._compute_torques(actions).view(self.torques.shape)
 
@@ -111,21 +111,21 @@ class LeggedRobot(BaseTask):
             if self.device == 'cpu':
                 self.gym.fetch_results(self.sim, True)
             self.gym.refresh_dof_state_tensor(self.sim)
-        self.post_physics_step()
+        self._post_physics_step()
 
-        self.check_termination()
+        self._check_termination()
 
         env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
-        self.reset_idx(env_ids)
+        self._reset_idx(env_ids)
 
 
 
 
-    def pre_physics_step(self):
+    def _pre_physics_step(self):
         return None
 
 
-    def post_physics_step(self):
+    def _post_physics_step(self):
         """ check terminations, compute observations and rewards
             calls self._post_physics_step_callback() for common computations
             calls self._draw_debug_vis() if needed
@@ -148,7 +148,7 @@ class LeggedRobot(BaseTask):
             self._draw_debug_vis()
 
 
-    def check_termination(self):
+    def _check_termination(self):
         """ Check if environments need to be reset
         """
         self.reset_buf = torch.any(torch.norm(self.contact_forces[:, self.termination_contact_indices, :], dim=-1) > 1., dim=1)
@@ -156,7 +156,7 @@ class LeggedRobot(BaseTask):
         self.reset_buf |= self.timed_out
 
 
-    def reset_idx(self, env_ids):
+    def _reset_idx(self, env_ids):
         """ Reset some environments.
             Calls self._reset_dofs(env_ids), self._reset_root_states(env_ids), and self._resample_commands(env_ids)
             [Optional] calls self._update_terrain_curriculum(env_ids), self.update_command_curriculum(env_ids) and
@@ -178,7 +178,7 @@ class LeggedRobot(BaseTask):
         self.episode_length_buf[env_ids] = 0
         self.reset_buf[env_ids] = 1
 
-
+    # * this will be zapped in the unit-test PR
     def create_sim(self):
         """ Creates simulation, terrain and evironments
         """
@@ -198,7 +198,7 @@ class LeggedRobot(BaseTask):
         self._create_envs()
 
 
-    def set_camera(self, position, lookat):
+    def _set_camera(self, position, lookat):
         """ Set camera position and direction
         """
         cam_pos = gymapi.Vec3(position[0], position[1], position[2])

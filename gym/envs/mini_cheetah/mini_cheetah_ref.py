@@ -44,13 +44,13 @@ class MiniCheetahRef(MiniCheetah):
                                                device=self.device)
 
 
-    def post_physics_step(self):
+    def _post_physics_step(self):
         """ Callback called before computing terminations, rewards, and
          observations, phase-dynamics.
             Default behaviour: Compute ang vel command based on target and
              heading, compute measured terrain heights and randomly push robots
         """
-        super().post_physics_step()
+        super()._post_physics_step()
 
         self.phase = torch.fmod(self.phase+self.dt*self.omega, 2*torch.pi)
         self.base_height = self.root_states[:, 2].unsqueeze(1)
@@ -79,7 +79,7 @@ class MiniCheetahRef(MiniCheetah):
         self.commands[env_ids, :3] *= (torch_rand_float(0, 1, (len(env_ids), 1), device=self.device).squeeze(1) < 0.9).unsqueeze(1)
 
 
-    def switch(self):
+    def _switch(self):
         c_vel = torch.linalg.norm(self.commands, dim=1)
         return torch.exp(-torch.square(torch.max(torch.zeros_like(c_vel),
                                                  c_vel-0.1))/0.1)
@@ -90,7 +90,7 @@ class MiniCheetahRef(MiniCheetah):
         in_contact = torch.gt(torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1), 50.)
         ph_off = torch.lt(self.phase, torch.pi)
         rew = in_contact*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1)
-        return -torch.sum(rew.float(), dim=1)*(1-self.switch())
+        return -torch.sum(rew.float(), dim=1)*(1-self._switch())
 
 
     def _reward_stance_grf(self):
@@ -99,19 +99,19 @@ class MiniCheetahRef(MiniCheetah):
         ph_off = torch.gt(self.phase, torch.pi)  # should this be in swing?
         rew = in_contact*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1)
 
-        return torch.sum(rew.float(), dim=1)*(1-self.switch())
+        return torch.sum(rew.float(), dim=1)*(1-self._switch())
 
 
     def _reward_reference_traj(self):
         # REWARDS EACH LEG INDIVIDUALLY BASED ON ITS POSITION IN THE CYCLE
         # dof position error
-        error = self.get_ref() + self.default_dof_pos - self.dof_pos
+        error = self._get_ref() + self.default_dof_pos - self.dof_pos
         reward = torch.sum(self.sqrdexp(error) - torch.abs(error)*0.2, dim=1)/12.  # normalize by n_dof
         # * only when commanded velocity is higher
-        return reward*(1-self.switch())
+        return reward*(1-self._switch())
 
 
-    def get_ref(self):
+    def _get_ref(self):
         leg_frame = torch.zeros_like(self.torques)
         # offset by half cycle (trot)
         ph_off = torch.fmod(self.phase+torch.pi, 2*torch.pi)
@@ -133,7 +133,7 @@ class MiniCheetahRef(MiniCheetah):
         rew_vel = torch.mean(self.sqrdexp(self.dof_vel), dim=1)
         rew_base_vel = torch.mean(torch.square(self.base_lin_vel), dim=1)
         rew_base_vel += torch.mean(torch.square(self.base_ang_vel), dim=1)
-        return (rew_vel+rew_pos-rew_base_vel)*self.switch()
+        return (rew_vel+rew_pos-rew_base_vel)*self._switch()
 
 
     def _reward_tracking_lin_vel(self):
@@ -142,4 +142,4 @@ class MiniCheetahRef(MiniCheetah):
         error = self.commands[:, :2] - self.base_lin_vel[:, :2]
         # * scale by (1+|cmd|): if cmd=0, no scaling.
         error *= 1./(1. + torch.abs(self.commands[:, :2]))
-        return torch.sum(self.sqrdexp(error), dim=1) * (1-self.switch())
+        return torch.sum(self.sqrdexp(error), dim=1) * (1-self._switch())

@@ -160,7 +160,7 @@ class SERefCfg(MiniCheetahCfg):
         gravity = [0., 0., -9.81]  # [m/s^2]
 
 class SERefRunnerCfg(MiniCheetahRunnerCfg):
-    seed = 2
+    seed = -1
     do_wandb = True
 
     class wandb:

@@ -66,7 +66,7 @@ class LeggedRobotCfg(BaseConfig):
     class commands:
         curriculum = False
         max_curriculum = 1.
-        num_commands = 3  # default: lin_vel_x, lin_vel_y, yaw_vel, heading (in heading mode yaw_vel is recomputed from heading error)
+        num_commands = 3  # default: lin_vel_x, lin_vel_y, yaw_vel
         resampling_time = 10.  # time before command are changed[s]
 
         class ranges:

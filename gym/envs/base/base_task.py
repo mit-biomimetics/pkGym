@@ -104,18 +104,18 @@ class BaseTask():
             return getattr(self, name)
 
 
-    def reset_idx(self, env_ids):
+    def _reset_idx(self, env_ids):
         """Reset selected robots"""
         raise NotImplementedError
 
 
     def reset(self):
         """ Reset all robots"""
-        self.reset_idx(torch.arange(self.num_envs, device=self.device))
+        self._reset_idx(torch.arange(self.num_envs, device=self.device))
         self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
 
 
-    def reset_buffers(self):
+    def _reset_buffers(self):
         self.reset_buf[:] = False
 
     def compute_reward(self, reward_weights, modifier=1):
@@ -126,18 +126,18 @@ class BaseTask():
         reward = torch.zeros(self.num_envs,
                               device=self.device, dtype=torch.float)
         for name, weight in reward_weights.items():
-            reward += weight*self.eval_reward(name)
+            reward += weight*self._eval_reward(name)
         # reward *= ~self.reset_buf  # ? do we want to have this?
         return modifier*reward
 
 
-    def eval_reward(self, name):
+    def _eval_reward(self, name):
         return eval('self._reward_'+name+'()')
 
     def step(self, actions):
         raise NotImplementedError
 
-    def render(self, sync_frame_time=True):
+    def _render(self, sync_frame_time=True):
         if self.viewer:
             # check for window closed
             if self.gym.query_viewer_has_closed(self.viewer):
