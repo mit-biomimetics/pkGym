@@ -9,13 +9,10 @@ class SERefCfg(MiniCheetahCfg):
         num_actions = 12
         episode_length_s = 15.
 
-        # * if learn state-estimator is set to True, also set the config
-        #  below for `state_estimator_nn` and `state_estimator`
-        learn_SE = True
-        # num_se_obs = 30
     class terrain(MiniCheetahCfg.terrain):
         curriculum = False
         mesh_type = 'plane'
+
     class init_state(MiniCheetahCfg.init_state):
         """
         Initial States of the Mini Cheetah
