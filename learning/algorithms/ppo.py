@@ -103,13 +103,13 @@ class PPO:
         self.transition.critic_observations = critic_obs
         return self.transition.actions
 
-    def process_env_step(self, rewards, dones, infos):
+    def process_env_step(self, rewards, dones, timed_out=None):
         self.transition.rewards = rewards.clone()
         self.transition.dones = dones
         # * Bootstrapping on time outs
-        if 'time_outs' in infos:
-            self.transition.rewards += self.gamma \
-                * torch.squeeze(self.transition.values * infos['time_outs'].unsqueeze(1).to(self.device), 1)
+        if timed_out is not None:
+            self.transition.rewards += self.gamma * self.transition.values \
+                                      * timed_out
 
         # * Record the transition
         self.storage.add_transitions(self.transition)

@@ -68,21 +68,21 @@ class RolloutStorage(BaseStorage):
         else:
             self.privileged_observations = None
 
-        self.rewards = torch.zeros(num_transitions_per_env, num_envs, 1,
+        self.rewards = torch.zeros(num_transitions_per_env, num_envs,
                                    device=self.device)
         self.actions = torch.zeros(num_transitions_per_env, num_envs,
                                    *actions_shape, device=self.device)
-        self.dones = torch.zeros(num_transitions_per_env, num_envs, 1,
+        self.dones = torch.zeros(num_transitions_per_env, num_envs,
                                  device=self.device).byte()
 
         # * For PPO
         self.actions_log_prob = torch.zeros(num_transitions_per_env, num_envs,
                                             1, device=self.device)
-        self.values = torch.zeros(num_transitions_per_env, num_envs, 1,
+        self.values = torch.zeros(num_transitions_per_env, num_envs,
                                   device=self.device)
-        self.returns = torch.zeros(num_transitions_per_env, num_envs, 1,
+        self.returns = torch.zeros(num_transitions_per_env, num_envs,
                                    device=self.device)
-        self.advantages = torch.zeros(num_transitions_per_env, num_envs, 1,
+        self.advantages = torch.zeros(num_transitions_per_env, num_envs,
                                       device=self.device)
         self.mu = torch.zeros(num_transitions_per_env, num_envs,
                               *actions_shape, device=self.device)
@@ -102,8 +102,8 @@ class RolloutStorage(BaseStorage):
         if self.privileged_observations is not None:
             self.privileged_observations[self.fill_count].copy_(transition.critic_observations)
         self.actions[self.fill_count].copy_(transition.actions)
-        self.rewards[self.fill_count].copy_(transition.rewards.view(-1, 1))
-        self.dones[self.fill_count].copy_(transition.dones.view(-1, 1))
+        self.rewards[self.fill_count].copy_(transition.rewards)
+        self.dones[self.fill_count].copy_(transition.dones)
         self.values[self.fill_count].copy_(transition.values)
         self.actions_log_prob[self.fill_count].copy_(transition.actions_log_prob.view(-1, 1))
         self.mu[self.fill_count].copy_(transition.action_mean)

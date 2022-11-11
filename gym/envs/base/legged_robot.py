@@ -152,8 +152,8 @@ class LeggedRobot(BaseTask):
         """ Check if environments need to be reset
         """
         self.reset_buf = torch.any(torch.norm(self.contact_forces[:, self.termination_contact_indices, :], dim=-1) > 1., dim=1)
-        self.time_out_buf = self.episode_length_buf > self.max_episode_length  # no terminal reward for time-outs
-        self.reset_buf |= self.time_out_buf
+        self.timed_out = self.episode_length_buf > self.max_episode_length  # no terminal reward for time-outs
+        self.reset_buf |= self.timed_out
 
 
     def reset_idx(self, env_ids):
@@ -177,8 +177,6 @@ class LeggedRobot(BaseTask):
         self.feet_air_time[env_ids] = 0.
         self.episode_length_buf[env_ids] = 0
         self.reset_buf[env_ids] = 1
-        if self.cfg.env.send_timeouts:
-            self.extras["time_outs"] = self.time_out_buf
 
 
     def create_sim(self):
@@ -888,7 +886,7 @@ class LeggedRobot(BaseTask):
 
     def _reward_termination(self):
         # Terminal reward / penalty
-        return -1.*(self.reset_buf * ~self.time_out_buf)
+        return -1.*(self.reset_buf * ~self.timed_out)
 
 
     def _reward_dof_pos_limits(self):

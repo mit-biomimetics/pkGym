@@ -19,4 +19,4 @@ class Critic(nn.Module):
         self.NN = create_MLP(num_obs, 1, hidden_dims, activation)
 
     def evaluate(self, critic_observations):
-        return self.NN(critic_observations)
+        return self.NN(critic_observations).squeeze()

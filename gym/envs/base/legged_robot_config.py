@@ -213,11 +213,11 @@ class LeggedRobotCfgPPO(BaseConfig):
 
         actor_obs = ["observation_a",
                      "observation_b",
-                     "these_need_to_be_atributes_of_the_robot_env"]
+                     "these_need_to_be_atributes_(states)_of_the_robot_env"]
 
-        actor_obs = ["observation_x",
+        critic_obs = ["observation_x",
                      "observation_y",
-                     "these_can_be_the_same_or_different_than_actor_obs"]
+                     "critic_obs_can_be_the_same_or_different_than_actor_obs"]
 
         class reward:
             make_PBRS = []

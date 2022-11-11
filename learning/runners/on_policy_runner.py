@@ -228,7 +228,8 @@ class OnPolicyRunner:
                                                               SE_targets)
 
                     if self.cfg["algorithm_class_name"] == "PPO":
-                        self.alg.process_env_step(rewards, dones, infos)
+                        timed_out = self.get_obs(["timed_out"])
+                        self.alg.process_env_step(rewards, dones, timed_out)
 
                     if self.log_dir is not None:
                         # * Book keeping

@@ -69,7 +69,7 @@ class BaseTask():
                                     device=self.device, dtype=torch.long)
         self.episode_length_buf = torch.zeros(self.num_envs,
                                               device=self.device, dtype=torch.long)
-        self.time_out_buf = torch.zeros(self.num_envs,
+        self.timed_out = torch.zeros(self.num_envs,
                                         device=self.device, dtype=torch.bool)
 
         self.extras = {}
@@ -94,10 +94,14 @@ class BaseTask():
 
 
     def get_obs(self, obs_list):
-        obs = torch.cat([getattr(self, name)*self.scales[name]
-                         if name in self.scales.keys() else
-                         getattr(self, name) for name in obs_list], dim=-1)
-        return obs
+        return torch.cat([self.get_state(obs) for obs in obs_list], dim=-1)
+
+
+    def get_state(self, name):
+        if name in self.scales.keys():
+            return getattr(self, name)*self.scales[name]
+        else:
+            return getattr(self, name)
 
 
     def reset_idx(self, env_ids):
