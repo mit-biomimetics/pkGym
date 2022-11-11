@@ -36,11 +36,18 @@ import random
 from isaacgym import gymapi
 from isaacgym import gymutil
 import torch
+from isaacgym.torch_utils import to_torch
 
 
 from gym import LEGGED_GYM_ROOT_DIR, LEGGED_GYM_ENVS_DIR
 
-def class_to_dict(obj) -> dict:
+
+def class_to_dict(obj, torch_device=None) -> dict:
+    """
+    Convert a multi-level class (config) into a dict of dicts.
+    Keyword arguments:
+    torch_device (opt): if specified, converts each element to a torch tensor.
+    """
     if not  hasattr(obj,"__dict__"):
         return obj
     result = {}
@@ -54,7 +61,10 @@ def class_to_dict(obj) -> dict:
                 element.append(class_to_dict(item))
         else:
             element = class_to_dict(val)
-        result[key] = element
+        if torch_device:
+            result[key] = to_torch(element, device=torch_device)
+        else:
+            result[key] = element
     return result
 
 def update_class_from_dict(obj, dict):

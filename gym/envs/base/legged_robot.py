@@ -745,20 +745,12 @@ class LeggedRobot(BaseTask):
 
     def _parse_cfg(self, cfg):
         self.dt = self.cfg.control.decimation * self.sim_params.dt
-        self.scales = class_to_dict(self.cfg.scaling)
-        self._convert_scales_to_torch()
+        self.scales = class_to_dict(self.cfg.scaling, self.device)
         self.command_ranges = class_to_dict(self.cfg.commands.ranges)
         self.max_episode_length_s = self.cfg.env.episode_length_s
         self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
 
         self.cfg.domain_rand.push_interval = np.ceil(self.cfg.domain_rand.push_interval_s / self.dt)
-
-
-    def _convert_scales_to_torch(self):
-        for key in self.scales.keys():
-            if type(self.scales[key]) == list:
-                self.scales[key] = to_torch(self.scales[key],
-                                            device=self.device)
 
 
     def _draw_debug_vis(self):
