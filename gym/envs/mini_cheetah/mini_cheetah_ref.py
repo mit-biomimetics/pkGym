@@ -106,7 +106,7 @@ class MiniCheetahRef(MiniCheetah):
         # REWARDS EACH LEG INDIVIDUALLY BASED ON ITS POSITION IN THE CYCLE
         # dof position error
         error = self._get_ref() + self.default_dof_pos - self.dof_pos
-        reward = torch.sum(self.sqrdexp(error) - torch.abs(error)*0.2, dim=1)/12.  # normalize by n_dof
+        reward = torch.sum(self._sqrdexp(error) - torch.abs(error)*0.2, dim=1)/12.  # normalize by n_dof
         # * only when commanded velocity is higher
         return reward*(1-self._switch())
 
@@ -129,8 +129,8 @@ class MiniCheetahRef(MiniCheetah):
     def _reward_stand_still(self):
         # Penalize motion at zero commands
         # * normalize angles so we care about being within 5 deg
-        rew_pos = torch.mean(self.sqrdexp((self.dof_pos - self.default_dof_pos)/torch.pi*36), dim=1)
-        rew_vel = torch.mean(self.sqrdexp(self.dof_vel), dim=1)
+        rew_pos = torch.mean(self._sqrdexp((self.dof_pos - self.default_dof_pos)/torch.pi*36), dim=1)
+        rew_vel = torch.mean(self._sqrdexp(self.dof_vel), dim=1)
         rew_base_vel = torch.mean(torch.square(self.base_lin_vel), dim=1)
         rew_base_vel += torch.mean(torch.square(self.base_ang_vel), dim=1)
         return (rew_vel+rew_pos-rew_base_vel)*self._switch()
@@ -142,4 +142,4 @@ class MiniCheetahRef(MiniCheetah):
         error = self.commands[:, :2] - self.base_lin_vel[:, :2]
         # * scale by (1+|cmd|): if cmd=0, no scaling.
         error *= 1./(1. + torch.abs(self.commands[:, :2]))
-        return torch.sum(self.sqrdexp(error), dim=1) * (1-self._switch())
+        return torch.sum(self._sqrdexp(error), dim=1) * (1-self._switch())

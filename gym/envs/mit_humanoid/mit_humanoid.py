@@ -134,12 +134,6 @@ class MIT_Humanoid(LeggedRobot):
         self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self.root_states))
 
 
-    def sqrdexp(self, x):
-        """ shorthand helper for squared exponential
-        """
-        return torch.exp(-torch.square(x)/self.cfg.rewards.tracking_sigma)
-
-
     def _reward_no_fly(self):
         contacts = self.contact_forces[:, self.feet_indices, 2] > 0.1
         single_contact = torch.sum(1.*contacts, dim=1) == 1
@@ -148,7 +142,7 @@ class MIT_Humanoid(LeggedRobot):
 
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity w. squared exp
-        return self.sqrdexp(self.base_lin_vel[:, 2]  \
+        return self._sqrdexp(self.base_lin_vel[:, 2]  \
                             * self.cfg.normalization.obs_scales.lin_vel)
 
 
@@ -162,7 +156,7 @@ class MIT_Humanoid(LeggedRobot):
         # Penalize non flat base orientation
         error = torch.sum(torch.square(self.projected_gravity[:, :2]), dim=1)
         return torch.exp(-error/self.cfg.rewards.tracking_sigma)
-        # return self.sqrdexp(self.projected_gravity[:, 2]+1.)
+        # return self._sqrdexp(self.projected_gravity[:, 2]+1.)
 
 
     def _reward_base_height(self):
@@ -188,17 +182,17 @@ class MIT_Humanoid(LeggedRobot):
 
     def _reward_dof_vel(self):
         # Penalize dof velocities
-        return torch.sum(self.sqrdexp(self.dof_vel  \
+        return torch.sum(self._sqrdexp(self.dof_vel  \
                             / self.cfg.normalization.obs_scales.dof_vel), dim=1)
 
 
     def _reward_symm_legs(self):
         error = 0.
         for i in range(2, 5):
-            error += self.sqrdexp((self.dof_pos[:, i]+self.dof_pos[:, i+9]) \
+            error += self._sqrdexp((self.dof_pos[:, i]+self.dof_pos[:, i+9]) \
                         / self.cfg.normalization.obs_scales.dof_pos)
         for i in range(0, 2):
-            error += self.sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
+            error += self._sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
                         / self.cfg.normalization.obs_scales.dof_pos)
         return error
 
@@ -206,11 +200,11 @@ class MIT_Humanoid(LeggedRobot):
     def _reward_symm_arms(self):
         error = 0.
         for i in range(6, 8):
-            error += self.sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
+            error += self._sqrdexp((self.dof_pos[:, i]-self.dof_pos[:, i+9]) \
                         / self.cfg.normalization.obs_scales.dof_pos)
-        error += self.sqrdexp((self.dof_pos[:, 5]+self.dof_pos[:, 14]) \
+        error += self._sqrdexp((self.dof_pos[:, 5]+self.dof_pos[:, 14]) \
                         / self.cfg.normalization.obs_scales.dof_pos)
-        error += self.sqrdexp((self.dof_pos[:, 8]+self.dof_pos[:, 17]) \
+        error += self._sqrdexp((self.dof_pos[:, 8]+self.dof_pos[:, 17]) \
                         / self.cfg.normalization.obs_scales.dof_pos)
         return error
 
@@ -218,5 +212,5 @@ class MIT_Humanoid(LeggedRobot):
     def _reward_dof_near_home(self):
         jnt_scales = torch.tensor(self.cfg.rewards.joint_level_scaling, device=self.device)
 
-        return torch.sum(jnt_scales*self.sqrdexp((self.dof_pos - self.default_dof_pos) \
+        return torch.sum(jnt_scales*self._sqrdexp((self.dof_pos - self.default_dof_pos) \
             * self.cfg.normalization.obs_scales.dof_pos), dim=1)

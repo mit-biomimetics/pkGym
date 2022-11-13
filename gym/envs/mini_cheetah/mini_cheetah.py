@@ -90,19 +90,19 @@ class MiniCheetah(LeggedRobot):
                                 * self.scales["height_measurements"]
         return noise_vec
 
-    def sqrdexp(self, x):
+    def _sqrdexp(self, x):
         """ shorthand helper for squared exponential
         """
         return torch.exp(-torch.square(x)/self.cfg.reward_settings.tracking_sigma)
 
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity w. squared exp
-        return self.sqrdexp(self.base_lin_vel[:, 2]
+        return self._sqrdexp(self.base_lin_vel[:, 2]
                             * self.scales["base_lin_vel"])
 
     def _reward_ang_vel_xy(self):
         # Penalize xy axes base angular velocity
-        error = self.sqrdexp(self.base_ang_vel[:, :2]
+        error = self._sqrdexp(self.base_ang_vel[:, :2]
                              * self.scales["base_ang_vel"])
         return torch.sum(error, dim=1)
 
@@ -111,7 +111,7 @@ class MiniCheetah(LeggedRobot):
         error = torch.square(self.projected_gravity[:, :2]) \
                 / self.cfg.reward_settings.tracking_sigma
         return torch.sum(torch.exp(-error), dim=1)
-        # return self.sqrdexp(self.projected_gravity[:, 2]+1.)
+        # return self._sqrdexp(self.projected_gravity[:, 2]+1.)
 
     def _reward_min_base_height(self):
         """
@@ -135,9 +135,9 @@ class MiniCheetah(LeggedRobot):
 
     def _reward_dof_vel(self):
         # Penalize dof velocities
-        return torch.sum(self.sqrdexp(self.dof_vel * self.scales["dof_vel"]),
+        return torch.sum(self._sqrdexp(self.dof_vel * self.scales["dof_vel"]),
                          dim=1)
 
     def _reward_dof_near_home(self):
-        return torch.sum(self.sqrdexp((self.dof_pos - self.default_dof_pos) \
+        return torch.sum(self._sqrdexp((self.dof_pos - self.default_dof_pos) \
                * self.scales["dof_pos"]), dim=1)

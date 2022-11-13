@@ -677,7 +677,7 @@ class FixedRobot(BaseTask):
 
     #------------ reward functions----------------
 
-    def sqrdexp(self, x):
+    def _sqrdexp(self, x):
         """ shorthand helper for squared exponential
         """
         return torch.exp(-torch.square(x)/self.cfg.rewards.tracking_sigma)
