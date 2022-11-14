@@ -30,10 +30,6 @@ class MiniCheetahRef(MiniCheetah):
                                  device=self.device, requires_grad=False)
         self.phase_obs = torch.zeros(self.num_envs, 2, dtype=torch.float,
                                      device=self.device, requires_grad=False)
-        self.dof_pos_obs = torch.zeros_like(self.dof_pos, requires_grad=False)
-
-        self.base_height = torch.zeros(self.num_envs, 1, dtype=torch.float,
-                                 device=self.device, requires_grad=False)
 
 
     def _reset_system(self, env_ids):
@@ -51,22 +47,7 @@ class MiniCheetahRef(MiniCheetah):
              heading, compute measured terrain heights and randomly push robots
         """
         super()._post_physics_step()
-
         self.phase = torch.fmod(self.phase+self.dt*self.omega, 2*torch.pi)
-        self.base_height = self.root_states[:, 2].unsqueeze(1)
-
-        nact = self.num_actions
-        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
-        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
-        self.ctrl_hist[:, :nact] = self.actions
-
-        # ? unsqueeze
-        self.phase_obs = torch.cat([torch.cos(self.phase),
-                                    torch.sin(self.phase)], dim=-1)
-
-        self.dof_pos_obs = (self.dof_pos - self.default_dof_pos) \
-                            * self.scales["dof_pos"]
-
 
     def _resample_commands(self, env_ids):
         """ Randommly select commands of some environments

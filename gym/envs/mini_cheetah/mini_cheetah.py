@@ -3,6 +3,7 @@ import numpy as np
 import os
 
 from isaacgym import gymtorch, gymapi, gymutil
+from isaacgym.torch_utils import to_torch
 
 import torch
 # from torch.tensor import Tensor
@@ -13,82 +14,31 @@ from gym.envs import LeggedRobot
 
 
 class MiniCheetah(LeggedRobot):
+    def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
+        super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
 
-    def _custom_init(self, cfg):
-        # * init buffer for phase variable
-        self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
-                                 device=self.device, requires_grad=False)
+    def _init_buffers(self):
+        super()._init_buffers()
+        self.dof_pos_obs = torch.zeros_like(self.dof_pos, requires_grad=False)
+        self.base_height = torch.zeros(self.num_envs, 1, dtype=torch.float,
+                                      device=self.device, requires_grad=False)
 
-    def compute_observations(self):
-        """ Computes observations
+    def _post_physics_step(self):
+        """ Callback called before computing terminations, rewards, and
+         observations, phase-dynamics.
+            Default behaviour: Compute ang vel command based on target and
+             heading, compute measured terrain heights and randomly push robots
         """
+        super()._post_physics_step()
 
-        # base_z
-        # base lin vel
-        # base ang vel
-        # projected gravity vec
-        # commands
-        # joint pos
-        # joint vel
-        # actions
-        # actions (n-1, n-2)
-        # phase
-        base_z = self.root_states[:, 2].unsqueeze(1)*self.scales["base_z"]
-        dof_pos = (self.dof_pos-self.default_dof_pos)*self.scales["dof_pos"]
+        self.base_height = self.root_states[:, 2:3]
 
-        # * update commanded action history buffer
-        control_type = self.cfg.control.control_type
         nact = self.num_actions
-        self.ctrl_hist[:, 2 * nact:] = self.ctrl_hist[:, nact:2 * nact]
-        self.ctrl_hist[:, nact:2 * nact] = self.ctrl_hist[:, :nact]
-        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale + self.default_dof_pos
-
-        self.obs_buf = torch.cat((base_z,
-                                  self.base_lin_vel*self.scales["lin_vel"],
-                                  self.base_ang_vel*self.scales["ang_vel"],
-                                  self.projected_gravity,
-                                  self.commands[:, :3]*self.commands_scale,
-                                  dof_pos,
-                                  self.dof_vel*self.scales["dof_vel"],
-                                  self.ctrl_hist,
-                                  torch.cos(self.phase*2*torch.pi),
-                                  torch.sin(self.phase*2*torch.pi)),
-                                 dim=-1)
-
-        # ! noise_scale_vec must be of correct order! Check def below
-        # * add noise if needed
-        if self.add_noise:
-            self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
-                            * self.noise_scale_vec
-
-    def _get_noise_scale_vec(self, cfg):
-        '''
-        Sets a vector used to scale the noise added to the observations.
-            [NOTE]: Must be adapted when changing the observations structure
-
-        Args:
-            cfg (Dict): Environment config file
-
-        Returns:
-            [torch.Tensor]: Vector of scales used to multiply a uniform
-            distribution in [-1, 1]
-        '''
-        noise_vec = torch.zeros_like(self.obs_buf[0])
-        self.add_noise = self.cfg.noise.add_noise
-        noise_scales = self.cfg.noise.noise_scales
-        ns_lvl = self.cfg.noise.noise_level
-        noise_vec[1:4] = noise_scales.lin_vel * ns_lvl * self.scales["lin_vel"]
-        noise_vec[4:7] = to_torch(noise_scales.ang_vel, device=self.device) \
-                         * ns_lvl*self.scales["ang_vel"]
-        noise_vec[7:10] = noise_scales.gravity*ns_lvl
-        noise_vec[10:13] = 0.  # commands
-        noise_vec[13:25] = noise_scales.dof_pos*ns_lvl*self.scales["dof_pos"]
-        noise_vec[25:37] = noise_scales.dof_vel*ns_lvl*self.scales["dof_vel"]
-
-        if self.cfg.terrain.measure_heights:
-            noise_vec[66:187] = noise_scales.height_measurements*ns_lvl \
-                                * self.scales["height_measurements"]
-        return noise_vec
+        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
+        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
+        self.ctrl_hist[:, :nact] = self.actions
+        self.dof_pos_obs = (self.dof_pos - self.default_dof_pos) \
+                            * self.scales["dof_pos_obs"]
 
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity w. squared exp
@@ -135,4 +85,4 @@ class MiniCheetah(LeggedRobot):
 
     def _reward_dof_near_home(self):
         return torch.sum(self._sqrdexp((self.dof_pos - self.default_dof_pos) \
-               * self.scales["dof_pos"]), dim=1)
+               * self.scales["dof_pos_obs"]), dim=1)

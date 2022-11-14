@@ -119,8 +119,6 @@ class LeggedRobot(BaseTask):
         self._reset_idx(env_ids)
 
 
-
-
     def _pre_physics_step(self):
         return None
 

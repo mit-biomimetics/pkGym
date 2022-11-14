@@ -61,6 +61,6 @@ from gym.utils.task_registry import task_registry
 #                        MITHumanoidRunnerCfg())
 
 
-# task_registry.register("mini_cheetah", MiniCheetah, MiniCheetahCfg(),MiniCheetahRunnerCfg())
+task_registry.register("mini_cheetah", MiniCheetah, MiniCheetahCfg(),MiniCheetahRunnerCfg())
 task_registry.register("mc_se_ref", MiniCheetahRef, SERefCfg(), SERefRunnerCfg())
 # task_registry.register("cartpole", Cartpole, CartpoleCfg(), CartpoleRunnerCfg())

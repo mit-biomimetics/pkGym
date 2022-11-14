@@ -134,7 +134,7 @@ class SERefCfg(MiniCheetahCfg):
 
     class scaling(MiniCheetahCfg.scaling):
         base_lin_vel = 1/BASE_HEIGHT_REF
-        dof_pos = 4*[10., 1., 0.5]  # hip-abad, hip-pitch, knee
+        dof_pos_obs = 4*[10., 1., 0.5]  # hip-abad, hip-pitch, knee
         base_ang_vel = 1./3.14*(BASE_HEIGHT_REF/9.81)**0.5
         commands = [base_lin_vel, base_lin_vel, base_ang_vel]
         dof_vel = 0.01  # ought to be roughly max expected speed.

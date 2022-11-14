@@ -135,7 +135,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
         heading_command = False
         resampling_time = 4.
         curriculum = True
-
         max_curriculum = 3.
         class ranges(LeggedRobotCfg.commands.ranges):
             lin_vel_x = [0., 1.]  # min max [m/s]
@@ -145,24 +144,11 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
     class scaling(LeggedRobotCfg.scaling):
         base_ang_vel = 1./3.14*(BASE_HEIGHT_REF/9.81)**0.5
+        base_lin_vel = 1.
         commands = 1
         dof_vel = 0.01  # ought to be roughly max expected speed.
         base_height = BASE_HEIGHT_REF
-        dof_pos = [10., 1., 0.5]
-        # class obs_scales(LeggedRobotCfg.normalization.obs_scales):
-        #     # * helper fcts
-        #     # * dimensionless time: sqrt(L/g) or sqrt(I/[mgL]), with I=I0+mL^2
-        #     v_leg = BASE_HEIGHT_REF
-        #     dimless_time = (v_leg/9.81)**0.5
-        #     # lin_vel = 1/v_leg*dimless_time
-        #     base_z = 1./v_leg
-        #     lin_vel = 1./v_leg  # virtual leg lengths per second
-        #     # ang_vel = 0.25
-        #     ang_vel = 1./3.14*dimless_time
-        #     dof_pos = 1./3.14
-        #     dof_vel = 0.01 # 0.05  # ought to be roughly max expected speed.
-
-        #     action_scale = 1e-3
+        dof_pos_obs = 4*[10., 1., 0.5]
 
     class noise(LeggedRobotCfg.noise):
         add_noise = True
@@ -183,29 +169,55 @@ class MiniCheetahCfg(LeggedRobotCfg):
 class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
     seed = -1
     do_wandb = False
+
+    class wandb:
+        what_to_log = {}
+
     class policy( LeggedRobotRunnerCfg.policy ):
         actor_hidden_dims = [256, 256, 256]
         critic_hidden_dims = [256, 256, 256]
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+
+        actor_obs = ["base_height",
+                     "base_lin_vel",
+                     "base_ang_vel",
+                     "projected_gravity",
+                     "commands",
+                     "dof_pos_obs",
+                     "dof_vel",
+                     "ctrl_hist",
+                     ]
+
+        critic_obs = ["base_height",
+                      "base_lin_vel",
+                      "base_ang_vel",
+                      "projected_gravity",
+                      "commands",
+                      "dof_pos_obs",
+                      "dof_vel",
+                      "ctrl_hist",
+                      ]
+
         class reward(LeggedRobotRunnerCfg.policy.reward):
             make_PBRS = []
-
             class weights(LeggedRobotRunnerCfg.policy.reward.weights):
-                termination = -1.
                 tracking_lin_vel = 1.0
                 tracking_ang_vel = 1.0
-                lin_vel_z = -0.
+                lin_vel_z = 0.
                 ang_vel_xy = 0.0
                 orientation = 1.0
-                torques = -5.e-7
+                torques = 5.e-7
                 dof_vel = 0.
                 base_height = 1.
-                action_rate = -0.001  # -0.01
-                action_rate2 = -0.0001  # -0.001
+                action_rate = 0.001  # -0.01
+                action_rate2 = 0.0001  # -0.001
                 stand_still = 0.
                 dof_pos_limits = 0.
                 feet_contact_forces = 0.
                 dof_near_home = 1.
+            class termination_weight:
+                termination = 1.
+
 
     class algorithm( LeggedRobotRunnerCfg.algorithm):
         # training params
@@ -227,6 +239,6 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
         run_name = ''
         experiment_name = 'mini_cheetah'
         max_iterations = 1000  # number of policy updates
-        SE_learner = 'none'
+        SE_learner = None
         algorithm_class_name = 'PPO'
         num_steps_per_env = 24 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)
