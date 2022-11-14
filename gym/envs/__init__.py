@@ -37,8 +37,8 @@ from .base.legged_robot import LeggedRobot
 # from .anymal_b.anymal_b_config import AnymalBRoughCfg, AnymalBRoughRunnerCfg
 # from .cassie.cassie import Cassie
 # from .cassie.cassie_config import CassieRoughCfg, CassieRoughRunnerCfg
-# from .mit_humanoid.mit_humanoid import MIT_Humanoid
-# from .mit_humanoid.mit_humanoid_config import MITHumanoidCfg, MITHumanoidRunnerCfg
+from .mit_humanoid.mit_humanoid import MIT_Humanoid
+from .mit_humanoid.mit_humanoid_config import MITHumanoidCfg, MITHumanoidRunnerCfg
 from .mini_cheetah.mini_cheetah import MiniCheetah
 from .mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahRunnerCfg
 # from .cartpole.cartpole import Cartpole
@@ -57,8 +57,8 @@ from gym.utils.task_registry import task_registry
 #                        AnymalBRoughRunnerCfg())
 # task_registry.register("a1", LeggedRobot, A1RoughCfg(), A1RoughRunnerCfg())
 # task_registry.register("cassie", Cassie, CassieRoughCfg(), CassieRoughRunnerCfg())
-# task_registry.register("mit_humanoid", MIT_Humanoid, MITHumanoidCfg(),
-#                        MITHumanoidRunnerCfg())
+task_registry.register("humanoid", MIT_Humanoid, MITHumanoidCfg(),
+                        MITHumanoidRunnerCfg())
 
 
 task_registry.register("mini_cheetah", MiniCheetah, MiniCheetahCfg(),MiniCheetahRunnerCfg())

@@ -210,7 +210,6 @@ class LeggedRobotRunnerCfg(BaseConfig):
         # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
         activation = 'elu'
 
-
         actor_obs = ["observation_a",
                      "observation_b",
                      "these_need_to_be_atributes_(states)_of_the_robot_env"]

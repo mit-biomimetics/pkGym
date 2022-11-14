@@ -28,7 +28,7 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
+from gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotRunnerCfg
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
@@ -44,7 +44,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         measure_heights = False
 
     class commands(LeggedRobotCfg.commands):
-        curriculum = True
+        curriculum = False
         max_curriculum = 3.
         num_commands = 4  # default: lin_vel_x, lin_vel_y, yaw_vel, heading (in heading mode yaw_vel is recomputed from heading error)
         resampling_time = 10.  # time before command are changed[s]
@@ -60,7 +60,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
                                 # "reset_to_basic" = a single position with some randomized noise on top. 
                                 # "reset_to_range" = a range of joint positions and velocities.
                                 #  "reset_to_traj" = feed in a trajectory to sample from. 
-        penetration_check = False  # disable to not check for penetration on initial conds.
 
         #default for normalization and basic initialization 
         # -0.27, 0.638, -0.35;
@@ -182,7 +181,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         disable_actions = False
         disable_motors = False
 
-    class rewards(LeggedRobotCfg.rewards):
+    class reward_settings(LeggedRobotCfg.reward_settings):
         soft_dof_pos_limit = 0.9
         soft_dof_vel_limit = 0.9
         soft_torque_limit = 0.9
@@ -191,79 +190,27 @@ class MITHumanoidCfg(LeggedRobotCfg):
         base_height_target = 0.65
         tracking_sigma = 0.5
 
-        # this is scaling sqrd-exp width
-        joint_level_scaling = [1.0,  # left_hip_yaw
-                               2.0,  # left_hip_abad
-                               1.0,  # left_hip_pitch
-                               1.0,  # left_knee
-                               1.0,  # left_ankle
-                               1.0,  # left_shoulder_pitch
-                               1.0,  # left_shoulder_abad
-                               1.0,  # left_shoulder_yaw
-                               1.0,  # left_elbow
-                               1.0,  # right_hip_yaw
-                               2.0,  # right_hip_abad
-                               1.0,  # right_hip_pitch
-                               1.0,  # right_knee
-                               1.0,  # right_ankle
-                               1.0,  # right_shoulder_pitch
-                               1.0,  # right_shoulder_abad
-                               1.0,  # right_shoulder_yaw
-                               1.0]  # right_elbow
-        make_PBRS = ["base_height",
-                     "orientation"]
-        class weights(LeggedRobotCfg.rewards.weights):
-            termination = -2.  # -1
-            tracking_ang_vel = 0.5  # 0.0001
-            tracking_lin_vel = 0.5  # 0.02
-            orientation = 1.5  # 0.1
-            torques = -5.e-6  # -5.e-7
-            base_height = 1.5  # 1.
-            feet_air_time = 0.0  # 1.0  # rewards keeping feet in the air
-            collision = 0.  # -1.
-            action_rate = -0.1
-            action_rate2 = -0.001  # -0.001
-            feet_contact_forces = -0.1
-            lin_vel_z = 0.  # 0.5
-            ang_vel_xy = -0.0  # -0.1
-            feet_stumble = -0.
-            dof_vel = 0.0  # 0.01
-            dof_acc = 0.0
-            stand_still = 0. # 1.5
-            dof_pos_limits = -0.0
-            no_fly = 0.0
-            symm_legs = 0.0
-            symm_arms = 0.0
-            dof_near_home = 0.5  # 1.
-
     class scaling(LeggedRobotCfg.scaling):
-            class obs_scales(LeggedRobotCfg.normalization.obs_scales):
-                # * helper fcts
-                # * dimensionless time: sqrt(L/g) or sqrt(I/[mgL]), with I=I0+mL^2
-                dimless_time = (0.7/9.81)**0.5
-                v_leg = 0.72
-                # lin_vel = 1/v_leg*dimless_time
-                base_z = 1./0.6565
-                lin_vel = 1./v_leg  # virtual leg lengths per second
-                # ang_vel = 0.25
-                ang_vel = 1./3.14*dimless_time
-                dof_pos = 1./3.14
-                dof_vel = 0.05  # ought to be roughly max expected speed.
-
-                height_measurements = 1./0.6565
-            # clip_observations = 100.
-            clip_actions = 1000.
+        # * dimensionless time: sqrt(L/g) or sqrt(I/[mgL]), with I=I0+mL^2
+        dimless_time = (0.7/9.81)**0.5
+        virtual_leg = 0.65
+        base_height = 1./virtual_leg
+        base_lin_vel = 1./virtual_leg 
+        base_ang_vel = 1./3.14*dimless_time
+        dof_pos_obs = 1./3.14
+        dof_vel = 0.05  # ought to be roughly max expected speed.
+        height_measurements = 1./virtual_leg
 
     class noise(LeggedRobotCfg.noise):
         add_noise = True
         noise_level = 0.25  # scales other values
 
         class noise_scales(LeggedRobotCfg.noise.noise_scales):
-            base_z = 0.05
-            dof_pos = 0.0
+            base_height = 0.05
+            dof_pos_obs = 0.0
             dof_vel = 0.0
-            lin_vel = 0.1
-            ang_vel = 0.2
+            base_lin_vel = 0.1
+            base_ang_vel = 0.2
             gravity = 0.05
             height_measurements = 0.1
 
@@ -274,12 +221,45 @@ class MITHumanoidCfg(LeggedRobotCfg):
         class physx:
             max_depenetration_velocity = 50.0
 
-class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
-
-    do_wandb = False
+class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
     seed = -1
+    runner_class_name = 'OnPolicyRunner'
+    class policy:
+        init_noise_std = 1.0
+        actor_hidden_dims = [512, 256, 128]
+        critic_hidden_dims = [512, 256, 128]
+        # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+        activation = 'elu'
 
-    class algorithm(LeggedRobotCfgPPO.algorithm):
+        actor_obs = ["base_height",
+                     "base_lin_vel",
+                     "base_ang_vel",
+                     "projected_gravity",
+                     "commands",
+                     "dof_pos_obs",
+                     "dof_vel"]
+
+        critic_obs = actor_obs
+
+        class reward:
+            make_PBRS = []
+            class weights:
+                tracking_ang_vel = 0.5  
+                tracking_lin_vel = 0.5  
+                orientation = 1.5 
+                torques = 5.e-6 
+                min_base_height = 1.5  
+                action_rate = 0.1
+                action_rate2 = 0.001 
+                lin_vel_z = 0. 
+                ang_vel_xy = 0.0 
+                dof_vel = 0.0 
+                stand_still = 0. 
+                dof_pos_limits = 0.0
+                dof_near_home = 0.5  
+            class termination_weight:
+                termination = 15
+    class algorithm(LeggedRobotRunnerCfg.algorithm):
          # training params
         value_loss_coef = 1.0
         use_clipped_value_loss = True
@@ -294,15 +274,12 @@ class MITHumanoidCfgPPO(LeggedRobotCfgPPO):
         desired_kl = 0.01
         max_grad_norm = 1.
 
-    class runner(LeggedRobotCfgPPO.runner):
+    class runner(LeggedRobotRunnerCfg.runner):
+        policy_class_name = 'ActorCritic'
+        algorithm_class_name = 'PPO'
         num_steps_per_env = 24
         max_iterations = 1000
-        algorithm_class_name = 'PPO'
         run_name = 'Standing'
         experiment_name = 'Humanoid'
         save_interval = 50
-
-    class policy( LeggedRobotCfgPPO.policy ):
-        actor_hidden_dims = [256, 256, 128]
-        critic_hidden_dims = [512, 256]
-        activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+    

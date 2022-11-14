@@ -37,8 +37,7 @@ class MiniCheetah(LeggedRobot):
         self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
         self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
         self.ctrl_hist[:, :nact] = self.actions
-        self.dof_pos_obs = (self.dof_pos - self.default_dof_pos) \
-                            * self.scales["dof_pos_obs"]
+        self.dof_pos_obs = (self.dof_pos - self.default_dof_pos)
 
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity w. squared exp

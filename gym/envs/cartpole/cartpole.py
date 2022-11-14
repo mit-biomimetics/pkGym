@@ -97,7 +97,6 @@ class Cartpole(FixedRobot):
         self.extras["success counts"]['cart_center'] = cart_center_count
         self.extras["episode counts"]['total_reset'] =  env_ids.shape[0]
 
-
     def _reward_pole_pos(self):
         pole_pos = self.dof_pos[:, 1]
 
