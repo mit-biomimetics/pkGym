@@ -34,19 +34,17 @@ class FixedRobot(BaseTask):
         """
         self.cfg = cfg
         self.sim_params = sim_params
-        # self.height_samples = None
         self.debug_viz = False
         self.init_done = False
+        self.device = sim_device
         self._parse_cfg(self.cfg)
         super().__init__(self.cfg, sim_params, physics_engine, sim_device, headless)
 
         if not self.headless:
             self.set_camera(self.cfg.viewer.pos, self.cfg.viewer.lookat)
         self._init_buffers()
-        self._prepare_reward_function()
-        if hasattr(self, "_custom_init"):
-            self._custom_init(cfg)
         self.init_done = True
+        self.reset()
 
 
     def step(self, actions):
@@ -56,39 +54,31 @@ class FixedRobot(BaseTask):
             actions (torch.Tensor): Tensor of shape (num_envs, num_actions_per_env)
         """
 
-        self.reset_buffers()
-        # potential-based shaping step 1: -r(s) part of \gamma*r(s') - r(s)
-        self.compute_reward(self.PBRS_reward_names, gamma=-1)
+        self._reset_buffers()
 
         if self.cfg.asset.disable_actions:
             self.actions[:] = 0.
         else:
-            clip_actions = self.cfg.normalization.clip_actions
-            self.actions = torch.clip(actions, -clip_actions, clip_actions).to(self.device)
-        self.pre_physics_step()
+            self.actions = actions.to(self.device)
+        self._pre_physics_step()
         # step physics and render each frame
-        self.render()
+        self._render()
         for _ in range(self.cfg.control.decimation):
-            # self.torques = self._compute_torques(self.actions).view(self.torques.shape)
-            if self.cfg.control.exp_avg_decay:
-                self.action_avg = exp_avg_filter(self.actions, self.action_avg,
-                                                self.cfg.control.exp_avg_decay)
-                self.torques = self._compute_torques(self.action_avg).view(self.torques.shape)
-            else:
-                self.torques = self._compute_torques(self.actions).view(self.torques.shape)
+            self.torques = self._compute_torques(actions).view(self.torques.shape)
 
             if self.cfg.asset.disable_motors:
                 self.torques[:] = 0.
-            # todo double-check this
-            # Deals with passive joints that IsaacGym thinks are active...
-            torques_to_gym_tensor = torch.zeros(size=(self.num_envs, self.num_dof), device=self.device)
+
+            torques_to_gym_tensor = torch.zeros(self.num_envs, self.num_dof,
+                                                device=self.device)
+            # todo encapsulate
             next_torques_idx = 0
             for dof_idx in range(self.num_dof):
                 if self.cfg.control.actuated_joints_mask[dof_idx]:
                     torques_to_gym_tensor[:, dof_idx] = self.torques[:, next_torques_idx]
                     next_torques_idx += 1
                 else:
-                    torques_to_gym_tensor[:, dof_idx] = torch.zeros(size=(self.num_envs,), device=self.device)
+                    torques_to_gym_tensor[:, dof_idx] = torch.zeros(self.num_envs, device=self.device)
 
 
             self.gym.set_dof_actuation_force_tensor(self.sim,
@@ -97,26 +87,19 @@ class FixedRobot(BaseTask):
             if self.device == 'cpu':
                 self.gym.fetch_results(self.sim, True)
             self.gym.refresh_dof_state_tensor(self.sim)
-        self.post_physics_step()
+        self._post_physics_step()
 
-        # return clipped obs, clipped states (None), rewards, dones and infos
-        clip_obs = self.cfg.normalization.clip_observations
-        self.obs_buf = torch.clip(self.obs_buf, -clip_obs, clip_obs)
-        if self.privileged_obs_buf is not None:
-            self.privileged_obs_buf = torch.clip(self.privileged_obs_buf,
-                                                -clip_obs, clip_obs)
-        return self.obs_buf, self.privileged_obs_buf, self.rew_buf, \
-            self.reset_buf, self.extras
+        self._check_termination()
+
+        env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
+        self._reset_idx(env_ids)
 
 
-    def pre_physics_step(self):
-            """
-            Nothing by default
-            """
-            return 0
+    def _pre_physics_step(self):
+        pass
 
 
-    def post_physics_step(self):
+    def _post_physics_step(self):
         """ check terminations, compute observations and rewards
             calls self._post_physics_step_callback() for common computations
             calls self._draw_debug_vis() if needed
@@ -127,42 +110,29 @@ class FixedRobot(BaseTask):
         self.episode_length_buf += 1
         self.common_step_counter += 1
 
-        # prepare quantities
-        # self.base_quat[:] = self.root_states[:, 3:7]
-        # self.base_lin_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 7:10])
-        # self.base_ang_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
-        # self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
-        if hasattr(self, "_post_physics_step_callback"):
-            self._post_physics_step_callback()
+        nact = self.num_actions
+        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
+        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
+        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale  + self.default_act_pos
 
-        # compute observations, rewards, resets, ...
-        self.check_termination()
-        self.compute_reward(self.reward_names)
-        # potential-based shaping step 2: \gamma*r(s') part of \gamma*r(s') - r(s)
-        # in practice, settings gamma=gamma is unstable.
-        self.compute_reward(self.PBRS_reward_names, gamma=1)
-
-        env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
-        self.reset_idx(env_ids)
-        self.compute_observations()  # in some cases a simulation step might be required to refresh some obs (for example body positions)
+        self.dof_pos_obs = (self.dof_pos-self.default_dof_pos)*self.scales["dof_pos"]
 
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
             self._draw_debug_vis()
 
 
-    def check_termination(self):
+    def _check_termination(self):
         """
         Check if the task has been terminated.
         """
-        self.time_out_buf = self.episode_length_buf > self.max_episode_length # no terminal reward for time-outs
-        if hasattr(self, "_custom_termination"):
-            self._custom_termination()
+        self.time_out_buf = self.episode_length_buf > self.max_episode_length
         self.reset_buf |= self.time_out_buf
 
 
-    def reset_idx(self, env_ids):
+    def _reset_idx(self, env_ids):
         """ Reset some environments.
             Calls self._reset_dofs(env_ids), self._reset_root_states(env_ids), and self._resample_commands(env_ids)
+            [Optional] calls self._update_terrain_curriculum(env_ids), self.update_command_curriculum(env_ids) and
             Logs episode info
             Resets some buffers
 
@@ -172,70 +142,12 @@ class FixedRobot(BaseTask):
         if len(env_ids) == 0:
             return
 
-        # At reset time, we may choose to count some reset information
-        self.extras["success counts"] = {}  # Use this to count named reset values
-        self.extras["episode counts"] = {}  # Use this to count all the agent resets that happened
-        if hasattr(self, "_custom_reset_logging"):
-            self._custom_reset_logging(env_ids)  # Define success according to your environment
-
         # reset robot states
         self._reset_system(env_ids)
-        if hasattr(self, "_custom_reset"):
-            self._custom_reset(env_ids)
-
         # reset buffers
         self.ctrl_hist[env_ids] = 0.
         self.episode_length_buf[env_ids] = 0
-        self.reset_buf[env_ids] = 0  # This was set to 1 for some reason -> needs to be zero
-        # fill extras
-        self.extras["episode"] = {}
-        for key in self.episode_sums.keys():
-            self.extras["episode"]['rew_' + key] = torch.mean(self.episode_sums[key][env_ids]) / self.max_episode_length_s
-            self.episode_sums[key][env_ids] = 0.
-        # send timeout info to the algorithm
-        if self.cfg.env.send_timeouts:
-            self.extras["time_outs"] = self.time_out_buf
-
-
-    def compute_observations(self):
-        """
-        Compute the observation for the current state.
-        """
-        nact = self.num_actions
-        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
-        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
-        self.ctrl_hist[:, :nact] = self.actions*self.cfg.control.action_scale  + self.default_act_pos
-
-        dof_pos = (self.dof_pos-self.default_dof_pos)*self.scales.dof_pos
-
-        self.obs_buf = torch.cat((dof_pos,
-                                  self.dof_vel*self.scales.dof_vel,
-                                  self.ctrl_hist),
-                                 dim=-1)
-
-        # ! noise_scale_vec must be of correct order!
-        # add noise if needed
-        if self.add_noise:
-            self.obs_buf += (2*torch.rand_like(self.obs_buf) - 1) \
-                            * self.noise_scale_vec
-
-
-    def _get_noise_scale_vec(self, cfg):
-        """
-        Sets a vector used to scale the noise added to the observations.
-            [NOTE]: Must be adapted when changing the observations structure
-
-        Args:
-            cfg (Dict): Environment config file
-
-        Returns:
-            [torch.Tensor]: Vector of scales used to multiply a uniform distribution in [-1, 1]
-        """
-        # todo put in some default implementation
-        noise_vec = torch.zeros_like(self.obs_buf[0],
-                                        device=self.device)
-        self.add_noise = self.cfg.noise.add_noise
-        return noise_vec
+        self.reset_buf[env_ids] = 1
 
 
     def create_sim(self):
@@ -261,24 +173,17 @@ class FixedRobot(BaseTask):
 
     # ------------- Callbacks --------------
     def _process_rigid_shape_props(self, props, env_id):
-        """
-        Process rigid shape properties.
-        """
-        if self.cfg.domain_rand.randomize_friction:
-            if env_id==0:
-                # prepare friction randomization
-                friction_range = self.cfg.domain_rand.friction_range
-                num_buckets = 64
-                bucket_ids = torch.randint(0, num_buckets, (self.num_envs, 1),
-                                           device=self.device)
-                friction_buckets = torch_rand_float(friction_range[0],
-                                                    friction_range[1],
-                                                    (num_buckets, 1),
-                                                    device='cpu')
-                self.friction_coeffs = friction_buckets[bucket_ids]
+        """ Callback allowing to store/change/randomize the rigid shape properties of each environment.
+            Called During environment creation.
+            Base behavior: randomizes the friction of each environment
 
-            for s in range(len(props)):
-                props[s].friction = self.friction_coeffs[env_id]
+        Args:
+            props (List[gymapi.RigidShapeProperties]): Properties of each shape of the asset
+            env_id (int): Environment id
+
+        Returns:
+            [List[gymapi.RigidShapeProperties]]: Modified rigid shape properties
+        """
         return props
 
 
@@ -310,16 +215,16 @@ class FixedRobot(BaseTask):
                 self.dof_pos_limits[i, 0] = props["lower"][i].item()
                 self.dof_pos_limits[i, 1] = props["upper"][i].item()
                 self.dof_vel_limits[i] = props["velocity"][i].item()
-                try:  # todo handle properly
-                    self.torque_limits[i] = self.cfg.env.max_effort
+                try:
+                    self.torque_limits[i] = props["effort"][i].item()
                 except:
                     pass
                 # soft limits
                 m = (self.dof_pos_limits[i, 0] + self.dof_pos_limits[i, 1]) / 2
                 r = self.dof_pos_limits[i, 1] - self.dof_pos_limits[i, 0]
                 self.dof_pos_limits[i, 0] = m - 0.5 * r \
-                                           *self.cfg.rewards.soft_dof_pos_limit
-                self.dof_pos_limits[i, 1] = m + 0.5 * r * self.cfg.rewards.soft_dof_pos_limit
+                                           *self.cfg.reward_settings.soft_dof_pos_limit
+                self.dof_pos_limits[i, 1] = m + 0.5 * r * self.cfg.reward_settings.soft_dof_pos_limit
         return props
 
 
@@ -330,15 +235,6 @@ class FixedRobot(BaseTask):
         Implement as you see fit.
         """
         return props
-
-
-    def _post_physic_step_callback(self):
-        """
-        Callback after physics step.
-        In `legged_robot` this is used to resample commands etc.
-        """
-        if self.cfg.domain_rand.push_robots and  (self.common_step_counter % self.cfg.domain_rand.push_interval == 0):
-            self._push_robots()
 
 
     def _compute_torques(self, actions):
@@ -352,25 +248,27 @@ class FixedRobot(BaseTask):
         Returns:
             [torch.Tensor]: Torques sent to the simulation
         """
-        # pd controller
-        actions_scaled = actions * self.cfg.control.action_scale
-        control_type = self.cfg.control.control_type
+        if self.cfg.control.exp_avg_decay:
+            self.action_avg = exp_avg_filter(self.actions, self.action_avg,
+                                            self.cfg.control.exp_avg_decay)
+            actions = self.action_avg
 
-        offset_pos = torch.zeros_like(self.torques, device=self.device) \
-                        + self.default_act_pos
-        if control_type == "P":
-            torques = self.p_gains*(actions_scaled+offset_pos -
-                                    self.dof_pos[:, self.act_idx]) \
-                        - self.d_gains*self.dof_vel[:, self.act_idx]
-        elif control_type == "T":
-            torques = actions_scaled
-        elif control_type=="Td":
-            torques = actions_scaled - self.d_gains*self.dof_vel
+        if self.cfg.control.control_type=="P":
+            torques = self.p_gains*(actions * self.cfg.control.action_scale \
+                                    + self.default_dof_pos \
+                                    - self.dof_pos) \
+                    - self.d_gains*self.dof_vel
+
+        elif self.cfg.control.control_type=="T":
+            torques = actions * self.cfg.control.action_scale
+
+        elif self.cfg.control.control_type=="Td":
+            torques = actions * self.cfg.control.action_scale \
+                        - self.d_gains*self.dof_vel
+
         else:
             raise NameError(f"Unknown controller type: {control_type}")
-
         return torch.clip(torques, -self.torque_limits, self.torque_limits)
-
 
     def _reset_system(self, env_ids):
         """
@@ -415,19 +313,12 @@ class FixedRobot(BaseTask):
                         self.dof_vel_range[:, 1],
                         device=self.device)
 
-
-    def _push_robots(self):
-        """
-        Needs to be implemented for each robot, depending where you want the push to happen.
-        """
-        return 0
-
     #----------------------------------------
     def _init_buffers(self):
         """ Initialize torch tensors which will contain simulation states and
         processed quantities
         """
-        n_envs = self.num_envs;
+        n_envs = self.num_envs
         # get gym GPU state tensors
         actor_root_state = self.gym.acquire_actor_root_state_tensor(self.sim)
         dof_state_tensor = self.gym.acquire_dof_state_tensor(self.sim)
@@ -440,10 +331,11 @@ class FixedRobot(BaseTask):
         # * root_states probably not needed...
         self.root_states = gymtorch.wrap_tensor(actor_root_state)
         self.dof_state = gymtorch.wrap_tensor(dof_state_tensor)
-        self.dof_pos = self.dof_state.view(n_envs, self.num_dof,
-                                           2)[..., 0]
-        self.dof_vel = self.dof_state.view(n_envs, self.num_dof,
-                                           2)[..., 1]
+
+        self.dof_pos = \
+            self.dof_state.view(n_envs, self.num_dof, 2)[..., 0]
+        self.dof_vel = \
+            self.dof_state.view(n_envs, self.num_dof, 2)[..., 1]
         self.base_quat = self.root_states[:, 3:7]
 
         # shape: num_envs, num_bodies, xyz axis
@@ -453,7 +345,6 @@ class FixedRobot(BaseTask):
         # initialize some data used later on
         self.common_step_counter = 0
         self.extras = {}
-        self.noise_scale_vec = self._get_noise_scale_vec(self.cfg)
         self.gravity_vec = to_torch(get_axis_params(-1., self.up_axis_idx),
                                     device=self.device).repeat((n_envs, 1))
         self.forward_vec = to_torch([1., 0., 0.],
@@ -466,15 +357,10 @@ class FixedRobot(BaseTask):
                                    device=self.device, requires_grad=False)
         self.actions = torch.zeros(n_envs, self.num_actions, dtype=torch.float,
                                    device=self.device, requires_grad=False)
-        # * additional buffer for last ctrl: whatever is actually used for PD control (which can be shifted compared to action)
+
         self.ctrl_hist = torch.zeros(self.num_envs, self.num_actions*3,
                                      dtype=torch.float, device=self.device,
                                      requires_grad=False)
-
-        # * removed:
-        # commands, commands_scale, feet_air_time, last_contacts, base_line_vel
-        # base_ang_vel, projected_gravity
-
         # joint positions offsets and PD gains
         # * added: default_act_pos, to differentiate from passive joints
         self.default_dof_pos = torch.zeros(self.num_dof, dtype=torch.float,
@@ -486,14 +372,24 @@ class FixedRobot(BaseTask):
         actuated_idx = []  # temp
         for i in range(self.num_dof):
             name = self.dof_names[i]
-            angle = self.cfg.init_state.default_joint_angles[name]
-            self.default_dof_pos[i] = angle
+            # angle = self.cfg.init_state.default_joint_angles[name]
+            angles = self.cfg.init_state.default_joint_angles
+            # self.default_dof_pos[i] = angle
+            found = False
+            for dof_name in angles.keys():
+                if dof_name in name:
+                    self.default_dof_pos[i] = angles[dof_name]
+                    found = True
+            if not found:
+                self.default_dof_pos[i] = 0.
+                print(f"Default dof pos of joint {name} was not defined, setting to zero")
+
             found = False
             for dof_name in self.cfg.control.stiffness.keys():
                 if dof_name in name:
                     self.p_gains[i] = self.cfg.control.stiffness[dof_name]
                     self.d_gains[i] = self.cfg.control.damping[dof_name]
-                    self.default_act_pos[i] = angle
+                    self.default_act_pos[i] = angles[dof_name]
                     found = True
                     actuated_idx.append(i)
             if not found:
@@ -506,6 +402,7 @@ class FixedRobot(BaseTask):
                         print(f"PD gain of joint {name} not defined, set to zero")
                 except:
                     pass
+
         self.default_dof_pos = self.default_dof_pos.unsqueeze(0)
         self.default_act_pos = self.default_act_pos.unsqueeze(0)
         # store indices of actuated joints
@@ -534,7 +431,6 @@ class FixedRobot(BaseTask):
                     if joint in self.dof_names[i]:
                         self.dof_vel_range[i, :] = to_torch(vals,
                                                             device=self.device)
-            # todo check for consistency (low first, high second)
 
 
     def _create_ground_plane(self):
@@ -587,7 +483,6 @@ class FixedRobot(BaseTask):
         body_names = self.gym.get_asset_rigid_body_names(robot_asset)
         self.dof_names = self.gym.get_asset_dof_names(robot_asset)
         self.num_bodies = len(body_names)
-        # * removed feet names
         penalized_contact_names = []
         for name in self.cfg.asset.penalize_contacts_on:
             penalized_contact_names.extend([s for s in body_names if name in s])
@@ -595,15 +490,7 @@ class FixedRobot(BaseTask):
         for name in self.cfg.asset.terminate_after_contacts_on:
             termination_contact_names.extend([s for s in body_names if name in s])
 
-        # base_init_state_list = self.cfg.init_state.pos + \
-        #                         self.cfg.init_state.rot + \
-        #                         self.cfg.init_state.lin_vel + \
-        #                         self.cfg.init_state.ang_vel
-        # self.base_init_state = to_torch(base_init_state_list,
-        #                                 device=self.device,
-        #                                 requires_grad=False)
         start_pose = gymapi.Transform()
-        # start_pose.p = gymapi.Vec3(*self.base_init_state[:3])
 
         self._get_env_origins()
         env_lower = gymapi.Vec3(0., 0., 0.)  # ? what's this?
@@ -615,15 +502,17 @@ class FixedRobot(BaseTask):
             env_handle = self.gym.create_env(self.sim, env_lower, env_upper,
                                              int(np.sqrt(self.num_envs)))
             pos = self.env_origins[i].clone()
-            # * random initial position...? -> never really
-            # pos[:2] += torch_rand_float(-1., 1., (2, 1),
-            #                             device=self.device).squeeze(1)
             start_pose.p = gymapi.Vec3(*pos)
 
             rigid_shape_props = self._process_rigid_shape_props(rigid_shape_props_asset, i)
             self.gym.set_asset_rigid_shape_properties(robot_asset, rigid_shape_props)
-            robot_handle = self.gym.create_actor(env_handle, robot_asset,
-                                                 start_pose, self.cfg.asset.file.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR), i,
+            name = self.cfg.asset.file
+            name = name.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
+            robot_handle = self.gym.create_actor(env_handle,
+                                                 robot_asset,
+                                                 start_pose,
+                                                 name,
+                                                 i,
                                                  self.cfg.asset.self_collisions,
                                                  0)
             dof_props = self._process_dof_props(dof_props_asset, i)
@@ -667,28 +556,25 @@ class FixedRobot(BaseTask):
 
     def _parse_cfg(self, cfg):
         self.dt = self.cfg.control.decimation * self.sim_params.dt
-        self.scales = self.cfg.normalization
-        self.reward_weights = class_to_dict(self.cfg.rewards.weights)
+        self.scales = class_to_dict(self.cfg.scaling, self.device)
         # self.command_ranges = class_to_dict(self.cfg.commands.ranges)
         self.max_episode_length_s = self.cfg.env.episode_length_s
         self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
-
-        self.cfg.domain_rand.push_interval = np.ceil(self.cfg.domain_rand.push_interval_s / self.dt)
 
     #------------ reward functions----------------
 
     def _sqrdexp(self, x):
         """ shorthand helper for squared exponential
         """
-        return torch.exp(-torch.square(x)/self.cfg.rewards.tracking_sigma)
+        return torch.exp(-torch.square(x)/self.cfg.reward_settings.tracking_sigma)
 
     def _reward_torques(self):
         # Penalize torques
-        return torch.sum(torch.square(self.torques), dim=1)
+        return -torch.sum(torch.square(self.torques), dim=1)
 
     def _reward_dof_vel(self):
         # Penalize dof velocities
-        return torch.sum(torch.square(self.dof_vel), dim=1)
+        return -torch.sum(torch.square(self.dof_vel), dim=1)
 
     def _reward_action_rate(self):
         # Penalize changes in actions
@@ -696,7 +582,7 @@ class FixedRobot(BaseTask):
         dt2 = (self.dt*self.cfg.control.decimation)**2
         error = torch.square(self.ctrl_hist[:, :nact] \
                             - self.ctrl_hist[:, nact:2*nact])/dt2
-        return torch.sum(error, dim=1)
+        return -torch.sum(error, dim=1)
 
     def _reward_action_rate2(self):
         # Penalize changes in actions
@@ -705,25 +591,23 @@ class FixedRobot(BaseTask):
         error = torch.square(self.ctrl_hist[:, :nact]  \
                             - 2*self.ctrl_hist[:, nact:2*nact]  \
                             + self.ctrl_hist[:, 2*nact:])/dt2
-        # todo this tracking_sigma is not scaled (check)
-        # error = torch.exp(-error/self.cfg.rewards.tracking_sigma)
-        return torch.sum(error, dim=1)
+        return -torch.sum(error, dim=1)
 
     def _reward_collision(self):
         # Penalize collisions on selected bodies
-        return torch.sum(1.*(torch.norm(self.contact_forces[:, self.penalised_contact_indices, :], dim=-1) > 0.1), dim=1)
+        return -torch.sum(1.*(torch.norm(self.contact_forces[:, self.penalised_contact_indices, :], dim=-1) > 0.1), dim=1)
 
     def _reward_termination(self):
         # Terminal reward / penalty
-        return self.reset_buf * ~self.time_out_buf
+        return -self.reset_buf * ~self.time_out_buf
 
     def _reward_dof_pos_limits(self):
         # Penalize dof positions too close to the limit
         out_of_limits = -(self.dof_pos - self.dof_pos_limits[:, 0]).clip(max=0.) # lower limit
         out_of_limits += (self.dof_pos - self.dof_pos_limits[:, 1]).clip(min=0.)
-        return torch.sum(out_of_limits, dim=1)
+        return -torch.sum(out_of_limits, dim=1)
 
     def _reward_dof_vel_limits(self):
         # Penalize dof velocities too close to the limit
         # clip to max error = 1 rad/s per joint to avoid huge penalties
-        return torch.sum((torch.abs(self.dof_vel) - self.dof_vel_limits*self.cfg.rewards.soft_dof_vel_limit).clip(min=0., max=1.), dim=1)
+        return -torch.sum((torch.abs(self.dof_vel) - self.dof_vel_limits*self.cfg.rewards.soft_dof_vel_limit).clip(min=0., max=1.), dim=1)

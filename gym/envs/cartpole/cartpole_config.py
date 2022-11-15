@@ -1,60 +1,12 @@
 from gym.envs.base.fixed_robot_config import FixedRobotCfg, FixedRobotCfgPPO
 import torch
 
-class obs_augmentations:
-
-    SIN = torch.sin
-    COS = torch.cos
-    SINSQR = lambda x: torch.square(torch.sin(x))
-    COSSQR = lambda x: torch.square(torch.cos(x))
-    SQR = torch.square
-    CUB = lambda x: x**3
-
-    do_dynamics_augmentation = True
-    do_controls_augmentation = True
-    # do_dynamics_augmentation = False
-    # do_controls_augmentation = False
-
-    dynamics_augmentations = [(SIN, "pole_pos", 1.0),
-                              (COS, "pole_pos", 1.0),
-                              (SQR, "pole_vel", 0.01)]
-
-    controls_augmentations = [(COS,    "pole_pos", 1.0),
-                              (COSSQR, "pole_pos", 1.0),
-                              (CUB,    "pole_vel", 0.005)]
-
-    combined_augmentations = [(SIN,    "pole_pos", 1.0),
-                              (COS,    "pole_pos", 1.0),
-                              (COSSQR, "pole_pos", 1.0),
-                              (SQR,    "pole_vel", 0.01),
-                              (CUB,    "pole_vel", 0.005)]
-
-    if do_dynamics_augmentation and do_controls_augmentation:
-        augmentations_list = combined_augmentations
-    elif do_dynamics_augmentation:
-        augmentations_list = dynamics_augmentations
-    elif do_controls_augmentation:
-        augmentations_list = controls_augmentations
-    else:
-        augmentations_list = []
-
-class underactuation:
-    max_effort = 4.0
-
 class CartpoleCfg(FixedRobotCfg):
 
     class env(FixedRobotCfg.env):
-        num_envs = 4096 # 1096
+        num_envs = 1024
         num_actions = 1  # 1 for the cart force
-        max_effort = underactuation.max_effort
-        reset_dist = 3.0
-
-        do_dynamics_augmentation = obs_augmentations.do_dynamics_augmentation
-        do_controls_augmentation = obs_augmentations.do_controls_augmentation
-        augmentations = obs_augmentations.augmentations_list
-        num_observations = 5 + len(augmentations)
-
-
+        episode_length_s = 10
     class terrain(FixedRobotCfg.terrain):
         # curriculum = False
         # mesh_type = 'plane'
@@ -62,10 +14,7 @@ class CartpoleCfg(FixedRobotCfg):
         pass
 
     class init_state(FixedRobotCfg.init_state):
-        """
-        Initial States of the Cartpole where the middle is cart 0 and up is pole 0
-        """
-        
+
         default_joint_angles = {"slider_to_cart": 0.,
                                 "cart_to_pole": 0.}
 
@@ -90,89 +39,31 @@ class CartpoleCfg(FixedRobotCfg):
         # for each dof: 1 if actuated, 0 if passive
         # Empty implies no chance in the _compute_torques step
         actuated_joints_mask = [1,  # slider_to_cart
-                                 0]  # cart_to_pole
+                                0]  # cart_to_pole
 
 
         # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = underactuation.max_effort
+        action_scale = 4.0
 
         # decimation: Number of control action updates @ sim DT per policy DT
         decimation = 1
-
-
-    class domain_rand(FixedRobotCfg.domain_rand):
-        pass
-
 
     class asset(FixedRobotCfg.asset):
         # Things that differ
         file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/cartpole/urdf/cartpole.urdf"
         flip_visual_attachments = False
-        fix_base_link = True
 
         # Toggles to keep
         disable_gravity = False
         disable_actions = False  # disable neural networks
         disable_motors = False  # all torques set to 0
 
-    class rewards(FixedRobotCfg.rewards):
-        hierarchy = {'pole position': {'cart position'}, 'pole velocity': None, 'actuation': None}
+    class reward_settings(FixedRobotCfg.reward_settings):
+        pass
 
-        class spaces:
-            # Space, sub_space
-            pole_pos = torch.pi
-            pole_vel = 14.0
-            cart_pos = 3.0
-            cart_vel = None  # (None, None, None)
-            actuation = underactuation.max_effort
-            termination = 3.0
-
-        class sub_spaces:
-            pole_pos = 0.5 * torch.pi
-            pole_vel = None
-            cart_pos = None
-            cart_vel = None  # (None, None, None)
-            actuation = None  # Assuming max effort is 10.0
-            termination = None
-
-        class weights:
-            termination = -20.0
-            pole_pos = 5
-            pole_vel = 0.01
-            cart_pos = 5
-            actuation = 1e-5
-
-            # Unused rewards
-            torques = 0.0
-            dof_vel = 0.0
-            collision = 0.0
-            action_rate = 0.0
-            action_rate2 = 0.0
-            dof_pos_limits = 0.0
-            dof_vel_limits = 0.0
-
-    class success_metrics:
-        class thresholds:
-            pole_pos = 0.2 * torch.pi  # [rad] - pole should be centered about the top of its range
-            pole_vel = 0.3 * torch.pi  # [rad/s] - the pole should not be moving
-            cart_pos = 0.3  # [m] - the cart should be centered in its range
-
-    class normalization(FixedRobotCfg.normalization):
-        clip_observations = 5.0
-        clip_actions = 1.0
-
-        class obs_scales:
-            # Used to be...
-            cart_pos = 1/torch.pi
-            pole_pos = 1/3.0
-            cart_vel = 1/20.0
-            pole_vel = 1/(4*torch.pi)
-            # sin_pole_pos = 1.0
-            # cos_pole_pos = 1.0
-            # sqr_pole_vel = 0.01
-            # cos_sqr_pole_pos = 1.0
-            # cub_pole_vel = 0.005
-
+    class scaling(FixedRobotCfg.scaling):
+        dof_pos = [1/3., 1/torch.pi]
+        dof_vel = [1/20., 1/(4*torch.pi)]
 
     class noise(FixedRobotCfg.noise):
         add_noise = True
@@ -187,7 +78,6 @@ class CartpoleCfg(FixedRobotCfg):
             actuation = 0.00
 
     class sim:
-        # These values now match the original cartpole example experiment when using RL_games
         dt = 0.001 # 1/60 s
         substeps = 2
         gravity = [0., 0., -9.81]  # [m/s^2]
@@ -207,7 +97,7 @@ class CartpoleCfg(FixedRobotCfg):
             contact_collection = 0  # 2  # 0: never, 1: last sub-step, 2: all sub-steps (default=2)
 
 
-class CartpoleCfgPPO(FixedRobotCfgPPO):
+class CartpoleRunnerCfg(FixedRobotCfgPPO):
     # We need random experiments to run
     seed = -1
     runner_class_name = 'OnPolicyRunner'
@@ -215,24 +105,34 @@ class CartpoleCfgPPO(FixedRobotCfgPPO):
     do_wandb = True
     class wandb:
         what_to_log = {}
-        what_to_log['num_layers'] = ['train_cfg', 'policy', 'num_layers']
-        what_to_log['num_units'] = ['train_cfg', 'policy', 'num_layers']
 
-        what_to_log['activation_sub_space'] = ['env_cfg', 'rewards', 'sub_spaces', 'pole_pos']
-        what_to_log['pole_pos_rew'] = ['env_cfg', 'rewards', 'scales', 'pole_pos']
-
-        what_to_log['cart_pos_rew'] = ['env_cfg', 'rewards', 'scales', 'cart_pos']
-        what_to_log['do_dynamics_augmentation'] = ['env_cfg', 'env', 'do_dynamics_augmentation']
-        what_to_log['do_controls_augmentation'] = ['env_cfg', 'env', 'do_controls_augmentation']
-
-    # TODO COME BACK TO THIS AND MAKE SURE VALUES ARE THE SAME AS BEFORE IF ITS NOT WORKING
     class policy(FixedRobotCfgPPO.policy):
         init_noise_std = 1.0
-        num_layers = 1
-        num_units = 10
+        num_layers = 2
+        num_units = 64
         actor_hidden_dims = [num_units] * num_layers
         critic_hidden_dims = [num_units] * num_layers
         activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+
+        actor_obs = ["dof_pos",
+                     "dof_vel"
+                     ]
+
+        critic_obs = actor_obs
+
+        class reward:
+            make_PBRS = []
+
+            class weights:
+                pole_pos = 5
+                pole_vel = 0.025
+                cart_pos = 1
+                torques = 0.1
+                dof_vel = 0.0
+                collision = 0.0
+                upright_pole = 10
+            class termination_weight:
+                termination = 0.
 
     class algorithm(FixedRobotCfgPPO.algorithm):
         # training params

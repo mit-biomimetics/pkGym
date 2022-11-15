@@ -3,15 +3,12 @@ from .base_config import BaseConfig
 
 class FixedRobotCfg(BaseConfig):
     class env:
-        num_envs = 1096
-        num_observations = 7
-        num_privileged_obs = None # if not None a priviledge_obs_buf will be returned by step() (critic obs for assymetric training). None is returned otherwise
+        num_envs = 4096
         num_actions = 1
         env_spacing = 4.  # not used with heightfields/trimeshes
         root_height = 2.
         send_timeouts = True # send time out information to the algorithm
-        episode_length_s = 20 # episode length in seconds
-        num_env_obs = None # States observed from env, used only when SE is used
+        episode_length_s = 4 # episode length in seconds
 
     class terrain:
         mesh_type = 'none'
@@ -50,7 +47,7 @@ class FixedRobotCfg(BaseConfig):
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.5
         # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 4
+        decimation = 1
         exp_avg_decay = None
 
         actuated_joints_mask = []  # for each dof: 1 if actuated, 0 if passive
@@ -78,37 +75,16 @@ class FixedRobotCfg(BaseConfig):
         max_linear_velocity = 1000.
         armature = 0.
         thickness = 0.01
-
-    class domain_rand:
-        randomize_friction = False
-        friction_range = [0.5, 1.25]
-        push_robots = False
-        push_interval_s = 15
-        max_push_vel_xy = 1.
-
-    class rewards:
-        class weights:
-            termination = -0.0
-            torques = -0.00001
-            dof_vel = -0.
-            collision = -1.
-            action_rate = -0.01
-            dof_pos_limits = -1.
-
+    class reward_settings:
         tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
         soft_dof_pos_limit = 1. # percentage of urdf limits, values above this limit are penalized
         soft_dof_vel_limit = 1.
         soft_torque_limit = 1.  # ! may want to turn this off
-        # fill this list with names to turn into potential-based rewards
-        # NOTE: formally these should only depend on state
-        make_PBRS = []
 
-    class normalization:
-        clip_observations = 1000.
-        clip_actions = 1000.
-        class obs_scales:
-            dof_pos = 1.
-            dof_vel = 1.
+    class scaling:
+        commands = 1
+        dof_pos = 1.
+        dof_vel = 1.
 
     class noise:
         add_noise = True
@@ -142,7 +118,7 @@ class FixedRobotCfg(BaseConfig):
             contact_collection = 2 # 0: never, 1: last sub-step, 2: all sub-steps (default=2)
 
 class FixedRobotCfgPPO(BaseConfig):
-    seed = 2
+    seed = -1
     runner_class_name = 'OnPolicyRunner'
     class policy:
         init_noise_std = 1.0
@@ -153,6 +129,26 @@ class FixedRobotCfgPPO(BaseConfig):
         # rnn_type = 'lstm'
         # rnn_hidden_size = 512
         # rnn_num_layers = 1
+
+        actor_obs = ["observation_a",
+                     "observation_b",
+                     "these_need_to_be_atributes_(states)_of_the_robot_env"]
+
+        critic_obs = ["observation_x",
+                     "observation_y",
+                     "critic_obs_can_be_the_same_or_different_than_actor_obs"]
+
+        class rewards:
+            make_PBRS = []
+            class weights:
+                torques = 0.
+                dof_vel = 0.
+                collision = 0.
+                action_rate = 0.
+                action_rate2 = 0.
+                dof_pos_limits = 1.
+            class termination_weight:
+                termination = 0.0
 
     class algorithm:
         # training params
@@ -173,7 +169,7 @@ class FixedRobotCfgPPO(BaseConfig):
         policy_class_name = 'ActorCritic'
         algorithm_class_name = 'PPO'
         num_steps_per_env = 24 # per iteration
-        max_iterations = 1500 # number of policy updates
+        max_iterations = 500 # number of policy updates
         SE_learner = None
 
         # logging

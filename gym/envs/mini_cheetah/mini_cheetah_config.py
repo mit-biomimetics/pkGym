@@ -73,7 +73,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
                           [0., 0.],  # roll
                           [0., 0.],  # pitch
                           [0., 0.]]  # yaw
-                          
+
         # TODO: add new traj
         ref_traj = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/trajectories/single_leg.csv"
         ref_type = "Pos"

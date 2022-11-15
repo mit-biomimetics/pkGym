@@ -41,8 +41,8 @@ from .mit_humanoid.mit_humanoid import MIT_Humanoid
 from .mit_humanoid.mit_humanoid_config import MITHumanoidCfg, MITHumanoidRunnerCfg
 from .mini_cheetah.mini_cheetah import MiniCheetah
 from .mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahRunnerCfg
-# from .cartpole.cartpole import Cartpole
-# from .cartpole.cartpole_config import CartpoleCfg, CartpoleRunnerCfg
+from .cartpole.cartpole import Cartpole
+from .cartpole.cartpole_config import CartpoleCfg, CartpoleRunnerCfg
 
 from .mini_cheetah.mini_cheetah_ref import MiniCheetahRef
 from .mini_cheetah.ref_SE_config import SERefCfg, SERefRunnerCfg
@@ -63,4 +63,4 @@ task_registry.register("humanoid", MIT_Humanoid, MITHumanoidCfg(),
 
 task_registry.register("mini_cheetah", MiniCheetah, MiniCheetahCfg(),MiniCheetahRunnerCfg())
 task_registry.register("mc_se_ref", MiniCheetahRef, SERefCfg(), SERefRunnerCfg())
-# task_registry.register("cartpole", Cartpole, CartpoleCfg(), CartpoleRunnerCfg())
+task_registry.register("cartpole", Cartpole, CartpoleCfg(), CartpoleRunnerCfg())
