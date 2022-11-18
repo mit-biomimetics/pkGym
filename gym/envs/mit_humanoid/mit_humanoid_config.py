@@ -243,7 +243,8 @@ class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
                 dof_vel = 0.0
                 stand_still = 0.
                 dof_pos_limits = 0.0
-                dof_near_home = 0.5            class termination_weight:
+                dof_near_home = 0.5
+            class termination_weight:
                 termination = 15
     class algorithm(LeggedRobotRunnerCfg.algorithm):
          # training params
