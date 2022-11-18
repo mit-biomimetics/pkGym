@@ -273,16 +273,15 @@ class OnPolicyRunner:
 
     def get_noise(self, obs_list, noise_dict):
         noise_vec = torch.zeros(self.get_obs_size(obs_list), device=self.device)
-        start = 0
+        obs_index = 0
         for obs in obs_list:
             obs_size = self.get_obs_size([obs])
             if obs in noise_dict.keys():
                 noise_tensor = torch.ones(obs_size).to(self.device) * noise_dict[obs]
                 if obs in self.env.scales.keys():
                     noise_tensor *= self.env.scales[obs]
-                noise_vec[start:start+obs_size] = noise_tensor
-            start += obs_size
- 
+                noise_vec[obs_index:obs_index+obs_size] = noise_tensor
+            obs_index += obs_size
         return torch_rand_float(-1., 1., (self.env.num_envs, len(noise_vec)), 
                                             self.device) * noise_vec
     
