@@ -139,17 +139,6 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         dof_vel = 0.01  # ought to be roughly max expected speed.
         base_height = 1/BASE_HEIGHT_REF
 
-    class noise(MiniCheetahCfg.noise):
-        # ! needs to be moved
-        add_noise = False
-        noise_level = 1.  # scales other values
-
-        class noise_scales(MiniCheetahCfg.noise.noise_scales):
-            dof_pos = 0.005  # can be made very low
-            dof_vel = 0.005
-            ang_vel = [0.3, 0.15, 0.4]  # 0.027, 0.14, 0.37
-            gravity = 0.05
-
 class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
     seed = -1
     do_wandb = True
@@ -183,7 +172,11 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                       "ctrl_hist",
                       "phase_obs"
                       ]
-
+        class noise:
+            dof_pos_obs = 0.005  # can be made very low
+            dof_vel = 0.005
+            ang_vel = [0.3, 0.15, 0.4]  # 0.027, 0.14, 0.37
+            projected_gravity = 0.05
         class reward:
             make_PBRS = []
 

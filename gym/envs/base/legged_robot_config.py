@@ -165,16 +165,7 @@ class LeggedRobotCfg(BaseConfig):
     class scaling:
         commands = 1
 
-    class noise:
-        add_noise = True
-        noise_level = 1.0  # scales other values
-        class noise_scales:
-            dof_pos = 0.01
-            dof_vel = 1.5
-            lin_vel = 0.1
-            ang_vel = 0.2
-            gravity = 0.05
-            height_measurements = 0.1
+
 
     # viewer camera:
     class viewer:
@@ -199,6 +190,14 @@ class LeggedRobotRunnerCfg(BaseConfig):
         critic_obs = ["observation_x",
                      "observation_y",
                      "critic_obs_can_be_the_same_or_different_than_actor_obs"]
+                     
+        class noise:
+            dof_pos_obs = 0.01
+            dof_vel = 1.5
+            lin_vel = 0.1
+            ang_vel = 0.2
+            projected_gravity = 0.05
+            height_measurements = 0.1
 
         class reward:
             make_PBRS = []

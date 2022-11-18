@@ -59,18 +59,6 @@ class CartpoleCfg(FixedRobotCfg):
         dof_pos = [1/3., 1/torch.pi]
         dof_vel = [1/20., 1/(4*torch.pi)]
 
-    class noise(FixedRobotCfg.noise):
-        add_noise = True
-        noise_level = 1.0  # scales other values
-
-        class noise_scales:
-            noise = 0.1  # implement as needed, also in your robot class
-            cart_pos = 0.001
-            pole_pos = 0.001
-            cart_vel = 0.010
-            pole_vel = 0.010
-            actuation = 0.00
-
 class CartpoleRunnerCfg(FixedRobotCfgPPO):
     # We need random experiments to run
     seed = -1
@@ -93,7 +81,13 @@ class CartpoleRunnerCfg(FixedRobotCfgPPO):
                      ]
 
         critic_obs = actor_obs
-
+        class noise:
+            noise = 0.1  # implement as needed, also in your robot class
+            cart_pos = 0.001
+            pole_pos = 0.001
+            cart_vel = 0.010
+            pole_vel = 0.010
+            actuation = 0.00
         class reward:
             make_PBRS = []
 

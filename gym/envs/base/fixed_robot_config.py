@@ -86,12 +86,6 @@ class FixedRobotCfg(BaseConfig):
         dof_pos = 1.
         dof_vel = 1.
 
-    class noise:
-        add_noise = True
-        noise_level = 1.0 # scales other values
-        class noise_scales:
-            noise = 0.1  # implement as needed, also in your robot class
-
     # viewer camera:
     class viewer:
         ref_env = 0
@@ -137,7 +131,8 @@ class FixedRobotCfgPPO(BaseConfig):
         critic_obs = ["observation_x",
                      "observation_y",
                      "critic_obs_can_be_the_same_or_different_than_actor_obs"]
-
+        class noise:
+            noise = 0.1  # implement as needed, also in your robot class
         class rewards:
             make_PBRS = []
             class weights:

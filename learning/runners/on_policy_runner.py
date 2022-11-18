@@ -36,12 +36,14 @@ import statistics
 from torch.utils.tensorboard import SummaryWriter
 import wandb
 import torch
+import numpy as np
+from isaacgym.torch_utils import torch_rand_float
 
 from learning.algorithms import PPO, StateEstimator
 from learning.modules import ActorCritic
 from learning.modules import StateEstimatorNN
 from learning.env import VecEnv
-
+from gym.utils.helpers import class_to_dict
 from learning.utils import (update_infos_with_episode_sums, 
                             remove_zero_weighted_rewards)
 
@@ -62,7 +64,7 @@ class OnPolicyRunner:
         if self.cfg["SE_learner"] == "modular_SE":    # if using SE
             num_actor_obs += self.get_obs_size(self.se_cfg["targets"])
         num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
-
+        
         actor_critic: ActorCritic = actor_critic_class(num_actor_obs,
                                             num_critic_obs,
                                             self.env.num_actions,
@@ -196,7 +198,9 @@ class OnPolicyRunner:
                     actions = self.alg.act(actor_obs, critic_obs)
                     self.env.step(actions)
 
-                    actor_obs = self.get_obs(self.policy_cfg["actor_obs"])
+                    # actor_obs = self.get_obs(self.policy_cfg["actor_obs"])
+                    actor_obs = self.get_noisy_obs(self.policy_cfg["actor_obs"],
+                                                   self.policy_cfg["noise"])
                     critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
 
                     dones = self.get_dones()
@@ -222,7 +226,7 @@ class OnPolicyRunner:
                                                               SE_targets)
 
                     if self.cfg["algorithm_class_name"] == "PPO":
-                        timed_out = self.get_obs(["timed_out"])
+                        timed_out = self.get_timed_out()
                         self.alg.process_env_step(rewards, dones, timed_out)
 
                     if self.log_dir is not None:
@@ -267,10 +271,31 @@ class OnPolicyRunner:
         if self.cfg["SE_learner"] == "modular_SE": 
             self.save_SE(os.path.join(self.SE_path, 'SE_{}.pt'.format(self.current_learning_iteration)))
 
+    def get_noise(self, obs_list, noise_dict):
+        noise_vec = torch.zeros(self.get_obs_size(obs_list), device=self.device)
+        start = 0
+        for obs in obs_list:
+            obs_size = self.get_obs_size([obs])
+            if obs in noise_dict.keys():
+                noise_tensor = torch.ones(obs_size).to(self.device) * noise_dict[obs]
+                if obs in self.env.scales.keys():
+                    noise_tensor *= self.env.scales[obs]
+                noise_vec[start:start+obs_size] = noise_tensor
+            start += obs_size
+ 
+        return torch_rand_float(-1., 1., (self.env.num_envs, len(noise_vec)), 
+                                            self.device) * noise_vec
+    
+    def get_noisy_obs(self, obs_list, noise_dict):
+        observation = self.get_obs(obs_list)
+        return observation + self.get_noise(obs_list, noise_dict)
 
     def get_obs(self, obs_list):
-        return self.env.get_obs(obs_list).to(self.device)
+        observation = self.env.get_obs(obs_list).to(self.device)
+        return observation
 
+    def get_timed_out(self):
+        return self.env.get_obs(["timed_out"]).to(self.device)
 
     def get_obs_size(self, obs_list):
         # todo make unit-test to assert len(shape)==1 always
@@ -279,7 +304,6 @@ class OnPolicyRunner:
 
     def get_rewards(self, reward_weights, modifier=1):
         return self.env.compute_reward(reward_weights, modifier).to(self.device)
-
 
 
     def get_and_log_rewards(self, reward_weights,

@@ -148,16 +148,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
         base_height = BASE_HEIGHT_REF
         dof_pos_obs = 4*[10., 1., 0.5]
 
-    class noise(LeggedRobotCfg.noise):
-        add_noise = True
-        noise_level = 1  # scales other values
-
-        class noise_scales(LeggedRobotCfg.noise.noise_scales):
-            dof_pos = 0.005  # can be made very low
-            dof_vel = 0.005
-            ang_vel = [0.3, 0.15, 0.4]  # 0.027, 0.14, 0.37
-            gravity = 0.02
-            # height_measurements = 0.1
 
 class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
     seed = -1
@@ -190,6 +180,12 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
                       "dof_vel",
                       "ctrl_hist",
                       ]
+
+        class noise:
+            dof_pos_obs = 0.005  # can be made very low
+            dof_vel = 0.005
+            base_ang_vel = 0.05  # 0.027, 0.14, 0.37
+            projected_gravity = 0.02
 
         class reward(LeggedRobotRunnerCfg.policy.reward):
             make_PBRS = []

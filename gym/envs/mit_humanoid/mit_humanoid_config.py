@@ -102,7 +102,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
                          'shoulder_yaw': [0., 0.],
                          'elbow': [0., 0.]
                          }
-        
         dof_vel_range = {'hip_yaw': [-0., 0.1],
                          'hip_abad': [-0., 0.1],
                          'hip_pitch': [-0.1, -0.1],
@@ -201,19 +200,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
         dof_vel = 0.05  # ought to be roughly max expected speed.
         height_measurements = 1./virtual_leg
 
-    class noise(LeggedRobotCfg.noise):
-        add_noise = True
-        noise_level = 0.25  # scales other values
-
-        class noise_scales(LeggedRobotCfg.noise.noise_scales):
-            base_height = 0.05
-            dof_pos_obs = 0.0
-            dof_vel = 0.0
-            base_lin_vel = 0.1
-            base_ang_vel = 0.2
-            gravity = 0.05
-            height_measurements = 0.1
-
 class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
     seed = -1
     runner_class_name = 'OnPolicyRunner'
@@ -233,24 +219,31 @@ class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
                      "dof_vel"]
 
         critic_obs = actor_obs
+        class noise:
+            base_height = 0.05
+            dof_pos_obs = 0.0
+            dof_vel = 0.0
+            base_lin_vel = 0.1
+            base_ang_vel = 0.2
+            projected_gravity = 0.05
+            height_measurements = 0.1
 
         class reward:
             make_PBRS = []
             class weights:
-                tracking_ang_vel = 0.5  
-                tracking_lin_vel = 0.5  
-                orientation = 1.5 
-                torques = 5.e-6 
-                min_base_height = 1.5  
+                tracking_ang_vel = 0.5
+                tracking_lin_vel = 0.5
+                orientation = 1.5
+                torques = 5.e-6
+                min_base_height = 1.5
                 action_rate = 0.1
-                action_rate2 = 0.001 
-                lin_vel_z = 0. 
-                ang_vel_xy = 0.0 
-                dof_vel = 0.0 
-                stand_still = 0. 
+                action_rate2 = 0.001
+                lin_vel_z = 0.
+                ang_vel_xy = 0.0
+                dof_vel = 0.0
+                stand_still = 0.
                 dof_pos_limits = 0.0
-                dof_near_home = 0.5  
-            class termination_weight:
+                dof_near_home = 0.5            class termination_weight:
                 termination = 15
     class algorithm(LeggedRobotRunnerCfg.algorithm):
          # training params
@@ -275,4 +268,3 @@ class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
         run_name = 'Standing'
         experiment_name = 'Humanoid'
         save_interval = 50
-    
