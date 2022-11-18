@@ -19,7 +19,8 @@ from gym.utils.helpers import class_to_dict
 
 class FixedRobot(BaseTask):
 
-    def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
+    def __init__(self, gym, sim, cfg, sim_params, sim_device,
+                 headless):
         """ Parses the provided config file,
             calls create_sim() (which creates, simulation, terrain and environments),
             initilizes pytorch buffers used during training
@@ -38,10 +39,13 @@ class FixedRobot(BaseTask):
         self.init_done = False
         self.device = sim_device
         self._parse_cfg(self.cfg)
-        super().__init__(self.cfg, sim_params, physics_engine, sim_device, headless)
+        super().__init__(gym, sim, self.cfg, sim_params,
+                         sim_device, headless)
 
         if not self.headless:
             self.set_camera(self.cfg.viewer.pos, self.cfg.viewer.lookat)
+        self._initialize_sim()
+        self.gym.prepare_sim(self.sim)
         self._init_buffers()
         self.init_done = True
         self.reset()
@@ -149,16 +153,10 @@ class FixedRobot(BaseTask):
         self.episode_length_buf[env_ids] = 0
         self.reset_buf[env_ids] = 1
 
-
-    def create_sim(self):
-        """
-        Create the simulator.
+    def _initialize_sim(self):
+        """ Creates simulation, terrain and evironments
         """
         self.up_axis_idx = 2  # 2 for z, 1 for y -> adapt gravity accordingly
-        self.sim = self.gym.create_sim(self.sim_device_id,
-                                       self.graphics_device_id,
-                                       self.physics_engine,
-                                       self.sim_params)
         self._create_ground_plane()
         self._create_envs()
 
@@ -555,7 +553,7 @@ class FixedRobot(BaseTask):
 
 
     def _parse_cfg(self, cfg):
-        self.dt = self.cfg.control.decimation * self.sim_params.dt
+        self.dt = self.cfg.control.ctrl_dt
         self.scales = class_to_dict(self.cfg.scaling, self.device)
         # self.command_ranges = class_to_dict(self.cfg.commands.ranges)
         self.max_episode_length_s = self.cfg.env.episode_length_s
@@ -610,4 +608,4 @@ class FixedRobot(BaseTask):
     def _reward_dof_vel_limits(self):
         # Penalize dof velocities too close to the limit
         # clip to max error = 1 rad/s per joint to avoid huge penalties
-        return -torch.sum((torch.abs(self.dof_vel) - self.dof_vel_limits*self.cfg.rewards.soft_dof_vel_limit).clip(min=0., max=1.), dim=1)
+        return -torch.sum((torch.abs(self.dof_vel) - self.dof_vel_limits*self.cfg.reward_settings.soft_dof_vel_limit).clip(min=0., max=1.), dim=1)

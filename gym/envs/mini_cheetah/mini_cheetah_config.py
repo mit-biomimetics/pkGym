@@ -94,12 +94,10 @@ class MiniCheetahCfg(LeggedRobotCfg):
         else:
             action_scale = 0.25 # 0.5
 
-        # decimation: Number of control action updates @ sim DT per policy DT
         exp_avg_decay = 0.35  # set to None to disable
-        decimation = 5
 
-        use_actuator_network = False
-        # actuator_net_file = "{LEGGED_GYM_ROOT_DIR}/resources/actuator_nets/anydrive_v3_lstm.pt"
+        ctrl_frequency = 100
+        desired_sim_frequency = 200
 
     class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_friction = True
@@ -160,11 +158,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
             ang_vel = [0.3, 0.15, 0.4]  # 0.027, 0.14, 0.37
             gravity = 0.02
             # height_measurements = 0.1
-
-    class sim:
-        dt = 0.002
-        substeps = 1
-        gravity = [0., 0., -9.81]  # [m/s^2]
 
 class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
     seed = -1

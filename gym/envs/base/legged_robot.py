@@ -54,9 +54,10 @@ from gym.utils.helpers import class_to_dict
 from .legged_robot_config import LeggedRobotCfg
 
 class LeggedRobot(BaseTask):
-    def __init__(self, cfg: LeggedRobotCfg, sim_params, physics_engine, sim_device, headless):
+    def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
         """ Parses the provided config file,
-            calls create_sim() (which creates, simulation, terrain and environments),
+            calls create_sim() (which creates, simulation, terrain and
+            environments),
             initilizes pytorch buffers used during training
 
         Args:
@@ -69,17 +70,19 @@ class LeggedRobot(BaseTask):
         """
         self.cfg = cfg
         self.sim_params = sim_params
-        self.sim_params.up_axis = gymapi.UpAxis.UP_AXIS_Z
         self.height_samples = None
         self.debug_viz = False
         self.init_done = False
         self.device = sim_device  # todo CRIME: remove this from __init__ then
         self._parse_cfg(self.cfg)
-        super().__init__(self.cfg, sim_params, physics_engine, sim_device, headless)
+        super().__init__(gym, sim, self.cfg, sim_params,
+                         sim_device, headless)
 
         if not self.headless:
             self._set_camera(self.cfg.viewer.pos, self.cfg.viewer.lookat)
 
+        self._initialize_sim()
+        self.gym.prepare_sim(self.sim)
         self._init_buffers()
         self.init_done = True
         self.reset()
@@ -88,7 +91,8 @@ class LeggedRobot(BaseTask):
         """ Apply actions, simulate, call self._post_physics_step()
 
         Args:
-            actions (torch.Tensor): Tensor of shape (num_envs, num_actions_per_env)
+            actions (torch.Tensor): Tensor of shape (num_envs,
+            num_actions_per_env)
         """
 
         self._reset_buffers()
@@ -176,12 +180,10 @@ class LeggedRobot(BaseTask):
         self.episode_length_buf[env_ids] = 0
         self.reset_buf[env_ids] = 1
 
-    # * this will be zapped in the unit-test PR
-    def create_sim(self):
+    def _initialize_sim(self):
         """ Creates simulation, terrain and evironments
         """
         self.up_axis_idx = 2  # 2 for z, 1 for y -> adapt gravity accordingly
-        self.sim = self.gym.create_sim(self.sim_device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
         mesh_type = self.cfg.terrain.mesh_type
         if mesh_type in ['heightfield', 'trimesh']:
             self.terrain = Terrain(self.cfg.terrain, self.num_envs)
@@ -569,7 +571,6 @@ class LeggedRobot(BaseTask):
             self.root_vel_range = torch.tensor(self.cfg.init_state.root_vel_range,
                     dtype=torch.float, device=self.device, requires_grad=False)
 
-
     def _create_ground_plane(self):
         """ Adds a ground plane to the simulation, sets friction and restitution based on the cfg.
         """
@@ -746,7 +747,7 @@ class LeggedRobot(BaseTask):
 
 
     def _parse_cfg(self, cfg):
-        self.dt = self.cfg.control.decimation * self.sim_params.dt
+        self.dt = self.cfg.control.ctrl_dt
         self.scales = class_to_dict(self.cfg.scaling, self.device)
         self.command_ranges = class_to_dict(self.cfg.commands.ranges)
         self.max_episode_length_s = self.cfg.env.episode_length_s

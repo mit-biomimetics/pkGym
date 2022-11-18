@@ -34,21 +34,19 @@ import os
 import copy
 import isaacgym
 from gym.envs import *
-from gym.utils import  get_args, task_registry, Logger
+from gym.utils import  get_args, task_registry, Logger, class_to_dict
 from gym.utils import KeyboardInterface, GamepadInterface
 import numpy as np
 import torch
-from isaacgym import gymapi
+import isaacgym
+
 
 def play(args):
-    env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
-    # override some parameters for testing
-    env_cfg.env.num_envs = min(env_cfg.env.num_envs, 16)
+    env_cfg, train_cfg = task_registry.create_cfgs(args)
+    task_registry.make_gym_and_sim()
+    env, env_cfg = task_registry.make_env(name=args.task, env_cfg=env_cfg)
 
-    # * prepare environment
-    env, _ = task_registry.make_env(name=args.task, args=args, env_cfg=env_cfg)
-    obs = env.get_obs(train_cfg.policy.actor_obs)
-    # * load policy
+    task_registry.prepare_sim()
     train_cfg.runner.resume = True
     ppo_runner, train_cfg = task_registry.make_alg_runner(env=env,
                                                           name=args.task,
@@ -60,7 +58,7 @@ def play(args):
         state_estimator = ppo_runner.get_state_estimator(device=env.device)
     else:
         SE_ON = False
-    # * export policy as a jit module (used to run it from C++)
+
     if EXPORT_POLICY:
         path = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs',
                             train_cfg.runner.experiment_name, 'exported')
@@ -70,6 +68,7 @@ def play(args):
     # interface = GamepadInterface(env)
     interface = KeyboardInterface(env)
 
+    obs = env.get_obs(train_cfg.policy.actor_obs)
     for i in range(10*int(env.max_episode_length)):
         # * handle interface
         # * handle state-estimation

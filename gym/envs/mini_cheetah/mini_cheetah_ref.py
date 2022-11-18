@@ -15,13 +15,14 @@ import pandas as pd
 
 class MiniCheetahRef(MiniCheetah):
 
-    def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
+    def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
         # * reference traj
         csv_path = cfg.init_state.ref_traj.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
         self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy(),
                                 device=sim_device)
         self.omega = 2*torch.pi*cfg.control.gait_freq
-        super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
+        super().__init__(gym, sim, cfg, sim_params, sim_device,
+                         headless)
 
 
     def _init_buffers(self):

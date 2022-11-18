@@ -3,7 +3,7 @@ from gym.envs.mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheeta
 
 BASE_HEIGHT_REF = 0.32
 
-class SERefCfg(MiniCheetahCfg):
+class MiniCheetahRefCfg(MiniCheetahCfg):
     class env(MiniCheetahCfg.env):
         num_envs = 4096
         num_actions = 12
@@ -84,8 +84,8 @@ class SERefCfg(MiniCheetahCfg):
         control_type = "P"
         action_scale = 0.75
         exp_avg_decay = None  # set to None to disable
-        # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 5
+        ctrl_frequency = 100
+        desired_sim_frequency = 500
 
     class domain_rand(MiniCheetahCfg.domain_rand):
         randomize_friction = True
@@ -121,7 +121,6 @@ class SERefCfg(MiniCheetahCfg):
         base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.3
 
-
     class commands(MiniCheetahCfg.commands):
         resampling_time = 4.
         curriculum = True
@@ -151,12 +150,7 @@ class SERefCfg(MiniCheetahCfg):
             ang_vel = [0.3, 0.15, 0.4]  # 0.027, 0.14, 0.37
             gravity = 0.05
 
-    class sim:
-        dt = 0.002
-        substeps = 1
-        gravity = [0., 0., -9.81]  # [m/s^2]
-
-class SERefRunnerCfg(MiniCheetahRunnerCfg):
+class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
     seed = -1
     do_wandb = True
 
@@ -206,12 +200,12 @@ class SERefRunnerCfg(MiniCheetahRunnerCfg):
                 collision = 0.25
                 action_rate = 0.01  # -0.01
                 action_rate2 = 0.001  # -0.001
-                stand_still = 0.
+                stand_still = 0.5
                 dof_pos_limits = 0.
                 feet_contact_forces = 0.
                 dof_near_home = 0.
-                reference_traj = 0.25
-                swing_grf = 0.5
+                reference_traj = 0.5
+                swing_grf = 0.75
                 stance_grf = 1.
             class termination_weight:
                 termination = 15

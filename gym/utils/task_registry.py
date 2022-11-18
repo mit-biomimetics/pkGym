@@ -40,12 +40,17 @@ from .helpers import get_args, update_cfg_from_args, class_to_dict, get_load_pat
 from gym.envs.base.legged_robot_config import (LeggedRobotCfg,
                                                LeggedRobotRunnerCfg)
 from gym.envs.base.base_config import BaseConfig
+import isaacgym
+from gym.envs.base.sim_config import SimCfg
+
 
 class TaskRegistry():
     def __init__(self):
         self.task_classes = {}
         self.env_cfgs = {}
         self.train_cfgs = {}
+        self.sim_cfg = class_to_dict(SimCfg)
+        self.sim = {}
 
     def register(self, name: str, task_class: VecEnv, env_cfg: BaseConfig, train_cfg: LeggedRobotRunnerCfg):
         self.task_classes[name] = task_class
@@ -56,13 +61,68 @@ class TaskRegistry():
         return self.task_classes[name]
 
     def get_cfgs(self, name) -> Tuple[LeggedRobotCfg, LeggedRobotRunnerCfg]:
-        train_cfg = self.train_cfgs[name]
         env_cfg = self.env_cfgs[name]
+        train_cfg = self.train_cfgs[name]
         # copy seed
         env_cfg.seed = train_cfg.seed
         return env_cfg, train_cfg
 
-    def make_env(self, name, args=None, env_cfg=None) -> Tuple[VecEnv, LeggedRobotCfg]:
+    def create_cfgs(self, args):
+        env_cfg, train_cfg = self.get_cfgs(name=args.task)
+        self.update_and_parse_cfgs(env_cfg, train_cfg, args)
+        return env_cfg, train_cfg
+
+    def update_and_parse_cfgs(self, env_cfg, train_cfg, args):
+
+        update_cfg_from_args(env_cfg, train_cfg, args)
+        self.update_sim_cfg(args)
+        # * handle the ctrl_frequency
+        env_cfg.control.decimation = int(env_cfg.control.desired_sim_frequency
+                                         / env_cfg.control.ctrl_frequency)
+        env_cfg.control.ctrl_dt = 1.0 / env_cfg.control.ctrl_frequency
+        env_cfg.sim_dt = env_cfg.control.ctrl_dt / env_cfg.control.decimation
+        self.sim_cfg["dt"] = env_cfg.sim_dt
+        if env_cfg.sim_dt != 1.0/env_cfg.control.desired_sim_frequency:
+            print(f"****** Simulation dt adjusted from "
+                  f"{1.0/env_cfg.control.desired_sim_frequency}"
+                  f" to {env_cfg.sim_dt}.")
+
+
+    def update_sim_cfg(self, args):
+        self.sim["sim_device"] = args.sim_device
+        self.sim["sim_device_id"] = args.sim_device_id
+        self.sim["graphics_device_id"] = args.graphics_device_id
+        self.sim["physics_engine"] = args.physics_engine
+        self.sim["headless"] = args.headless
+
+        self.sim["params"] = isaacgym.gymapi.SimParams()
+        self.sim["params"].physx.use_gpu = args.use_gpu
+        self.sim["params"].physx.num_subscenes = args.subscenes
+        self.sim["params"].use_gpu_pipeline = args.use_gpu_pipeline
+        isaacgym.gymutil.parse_sim_config(self.sim_cfg, self.sim["params"])
+
+
+
+    def make_gym_and_sim(self):
+        self.make_gym()
+        self.make_sim()
+
+    def make_gym(self):
+        self._gym = isaacgym.gymapi.acquire_gym()
+
+    def make_sim(self):
+        self._sim = self._gym.create_sim(self.sim["sim_device_id"],
+                                        self.sim["graphics_device_id"],
+                                        self.sim["physics_engine"],
+                                        self.sim["params"])
+
+    def prepare_sim(self):
+        """
+        Must be called before running simulator, after adding all environments.
+        """
+        self._gym.prepare_sim(self._sim)
+
+    def make_env(self, name, env_cfg=None) -> Tuple[VecEnv, LeggedRobotCfg]:
         """ Creates an environment either from a registered namme or from the provided config file.
 
         Args:
@@ -77,28 +137,19 @@ class TaskRegistry():
             isaacgym.VecTaskPython: The created environment
             Dict: the corresponding config file
         """
-        # if no args passed get command line arguments
-        if args is None:
-            args = get_args()
         # check if there is a registered env with that name
         if name in self.task_classes:
             task_class = self.get_task_class(name)
         else:
             raise ValueError(f"Task with name: {name} was not registered")
-        if env_cfg is None:
+        if env_cfg is None:  # todo cehck if this is ever happening
             # load config files
             env_cfg, _ = self.get_cfgs(name)
-        # override cfg from args (if specified)
-        env_cfg, _ = update_cfg_from_args(env_cfg, None, args)
         set_seed(env_cfg.seed)
-        # parse sim params (convert to dict first)
-        sim_params = {"sim": class_to_dict(env_cfg.sim)}
-        sim_params = parse_sim_params(args, sim_params)
-        env = task_class(cfg=env_cfg,
-                         sim_params=sim_params,
-                         physics_engine=args.physics_engine,
-                         sim_device=args.sim_device,
-                            headless=args.headless)
+        env = task_class(gym=self._gym, sim=self._sim, cfg=env_cfg,
+                         sim_params=self.sim["params"],
+                         sim_device=self.sim["sim_device"],
+                         headless=self.sim["headless"])
         return env, env_cfg
 
     def make_alg_runner(self, env, name=None, args=None, train_cfg=None, log_root="default") -> Tuple[OnPolicyRunner, LeggedRobotRunnerCfg]:
@@ -142,7 +193,7 @@ class TaskRegistry():
             log_dir = None
         else:
             log_dir = os.path.join(log_root, datetime.now().strftime('%b%d_%H-%M-%S') + '_' + train_cfg.runner.run_name)
-        
+
         train_cfg_dict = class_to_dict(train_cfg)
         runner = OnPolicyRunner(env, train_cfg_dict, log_dir, device=args.rl_device)
 
@@ -154,6 +205,7 @@ class TaskRegistry():
             print(f"Loading model from: {resume_path}")
             runner.load(resume_path)
         return runner, train_cfg
+
 
 # make global task registry
 task_registry = TaskRegistry()

@@ -47,12 +47,12 @@ class FixedRobotCfg(BaseConfig):
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.5
         # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 1
         exp_avg_decay = None
 
         actuated_joints_mask = []  # for each dof: 1 if actuated, 0 if passive
         # Empty implies no chance in the _compute_torques step
-
+        ctrl_frequency = 100
+        desired_sim_frequency = 100
 
     class asset:
         file = ""

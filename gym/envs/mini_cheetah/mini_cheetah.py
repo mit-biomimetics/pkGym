@@ -14,8 +14,9 @@ from gym.envs import LeggedRobot
 
 
 class MiniCheetah(LeggedRobot):
-    def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
-        super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
+    def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
+        super().__init__(gym, sim, cfg, sim_params, sim_device,
+                         headless)
 
     def _init_buffers(self):
         super()._init_buffers()

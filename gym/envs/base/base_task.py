@@ -37,11 +37,11 @@ import torch
 # Base class for RL tasks
 class BaseTask():
 
-    def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
-        self.gym = gymapi.acquire_gym()
-
+    def __init__(self, gym, sim, cfg, sim_params, sim_device,
+                 headless):
+        self.gym = gym
+        self.sim = sim
         self.sim_params = sim_params
-        self.physics_engine = physics_engine
         self.sim_device = sim_device
         sim_device_type, self.sim_device_id = gymutil.parse_device_str(self.sim_device)
         self.headless = headless
@@ -68,15 +68,12 @@ class BaseTask():
         self.reset_buf = torch.ones(self.num_envs,
                                     device=self.device, dtype=torch.long)
         self.episode_length_buf = torch.zeros(self.num_envs,
-                                              device=self.device, dtype=torch.long)
+                                              device=self.device,
+                                              dtype=torch.long)
         self.timed_out = torch.zeros(self.num_envs,
                                         device=self.device, dtype=torch.bool)
 
         self.extras = {}
-
-        # create envs, sim and viewer
-        self.create_sim()
-        self.gym.prepare_sim(self.sim)
 
         # todo: read from config
         self.enable_viewer_sync = True
@@ -121,7 +118,7 @@ class BaseTask():
     def compute_reward(self, reward_weights, modifier=1):
         ''' Compute and return a torch tensor of rewards
         reward_weights: dict with keys matching reward names, and values matching weights
-        modifier: additional weight applied to all weights, e.g. used for gamma in PBRS
+        modifier: additional weight applied to all weights
         '''
         reward = torch.zeros(self.num_envs,
                               device=self.device, dtype=torch.float)

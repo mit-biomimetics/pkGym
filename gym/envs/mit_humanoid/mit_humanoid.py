@@ -13,8 +13,8 @@ from gym.envs import LeggedRobot
 END_EFFECTOR = ["left_hand", "right_hand", "left_toe", "left_heel", "right_toe", "right_heel"]
 
 class MIT_Humanoid(LeggedRobot):
-    def __init__(self, cfg, sim_params, physics_engine, sim_device, headless):
-        super().__init__(cfg, sim_params, physics_engine, sim_device, headless)
+    def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
+        super().__init__(gym, sim, cfg, sim_params, sim_device, headless)
         # get end_effector IDs for forward kinematics
         body_ids = []
         for body_name in END_EFFECTOR:

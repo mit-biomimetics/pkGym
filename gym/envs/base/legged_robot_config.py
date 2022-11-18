@@ -117,8 +117,9 @@ class LeggedRobotCfg(BaseConfig):
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.5
         # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 4
         exp_avg_decay = None
+        ctrl_frequency = 100
+        desired_sim_frequency = 200
 
     class asset:
         file = ""
@@ -181,25 +182,6 @@ class LeggedRobotCfg(BaseConfig):
         pos = [10, 0, 6]  # [m]
         lookat = [11., 5, 3.]  # [m]
 
-    class sim:
-        dt =  0.005
-        substeps = 1
-        gravity = [0., 0. , -9.81]  # [m/s^2]
-        up_axis = 1  # 0 is y, 1 is z
-
-        class physx:
-            num_threads = 10
-            solver_type = 1  # 0: pgs, 1: tgs
-            num_position_iterations = 4
-            num_velocity_iterations = 0
-            contact_offset = 0.01  # [m]
-            rest_offset = 0.0   # [m]
-            bounce_threshold_velocity = 0.5 #0.5 [m/s]
-            max_depenetration_velocity = 10.0
-            max_gpu_contact_pairs = 2**23 #2**24 -> needed for 8000 envs and more
-            default_buffer_size_multiplier = 5
-            contact_collection = 2 # 0: never, 1: last sub-step, 2: all sub-steps (default=2)
-
 class LeggedRobotRunnerCfg(BaseConfig):
     seed = -1
     runner_class_name = 'OnPolicyRunner'
@@ -255,16 +237,15 @@ class LeggedRobotRunnerCfg(BaseConfig):
     class runner:
         policy_class_name = 'ActorCritic'
         algorithm_class_name = 'PPO'
-        num_steps_per_env = 24 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)
-        max_iterations = 1500 # number of policy updates
+        num_steps_per_env = 24
+        max_iterations = 1500
         SE_learner = None
-        # logging
-        save_interval = 50 # check for potential saves every this many iterations
+        save_interval = 50
         run_name = ''
         experiment_name = 'legged_robot'
 
         # load and resume
         resume = False
         load_run = -1 # -1 = last run
-        checkpoint = -1 # -1 = last saved model
-        resume_path = None # updated from load_run and chkpt
+        checkpoint = -1  # -1 = last saved model
+        resume_path = None  # updated from load_run and chkpt

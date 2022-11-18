@@ -155,8 +155,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
         action_scale = 1.
         # * exponential average decay for action scale
         exp_avg_decay = None  # set to None to disable
-        # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 10  # ! substeps?
+        ctrl_frequency = 100
+        desired_sim_frequency = 200
 
     class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_friction = True
@@ -213,13 +213,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
             base_ang_vel = 0.2
             gravity = 0.05
             height_measurements = 0.1
-
-    class sim(LeggedRobotCfg.sim):
-        dt = 0.001
-        substeps = 1
-        gravity = [0., 0., -9.81]
-        class physx:
-            max_depenetration_velocity = 50.0
 
 class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
     seed = -1

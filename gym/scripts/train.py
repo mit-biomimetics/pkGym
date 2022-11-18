@@ -34,7 +34,7 @@ from datetime import datetime
 
 import isaacgym
 from gym.envs import *
-from gym.utils import get_args, task_registry, wandb_helper
+from gym.utils import get_args, task_registry, wandb_helper, class_to_dict
 from gym import LEGGED_GYM_ROOT_DIR
 import torch
 
@@ -42,9 +42,15 @@ import wandb
 
 
 def train(args):
-    env, env_cfg = task_registry.make_env(name=args.task, args=args)
-    ppo_runner, train_cfg = task_registry.make_alg_runner(env=env, name=args.task, args=args)
-
+    # * prepare environment
+    env_cfg, train_cfg = task_registry.create_cfgs(args)
+    task_registry.make_gym_and_sim()
+    env, env_cfg = task_registry.make_env(name=args.task, env_cfg=env_cfg)
+    # * then make env
+    ppo_runner, train_cfg = task_registry.make_alg_runner(env=env,
+                                                          name=args.task,
+                                                          args=args)
+    task_registry.prepare_sim()
     experiment_name = f'{args.task}'
     log_root = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name)
     log_dir = os.path.join(log_root, datetime.now().strftime('%b%d_%H-%M-%S') + '_' + train_cfg.runner.run_name)

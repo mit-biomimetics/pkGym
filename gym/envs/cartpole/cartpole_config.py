@@ -35,18 +35,12 @@ class CartpoleCfg(FixedRobotCfg):
         damping = {'slider_to_cart': 0.5}  # [N*m*s/rad]
 
         control_type = "T"
-
-        # for each dof: 1 if actuated, 0 if passive
-        # Empty implies no chance in the _compute_torques step
         actuated_joints_mask = [1,  # slider_to_cart
                                 0]  # cart_to_pole
-
-
-        # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 4.0
 
-        # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 1
+        ctrl_frequency = 100
+        desired_sim_frequency = 200
 
     class asset(FixedRobotCfg.asset):
         # Things that differ
@@ -76,26 +70,6 @@ class CartpoleCfg(FixedRobotCfg):
             cart_vel = 0.010
             pole_vel = 0.010
             actuation = 0.00
-
-    class sim:
-        dt = 0.001 # 1/60 s
-        substeps = 2
-        gravity = [0., 0., -9.81]  # [m/s^2]
-        up_axis = 1  # 0 is y, 1 is z
-
-        class physx:
-            num_threads = 4  # 10
-            solver_type = 1  # 0: pgs, 1: tgs
-            num_position_iterations = 4
-            num_velocity_iterations = 0
-            contact_offset = 0.02  # 0.01  # [m]
-            rest_offset = 0.001  # 0.0  # [m]
-            bounce_threshold_velocity = 0.2  # 0.5  # 0.5 [m/s]
-            max_depenetration_velocity = 100.0  # 10.0
-            max_gpu_contact_pairs = 1024*1024  # 2 ** 23  # 2**24 -> needed for 8000 envs and more
-            default_buffer_size_multiplier = 2.0  # 5
-            contact_collection = 0  # 2  # 0: never, 1: last sub-step, 2: all sub-steps (default=2)
-
 
 class CartpoleRunnerCfg(FixedRobotCfgPPO):
     # We need random experiments to run
