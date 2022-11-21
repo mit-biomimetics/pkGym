@@ -20,12 +20,18 @@ class TestEnvs(unittest.TestCase):
             env_cfg, train_cfg = task_registry.create_cfgs(self.args)
             task_registry.update_sim_cfg(self.args)
             task_registry.make_sim()
-            env, _ = task_registry.make_env(name=env_name,
-                                            env_cfg=env_cfg)
 
-            env.step(torch.zeros(env.num_envs, env.num_actions, device=env.device, requires_grad=False))
-            self.assertEqual(len(env.extras), 0, "env.extras has been modified!")
-            
+            try:
+                env, _ = task_registry.make_env(name=env_name,env_cfg=env_cfg)
+                env.step(torch.zeros(env.num_envs, env.num_actions, device=env.device, requires_grad=False))
+            except:
+                print(f'{env_name}.step() is NOT WORKING!')
+                
+            try:
+                self.assertEqual(len(env.extras), 0, "env.extras has been modified!")
+            except:
+                print(f'{env_name}.extras is NOT EMPTY!')
+
             task_registry._gym.destroy_sim(task_registry._sim)
 
 
