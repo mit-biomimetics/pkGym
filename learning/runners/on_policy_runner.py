@@ -30,6 +30,7 @@
 
 import time
 import os
+import shutil
 from collections import deque
 import statistics
 
@@ -99,6 +100,7 @@ class OnPolicyRunner:
         self.SE_path = os.path.join(self.log_dir, 'SE')   # log_dir for SE
         self.wandb = None
         self.do_wandb = False
+        self.save_local_files = False
         self.writer = None
         self.tot_timesteps = 0
         self.tot_time = 0
@@ -116,6 +118,9 @@ class OnPolicyRunner:
         else:
             self.se_cfg = None
 
+    def configure_local_files(self, save_paths):
+        self.save_local_files = True
+        self.save_paths = save_paths
 
     def init_storage(self):
         num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
@@ -135,14 +140,13 @@ class OnPolicyRunner:
                               critic_obs_shape=[num_critic_obs],
                               action_shape=[self.env.num_actions])
 
-
-    def configure_wandb(self, wandb):
-        self.wandb = wandb
+    def configure_wandb(self, wandb_in, log_freq=100, log_graph=True):
+        self.wandb = wandb_in
         self.do_wandb = True
         self.wandb.watch((self.alg.actor_critic.actor,
                           self.alg.actor_critic.critic),
-                         log_freq=100, log_graph=True)
-
+                         log_freq=log_freq,
+                         log_graph=log_graph)
 
     def reset_learn(self):
         self.current_learning_iteration = 0
@@ -152,6 +156,19 @@ class OnPolicyRunner:
         # initialize writer
         if self.log_dir is not None and self.writer is None:
             self.writer = SummaryWriter(log_dir=self.log_dir, flush_secs=10)
+        # copy the relevant source files to the local logs for records
+        if self.save_local_files:
+            save_dir = self.log_dir+'/files/'
+            for i in self.save_paths:
+                if i['type'] == 'file':
+                    os.makedirs(save_dir+i['target_dir'], exist_ok=True)
+                    shutil.copy2(i['source_file'], save_dir+i['target_dir'])
+                elif i['type'] == 'dir':
+                    shutil.copytree(
+                        i['source_dir'], save_dir+i['target_dir'],
+                        ignore=shutil.ignore_patterns(*i['ignore_patterns']))
+                else:
+                    print('WARNING: uncaught save path type:', i['type'])
         if init_at_random_ep_len:
             self.env.episode_length_buf = torch.randint_like(self.env.episode_length_buf, high=int(self.env.max_episode_length))
         # actor_obs = self.env.get_observations()

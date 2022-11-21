@@ -176,6 +176,11 @@ class LeggedRobotCfg(BaseConfig):
 class LeggedRobotRunnerCfg(BaseConfig):
     seed = -1
     runner_class_name = 'OnPolicyRunner'
+
+    class logging():
+        enable_wandb = False
+        enable_local_saving = True
+
     class policy:
         init_noise_std = 1.0
         actor_hidden_dims = [512, 256, 128]
