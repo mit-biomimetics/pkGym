@@ -1,4 +1,6 @@
+import os
 import wandb
+from gym import LEGGED_GYM_ROOT_DIR
 
 
 # return true if an entity and project are given in the commandline args
@@ -16,7 +18,7 @@ def is_wandb_enabled(args):
     return enable_wandb
 
 
-def wandb_setup(ppo_runner, args):
+def wandb_setup(policy_runner, args):
     experiment_name = f'{args.task}'
 
     wandb.config = {}
@@ -29,11 +31,10 @@ def wandb_setup(ppo_runner, args):
                config=wandb.config,
                name=experiment_name)
 
-    # todo: need to make this not based on where the script is run,
-    # todo: just caught this bug
-    wandb.run.log_code('..')
+    wandb.run.log_code(
+        os.path.join(LEGGED_GYM_ROOT_DIR, 'gym'))
 
-    ppo_runner.configure_wandb(wandb)
+    policy_runner.configure_wandb(wandb)
 
 
 # close WandB process after training has finished
