@@ -32,10 +32,12 @@ class TestHumanoidRewardDimensions(unittest.TestCase):
                     self.assertEqual(len(env._eval_reward(reward_name).shape),
                                      1,
                                      f"Wrong shape for {reward_name}")
-        
+
     def test_extras(self):
         for env in self.env_list:
-            self.assertEqual(len(env.extras), 0, f"{env}.extras has been modified. Has extras: {env.extras}")
+            self.assertEqual(len(env.extras), 0,
+                             f"{env.__class__.__name__} has extras: "
+                             f"{', '.join(list(env.extras.keys()))}")
 
 
 if __name__ == '__main__':
