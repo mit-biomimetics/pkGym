@@ -29,7 +29,15 @@ def wandb_setup(ppo_runner, args):
                config=wandb.config,
                name=experiment_name)
 
-    # todo: need to make this not based on where the script is run, just caught this bug
+    # todo: need to make this not based on where the script is run,
+    # todo: just caught this bug
     wandb.run.log_code('..')
 
     ppo_runner.configure_wandb(wandb)
+
+
+# close WandB process after training has finished
+def wandb_close(args):
+    # close WandB after learning is done
+    if is_wandb_enabled(args):
+        wandb.finish()

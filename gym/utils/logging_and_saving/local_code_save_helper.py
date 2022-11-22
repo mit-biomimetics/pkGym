@@ -1,7 +1,18 @@
-# todo: test if these imports work/are needed
-from gym.envs import class_dict, config_dict
-from gym import LEGGED_GYM_ROOT_DIR, LEGGED_GYM_ENVS_DIR
 import os
+from gym import LEGGED_GYM_ROOT_DIR
+from gym.utils.logging_and_saving import wandb_helper
+
+
+# configure local and cloud code saving and logging
+def log_and_save(env, env_cfg, train_cfg, runner, args):
+    # setup local code saving if enabled
+    if check_local_saving_flag(train_cfg):
+        save_paths = get_local_save_paths(env, env_cfg)
+        runner.configure_local_files(save_paths)
+
+    # setup WandB if enabled
+    if wandb_helper.is_wandb_enabled(args):
+        wandb_helper.wandb_setup(runner, args)
 
 
 # check if enable_local_saving is set to true in the training_config

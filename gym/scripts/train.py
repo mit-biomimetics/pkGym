@@ -33,7 +33,7 @@
 import isaacgym
 from gym.envs import *
 from gym.utils import get_args, task_registry
-from gym.utils.logging_and_saving import logging_and_saving
+from gym.utils.logging_and_saving import local_code_save_helper
 
 
 def train(args):
@@ -47,14 +47,14 @@ def train(args):
                                                              args=args)
     task_registry.prepare_sim()
 
-    logging_and_saving.log_and_save(
+    local_code_save_helper.log_and_save(
         env, env_cfg, train_cfg, policy_runner, args)
 
     policy_runner.learn(
         num_learning_iterations=train_cfg.runner.max_iterations,
         init_at_random_ep_len=True)
 
-    logging_and_saving.wandb_close(train_cfg, args)
+    local_code_save_helper.wandb_close(args)
 
 
 if __name__ == '__main__':
