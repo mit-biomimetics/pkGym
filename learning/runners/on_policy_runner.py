@@ -104,7 +104,16 @@ class OnPolicyRunner:
         self.tot_timesteps = 0
         self.tot_time = 0
         self.current_learning_iteration = 0
-
+        self.episode_sums = {name: torch.zeros(self.env.num_envs, dtype=torch.float,
+                                               device=self.device,
+                                               requires_grad=False)
+                        for name in self.policy_cfg["reward"]["weights"].keys()}
+        self.episode_sums.update({name: torch.zeros(self.env.num_envs,
+                                               dtype=torch.float,
+                                               device=self.device,
+                                               requires_grad=False)
+                        for name in self.policy_cfg["reward"]["termination_weight"].keys()})
+        self.avg_reward = {}
         self.logger = Logger(log_dir)
 
 
@@ -174,18 +183,6 @@ class OnPolicyRunner:
         critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
 
         self.alg.actor_critic.train()
-
-        episode_sums = {name: torch.zeros(self.env.num_envs, dtype=torch.float,
-                                               device=self.device,
-                                               requires_grad=False)
-                        for name in self.policy_cfg["reward"]["weights"].keys()}
-        episode_sums.update({name: torch.zeros(self.env.num_envs,
-                                               dtype=torch.float,
-                                               device=self.device,
-                                               requires_grad=False)
-                        for name in self.policy_cfg["reward"]["termination_weight"].keys()})
-
-
         tot_iter = self.current_learning_iteration + num_learning_iterations
         for it in range(self.current_learning_iteration, tot_iter):
             start = time.time()
@@ -196,45 +193,41 @@ class OnPolicyRunner:
                     self.set_actions(actions)
                     self.env.step()
 
-                    # actor_obs = self.get_obs(self.policy_cfg["actor_obs"])
                     actor_obs = self.get_noisy_obs(self.policy_cfg["actor_obs"],
                                                    self.policy_cfg["noise"])
                     critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
-
                     dones = self.get_dones()
-
                     rewards = self.get_and_log_rewards(self.policy_cfg["reward"]["weights"],
-                                                       modifier=self.env.dt,
-                                                       episode_sums=episode_sums)
-
-                    rewards += self.get_and_log_rewards(self.policy_cfg["reward"]["termination_weight"],
-                            episode_sums=episode_sums)
+                                                       modifier=self.env.dt)
+                    rewards += self.get_and_log_rewards(self.policy_cfg["reward"]["termination_weight"])
 
                     if self.cfg["SE_learner"] == "modular_SE":
                         SE_obs = self.get_obs(self.se_cfg["obs"])
                         SE_estimate = self.state_estimator.predict(SE_obs)
                         actor_obs = torch.cat((SE_estimate, actor_obs), dim=1)
-
                         SE_targets = self.get_obs(self.se_cfg["targets"])
                         self.state_estimator.process_env_step(SE_obs,
                                                               SE_targets)
-
                     if self.cfg["algorithm_class_name"] == "PPO":
                         timed_out = self.get_timed_out()
                         self.alg.process_env_step(rewards, dones, timed_out)
-
+                    self.calc_avg_reward(dones)
+                    
                 stop = time.time()
-                collection_time = stop - start
-
+                self.collection_time = stop - start
                 # * Learning step
                 start = stop
                 self.alg.compute_returns(critic_obs)
 
-            mean_value_loss, mean_surrogate_loss = self.alg.update()
+            self.mean_value_loss, self.mean_surrogate_loss = self.alg.update()
             if self.cfg["SE_learner"] == "modular_SE":
                 SE_loss = self.state_estimator.update()
             stop = time.time()
-            learn_time = stop - start
+            self.learn_time = stop - start
+            self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
+            self.tot_time += self.collection_time + self.learn_time
+            self.log()
+
             if it % self.save_interval == 0:
                 self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(it)))
                 if self.cfg["SE_learner"] == "modular_SE": 
@@ -286,14 +279,11 @@ class OnPolicyRunner:
     def get_rewards(self, reward_weights, modifier=1):
         return self.env.compute_reward(reward_weights, modifier).to(self.device)
 
-
     def get_and_log_rewards(self, reward_weights,
-                            modifier=1,
-                            episode_sums=None):
+                            modifier=1):
         '''
         Computes each reward on the fly and returns.
         Also takes care of logging...
-        TODO this should get refactored. Single responsibiliy!
         '''
         total_rewards = torch.zeros(self.env.num_envs,
                                     device=self.device, dtype=torch.float)
@@ -301,10 +291,29 @@ class OnPolicyRunner:
             reward = self.env.compute_reward({name: weight},
                                              modifier).to(self.device)
             total_rewards += reward
-            if name in episode_sums:
-                episode_sums[name] += reward  # keeping only from 1 env
+            self.log_reward(name, reward)
         return total_rewards
 
+    def log_reward(self, name, reward):
+        if name in self.episode_sums:
+            self.episode_sums[name] += reward  
+    
+    def log(self):
+        self.logger.add_log(self.avg_reward)
+        self.logger.add_log({"total_timesteps": self.tot_timesteps,
+                             "iteration_time": self.collection_time+self.learn_time,
+                             "total_time": self.tot_time
+                             ""})
+
+
+        #TODO: iterate through the config for any extra things you might want to log
+
+    def calc_avg_reward(self, dones):
+        if dones.any():
+            for key, val in self.episode_sums.items():
+                self.avg_reward[key] = torch.mean(self.episode_sums[key][dones]) \
+                                            / self.env.max_episode_length
+                self.episode_sums[key][dones] = 0.
 
     def get_dones(self):
         return self.env.reset_buf.to(self.device)
