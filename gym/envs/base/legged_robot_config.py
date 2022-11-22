@@ -201,7 +201,6 @@ class LeggedRobotRunnerCfg(BaseConfig):
                 torques = 0.
                 dof_vel = 0.
                 base_height = 0.
-                feet_air_time = 0.
                 collision = 0.
                 action_rate = 0.
                 action_rate2 = 0.

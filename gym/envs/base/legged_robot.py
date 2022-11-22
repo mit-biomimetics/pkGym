@@ -439,17 +439,7 @@ class LeggedRobot(BaseTask):
                                      requires_grad=False)
         self.commands = torch.zeros(self.num_envs, 3,
                                     dtype=torch.float, device=self.device,
-                                    requires_grad=False) # x vel, y vel, yaw vel, heading
-        self.feet_air_time = torch.zeros(self.num_envs,
-                                         self.feet_indices.shape[0],
-                                         dtype=torch.float,
-                                         device=self.device,
-                                         requires_grad=False)
-        self.last_contacts = torch.zeros(self.num_envs,
-                                         len(self.feet_indices),
-                                         dtype=torch.bool,
-                                         device=self.device,
-                                         requires_grad=False)
+                                    requires_grad=False)
         self.base_lin_vel = quat_rotate_inverse(self.base_quat,
                                                 self.root_states[:, 7:10])
         self.base_ang_vel = quat_rotate_inverse(self.base_quat,
@@ -537,7 +527,6 @@ class LeggedRobot(BaseTask):
         plane_params.dynamic_friction = self.cfg.terrain.dynamic_friction
         plane_params.restitution = self.cfg.terrain.restitution
         self.gym.add_ground(self.sim, plane_params)
-
 
     def _create_heightfield(self):
         """ Adds a heightfield terrain to the simulation, sets parameters based on the cfg.
