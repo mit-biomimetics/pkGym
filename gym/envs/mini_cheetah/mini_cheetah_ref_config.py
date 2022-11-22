@@ -6,7 +6,7 @@ BASE_HEIGHT_REF = 0.32
 class MiniCheetahRefCfg(MiniCheetahCfg):
     class env(MiniCheetahCfg.env):
         num_envs = 4096
-        num_actions = 12
+        num_actuators = 12
         episode_length_s = 15.
 
     class terrain(MiniCheetahCfg.terrain):
@@ -80,10 +80,8 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
         gait_freq = 4. #
-        # Control type: "P" (position + damping) or "Td" (torque + damping)
-        control_type = "P"
-        action_scale = 0.75
-        exp_avg_decay = None  # set to None to disable
+        
+        dof_pos_decay = None  # set to None to disable
         ctrl_frequency = 100
         desired_sim_frequency = 500
 
@@ -109,7 +107,6 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         self_collisions = 1  # 1 to disable, 0 to enable...bitwise filter
         flip_visual_attachments = False
         disable_gravity = False
-        disable_actions = False  # neural networks output set to 0
         disable_motors = False  # all torques set to 0
 
     class reward_settings(MiniCheetahCfg.reward_settings):
@@ -138,6 +135,10 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         commands = [base_lin_vel, base_lin_vel, base_ang_vel]
         dof_vel = 0.01  # ought to be roughly max expected speed.
         base_height = 1/BASE_HEIGHT_REF
+        
+        # Action scales
+        tau_ff = 10
+        dof_pos_target = 0.25 
 
 class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
     seed = -1
@@ -157,7 +158,7 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                      "commands",
                      "dof_pos_obs",
                      "dof_vel",
-                     "ctrl_hist",
+                     "dof_pos_history",
                      "phase_obs"
                      ]
 
@@ -169,9 +170,12 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                       "commands",
                       "dof_pos_obs",
                       "dof_vel",
-                      "ctrl_hist",
+                      "dof_pos_history",
                       "phase_obs"
                       ]
+                      
+        actions = ["dof_pos_target"]                  
+
         class noise:
             dof_pos_obs = 0.005  # can be made very low
             dof_vel = 0.005

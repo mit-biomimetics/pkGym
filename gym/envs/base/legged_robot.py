@@ -87,7 +87,7 @@ class LeggedRobot(BaseTask):
         self.init_done = True
         self.reset()
 
-    def step(self, actions):
+    def step(self):
         """ Apply actions, simulate, call self._post_physics_step()
 
         Args:
@@ -96,16 +96,11 @@ class LeggedRobot(BaseTask):
         """
 
         self._reset_buffers()
-
-        if self.cfg.asset.disable_actions:
-            self.actions[:] = 0.
-        else:
-            self.actions = actions.to(self.device)
         self._pre_physics_step()
         # step physics and render each frame
         self._render()
         for _ in range(self.cfg.control.decimation):
-            self.torques = self._compute_torques(actions).view(self.torques.shape)
+            self.torques = self._compute_torques()
 
             if self.cfg.asset.disable_motors:
                 self.torques[:] = 0.
@@ -144,6 +139,16 @@ class LeggedRobot(BaseTask):
         self.base_ang_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
         self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
 
+
+        self.base_height = self.root_states[:, 2:3]
+
+        nact = self.num_actuators
+        self.dof_pos_history[:, 2*nact:] = self.dof_pos_history[:, nact:2*nact]
+        self.dof_pos_history[:, nact:2*nact] = self.dof_pos_history[:, :nact]
+        self.dof_pos_history[:, :nact] = self.dof_pos_target
+
+        self.dof_pos_obs = (self.dof_pos - self.default_dof_pos)
+        
         self._post_physics_step_callback()
 
         if self.viewer and self.enable_viewer_sync and self.debug_viz:
@@ -175,7 +180,7 @@ class LeggedRobot(BaseTask):
         self._reset_system(env_ids)
         self._resample_commands(env_ids)
         # reset buffers
-        self.ctrl_hist[env_ids] = 0.
+        self.dof_pos_history[env_ids] = 0.
         self.feet_air_time[env_ids] = 0.
         self.episode_length_buf[env_ids] = 0
         self.reset_buf[env_ids] = 1
@@ -319,7 +324,7 @@ class LeggedRobot(BaseTask):
         self.commands[env_ids, :2] *= (torch.norm(self.commands[env_ids, :2], dim=1) > 0.2).unsqueeze(1)
 
 
-    def _compute_torques(self, actions):
+    def _compute_torques(self):
         """ Compute torques from actions.
             Actions can be interpreted as position or velocity targets given to a PD controller, or directly as scaled torques.
             [NOTE]: torques must have the same dimension as the number of DOFs, even if some DOFs are not actuated.
@@ -330,29 +335,23 @@ class LeggedRobot(BaseTask):
         Returns:
             [torch.Tensor]: Torques sent to the simulation
         """
-        # pd controller
-
-        if self.cfg.control.exp_avg_decay:
-            self.action_avg = exp_avg_filter(self.actions, self.action_avg,
-                                            self.cfg.control.exp_avg_decay)
-            actions = self.action_avg
-
-        if self.cfg.control.control_type=="P":
-            torques = self.p_gains*(actions * self.cfg.control.action_scale \
-                                    + self.default_dof_pos \
-                                    - self.dof_pos) \
-                    - self.d_gains*self.dof_vel
-
-        elif self.cfg.control.control_type=="T":
-            torques = actions * self.cfg.control.action_scale
-
-        elif self.cfg.control.control_type=="Td":
-            torques = actions * self.cfg.control.action_scale \
-                        - self.d_gains*self.dof_vel
-
+        
+        if self.cfg.control.dof_pos_decay:
+            self.dof_pos_avg = exp_avg_filter(self.dof_pos_target, self.dof_pos_avg,
+                                            self.cfg.control.dof_pos_decay)
+            dof_pos_target = self.dof_pos_avg
         else:
-            raise NameError(f"Unknown controller type: {control_type}")
-        return torch.clip(torques, -self.torque_limits, self.torque_limits)
+            dof_pos_target = self.dof_pos_target
+
+        dof_pos_action_scale = self.scales["dof_pos_target"]
+        tau_ff_action_scale = self.scales["tau_ff"]
+        torques = self.p_gains*(dof_pos_target * dof_pos_action_scale
+                    + self.default_dof_pos - self.dof_pos) \
+                    + self.d_gains*(self.dof_vel_target - self.dof_vel) \
+                    + self.tau_ff*tau_ff_action_scale
+                      
+        return torch.clip(torques, -self.torque_limits, 
+                          self.torque_limits).view(self.torques.shape)
 
 
     def _reset_system(self, env_ids):
@@ -470,17 +469,25 @@ class LeggedRobot(BaseTask):
                                 device=self.device).repeat((self.num_envs, 1))
         self.forward_vec = to_torch([1., 0., 0.],
                                 device=self.device).repeat((self.num_envs, 1))
-        self.torques = torch.zeros(self.num_envs, self.num_actions,
+        
+        self.torques = torch.zeros(self.num_envs, self.num_actuators,
                                    dtype=torch.float, device=self.device,
                                    requires_grad=False)
-        self.p_gains = torch.zeros(self.num_actions, dtype=torch.float,
+        self.p_gains = torch.zeros(self.num_actuators, dtype=torch.float,
                                     device=self.device, requires_grad=False)
-        self.d_gains = torch.zeros(self.num_actions, dtype=torch.float,
+        self.d_gains = torch.zeros(self.num_actuators, dtype=torch.float,
                                     device=self.device, requires_grad=False)
-        self.actions = torch.zeros(self.num_envs, self.num_actions,
+        self.dof_pos_target = torch.zeros(self.num_envs, self.num_actuators,
                                    dtype=torch.float, device=self.device,
                                    requires_grad=False)
-        self.ctrl_hist = torch.zeros(self.num_envs, self.num_actions*3,
+        self.dof_vel_target = torch.zeros(self.num_envs, self.num_actuators,
+                                   dtype=torch.float, device=self.device,
+                                   requires_grad=False)
+        self.tau_ff = torch.zeros(self.num_envs, self.num_actuators,
+                                   dtype=torch.float, device=self.device,
+                                   requires_grad=False)
+                
+        self.dof_pos_history = torch.zeros(self.num_envs, self.num_actuators*3,
                                      dtype=torch.float, device=self.device,
                                      requires_grad=False)
         self.commands = torch.zeros(self.num_envs,
@@ -508,7 +515,7 @@ class LeggedRobot(BaseTask):
             self.height_points = self._init_height_points()
         self.measured_heights = 0
 
-        self.action_avg = torch.zeros(self.num_envs, self.num_actions,
+        self.dof_pos_avg = torch.zeros(self.num_envs, self.num_actuators,
                                         dtype=torch.float,
                                         device=self.device, requires_grad=False)
 
@@ -873,20 +880,20 @@ class LeggedRobot(BaseTask):
 
     def _reward_action_rate(self):
         # Penalize changes in actions
-        nact = self.num_actions
+        nact = self.num_actuators
         dt2 = (self.dt*self.cfg.control.decimation)**2
-        error = torch.square(self.ctrl_hist[:, :nact] \
-                            - self.ctrl_hist[:, nact:2*nact])/dt2
+        error = torch.square(self.dof_pos_history[:, :nact] \
+                            - self.dof_pos_history[:, nact:2*nact])/dt2
         return -torch.sum(error, dim=1)
 
 
     def _reward_action_rate2(self):
         # Penalize changes in actions
-        nact = self.num_actions
+        nact = self.num_actuators
         dt2 = (self.dt*self.cfg.control.decimation)**2
-        error = torch.square(self.ctrl_hist[:, :nact]  \
-                            - 2*self.ctrl_hist[:, nact:2*nact]  \
-                            + self.ctrl_hist[:, 2*nact:])/dt2
+        error = torch.square(self.dof_pos_history[:, :nact]  \
+                            - 2*self.dof_pos_history[:, nact:2*nact]  \
+                            + self.dof_pos_history[:, 2*nact:])/dt2
         return -torch.sum(error, dim=1)
 
 

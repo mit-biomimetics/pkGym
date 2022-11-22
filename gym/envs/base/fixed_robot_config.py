@@ -4,7 +4,7 @@ from .base_config import BaseConfig
 class FixedRobotCfg(BaseConfig):
     class env:
         num_envs = 4096
-        num_actions = 1
+        num_actuators = 1
         env_spacing = 4.  # not used with heightfields/trimeshes
         root_height = 2.
         send_timeouts = True # send time out information to the algorithm
@@ -40,17 +40,13 @@ class FixedRobotCfg(BaseConfig):
 
 
     class control:
-        control_type = 'P' # P: position, V: velocity, T: torques
         # PD Drive parameters:
         stiffness = {'joint_a': 10.0}  # [N*m/rad]
         damping = {'joint_a': 0.5}     # [N*m*s/rad]
-        # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = 0.5
-        # decimation: Number of control action updates @ sim DT per policy DT
-        exp_avg_decay = None
 
+        dof_pos_decay = None
         actuated_joints_mask = []  # for each dof: 1 if actuated, 0 if passive
-        # Empty implies no chance in the _compute_torques step
+
         ctrl_frequency = 100
         desired_sim_frequency = 100
 
@@ -59,7 +55,6 @@ class FixedRobotCfg(BaseConfig):
         penalize_contacts_on = []
         terminate_after_contacts_on = []
         disable_gravity = False
-        disable_actions = False
         disable_motors = False
         collapse_fixed_joints = True  # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
         fix_base_link = True  # fix the base of the robot
@@ -85,6 +80,10 @@ class FixedRobotCfg(BaseConfig):
         commands = 1
         dof_pos = 1.
         dof_vel = 1.
+        
+        # Action scales
+        tau_ff = 10
+        dof_pos_target = 0.25 
 
     # viewer camera:
     class viewer:

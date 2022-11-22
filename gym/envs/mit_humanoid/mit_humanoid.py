@@ -29,22 +29,6 @@ class MIT_Humanoid(LeggedRobot):
         self.base_height = torch.zeros(self.num_envs, 1, dtype=torch.float,
                                  device=self.device, requires_grad=False)
 
-    def _post_physics_step(self):
-        """ Callback called before computing terminations, rewards, and
-         observations, phase-dynamics.
-            Default behaviour: Compute ang vel command based on target and
-             heading, compute measured terrain heights and randomly push robots
-        """
-        super()._post_physics_step()
-
-        self.base_height = self.root_states[:, 2:3]
-
-        nact = self.num_actions
-        self.ctrl_hist[:, 2*nact:] = self.ctrl_hist[:, nact:2*nact]
-        self.ctrl_hist[:, nact:2*nact] = self.ctrl_hist[:, :nact]
-        self.ctrl_hist[:, :nact] = self.actions
-
-        self.dof_pos_obs = (self.dof_pos - self.default_dof_pos)
 
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity w. squared exp

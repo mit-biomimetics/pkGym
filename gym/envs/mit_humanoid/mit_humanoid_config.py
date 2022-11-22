@@ -32,9 +32,9 @@ from gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotRunnerC
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 6000
+        num_envs = 4000
         num_observations = 49+3*18  # 121
-        num_actions = 18
+        num_actuators = 18
         episode_length_s = 100  # episode length in seconds
         num_privileged_obs = num_observations
 
@@ -149,11 +149,9 @@ class MITHumanoidCfg(LeggedRobotCfg):
                    'shoulder_yaw': 5.,
                    'elbow': 5.,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
-
-        # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = 1.
+        
         # * exponential average decay for action scale
-        exp_avg_decay = None  # set to None to disable
+        dof_pos_decay = None  # set to None to disable
         ctrl_frequency = 100
         desired_sim_frequency = 200
 
@@ -177,7 +175,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
         disable_gravity = False
-        disable_actions = False
         disable_motors = False
 
     class reward_settings(LeggedRobotCfg.reward_settings):
@@ -199,7 +196,11 @@ class MITHumanoidCfg(LeggedRobotCfg):
         dof_pos_obs = 1./3.14
         dof_vel = 0.05  # ought to be roughly max expected speed.
         height_measurements = 1./virtual_leg
-
+        
+        # Action scales
+        tau_ff = 10
+        dof_pos_target = 0.25 
+        
 class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
     seed = -1
     runner_class_name = 'OnPolicyRunner'
@@ -216,9 +217,13 @@ class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
                      "projected_gravity",
                      "commands",
                      "dof_pos_obs",
-                     "dof_vel"]
+                     "dof_vel",
+                     "dof_pos_history"]
 
         critic_obs = actor_obs
+        
+        actions = ["dof_pos_target"]                  
+
         class noise:
             base_height = 0.05
             dof_pos_obs = 0.0
@@ -236,7 +241,7 @@ class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
                 orientation = 1.5
                 torques = 5.e-6
                 min_base_height = 1.5
-                action_rate = 0.1
+                action_rate = 0.01
                 action_rate2 = 0.001
                 lin_vel_z = 0.
                 ang_vel_xy = 0.0
