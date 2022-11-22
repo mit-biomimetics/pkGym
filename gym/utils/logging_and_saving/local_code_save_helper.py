@@ -16,22 +16,6 @@ def use_local_saving(train_cfg):
 
 # create a save_paths object to dictate the code to locally save for a run
 def get_save_local_paths(env, env_cfg):
-    # class_source = os.path.join(
-    #     LEGGED_GYM_ENVS_DIR,
-    #     class_dict[type(env).__name__][1:].replace('.', '/')+'.py')
-    # class_target = os.path.join(
-    #     'envs', *class_dict[type(env).__name__].split('.')[:-1])
-
-    # config_source = os.path.join(
-    #     LEGGED_GYM_ENVS_DIR,
-    #     config_dict[type(env_cfg).__name__][1:].replace('.', '/')+'.py')
-    # config_target = os.path.join(
-    #     'envs',
-    #     *config_dict[type(env_cfg).__name__].split('.')[:-1])
-
-    # envs_source = os.path.join(
-    #     LEGGED_GYM_ROOT_DIR, 'gym', 'envs', '__init__.py')
-    # envs_target = os.path.join('envs')
 
     runners_dir = os.path.join(LEGGED_GYM_ROOT_DIR, 'learning', 'runners')
     runners_target = os.path.join('learning', 'runners')
@@ -48,12 +32,6 @@ def get_save_local_paths(env, env_cfg):
     # list of things to copy
     # source paths need the full path and target are relative to log_dir
     save_paths = [
-        # {'type': 'file', 'source_file': class_source,
-        #                  'target_dir': class_target},
-        # {'type': 'file', 'source_file': config_source,
-        #                  'target_dir': config_target},
-        # {'type': 'file', 'source_file': envs_source,
-        #                  'target_dir': envs_target},
         {'type': 'dir', 'source_dir': runners_dir,
                         'target_dir': runners_target,
             'ignore_patterns': ['__pycache__*']},

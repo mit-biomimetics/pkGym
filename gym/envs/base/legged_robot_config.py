@@ -178,8 +178,9 @@ class LeggedRobotRunnerCfg(BaseConfig):
     runner_class_name = 'OnPolicyRunner'
 
     class logging():
-        enable_wandb = False
+        enable_wandb = True
         enable_local_saving = True
+
 
     class policy:
         init_noise_std = 1.0
@@ -195,7 +196,7 @@ class LeggedRobotRunnerCfg(BaseConfig):
         critic_obs = ["observation_x",
                      "observation_y",
                      "critic_obs_can_be_the_same_or_different_than_actor_obs"]
-                     
+
         class noise:
             dof_pos_obs = 0.01
             dof_vel = 1.5

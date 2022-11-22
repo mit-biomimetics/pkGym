@@ -54,7 +54,6 @@ def train(args):
 
     logging_and_saving.wandb_close(train_cfg, args)
 
-
 if __name__ == '__main__':
     args = get_args()
     train(args)
