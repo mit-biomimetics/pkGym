@@ -149,11 +149,11 @@ class MITHumanoidCfg(LeggedRobotCfg):
                    'shoulder_yaw': 5.,
                    'elbow': 5.,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
-        
+
         # * exponential average decay for action scale
         dof_pos_decay = None  # set to None to disable
         ctrl_frequency = 100
-        desired_sim_frequency = 200
+        desired_sim_frequency = 800
 
     class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_friction = True
@@ -188,19 +188,21 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
     class scaling(LeggedRobotCfg.scaling):
         # * dimensionless time: sqrt(L/g) or sqrt(I/[mgL]), with I=I0+mL^2
-        dimless_time = (0.7/9.81)**0.5
-        virtual_leg = 0.65
-        base_height = 1./virtual_leg
-        base_lin_vel = 1./virtual_leg 
-        base_ang_vel = 1./3.14*dimless_time
-        dof_pos_obs = 1./3.14
-        dof_vel = 0.05  # ought to be roughly max expected speed.
-        height_measurements = 1./virtual_leg
-        
+        virtual_leg_length = 0.65
+        dimensionless_time = (virtual_leg_length/9.81)**0.5
+        base_height = virtual_leg_length
+        base_lin_vel = virtual_leg_length/dimensionless_time
+        base_ang_vel = 3.14/dimensionless_time
+        dof_vel = 20  # ought to be roughly max expected speed.
+        height_measurements = virtual_leg_length
+
+        # todo check order of joints, create per-joint scaling
+        dof_pos = 3.14
+        dof_pos_obs = dof_pos
         # Action scales
-        tau_ff = 10
-        dof_pos_target = 0.25 
-        
+        dof_pos_target = dof_pos
+        tau_ff = 0.1
+
 class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
     seed = -1
     runner_class_name = 'OnPolicyRunner'
@@ -221,8 +223,8 @@ class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
                      "dof_pos_history"]
 
         critic_obs = actor_obs
-        
-        actions = ["dof_pos_target"]                  
+
+        actions = ["dof_pos_target"]
 
         class noise:
             base_height = 0.05

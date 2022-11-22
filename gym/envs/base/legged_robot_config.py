@@ -161,12 +161,11 @@ class LeggedRobotCfg(BaseConfig):
 
     class scaling:
         commands = 1
-        
         # Action scales
-        tau_ff = 10
-        dof_pos_target = 0.25 
-
-
+        tau_ff = 1  # scale by torque limits
+        dof_pos = 1
+        dof_pos_obs = dof_pos
+        dof_pos_target = dof_pos  # scale by range of motion
 
     # viewer camera:
     class viewer:

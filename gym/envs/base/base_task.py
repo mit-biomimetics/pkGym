@@ -96,7 +96,7 @@ class BaseTask():
 
     def get_state(self, name):
         if name in self.scales.keys():
-            return getattr(self, name)*self.scales[name]
+            return getattr(self, name)/self.scales[name]
         else:
             return getattr(self, name)
 
@@ -104,14 +104,17 @@ class BaseTask():
         idx = 0
         for state in state_list:
             state_dim = getattr(self, state).shape[1]
-            self.set_state(state, values[:,idx:idx+state_dim])
+            self.set_state(state, values[:, idx:idx+state_dim])
             idx += state_dim
         assert(idx == values.shape[1]), "Actions don't equal tensor shapes"
 
     def set_state(self, name, value):
         try:
-            setattr(self, name, value)
-        except:
+            if name in self.scales.keys():
+                setattr(self, name, value*self.scales[name])
+            else:
+                setattr(self, name, value)
+        except AttributeError:
             print("Value for " + name + " does not match tensor shape")
 
 

@@ -257,16 +257,13 @@ class FixedRobot(BaseTask):
                 actuated_dof_pos[:, idx] = self.dof_pos[:, dof_idx]
                 actuated_dof_vel[:, idx] = self.dof_vel[:, dof_idx]
                 idx += 1
-                
-        dof_pos_action_scale = self.scales["dof_pos_target"]
-        tau_ff_action_scale = self.scales["tau_ff"]        
-        torques = self.p_gains*(dof_pos_target * dof_pos_action_scale
-                  + self.default_act_pos - actuated_dof_pos) \
+
+        torques = self.p_gains*(dof_pos_target + self.default_act_pos
+                                - actuated_dof_pos) \
                   + self.d_gains*(self.dof_vel_target - actuated_dof_vel) \
-                  + self.tau_ff*tau_ff_action_scale
-                      
-        return torch.clip(torques, -self.torque_limits, 
-                          self.torque_limits).view(self.torques.shape)
+                  + self.tau_ff
+        torques = torch.clip(torques, -self.torque_limits, self.torque_limits)
+        return torques.view(self.torques.shape)
 
     def _reset_system(self, env_ids):
         """
