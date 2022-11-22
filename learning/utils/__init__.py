@@ -30,4 +30,4 @@
 
 from .utils import (split_and_pad_trajectories, unpad_trajectories,
                     remove_zero_weighted_rewards)
-from .logging import update_infos_with_episode_sums
+from .logging import Logger

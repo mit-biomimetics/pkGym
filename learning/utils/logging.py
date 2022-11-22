@@ -1,11 +1,16 @@
 import torch
 
-def update_infos_with_episode_sums(infos,
-                                   episode_sums,
-                                   dones,
-                                   max_episode_length):
-    if dones.any():
-        for key, val in episode_sums.items():
-            infos['episode'][key] = torch.mean(episode_sums[key][dones]) \
-                                            / max_episode_length
-            episode_sums[key][dones] = 0.
+class Logger:
+    def __init__(self, path):
+        self.path = path
+        self.log = {}
+
+    def log_to_wandb(self):
+        print("empty")
+    
+    def add_log(self, log_dict):
+        self.log.update(log_dict)
+
+    def print_to_terminal(self):
+        print("Bingo!")
+
