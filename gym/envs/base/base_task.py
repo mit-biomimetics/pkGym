@@ -71,7 +71,7 @@ class BaseTask():
                                               device=self.device,
                                               dtype=torch.long)
         self.timed_out = torch.zeros(self.num_envs,
-                                        device=self.device, dtype=torch.bool)
+                                    device=self.device, dtype=torch.bool)
 
         self.extras = {}
 

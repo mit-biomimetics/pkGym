@@ -2,7 +2,7 @@ from time import time
 import numpy as np
 import os
 
-from isaacgym.torch_utils import *
+from isaacgym.torch_utils import to_torch
 from isaacgym import gymtorch, gymapi, gymutil
 
 import torch
@@ -10,7 +10,8 @@ from typing import Tuple, Dict
 from gym.utils.math import *
 from gym.envs import LeggedRobot
 
-END_EFFECTOR = ["left_hand", "right_hand", "left_toe", "left_heel", "right_toe", "right_heel"]
+END_EFFECTOR = ["left_hand", "right_hand", "left_toe", "left_heel",
+                "right_toe", "right_heel"]
 
 class MIT_Humanoid(LeggedRobot):
     def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
@@ -18,7 +19,8 @@ class MIT_Humanoid(LeggedRobot):
         # get end_effector IDs for forward kinematics
         body_ids = []
         for body_name in END_EFFECTOR:
-            body_id = self.gym.find_actor_rigid_body_handle(self.envs[0], self.actor_handles[0], body_name)
+            body_id = self.gym.find_actor_rigid_body_handle(self.envs[0],
+                                            self.actor_handles[0], body_name)
             body_ids.append(body_id)
         self.end_eff_ids = to_torch(body_ids, device=self.device,
                                     dtype=torch.long)
@@ -32,18 +34,12 @@ class MIT_Humanoid(LeggedRobot):
 
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity w. squared exp
-        return self._sqrdexp(self.base_lin_vel[:, 2] *self.scales["base_lin_vel"])
-
-
-    def _reward_tracking_ang_vel(self):
-        # Tracking of angular velocity commands (yaw)
-        ang_vel_error = torch.square((self.commands[:, 2] - self.base_ang_vel[:, 2])*2/torch.pi)
-        return self._sqrdexp(-ang_vel_error * self.scales['base_ang_vel'])
-
+        return self._sqrdexp(self.base_lin_vel[:, 2]
+                             * self.scales["base_lin_vel"])
 
     def _reward_orientation(self):
         # Penalize non flat base orientation
-        return torch.sum(self._sqrdexp(torch.square( 
+        return torch.sum(self._sqrdexp(torch.square(
                          self.projected_gravity[:, :2])), dim=1)
 
     def _reward_min_base_height(self):
@@ -66,9 +62,9 @@ class MIT_Humanoid(LeggedRobot):
 
     def _reward_dof_vel(self):
         # Penalize dof velocities
-        return torch.sum(self._sqrdexp(self.dof_vel  
-                            * self.scales['dof_vel']), dim=1)
+        return torch.sum(self._sqrdexp(self.dof_vel * self.scales['dof_vel']),
+                         dim=1)
 
     def _reward_dof_near_home(self):
-        return torch.sum(self._sqrdexp((self.dof_pos - self.default_dof_pos) 
-                                        * self.scales['dof_pos_obs']), dim=1)
+        return torch.sum(self._sqrdexp((self.dof_pos - self.default_dof_pos)
+                                       * self.scales['dof_pos_obs']), dim=1)

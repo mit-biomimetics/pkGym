@@ -10,8 +10,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         episode_length_s = 15.
 
     class terrain(MiniCheetahCfg.terrain):
-        curriculum = False
-        mesh_type = 'plane'
+        pass
 
     class init_state(MiniCheetahCfg.init_state):
         """
@@ -38,7 +37,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
             "rh_kfe": 1.596976,
         }
 
-        reset_mode = "reset_to_range" 
+        reset_mode = "reset_to_basic" 
         # reset setup chooses how the initial conditions are chosen. 
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
@@ -117,16 +116,6 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
 
         base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.3
-
-    class commands(MiniCheetahCfg.commands):
-        resampling_time = 4.
-        curriculum = True
-        max_curriculum_x = 4.
-        max_curriculum_ang = 2.5
-        class ranges(MiniCheetahCfg.commands.ranges):
-            lin_vel_x = [-1., 2.]  # min max [m/s]
-            lin_vel_y = 1.   # max [m/s]
-            yaw_vel = 3.14/2.    # max [rad/s]
 
     class scaling(MiniCheetahCfg.scaling):
         pass

@@ -7,11 +7,7 @@ class CartpoleCfg(FixedRobotCfg):
         num_envs = 1024
         num_actuators = 1  # 1 for the cart force
         episode_length_s = 10
-        
     class terrain(FixedRobotCfg.terrain):
-        # curriculum = False
-        # mesh_type = 'plane'
-        # measure_heights = False
         pass
 
     class init_state(FixedRobotCfg.init_state):

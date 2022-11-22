@@ -63,17 +63,6 @@ class LeggedRobotCfg(BaseConfig):
         # trimesh only:
         slope_treshold = 0.75 # slopes above this threshold will be corrected to vertical surfaces
 
-    class commands:
-        curriculum = False
-        max_curriculum = 1.
-        num_commands = 3  # default: lin_vel_x, lin_vel_y, yaw_vel
-        resampling_time = 10.  # time before command are changed[s]
-
-        class ranges:
-            lin_vel_x = [-1.0, 1.0]  # min max [m/s]
-            lin_vel_y = 1.  # max [m/s]
-            yaw_vel = 1    # max [rad/s]
-
     class init_state:
 
         # * target state when action = 0, also reset positions for basic mode

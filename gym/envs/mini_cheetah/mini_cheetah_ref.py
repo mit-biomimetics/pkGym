@@ -42,23 +42,12 @@ class MiniCheetahRef(MiniCheetah):
 
 
     def _post_physics_step(self):
-        """ Callback called before computing terminations, rewards, and
-         observations, phase-dynamics.
-            Default behaviour: Compute ang vel command based on target and
-             heading, compute measured terrain heights and randomly push robots
-        """
+        """ Update all states that are not handled in PhysX """
+
         super()._post_physics_step()
         self.phase = torch.fmod(self.phase+self.dt*self.omega, 2*torch.pi)
-
-    def _resample_commands(self, env_ids):
-        """ Randommly select commands of some environments
-
-        Args:
-            env_ids (List[int]): Environments ids for which new commands are needed
-        """
-        super()._resample_commands(env_ids)
-        # * with 10% chance, reset to 0 commands
-        self.commands[env_ids, :3] *= (torch_rand_float(0, 1, (len(env_ids), 1), device=self.device).squeeze(1) < 0.9).unsqueeze(1)
+        self.phase_obs = torch.cat((torch.sin(self.phase),
+                                    torch.cos(self.phase)), dim=1)
 
 
     def _switch(self):
@@ -69,7 +58,8 @@ class MiniCheetahRef(MiniCheetah):
 
     def _reward_swing_grf(self):
         # Reward non-zero grf during swing (0 to pi)
-        in_contact = torch.gt(torch.norm(self.contact_forces[:, self.feet_indices, :], dim=-1), 50.)
+        in_contact = torch.gt(torch.norm(self.contact_forces[:,
+                                            self.feet_indices, :], dim=-1), 50.)
         ph_off = torch.lt(self.phase, torch.pi)
         rew = in_contact*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1)
         return -torch.sum(rew.float(), dim=1)*(1-self._switch())
@@ -121,7 +111,5 @@ class MiniCheetahRef(MiniCheetah):
     def _reward_tracking_lin_vel(self):
         # Tracking linear velocity commands (xy axes)
         # just use lin_vel?
-        error = self.commands[:, :2] - self.base_lin_vel[:, :2]
-        # * scale by (1+|cmd|): if cmd=0, no scaling.
-        error *= 1./(1. + torch.abs(self.commands[:, :2]))
-        return torch.sum(self._sqrdexp(error), dim=1) * (1-self._switch())
+        reward = super()._reward_tracking_lin_vel()
+        return reward * (1-self._switch())
