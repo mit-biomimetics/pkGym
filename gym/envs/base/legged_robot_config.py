@@ -178,9 +178,7 @@ class LeggedRobotRunnerCfg(BaseConfig):
     runner_class_name = 'OnPolicyRunner'
 
     class logging():
-        enable_wandb = True
         enable_local_saving = True
-
 
     class policy:
         init_noise_std = 1.0

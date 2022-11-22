@@ -116,7 +116,6 @@ class FixedRobotCfgPPO(BaseConfig):
     runner_class_name = 'OnPolicyRunner'
 
     class logging():
-        enable_wandb = False
         enable_local_saving = True
 
     class policy:
