@@ -29,6 +29,7 @@
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
 from gym import LEGGED_GYM_ROOT_DIR, LEGGED_GYM_ENVS_DIR
+from .base.base_task import BaseTask
 from .base.legged_robot import LeggedRobot
 from .mit_humanoid.mit_humanoid import MIT_Humanoid
 from .mit_humanoid.mit_humanoid_config import (MITHumanoidCfg,
