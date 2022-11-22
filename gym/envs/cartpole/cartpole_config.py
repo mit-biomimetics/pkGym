@@ -5,8 +5,9 @@ class CartpoleCfg(FixedRobotCfg):
 
     class env(FixedRobotCfg.env):
         num_envs = 1024
-        num_actions = 1  # 1 for the cart force
+        num_actuators = 1  # 1 for the cart force
         episode_length_s = 10
+        
     class terrain(FixedRobotCfg.terrain):
         # curriculum = False
         # mesh_type = 'plane'
@@ -34,11 +35,9 @@ class CartpoleCfg(FixedRobotCfg):
         stiffness = {'slider_to_cart': 10.}  # [N*m/rad]
         damping = {'slider_to_cart': 0.5}  # [N*m*s/rad]
 
-        control_type = "T"
         actuated_joints_mask = [1,  # slider_to_cart
                                 0]  # cart_to_pole
-        action_scale = 4.0
-
+        
         ctrl_frequency = 100
         desired_sim_frequency = 200
 
@@ -49,7 +48,6 @@ class CartpoleCfg(FixedRobotCfg):
 
         # Toggles to keep
         disable_gravity = False
-        disable_actions = False  # disable neural networks
         disable_motors = False  # all torques set to 0
 
     class reward_settings(FixedRobotCfg.reward_settings):
@@ -58,6 +56,10 @@ class CartpoleCfg(FixedRobotCfg):
     class scaling(FixedRobotCfg.scaling):
         dof_pos = [1/3., 1/torch.pi]
         dof_vel = [1/20., 1/(4*torch.pi)]
+
+        # Action scales
+        tau_ff = 10
+        dof_pos_target = 4
 
 class CartpoleRunnerCfg(FixedRobotCfgPPO):
     # We need random experiments to run
@@ -81,6 +83,8 @@ class CartpoleRunnerCfg(FixedRobotCfgPPO):
                      ]
 
         critic_obs = actor_obs
+
+        actions = ["tau_ff"]
         class noise:
             noise = 0.1  # implement as needed, also in your robot class
             cart_pos = 0.001

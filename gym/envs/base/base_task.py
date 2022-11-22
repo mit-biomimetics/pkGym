@@ -58,7 +58,7 @@ class BaseTask():
             self.graphics_device_id = -1
 
         self.num_envs = cfg.env.num_envs
-        self.num_actions = cfg.env.num_actions
+        self.num_actuators = cfg.env.num_actuators
 
         # optimization flags for pytorch JIT
         torch._C._jit_set_profiling_mode(False)
@@ -90,15 +90,32 @@ class BaseTask():
                 self.viewer, gymapi.KEY_V, "toggle_viewer_sync")
 
 
-    def get_obs(self, obs_list):
+    def get_states(self, obs_list):
         return torch.cat([self.get_state(obs) for obs in obs_list], dim=-1)
 
 
     def get_state(self, name):
         if name in self.scales.keys():
-            return getattr(self, name)*self.scales[name]
+            return getattr(self, name)/self.scales[name]
         else:
             return getattr(self, name)
+
+    def set_states(self, state_list, values):
+        idx = 0
+        for state in state_list:
+            state_dim = getattr(self, state).shape[1]
+            self.set_state(state, values[:, idx:idx+state_dim])
+            idx += state_dim
+        assert(idx == values.shape[1]), "Actions don't equal tensor shapes"
+
+    def set_state(self, name, value):
+        try:
+            if name in self.scales.keys():
+                setattr(self, name, value*self.scales[name])
+            else:
+                setattr(self, name, value)
+        except AttributeError:
+            print("Value for " + name + " does not match tensor shape")
 
 
     def _reset_idx(self, env_ids):
@@ -109,7 +126,7 @@ class BaseTask():
     def reset(self):
         """ Reset all robots"""
         self._reset_idx(torch.arange(self.num_envs, device=self.device))
-        self.step(torch.zeros(self.num_envs, self.num_actions, device=self.device, requires_grad=False))
+        self.step()
 
 
     def _reset_buffers(self):
@@ -120,11 +137,14 @@ class BaseTask():
         reward_weights: dict with keys matching reward names, and values matching weights
         modifier: additional weight applied to all weights
         '''
+        not_terminated = self.reset_buf&self.timed_out|~self.reset_buf
         reward = torch.zeros(self.num_envs,
                               device=self.device, dtype=torch.float)
         for name, weight in reward_weights.items():
-            reward += weight*self._eval_reward(name)
-        # reward *= ~self.reset_buf  # ? do we want to have this?
+            if "termination" in name:                
+                reward += weight*self._eval_reward(name)
+            else:
+                reward += weight*self._eval_reward(name)*not_terminated
         return modifier*reward
 
 

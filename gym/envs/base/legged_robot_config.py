@@ -33,7 +33,7 @@ from .base_config import BaseConfig
 class LeggedRobotCfg(BaseConfig):
     class env:
         num_envs = 4096
-        num_actions = 12
+        num_actuators = 12
         env_spacing = 3.  # not used with heightfields/trimeshes 
         send_timeouts = True  # send time out information to the algorithm
         episode_length_s = 20  # episode length in seconds
@@ -110,14 +110,12 @@ class LeggedRobotCfg(BaseConfig):
                           [-0.1, 0.1]]  # yaw
 
     class control:
-        control_type = 'P' # P: position, V: velocity, T: torques
         # PD Drive parameters:
         stiffness = {'joint_a': 10.0, 'joint_b': 15.}  # [N*m/rad]
         damping = {'joint_a': 1.0, 'joint_b': 1.5}     # [N*m*s/rad]
-        # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = 0.5
-        # decimation: Number of control action updates @ sim DT per policy DT
-        exp_avg_decay = None
+        
+        q_des_decay = None
+        
         ctrl_frequency = 100
         desired_sim_frequency = 200
 
@@ -127,7 +125,6 @@ class LeggedRobotCfg(BaseConfig):
         penalize_contacts_on = []
         terminate_after_contacts_on = []
         disable_gravity = False
-        disable_actions = False
         disable_motors = False
         collapse_fixed_joints = True  # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
         fix_base_link = False  # fixe the base of the robot
@@ -164,8 +161,11 @@ class LeggedRobotCfg(BaseConfig):
 
     class scaling:
         commands = 1
-
-
+        # Action scales
+        tau_ff = 1  # scale by torque limits
+        dof_pos = 1
+        dof_pos_obs = dof_pos
+        dof_pos_target = dof_pos  # scale by range of motion
 
     # viewer camera:
     class viewer:
@@ -197,6 +197,7 @@ class LeggedRobotRunnerCfg(BaseConfig):
                      "observation_y",
                      "critic_obs_can_be_the_same_or_different_than_actor_obs"]
 
+        actions = ["q_des"]                  
         class noise:
             dof_pos_obs = 0.01
             dof_vel = 1.5

@@ -32,9 +32,9 @@ from gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotRunnerC
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 6000
+        num_envs = 4000
         num_observations = 49+3*18  # 121
-        num_actions = 18
+        num_actuators = 18
         episode_length_s = 100  # episode length in seconds
         num_privileged_obs = num_observations
 
@@ -150,12 +150,10 @@ class MITHumanoidCfg(LeggedRobotCfg):
                    'elbow': 5.,
                     }  # [N*m*s/rad]     # [N*m*s/rad]
 
-        # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = 1.
         # * exponential average decay for action scale
-        exp_avg_decay = None  # set to None to disable
+        dof_pos_decay = None  # set to None to disable
         ctrl_frequency = 100
-        desired_sim_frequency = 200
+        desired_sim_frequency = 800
 
     class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_friction = True
@@ -177,7 +175,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
         # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
         disable_gravity = False
-        disable_actions = False
         disable_motors = False
 
     class reward_settings(LeggedRobotCfg.reward_settings):
@@ -191,14 +188,20 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
     class scaling(LeggedRobotCfg.scaling):
         # * dimensionless time: sqrt(L/g) or sqrt(I/[mgL]), with I=I0+mL^2
-        dimless_time = (0.7/9.81)**0.5
-        virtual_leg = 0.65
-        base_height = 1./virtual_leg
-        base_lin_vel = 1./virtual_leg 
-        base_ang_vel = 1./3.14*dimless_time
-        dof_pos_obs = 1./3.14
-        dof_vel = 0.05  # ought to be roughly max expected speed.
-        height_measurements = 1./virtual_leg
+        virtual_leg_length = 0.65
+        dimensionless_time = (virtual_leg_length/9.81)**0.5
+        base_height = virtual_leg_length
+        base_lin_vel = virtual_leg_length/dimensionless_time
+        base_ang_vel = 3.14/dimensionless_time
+        dof_vel = 20  # ought to be roughly max expected speed.
+        height_measurements = virtual_leg_length
+
+        # todo check order of joints, create per-joint scaling
+        dof_pos = 3.14
+        dof_pos_obs = dof_pos
+        # Action scales
+        dof_pos_target = dof_pos
+        tau_ff = 0.1
 
 class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
     seed = -1
@@ -216,9 +219,13 @@ class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
                      "projected_gravity",
                      "commands",
                      "dof_pos_obs",
-                     "dof_vel"]
+                     "dof_vel",
+                     "dof_pos_history"]
 
         critic_obs = actor_obs
+
+        actions = ["dof_pos_target"]
+
         class noise:
             base_height = 0.05
             dof_pos_obs = 0.0
@@ -236,7 +243,7 @@ class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
                 orientation = 1.5
                 torques = 5.e-6
                 min_base_height = 1.5
-                action_rate = 0.1
+                action_rate = 0.01
                 action_rate2 = 0.001
                 lin_vel_z = 0.
                 ang_vel_xy = 0.0

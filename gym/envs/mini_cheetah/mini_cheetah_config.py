@@ -6,7 +6,7 @@ BASE_HEIGHT_REF = 0.33
 class MiniCheetahCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         num_envs = 2**12
-        num_actions = 12
+        num_actuators = 12
         episode_length_s = 10.
 
     class terrain(LeggedRobotCfg.terrain):
@@ -83,18 +83,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
 
-        # Control type
-        control_type = "P"  # "Td"
-
-        # action scale: target angle = actionScale * action + defaultAngle
-        if control_type == "T":
-            action_scale = 20 * 0.5
-        elif control_type == "Td":
-            action_scale = 4.0 # 1e-2 # stiffness['haa'] * 0.5
-        else:
-            action_scale = 0.25 # 0.5
-
-        exp_avg_decay = 0.35  # set to None to disable
+        dof_pos_decay = 0.35  # set to None to disable
 
         ctrl_frequency = 100
         desired_sim_frequency = 200
@@ -118,7 +107,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
         self_collisions = 1  # added blindly from the AnymalCFlatCFG.  1 to disable, 0 to enable...bitwise filter
         flip_visual_attachments = False
         disable_gravity = False
-        disable_actions = False  # disable neural networks
         disable_motors = False  # all torques set to 0
 
     class reward_settings(LeggedRobotCfg.reward_settings):
@@ -141,12 +129,16 @@ class MiniCheetahCfg(LeggedRobotCfg):
             heading = 0.
 
     class scaling(LeggedRobotCfg.scaling):
-        base_ang_vel = 1./3.14*(BASE_HEIGHT_REF/9.81)**0.5
+        base_ang_vel = 3.14*(BASE_HEIGHT_REF/9.81)**0.5
         base_lin_vel = 1.
         commands = 1
-        dof_vel = 0.01  # ought to be roughly max expected speed.
+        dof_vel = 100.  # ought to be roughly max expected speed.
         base_height = BASE_HEIGHT_REF
-        dof_pos_obs = 4*[10., 1., 0.5]
+        dof_pos = 4*[0.1, 1., 2]  # hip-abad, hip-pitch, knee
+        dof_pos_obs = dof_pos
+        # Action scales
+        dof_pos_target = dof_pos
+        tau_ff = 4*[18, 18, 28]  # hip-abad, hip-pitch, knee
 
 
 class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
@@ -168,7 +160,7 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
                      "commands",
                      "dof_pos_obs",
                      "dof_vel",
-                     "ctrl_hist",
+                     "dof_pos_history",
                      ]
 
         critic_obs = ["base_height",
@@ -178,9 +170,10 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
                       "commands",
                       "dof_pos_obs",
                       "dof_vel",
-                      "ctrl_hist",
+                      "dof_pos_history",
                       ]
 
+        actions = ["dof_pos_target"]
         class noise:
             dof_pos_obs = 0.005  # can be made very low
             dof_vel = 0.005

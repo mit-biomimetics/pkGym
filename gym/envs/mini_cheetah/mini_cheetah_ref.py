@@ -35,7 +35,7 @@ class MiniCheetahRef(MiniCheetah):
 
     def _reset_system(self, env_ids):
         super()._reset_system(env_ids)
-        self.action_avg[env_ids] = 0.
+        self.dof_pos_avg[env_ids] = 0.
         self.phase[env_ids] = torch_rand_float(0, torch.pi,
                                                shape=self.phase[env_ids].shape,
                                                device=self.device)
