@@ -18,7 +18,7 @@ def is_wandb_enabled(args):
     return enable_wandb
 
 
-def wandb_setup(policy_runner, args):
+def setup_wandb(policy_runner, args):
     experiment_name = f'{args.task}'
 
     wandb.config = {}
@@ -38,7 +38,7 @@ def wandb_setup(policy_runner, args):
 
 
 # close WandB process after training has finished
-def wandb_close(args):
+def close_wandb(args):
     # close WandB after learning is done
     if is_wandb_enabled(args):
         wandb.finish()

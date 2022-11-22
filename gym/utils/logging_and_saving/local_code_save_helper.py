@@ -12,7 +12,7 @@ def log_and_save(env, env_cfg, train_cfg, runner, args):
 
     # setup WandB if enabled
     if wandb_helper.is_wandb_enabled(args):
-        wandb_helper.wandb_setup(runner, args)
+        wandb_helper.setup_wandb(runner, args)
 
 
 # check if enable_local_saving is set to true in the training_config
