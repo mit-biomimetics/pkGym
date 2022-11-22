@@ -56,10 +56,10 @@ class CartpoleCfg(FixedRobotCfg):
     class scaling(FixedRobotCfg.scaling):
         dof_pos = [1/3., 1/torch.pi]
         dof_vel = [1/20., 1/(4*torch.pi)]
-        
+
         # Action scales
         tau_ff = 10
-        dof_pos_target = 0.25 
+        dof_pos_target = 4
 
 class CartpoleRunnerCfg(FixedRobotCfgPPO):
     # We need random experiments to run

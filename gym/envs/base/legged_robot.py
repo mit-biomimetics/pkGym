@@ -335,7 +335,7 @@ class LeggedRobot(BaseTask):
         Returns:
             [torch.Tensor]: Torques sent to the simulation
         """
-        
+
         if self.cfg.control.dof_pos_decay:
             self.dof_pos_avg = exp_avg_filter(self.dof_pos_target, self.dof_pos_avg,
                                             self.cfg.control.dof_pos_decay)
@@ -343,15 +343,12 @@ class LeggedRobot(BaseTask):
         else:
             dof_pos_target = self.dof_pos_target
 
-        dof_pos_action_scale = self.scales["dof_pos_target"]
-        tau_ff_action_scale = self.scales["tau_ff"]
-        torques = self.p_gains*(dof_pos_target * dof_pos_action_scale
-                    + self.default_dof_pos - self.dof_pos) \
+        torques = self.p_gains*(dof_pos_target + self.default_dof_pos
+                                - self.dof_pos) \
                     + self.d_gains*(self.dof_vel_target - self.dof_vel) \
-                    + self.tau_ff*tau_ff_action_scale
-                      
-        return torch.clip(torques, -self.torque_limits, 
-                          self.torque_limits).view(self.torques.shape)
+                    + self.tau_ff
+        torques = torch.clip(torques, -self.torque_limits, self.torque_limits)
+        return torques.view(self.torques.shape)
 
 
     def _reset_system(self, env_ids):
@@ -469,7 +466,7 @@ class LeggedRobot(BaseTask):
                                 device=self.device).repeat((self.num_envs, 1))
         self.forward_vec = to_torch([1., 0., 0.],
                                 device=self.device).repeat((self.num_envs, 1))
-        
+
         self.torques = torch.zeros(self.num_envs, self.num_actuators,
                                    dtype=torch.float, device=self.device,
                                    requires_grad=False)
@@ -486,7 +483,7 @@ class LeggedRobot(BaseTask):
         self.tau_ff = torch.zeros(self.num_envs, self.num_actuators,
                                    dtype=torch.float, device=self.device,
                                    requires_grad=False)
-                
+
         self.dof_pos_history = torch.zeros(self.num_envs, self.num_actuators*3,
                                      dtype=torch.float, device=self.device,
                                      requires_grad=False)

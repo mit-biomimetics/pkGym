@@ -12,9 +12,9 @@ class FixedRobotCfg(BaseConfig):
 
     class terrain:
         mesh_type = 'none'
-        horizontal_scale = 0.1 # [m]
-        vertical_scale = 0.005 # [m]
-        border_size = 25 # [m]
+        horizontal_scale = 0.1  # [m]
+        vertical_scale = 0.005  # [m]
+        border_size = 25  # [m]
         static_friction = 1.0
         dynamic_friction = 1.0
         restitution = 0.
@@ -71,19 +71,18 @@ class FixedRobotCfg(BaseConfig):
         armature = 0.
         thickness = 0.01
     class reward_settings:
-        tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
-        soft_dof_pos_limit = 1. # percentage of urdf limits, values above this limit are penalized
+        tracking_sigma = 0.25  # tracking reward = exp(-error^2/sigma)
+        soft_dof_pos_limit = 1.  # percentage of urdf limits, values above this limit are penalized
         soft_dof_vel_limit = 1.
         soft_torque_limit = 1.  # ! may want to turn this off
 
     class scaling:
-        commands = 1
         dof_pos = 1.
         dof_vel = 1.
-        
+
         # Action scales
         tau_ff = 10
-        dof_pos_target = 0.25 
+        dof_pos_target = 0.25
 
     # viewer camera:
     class viewer:
