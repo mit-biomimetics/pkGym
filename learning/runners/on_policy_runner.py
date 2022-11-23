@@ -34,7 +34,6 @@ import shutil
 from collections import deque
 from statistics import mean
 
-from torch.utils.tensorboard import SummaryWriter
 import wandb
 import torch
 import numpy as np
@@ -100,7 +99,6 @@ class OnPolicyRunner:
         self.SE_path = os.path.join(self.log_dir, 'SE')   # log_dir for SE
         self.wandb = None
         self.do_wandb = False
-        self.writer = None
         self.tot_timesteps = 0
         self.tot_time = 0
         self.current_learning_iteration = 0
@@ -233,7 +231,7 @@ class OnPolicyRunner:
             self.learn_time = stop - start
             self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
             self.tot_time += self.collection_time + self.learn_time
-            self.log()
+            self.log(it)
 
             if it % self.save_interval == 0:
                 self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(it)))
@@ -309,31 +307,43 @@ class OnPolicyRunner:
         self.cur_episode_length += 1
         new_ids = (dones > 0).nonzero(as_tuple=False)
         for name in self.current_episode_rewards.keys():
-            self.rewbuffer[name].extend(self.current_episode_rewards[name][new_ids])
+            self.rewbuffer[name].extend(self.current_episode_rewards[name]
+                                        [new_ids][:, 0].cpu().numpy().tolist())
             self.current_episode_rewards[name][new_ids] = 0.
-
-        self.lenbuffer.extend(self.cur_episode_length[new_ids])
+        self.lenbuffer.extend(self.cur_episode_length[new_ids]
+                              [:, 0].cpu().numpy().tolist())
         self.cur_episode_length[new_ids] = 0
         if (len(self.lenbuffer) > 0):
             self.calculate_reward_avg()
 
     def calculate_reward_avg(self):
         self.mean_episode_length = mean(self.lenbuffer)
-        self.mean_rewards = {name:  mean(self.rewbuffer[name])
+        self.mean_rewards = {"Episode/"+name:  mean(self.rewbuffer[name])
                         for name in  self.current_episode_rewards.keys()} 
         self.total_mean_reward = mean(list(self.mean_rewards.values()))
 
 
-    def log(self):
+    def log(self, it):
+        fps = int(self.num_steps_per_env * self.env.num_envs \
+                  / (self.collection_time+self.learn_time))
+        mean_noise_std = self.alg.actor_critic.std.mean().item()
         self.logger.add_log(self.mean_rewards)
-        self.logger.add_log({"total_timesteps": self.tot_timesteps,
-                             "iteration_time": self.collection_time+self.learn_time,
-                             "total_time": self.tot_time
+        self.logger.add_log({
+                             "Loss/value_function" : self.mean_value_loss,
+                             "Loss/surrogate" : self.mean_surrogate_loss,
+                             "Loss/learning_rate": self.alg.learning_rate,
+                             "Policy/mean_noise_std" : mean_noise_std,
+                             "Perf/total_fps": fps,
+                             "Perf/collection_time": self.collection_time,
+                             "Perf/learning_time" : self.learn_time,
+                             "Train/mean_reward" : self.total_mean_reward,
+                             "Train/mean_episode_length" : self.mean_episode_length,
+                             "Train/total_timesteps": self.tot_timesteps,
+                             "Train/iteration_time": self.collection_time+self.learn_time,
+                             "Train/time": self.tot_time,
+                             "Train/iterations": it
                              })
-                            #self.mean_value_loss, self.mean_surrogate_loss
-                            #self.alg.actor_critic_std.mean().item()
-                            #self.alg.learning_rate
-        fps = int(self.num_steps_per_env * self.env.num_envs / (self.collection_time+self.learn_time))
+                        
         #TODO: iterate through the config for any extra things you might want to log
 
     def get_dones(self):

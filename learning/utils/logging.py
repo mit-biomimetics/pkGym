@@ -10,6 +10,7 @@ class Logger:
     
     def add_log(self, log_dict):
         self.log.update(log_dict)
+        print(self.log)
 
     def print_to_terminal(self):
         print("Bingo!")
