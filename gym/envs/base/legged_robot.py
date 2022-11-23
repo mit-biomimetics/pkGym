@@ -148,8 +148,15 @@ class LeggedRobot(BaseTask):
         self.dof_pos_history[:, 2*nact:] = self.dof_pos_history[:, nact:2*nact]
         self.dof_pos_history[:, nact:2*nact] = self.dof_pos_history[:, :nact]
         self.dof_pos_history[:, :nact] = self.dof_pos_target
-
         self.dof_pos_obs = (self.dof_pos - self.default_dof_pos)
+
+        env_ids = (self.episode_length_buf
+                   % int(self.cfg.commands.resampling_time / self.dt)==0)
+        self._resample_commands(env_ids.nonzero(as_tuple=False).flatten())
+        if self.cfg.push_robots:
+            if (self.common_step_counter
+                % self.cfg.push_interval == 0):
+                    self._push_robots()
 
 
     def _check_termination(self):
@@ -173,6 +180,7 @@ class LeggedRobot(BaseTask):
 
         # reset robot states
         self._reset_system(env_ids)
+        self._resample_commands(env_ids)
         # reset buffers
         self.dof_pos_history[env_ids] = 0.
         self.episode_length_buf[env_ids] = 0
@@ -196,6 +204,30 @@ class LeggedRobot(BaseTask):
         self._create_envs()
 
 
+    def _resample_commands(self, env_ids):
+        """ Randommly select commands of some environments
+
+        Args:
+            env_ids (List[int]): Environments ids for which new commands are needed
+        """
+        self.commands[env_ids, 0] = torch_rand_float(self.command_ranges["lin_vel_x"][0],
+                                                     self.command_ranges["lin_vel_x"][1],
+                                                     (len(env_ids), 1),
+                                                     device=self.device).squeeze(1)
+        self.commands[env_ids, 1] = torch_rand_float(-self.command_ranges["lin_vel_y"],
+                                                     self.command_ranges["lin_vel_y"],
+                                                     (len(env_ids), 1),
+                                                     device=self.device).squeeze(1)
+        max_yaw_vel = self.command_ranges["yaw_vel"]
+        self.commands[env_ids, 2] = torch_rand_float(-max_yaw_vel,
+                                                     max_yaw_vel,
+                                                     (len(env_ids), 1),
+                                                     device=self.device).squeeze(1)
+
+        # set small commands to zero
+        self.commands[env_ids, :2] *= (torch.norm(self.commands[env_ids, :2], dim=1) > 0.2).unsqueeze(1)
+
+
     def _set_camera(self, position, lookat):
         """ Set camera position and direction
         """
@@ -204,7 +236,6 @@ class LeggedRobot(BaseTask):
         self.gym.viewer_camera_look_at(self.viewer, None, cam_pos, cam_target)
 
 
-    #------------- Callbacks --------------
     def _process_rigid_shape_props(self, props, env_id):
         """ Callback allowing to store/change/randomize the rigid shape properties of each environment.
             Called During environment creation.
@@ -218,12 +249,15 @@ class LeggedRobot(BaseTask):
             [List[gymapi.RigidShapeProperties]]: Modified rigid shape properties
         """
         if self.cfg.domain_rand.randomize_friction:
-            if env_id==0:
+            if env_id == 0:
                 # prepare friction randomization
                 friction_range = self.cfg.domain_rand.friction_range
                 num_buckets = 64
                 bucket_ids = torch.randint(0, num_buckets, (self.num_envs, 1))
-                friction_buckets = torch_rand_float(friction_range[0], friction_range[1], (num_buckets,1), device='cpu')
+                friction_buckets = torch_rand_float(friction_range[0],
+                                                    friction_range[1],
+                                                    (num_buckets, 1),
+                                                    device='cpu')
                 self.friction_coeffs = friction_buckets[bucket_ids]
 
             for s in range(len(props)):
@@ -244,9 +278,17 @@ class LeggedRobot(BaseTask):
             [numpy.array]: Modified DOF properties
         """
         if env_id==0:
-            self.dof_pos_limits = torch.zeros(self.num_dof, 2, dtype=torch.float, device=self.device, requires_grad=False)
-            self.dof_vel_limits = torch.zeros(self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
-            self.torque_limits = torch.zeros(self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
+            self.dof_pos_limits = torch.zeros(self.num_dof, 2,
+                                              dtype=torch.float,
+                                              device=self.device,
+                                              requires_grad=False)
+            self.dof_vel_limits = torch.zeros(self.num_dof, dtype=torch.float,
+                                              device=self.device,
+                                              requires_grad=False)
+            self.torque_limits = torch.zeros(self.num_dof, dtype=torch.float,
+                                             device=self.device,
+                                             requires_grad=False)
+
             for i in range(len(props)):
                 self.dof_pos_limits[i, 0] = props["lower"][i].item()
                 self.dof_pos_limits[i, 1] = props["upper"][i].item()
@@ -287,8 +329,9 @@ class LeggedRobot(BaseTask):
         """
 
         if self.cfg.control.dof_pos_decay:
-            self.dof_pos_avg = exp_avg_filter(self.dof_pos_target, self.dof_pos_avg,
-                                            self.cfg.control.dof_pos_decay)
+            self.dof_pos_avg = exp_avg_filter(self.dof_pos_target,
+                                              self.dof_pos_avg,
+                                              self.cfg.control.dof_pos_decay)
             dof_pos_target = self.dof_pos_avg
         else:
             dof_pos_target = self.dof_pos_target
@@ -376,9 +419,12 @@ class LeggedRobot(BaseTask):
     def _push_robots(self):
         """ Random pushes the robots. Emulates an impulse by setting a randomized base velocity. 
         """
-        max_vel = self.cfg.domain_rand.max_push_vel_xy
-        self.root_states[:, 7:9] = torch_rand_float(-max_vel, max_vel, (self.num_envs, 2), device=self.device) # lin vel x/y
-        self.gym.set_actor_root_state_tensor(self.sim, gymtorch.unwrap_tensor(self.root_states))
+        max_vel = self.cfg.push_robots.max_push_vel_xy
+        self.root_states[:, 7:9] += torch_rand_float(-max_vel, max_vel,
+                                                     (self.num_envs, 2),
+                                                     device=self.device)
+        self.gym.set_actor_root_state_tensor(self.sim,
+                                gymtorch.unwrap_tensor(self.root_states))
 
     #----------------------------------------
     def _init_buffers(self):
@@ -624,13 +670,14 @@ class LeggedRobot(BaseTask):
         self.envs = []
         for i in range(self.num_envs):
             # create env instance
-            env_handle = self.gym.create_env(self.sim, env_lower, env_upper, int(np.sqrt(self.num_envs)))
+            env_handle = self.gym.create_env(self.sim, env_lower, env_upper,
+                                             int(np.sqrt(self.num_envs)))
             pos = self.env_origins[i].clone()
             pos[:2] += torch_rand_float(-1., 1., (2,1), device=self.device).squeeze(1)
             start_pose.p = gymapi.Vec3(*pos)
 
-            rigid_shape_props = self._process_rigid_shape_props(rigid_shape_props_asset, i)
-            self.gym.set_asset_rigid_shape_properties(robot_asset, rigid_shape_props)
+            # rigid_shape_props = self._process_rigid_shape_props(rigid_shape_props_asset, i)
+            # self.gym.set_asset_rigid_shape_properties(robot_asset, rigid_shape_props)
             name = self.cfg.asset.file
             name = name.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
             robot_handle = self.gym.create_actor(env_handle,
@@ -694,8 +741,10 @@ class LeggedRobot(BaseTask):
     def _parse_cfg(self, cfg):
         self.dt = self.cfg.control.ctrl_dt
         self.scales = class_to_dict(self.cfg.scaling, self.device)
+        self.command_ranges = class_to_dict(self.cfg.commands.ranges)
         self.max_episode_length_s = self.cfg.env.episode_length_s
         self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
+        self.cfg.push_interval = np.ceil(self.cfg.push_robots.interval_s / self.dt)
 
     def _init_height_points(self):
         """ Returns points at which the height measurments are sampled (in base frame)

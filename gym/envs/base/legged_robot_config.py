@@ -61,7 +61,20 @@ class LeggedRobotCfg(BaseConfig):
         # terrain types: [smooth slope, rough slope, stairs up, stairs down, discrete]
         terrain_proportions = [0.1, 0.1, 0.35, 0.25, 0.2]
         # trimesh only:
-        slope_treshold = 0.75 # slopes above this threshold will be corrected to vertical surfaces
+        slope_treshold = 0.75
+        # slopes above this threshold will be corrected to vertical surfaces
+
+    class commands:
+        resampling_time = 10.  # time before command are changed[s]
+        class ranges:
+            lin_vel_x = [-1.0, 1.0]  # min max [m/s]
+            lin_vel_y = 1.  # max [m/s]
+            yaw_vel = 1    # max [rad/s]
+
+    class push_robots:
+        toggle = True
+        interval_s = 15
+        max_push_vel_xy = 0.05
 
     class init_state:
 
@@ -135,16 +148,13 @@ class LeggedRobotCfg(BaseConfig):
         randomize_friction = False
         friction_range = [0.5, 1.25]
         randomize_base_mass = False
-        added_mass_range = [-1., 1.]
-        push_robots = False
-        push_interval_s = 15
-        max_push_vel_xy = 1.
+        added_mass_range = [-1., 1.]  # added to each link!
 
     class reward_settings:
         tracking_sigma = 0.25  # tracking reward = exp(-error^2/sigma)
         soft_dof_pos_limit = 1.  # percentage of urdf limits, values above this limit are penalized
         soft_dof_vel_limit = 1.
-        soft_torque_limit = 1.  # ! may want to turn this off
+        soft_torque_limit = 1.
         base_height_target = 1.
         max_contact_force = 100.  # forces above this value are penalized
 
