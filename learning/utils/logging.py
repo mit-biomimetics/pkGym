@@ -1,4 +1,6 @@
-import torch
+import pprint
+import wandb
+
 
 class Logger:
     def __init__(self, path):
@@ -6,12 +8,11 @@ class Logger:
         self.log = {}
 
     def log_to_wandb(self):
-        print("empty")
-    
+        wandb.log(self.log)
+
     def add_log(self, log_dict):
         self.log.update(log_dict)
-        print(self.log)
 
     def print_to_terminal(self):
         print("Bingo!")
-
+        pprint.pprint(self.log)

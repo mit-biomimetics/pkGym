@@ -28,6 +28,7 @@ def setup_wandb(policy_runner, args):
 
     wandb.init(project=args.wandb_project,
                entity=args.wandb_entity,
+               dir=os.path.join(LEGGED_GYM_ROOT_DIR, 'logs'),
                config=wandb.config,
                name=experiment_name)
 

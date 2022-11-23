@@ -232,6 +232,8 @@ class OnPolicyRunner:
             self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
             self.tot_time += self.collection_time + self.learn_time
             self.log(it)
+            self.logger.log_to_wandb()
+            self.logger.print_to_terminal()
 
             if it % self.save_interval == 0:
                 self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(it)))
