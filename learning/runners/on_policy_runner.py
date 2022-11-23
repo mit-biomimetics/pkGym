@@ -32,7 +32,7 @@ import time
 import os
 import shutil
 from collections import deque
-import statistics
+from statistics import mean
 
 from torch.utils.tensorboard import SummaryWriter
 import wandb
@@ -104,16 +104,22 @@ class OnPolicyRunner:
         self.tot_timesteps = 0
         self.tot_time = 0
         self.current_learning_iteration = 0
-        self.episode_sums = {name: torch.zeros(self.env.num_envs, dtype=torch.float,
+        self.current_episode_rewards = {name: torch.zeros(self.env.num_envs, dtype=torch.float,
                                                device=self.device,
                                                requires_grad=False)
                         for name in self.policy_cfg["reward"]["weights"].keys()}
-        self.episode_sums.update({name: torch.zeros(self.env.num_envs,
+        self.current_episode_rewards.update({name: torch.zeros(self.env.num_envs,
                                                dtype=torch.float,
                                                device=self.device,
                                                requires_grad=False)
-                        for name in self.policy_cfg["reward"]["termination_weight"].keys()})
-        self.avg_reward = {}
+                        for name in self.policy_cfg["reward"]["termination_weight"].keys()})      
+        self.cur_episode_length = torch.zeros(self.env.num_envs,
+                                         dtype=torch.float, device=self.device)
+        self.rewbuffer = {name:  deque(maxlen=100)
+                        for name in  self.current_episode_rewards.keys()}   
+        self.lenbuffer = deque(maxlen=100)
+                     
+
         self.logger = Logger(log_dir)
 
 
@@ -211,8 +217,9 @@ class OnPolicyRunner:
                     if self.cfg["algorithm_class_name"] == "PPO":
                         timed_out = self.get_timed_out()
                         self.alg.process_env_step(rewards, dones, timed_out)
-                    self.calc_avg_reward(dones)
-                    
+
+                    self.update_episode_buf(dones)
+
                 stop = time.time()
                 self.collection_time = stop - start
                 # * Learning step
@@ -291,33 +298,46 @@ class OnPolicyRunner:
             reward = self.env.compute_reward({name: weight},
                                              modifier).to(self.device)
             total_rewards += reward
-            self.log_reward(name, reward)
+            self.log_current_reward(name, reward)
         return total_rewards
 
-    def log_reward(self, name, reward):
-        if name in self.episode_sums:
-            self.episode_sums[name] += reward  
+    def log_current_reward(self, name, reward):
+        if name in self.current_episode_rewards.keys():
+            self.current_episode_rewards[name] += reward  
     
+    def update_episode_buf(self, dones):
+        self.cur_episode_length += 1
+        new_ids = (dones > 0).nonzero(as_tuple=False)
+        for name in self.current_episode_rewards.keys():
+            self.rewbuffer[name].extend(self.current_episode_rewards[name][new_ids])
+            self.current_episode_rewards[name][new_ids] = 0.
+
+        self.lenbuffer.extend(self.cur_episode_length[new_ids])
+        self.cur_episode_length[new_ids] = 0
+        if (len(self.lenbuffer) > 0):
+            self.calculate_reward_avg()
+
+    def calculate_reward_avg(self):
+        self.mean_episode_length = mean(self.lenbuffer)
+        self.mean_rewards = {name:  mean(self.rewbuffer[name])
+                        for name in  self.current_episode_rewards.keys()} 
+        self.total_mean_reward = mean(list(self.mean_rewards.values()))
+
+
     def log(self):
-        self.logger.add_log(self.avg_reward)
+        self.logger.add_log(self.mean_rewards)
         self.logger.add_log({"total_timesteps": self.tot_timesteps,
                              "iteration_time": self.collection_time+self.learn_time,
                              "total_time": self.tot_time
-                             ""})
-
-
+                             })
+                            #self.mean_value_loss, self.mean_surrogate_loss
+                            #self.alg.actor_critic_std.mean().item()
+                            #self.alg.learning_rate
+        fps = int(self.num_steps_per_env * self.env.num_envs / (self.collection_time+self.learn_time))
         #TODO: iterate through the config for any extra things you might want to log
-
-    def calc_avg_reward(self, dones):
-        if dones.any():
-            for key, val in self.episode_sums.items():
-                self.avg_reward[key] = torch.mean(self.episode_sums[key][dones]) \
-                                            / self.env.max_episode_length
-                self.episode_sums[key][dones] = 0.
 
     def get_dones(self):
         return self.env.reset_buf.to(self.device)
-
 
     def get_infos(self):
         return self.env.extras
