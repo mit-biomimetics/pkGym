@@ -10,10 +10,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         episode_length_s = 10.
 
     class terrain(LeggedRobotCfg.terrain):
-        curriculum = False
-        mesh_type = 'plane'  # added blindly from the AnymalCFlatCFG.
-        # 'trimesh' # from Nikita: use a triangle mesh instead of a height field
-        measure_heights = False  # added blindly from the AnymalCFlatCFG TODO: why this?
+        mesh_type = 'plane'
 
     class init_state(LeggedRobotCfg.init_state):
         """
@@ -116,17 +113,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
         max_contact_force = 600.
         base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.25
-
-    class commands(LeggedRobotCfg.commands):
-        heading_command = False
-        resampling_time = 4.
-        curriculum = True
-        max_curriculum = 3.
-        class ranges(LeggedRobotCfg.commands.ranges):
-            lin_vel_x = [0., 1.]  # min max [m/s]
-            lin_vel_y = 0.   # max [m/s]
-            yaw_vel = 0.  # max [rad/s]
-            heading = 0.
 
     class scaling(LeggedRobotCfg.scaling):
         base_ang_vel = 3.14*(BASE_HEIGHT_REF/9.81)**0.5

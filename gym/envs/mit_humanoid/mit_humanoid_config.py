@@ -39,30 +39,16 @@ class MITHumanoidCfg(LeggedRobotCfg):
         num_privileged_obs = num_observations
 
     class terrain(LeggedRobotCfg.terrain):
-        curriculum = False
-        mesh_type = 'plane'
-        measure_heights = False
+        pass
 
-    class commands(LeggedRobotCfg.commands):
-        curriculum = False
-        max_curriculum = 3.
-        num_commands = 4  # default: lin_vel_x, lin_vel_y, yaw_vel, heading (in heading mode yaw_vel is recomputed from heading error)
-        resampling_time = 10.  # time before command are changed[s]
-        heading_command = True  # if true: compute ang vel command from heading error
-        class ranges:
-            lin_vel_x = [0., 4.]  # min max [m/s]
-            lin_vel_y = 0.  # max [m/s]
-            yaw_vel = 0.  # max [rad/s]
-            heading = 0.
 
     class init_state(LeggedRobotCfg.init_state):
-        reset_mode = "reset_to_range" # default setup chooses how the initial conditions are chosen.
-                                # "reset_to_basic" = a single position with some randomized noise on top. 
-                                # "reset_to_range" = a range of joint positions and velocities.
-                                #  "reset_to_traj" = feed in a trajectory to sample from. 
+        reset_mode = "reset_to_range"
+        # default setup chooses how the initial conditions are chosen.
+        # "reset_to_basic" = a single position with some randomized noise on top.
+        # "reset_to_range" = a range of joint positions and velocities.
+        #  "reset_to_traj" = feed in a trajectory to sample from.
 
-        #default for normalization and basic initialization 
-        # -0.27, 0.638, -0.35;
         default_joint_angles = {  # = target angles [rad] when action = 0.0
             'left_hip_yaw': 0.,
             'left_hip_abad': 0.,

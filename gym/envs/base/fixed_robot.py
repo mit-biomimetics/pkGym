@@ -35,7 +35,6 @@ class FixedRobot(BaseTask):
         """
         self.cfg = cfg
         self.sim_params = sim_params
-        self.debug_viz = False
         self.init_done = False
         self.device = sim_device
         self._parse_cfg(self.cfg)
@@ -99,9 +98,8 @@ class FixedRobot(BaseTask):
 
 
     def _post_physics_step(self):
-        """ check terminations, compute observations and rewards
-            calls self._post_physics_step_callback() for common computations
-            calls self._draw_debug_vis() if needed
+        """
+        check terminations, compute observations and rewards
         """
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_net_contact_force_tensor(self.sim)
@@ -116,9 +114,6 @@ class FixedRobot(BaseTask):
 
         self.dof_pos_obs = (self.dof_pos-self.default_dof_pos)*self.scales["dof_pos"]
 
-        if self.viewer and self.enable_viewer_sync and self.debug_viz:
-            self._draw_debug_vis()
-
 
     def _check_termination(self):
         """
@@ -131,7 +126,6 @@ class FixedRobot(BaseTask):
     def _reset_idx(self, env_ids):
         """ Reset some environments.
             Calls self._reset_dofs(env_ids), self._reset_root_states(env_ids), and self._resample_commands(env_ids)
-            [Optional] calls self._update_terrain_curriculum(env_ids), self.update_command_curriculum(env_ids) and
             Logs episode info
             Resets some buffers
 
@@ -414,27 +408,29 @@ class FixedRobot(BaseTask):
         # * check that init range highs and lows are consistent
         # * and repopulate to match 
         if self.cfg.init_state.reset_mode == "reset_to_range":
-            self.dof_pos_range = torch.zeros(self.num_dof, 2,
-                                            dtype=torch.float,
-                                            device=self.device,
-                                            requires_grad=False)
-            self.dof_vel_range = torch.zeros(self.num_dof, 2,
-                                            dtype=torch.float,
-                                            device=self.device,
-                                            requires_grad=False)
+            self.initialize_ranges_for_initial_conditions()
 
-            for joint, vals in self.cfg.init_state.dof_pos_range.items():
-                for i in range(self.num_dof):
-                    if joint in self.dof_names[i]:
-                        self.dof_pos_range[i, :] = to_torch(vals,
-                                                            device=self.device)
+    def initialize_ranges_for_initial_conditions(self):
+        self.dof_pos_range = torch.zeros(self.num_dof, 2,
+                                         dtype=torch.float,
+                                         device=self.device,
+                                         requires_grad=False)
+        self.dof_vel_range = torch.zeros(self.num_dof, 2,
+                                         dtype=torch.float,
+                                         device=self.device,
+                                         requires_grad=False)
 
-            for joint, vals in self.cfg.init_state.dof_vel_range.items():
-                for i in range(self.num_dof):
-                    if joint in self.dof_names[i]:
-                        self.dof_vel_range[i, :] = to_torch(vals,
-                                                            device=self.device)
+        for joint, vals in self.cfg.init_state.dof_pos_range.items():
+            for i in range(self.num_dof):
+                if joint in self.dof_names[i]:
+                    self.dof_pos_range[i, :] = to_torch(vals,
+                                                        device=self.device)
 
+        for joint, vals in self.cfg.init_state.dof_vel_range.items():
+            for i in range(self.num_dof):
+                if joint in self.dof_names[i]:
+                    self.dof_vel_range[i, :] = to_torch(vals,
+                                                        device=self.device)
 
     def _create_ground_plane(self):
         """ Adds a ground plane to the simulation, sets friction and restitution based on the cfg.

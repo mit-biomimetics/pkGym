@@ -31,21 +31,15 @@ class KeyboardInterface():
 
         env.commands[:] = 0.
         # never resample
-        env.cfg.commands.resampling_time = env.max_episode_length + 1
-        self.max_vel_backward = env.cfg.commands.ranges.lin_vel_x[0]
-        self.max_vel_forward = env.cfg.commands.ranges.lin_vel_x[1]
+        self.max_vel_backward = -1.
+        self.max_vel_forward = 4.
         self.increment_x = (self.max_vel_forward-self.max_vel_backward)*0.1
 
-        self.max_vel_sideways = env.cfg.commands.ranges.lin_vel_y
+        self.max_vel_sideways = 1.0
         self.increment_y = self.max_vel_sideways*0.2
-        
-        self.max_vel_yaw = env.cfg.commands.ranges.yaw_vel
+
+        self.max_vel_yaw = 2.0
         self.increment_yaw = self.max_vel_yaw*0.2
-        env.command_ranges["lin_vel_x"] = [0., 0.]
-        env.command_ranges["lin_vel_y"] = 0.
-        env.command_ranges["yaw_vel"] = 0.
-        env.cfg.commands.curriculum = False
-        env.cfg.heading_command = False
 
     def update(self, env):
         for evt in env.gym.query_viewer_action_events(env.viewer):
@@ -76,4 +70,4 @@ class KeyboardInterface():
             elif evt.action == "QUIT":
                 exit()
             elif evt.action == "RESET":
-                env.episode_length_buf[:] = env.max_episode_length+1
+                env.reset()
