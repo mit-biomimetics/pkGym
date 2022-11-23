@@ -181,10 +181,10 @@ class LeggedRobotRunnerCfg(BaseConfig):
                      "these_need_to_be_atributes_(states)_of_the_robot_env"]
 
         critic_obs = ["observation_x",
-                     "observation_y",
-                     "critic_obs_can_be_the_same_or_different_than_actor_obs"]
+                      "observation_y",
+                      "critic_obs_can_be_the_same_or_different_than_actor_obs"]
 
-        actions = ["q_des"]                  
+        actions = ["q_des"]
         class noise:
             dof_pos_obs = 0.01
             dof_vel = 1.5

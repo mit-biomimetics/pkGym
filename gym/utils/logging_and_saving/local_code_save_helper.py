@@ -3,8 +3,9 @@ from gym import LEGGED_GYM_ROOT_DIR
 from gym.utils.logging_and_saving import wandb_helper
 
 
-# configure local and cloud code saving and logging
 def log_and_save(env, env_cfg, train_cfg, runner, args):
+    """Configure local and cloud code logging"""
+
     # setup local code saving if enabled
     if check_local_saving_flag(train_cfg):
         save_paths = get_local_save_paths(env, env_cfg)
@@ -15,8 +16,9 @@ def log_and_save(env, env_cfg, train_cfg, runner, args):
         wandb_helper.setup_wandb(runner, args)
 
 
-# check if enable_local_saving is set to true in the training_config
 def check_local_saving_flag(train_cfg):
+    """Check if enable_local_saving is set to true in the training_config"""
+
     if hasattr(train_cfg, 'logging') and \
        hasattr(train_cfg.logging, 'enable_local_saving'):
         enable_local_saving = train_cfg.logging.enable_local_saving
@@ -25,8 +27,8 @@ def check_local_saving_flag(train_cfg):
     return enable_local_saving
 
 
-# create a save_paths object for saving code locally
 def get_local_save_paths(env, env_cfg):
+    """Create a save_paths object for saving code locally"""
 
     runners_dir = os.path.join(LEGGED_GYM_ROOT_DIR, 'learning', 'runners')
     runners_target = os.path.join('learning', 'runners')
