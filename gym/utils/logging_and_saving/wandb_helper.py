@@ -3,8 +3,8 @@ import wandb
 from gym import LEGGED_GYM_ROOT_DIR
 
 
-# return true if an entity and project are given in the commandline args
 def is_wandb_enabled(args):
+    """Return true if entity and project are in the commandline args"""
 
     enable_wandb = True
 
@@ -28,6 +28,7 @@ def setup_wandb(policy_runner, args):
 
     wandb.init(project=args.wandb_project,
                entity=args.wandb_entity,
+               dir=os.path.join(LEGGED_GYM_ROOT_DIR, 'logs'),
                config=wandb.config,
                name=experiment_name)
 
@@ -37,8 +38,8 @@ def setup_wandb(policy_runner, args):
     policy_runner.configure_wandb(wandb)
 
 
-# close WandB process after training has finished
 def close_wandb(args):
-    # close WandB after learning is done
+    """Close WandB process after training has finished"""
+
     if is_wandb_enabled(args):
         wandb.finish()
