@@ -1,8 +1,6 @@
 import importlib
 from gym.utils.task_registry import task_registry
 
-#test
-
 # To add a new env:
 # 1. add the base env and env class name and location to the class dict
 # 2. add the config name and location to the config dict

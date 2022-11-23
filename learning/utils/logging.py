@@ -14,5 +14,4 @@ class Logger:
         self.log.update(log_dict)
 
     def print_to_terminal(self):
-        print("Bingo!")
         pprint.pprint(self.log)
