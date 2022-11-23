@@ -102,6 +102,7 @@ class OnPolicyRunner:
         self.tot_timesteps = 0
         self.tot_time = 0
         self.current_learning_iteration = 0
+
         self.current_episode_rewards = {name: torch.zeros(self.env.num_envs, dtype=torch.float,
                                                device=self.device,
                                                requires_grad=False)
@@ -116,7 +117,11 @@ class OnPolicyRunner:
         self.rewbuffer = {name:  deque(maxlen=100)
                         for name in  self.current_episode_rewards.keys()}   
         self.lenbuffer = deque(maxlen=100)
-                     
+
+        self.mean_episode_length = 0.
+        self.mean_rewards = {"Episode/"+name:  0.
+                        for name in  self.current_episode_rewards.keys()} 
+        self.total_mean_reward = 0.
 
         self.logger = Logger(log_dir)
 
@@ -135,16 +140,17 @@ class OnPolicyRunner:
     def configure_local_files(self, save_paths):
         # copy the relevant source files to the local logs for records
         save_dir = self.log_dir+'/files/'
-        for i in save_paths:
-            if i['type'] == 'file':
-                os.makedirs(save_dir+i['target_dir'], exist_ok=True)
-                shutil.copy2(i['source_file'], save_dir+i['target_dir'])
-            elif i['type'] == 'dir':
+        for save_path in save_paths:
+            if save_path['type'] == 'file':
+                os.makedirs(save_dir+save_path['target_dir'], exist_ok=True)
+                shutil.copy2(save_path['source_file'], 
+                              save_dir+save_path['target_dir'])
+            elif save_path['type'] == 'dir':
                 shutil.copytree(
-                    i['source_dir'], save_dir+i['target_dir'],
-                    ignore=shutil.ignore_patterns(*i['ignore_patterns']))
+                    save_path['source_dir'], save_dir+save_path['target_dir'],
+                    ignore=shutil.ignore_patterns(*save_path['ignore_patterns']))
             else:
-                print('WARNING: uncaught save path type:', i['type'])
+                print('WARNING: uncaught save path type:', save_path['type'])
 
     def init_storage(self):
         num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
@@ -187,8 +193,9 @@ class OnPolicyRunner:
         critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
 
         self.alg.actor_critic.train()
-        tot_iter = self.current_learning_iteration + num_learning_iterations
-        for it in range(self.current_learning_iteration, tot_iter):
+        self.num_learning_iterations = num_learning_iterations
+        self.tot_iter = self.current_learning_iteration + num_learning_iterations
+        for self.it in range(self.current_learning_iteration, self.tot_iter):
             start = time.time()
             # * Rollout
             with torch.inference_mode():
@@ -231,16 +238,16 @@ class OnPolicyRunner:
             self.learn_time = stop - start
             self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
             self.tot_time += self.collection_time + self.learn_time
-            self.log(it)
+            self.log()
             self.logger.log_to_wandb()
             self.logger.print_to_terminal()
 
-            if it % self.save_interval == 0:
-                self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(it)))
+            if self.it % self.save_interval == 0:
+                self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.it)))
                 if self.cfg["SE_learner"] == "modular_SE": 
                     if not os.path.exists(self.SE_path):
                         os.makedirs(self.SE_path)
-                    self.save_SE(os.path.join(self.SE_path, 'SE_{}.pt'.format(it)))
+                    self.save_SE(os.path.join(self.SE_path, 'SE_{}.pt'.format(self.it)))
 
         self.current_learning_iteration += num_learning_iterations
         # * save
@@ -325,7 +332,7 @@ class OnPolicyRunner:
         self.total_mean_reward = mean(list(self.mean_rewards.values()))
 
 
-    def log(self, it):
+    def log(self):
         fps = int(self.num_steps_per_env * self.env.num_envs \
                   / (self.collection_time+self.learn_time))
         mean_noise_std = self.alg.actor_critic.std.mean().item()
@@ -343,8 +350,9 @@ class OnPolicyRunner:
                              "Train/total_timesteps": self.tot_timesteps,
                              "Train/iteration_time": self.collection_time+self.learn_time,
                              "Train/time": self.tot_time,
-                             "Train/iterations": it
                              })
+        self.logger.update_iterations(self.it, self.tot_iter, 
+                                      self.num_learning_iterations)
                         
         #TODO: iterate through the config for any extra things you might want to log
 
