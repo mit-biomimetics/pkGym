@@ -51,7 +51,7 @@ class Cartpole(FixedRobot):
     def _reward_cart_pos(self):
         cart_pos = self.dof_pos[:, 0]
         return -cart_pos.square()
-    
+
     def _reward_upright_pole(self):
         return self._sqrdexp(self.dof_pos[:, 1]
                              / self.scales["dof_pos"][1])

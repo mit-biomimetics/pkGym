@@ -68,19 +68,19 @@ def play(args):
     # interface = GamepadInterface(env)
     interface = KeyboardInterface(env)
 
-    obs = env.get_obs(train_cfg.policy.actor_obs)
+    obs = env.get_states(train_cfg.policy.actor_obs)
     for i in range(10*int(env.max_episode_length)):
         # * handle interface
         # * handle state-estimation
         if SE_ON:
-            SE_obs = env.get_obs(train_cfg.state_estimator.obs)
+            SE_obs = env.get_states(train_cfg.state_estimator.obs)
             SE_prediction = state_estimator.predict(SE_obs)
             obs = torch.cat((SE_prediction.detach(), obs.detach()), dim=1)
 
         actions = policy(obs.detach())
         interface.update(env)
         env.step(actions.detach())
-        obs = env.get_obs(train_cfg.policy.actor_obs)
+        obs = env.get_states(train_cfg.policy.actor_obs)
 
 if __name__ == '__main__':
     EXPORT_POLICY = True

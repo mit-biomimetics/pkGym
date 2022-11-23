@@ -65,10 +65,10 @@ class OnPolicyRunner:
         if self.cfg["SE_learner"] == "modular_SE":    # if using SE
             num_actor_obs += self.get_obs_size(self.se_cfg["targets"])
         num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
-        
+        num_actions = self.get_action_size(self.policy_cfg["actions"])
         actor_critic: ActorCritic = actor_critic_class(num_actor_obs,
                                             num_critic_obs,
-                                            self.env.num_actions,
+                                            num_actions,
                                             **self.policy_cfg).to(self.device)
 
         # ! this is hardcoded
@@ -133,12 +133,12 @@ class OnPolicyRunner:
                                               [num_SE_outputs])
             num_actor_obs += num_SE_outputs
         num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
-
+        num_actions = self.get_action_size(self.policy_cfg["actions"])
         self.alg.init_storage(self.env.num_envs,
                               self.num_steps_per_env,
                               actor_obs_shape=[num_actor_obs],
                               critic_obs_shape=[num_critic_obs],
-                              action_shape=[self.env.num_actions])
+                              action_shape=[num_actions])
 
     def configure_wandb(self, wandb_in, log_freq=100, log_graph=True):
         self.wandb = wandb_in
@@ -171,7 +171,7 @@ class OnPolicyRunner:
                     print('WARNING: uncaught save path type:', i['type'])
         if init_at_random_ep_len:
             self.env.episode_length_buf = torch.randint_like(self.env.episode_length_buf, high=int(self.env.max_episode_length))
-        # actor_obs = self.env.get_observations()
+
         actor_obs = self.get_obs(self.policy_cfg["actor_obs"])
         if self.cfg["SE_learner"] == "modular_SE":
             SE_obs = self.get_obs(self.se_cfg["obs"])
@@ -213,7 +213,8 @@ class OnPolicyRunner:
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
                     actions = self.alg.act(actor_obs, critic_obs)
-                    self.env.step(actions)
+                    self.set_actions(actions)
+                    self.env.step()
 
                     # actor_obs = self.get_obs(self.policy_cfg["actor_obs"])
                     actor_obs = self.get_noisy_obs(self.policy_cfg["actor_obs"],
@@ -307,16 +308,21 @@ class OnPolicyRunner:
         return observation + self.get_noise(obs_list, noise_dict)
 
     def get_obs(self, obs_list):
-        observation = self.env.get_obs(obs_list).to(self.device)
+        observation = self.env.get_states(obs_list).to(self.device)
         return observation
 
+    def set_actions(self,actions):
+        self.env.set_states(self.policy_cfg["actions"], actions)
+
     def get_timed_out(self):
-        return self.env.get_obs(["timed_out"]).to(self.device)
+        return self.env.get_states(["timed_out"]).to(self.device)
 
     def get_obs_size(self, obs_list):
         # todo make unit-test to assert len(shape)==1 always
         return self.get_obs(obs_list)[0].shape[0]
 
+    def get_action_size(self, action_list):
+        return self.env.get_states(action_list)[0].shape[0]
 
     def get_rewards(self, reward_weights, modifier=1):
         return self.env.compute_reward(reward_weights, modifier).to(self.device)
@@ -336,7 +342,6 @@ class OnPolicyRunner:
             reward = self.env.compute_reward({name: weight},
                                              modifier).to(self.device)
             total_rewards += reward
-
             if name in episode_sums:
                 episode_sums[name] += reward  # keeping only from 1 env
         return total_rewards

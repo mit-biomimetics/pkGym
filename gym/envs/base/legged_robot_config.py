@@ -33,7 +33,7 @@ from .base_config import BaseConfig
 class LeggedRobotCfg(BaseConfig):
     class env:
         num_envs = 4096
-        num_actions = 12
+        num_actuators = 12
         env_spacing = 3.  # not used with heightfields/trimeshes 
         send_timeouts = True  # send time out information to the algorithm
         episode_length_s = 20  # episode length in seconds
@@ -62,17 +62,6 @@ class LeggedRobotCfg(BaseConfig):
         terrain_proportions = [0.1, 0.1, 0.35, 0.25, 0.2]
         # trimesh only:
         slope_treshold = 0.75 # slopes above this threshold will be corrected to vertical surfaces
-
-    class commands:
-        curriculum = False
-        max_curriculum = 1.
-        num_commands = 3  # default: lin_vel_x, lin_vel_y, yaw_vel
-        resampling_time = 10.  # time before command are changed[s]
-
-        class ranges:
-            lin_vel_x = [-1.0, 1.0]  # min max [m/s]
-            lin_vel_y = 1.  # max [m/s]
-            yaw_vel = 1    # max [rad/s]
 
     class init_state:
 
@@ -110,14 +99,12 @@ class LeggedRobotCfg(BaseConfig):
                           [-0.1, 0.1]]  # yaw
 
     class control:
-        control_type = 'P' # P: position, V: velocity, T: torques
         # PD Drive parameters:
         stiffness = {'joint_a': 10.0, 'joint_b': 15.}  # [N*m/rad]
         damping = {'joint_a': 1.0, 'joint_b': 1.5}     # [N*m*s/rad]
-        # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = 0.5
-        # decimation: Number of control action updates @ sim DT per policy DT
-        exp_avg_decay = None
+        
+        q_des_decay = None
+        
         ctrl_frequency = 100
         desired_sim_frequency = 200
 
@@ -127,7 +114,6 @@ class LeggedRobotCfg(BaseConfig):
         penalize_contacts_on = []
         terminate_after_contacts_on = []
         disable_gravity = False
-        disable_actions = False
         disable_motors = False
         collapse_fixed_joints = True  # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
         fix_base_link = False  # fixe the base of the robot
@@ -164,8 +150,11 @@ class LeggedRobotCfg(BaseConfig):
 
     class scaling:
         commands = 1
-
-
+        # Action scales
+        tau_ff = 1  # scale by torque limits
+        dof_pos = 1
+        dof_pos_obs = dof_pos
+        dof_pos_target = dof_pos  # scale by range of motion
 
     # viewer camera:
     class viewer:
@@ -192,8 +181,10 @@ class LeggedRobotRunnerCfg(BaseConfig):
                      "these_need_to_be_atributes_(states)_of_the_robot_env"]
 
         critic_obs = ["observation_x",
-                     "observation_y",
-                     "critic_obs_can_be_the_same_or_different_than_actor_obs"]
+                      "observation_y",
+                      "critic_obs_can_be_the_same_or_different_than_actor_obs"]
+
+        actions = ["q_des"]
 
         class noise:
             dof_pos_obs = 0.01

@@ -19,16 +19,11 @@ class GamepadInterface():
 
             env.commands[:] = 0.
             # never resample
-            env.cfg.commands.resampling_time = env.max_episode_length + 1
-            env.cfg.heading_command = False
-            self.max_vel_backward = env.cfg.commands.ranges.lin_vel_x[0]
-            self.max_vel_forward = env.cfg.commands.ranges.lin_vel_x[1]
-            self.max_vel_sideways = env.cfg.commands.ranges.lin_vel_y
-            self.max_yaw_vel = env.cfg.commands.ranges.yaw_vel
-            # set to 0
-            env.command_ranges["lin_vel_x"] = [0., 0.]
-            env.command_ranges["lin_vel_y"] = 0.
-            env.command_ranges["yaw_vel"] = 0.
+            self.max_vel_backward = -1.
+            self.max_vel_forward = 4.
+            self.max_vel_sideways = 1.
+            self.max_yaw_vel = 2.
+
         elif pygame.joystick.get_count() > 1:
             print("WARNING: you have more than one gamepad plugged in."
                   "Please unplug one.")
