@@ -1,8 +1,8 @@
 import unittest
+import isaacgym
+import torch
 from gym.envs import *
 from gym.utils import get_args, task_registry
-import torch
-import isaacgym
 from gym.utils import class_to_dict
 
 class TestEnvironments(unittest.TestCase):

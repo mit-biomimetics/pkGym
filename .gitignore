@@ -1,12 +1,13 @@
 logs/
-gpugym/scripts/wandb/
+artifacts/
+gym/scripts/wandb/
 .idea/
 gpuGym.egg-info/
 __pycache__
 *.pyc 
 wandb/
 .vscode/
-gpugym/wandb
+gym/wandb
 *.DS_Store
 *.zip
 
