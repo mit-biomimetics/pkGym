@@ -122,11 +122,6 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
 
 class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
     seed = -1
-    do_wandb = True
-
-    class wandb:
-        what_to_log = {}
-
     class policy( MiniCheetahRunnerCfg.policy ):
         actor_hidden_dims = [256, 256, 128]
         critic_hidden_dims = [256, 256, 128]

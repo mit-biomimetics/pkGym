@@ -30,20 +30,15 @@
 
 import time
 import os
-import shutil
-from collections import deque
-from statistics import mean
 
 import wandb
 import torch
-import numpy as np
 from isaacgym.torch_utils import torch_rand_float
 
 from learning.algorithms import PPO, StateEstimator
 from learning.modules import ActorCritic
 from learning.modules import StateEstimatorNN
 from learning.env import VecEnv
-from gym.utils.helpers import class_to_dict
 from learning.utils import remove_zero_weighted_rewards
 from learning.utils import Logger
 
@@ -90,6 +85,9 @@ class OnPolicyRunner:
 
         self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
+        self.tot_timesteps = 0
+        self.tot_time = 0
+        self.current_learning_iteration = 0
 
         # init storage and model
         self.init_storage()
@@ -98,8 +96,9 @@ class OnPolicyRunner:
         self.log_dir = log_dir
         self.SE_path = os.path.join(self.log_dir, 'SE')   # log_dir for SE
 
-        reward_keys_to_log = self.policy_cfg["reward"]["weights"].keys() + \
-                        self.policy_cfg["reward"]["termination_weight"].keys()
+        reward_keys_to_log = list(self.policy_cfg["reward"]["weights"].keys())\
+                             + list(self.policy_cfg["reward"]
+                                    ["termination_weight"].keys())
    
         self.logger = Logger(self.env.num_envs, reward_keys_to_log, 
                              log_dir, self.device)
@@ -135,11 +134,11 @@ class OnPolicyRunner:
                               action_shape=[num_actions])
 
     def configure_wandb(self, wandb, log_freq=100, log_graph=True):
-        self.wandb = wandb
-        self.wandb.watch((self.alg.actor_critic.actor,
-                          self.alg.actor_critic.critic),
-                         log_freq=log_freq,
-                         log_graph=log_graph)
+        self.logger.wandb = wandb
+        self.logger.wandb.watch((self.alg.actor_critic.actor,
+                                self.alg.actor_critic.critic),
+                                log_freq=log_freq,
+                                log_graph=log_graph)
 
     def reset_learn(self):
         self.current_learning_iteration = 0
@@ -186,7 +185,7 @@ class OnPolicyRunner:
                         timed_out = self.get_timed_out()
                         self.alg.process_env_step(rewards, dones, timed_out)
 
-                    self.update_episode_buf(dones)
+                    self.logger.update_episode_buffer(dones)
 
                 stop = time.time()
                 self.collection_time = stop - start
@@ -201,10 +200,8 @@ class OnPolicyRunner:
             self.learn_time = stop - start
             self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
             self.tot_time += self.collection_time + self.learn_time
+
             self.log()
-            if wandb.run is not None:
-                self.logger.log_to_wandb()
-            self.logger.print_to_terminal()
 
             if self.it % self.save_interval == 0:
                 self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.it)))
@@ -276,7 +273,7 @@ class OnPolicyRunner:
         fps = int(self.num_steps_per_env * self.env.num_envs \
                   / (self.collection_time+self.learn_time))
         mean_noise_std = self.alg.actor_critic.std.mean().item()
-        self.logger.add_log(self.mean_rewards)
+        self.logger.add_log(self.logger.mean_rewards)
         self.logger.add_log({
                              "Loss/value_function" : self.mean_value_loss,
                              "Loss/surrogate" : self.mean_surrogate_loss,
@@ -285,8 +282,8 @@ class OnPolicyRunner:
                              "Perf/total_fps": fps,
                              "Perf/collection_time": self.collection_time,
                              "Perf/learning_time" : self.learn_time,
-                             "Train/mean_reward" : self.total_mean_reward,
-                             "Train/mean_episode_length" : self.mean_episode_length,
+                             "Train/mean_reward" : self.logger.total_mean_reward,
+                             "Train/mean_episode_length" : self.logger.mean_episode_length,
                              "Train/total_timesteps": self.tot_timesteps,
                              "Train/iteration_time": self.collection_time+self.learn_time,
                              "Train/time": self.tot_time,
@@ -296,12 +293,15 @@ class OnPolicyRunner:
                         
         #TODO: iterate through the config for any extra things you might want to log
 
+        if wandb.run is not None:
+            self.logger.log_to_wandb()
+        self.logger.print_to_terminal()
+
     def get_dones(self):
         return self.env.reset_buf.to(self.device)
 
     def get_infos(self):
         return self.env.extras
-
 
     def save(self, path, infos=None):
         torch.save({

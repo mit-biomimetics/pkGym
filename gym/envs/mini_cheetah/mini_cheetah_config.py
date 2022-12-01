@@ -129,8 +129,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
 class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
     seed = -1
-    do_wandb = False
-
     class wandb:
         what_to_log = {}
 

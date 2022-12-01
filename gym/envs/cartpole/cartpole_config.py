@@ -61,11 +61,6 @@ class CartpoleRunnerCfg(FixedRobotCfgPPO):
     # We need random experiments to run
     seed = -1
     runner_class_name = 'OnPolicyRunner'
-
-    do_wandb = True
-    class wandb:
-        what_to_log = {}
-
     class policy(FixedRobotCfgPPO.policy):
         init_noise_std = 1.0
         num_layers = 2

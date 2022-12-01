@@ -1,4 +1,3 @@
-import pprint
 import wandb
 import torch
 from collections import deque
@@ -15,21 +14,17 @@ class Logger:
         self.it = 0
         self.tot_iter = 0
         self.learning_iter = 0
-
         self.wandb = None
-        self.do_wandb = False
-        self.tot_timesteps = 0
-        self.tot_time = 0
-        self.current_learning_iteration = 0
 
-        self.current_episode_rewards = {name: torch.zeros(self.num_envs, dtype=torch.float,
+        self.current_episode_return = {name: torch.zeros(self.num_envs, 
+                                                dtype=torch.float,
                                                device=self.device,
                                                requires_grad=False)
                                         for name in reward_keys}
-        self.cur_episode_length = torch.zeros(self.num_envs,
+        self.current_episode_length = torch.zeros(self.num_envs,
                                          dtype=torch.float, device=self.device)
-        self.rewbuffer = {name:  deque(maxlen=100) for name in  reward_keys}   
-        self.lenbuffer = deque(maxlen=100)
+        self.avg_return_buffer = {name:  deque(maxlen=100) for name in  reward_keys}   
+        self.avg_length_buffer = deque(maxlen=100)
 
         self.mean_episode_length = 0.
         self.mean_rewards = {"Episode/"+name:  0. for name in reward_keys} 
@@ -47,26 +42,26 @@ class Logger:
         self.learning_iter = learning_iter
 
     def log_current_reward(self, name, reward):
-        if name in self.current_episode_rewards.keys():
-            self.current_episode_rewards[name] += reward  
+        if name in self.current_episode_return.keys():
+            self.current_episode_return[name] += reward  
     
-    def update_episode_buf(self, dones):
-        self.cur_episode_length += 1
+    def update_episode_buffer(self, dones):
+        self.current_episode_length += 1
         new_ids = (dones > 0).nonzero(as_tuple=False)
-        for name in self.current_episode_rewards.keys():
-            self.rewbuffer[name].extend(self.current_episode_rewards[name]
+        for name in self.current_episode_return.keys():
+            self.avg_return_buffer[name].extend(self.current_episode_return[name]
                                         [new_ids][:, 0].cpu().numpy().tolist())
-            self.current_episode_rewards[name][new_ids] = 0.
-        self.lenbuffer.extend(self.cur_episode_length[new_ids]
+            self.current_episode_return[name][new_ids] = 0.
+        self.avg_length_buffer.extend(self.current_episode_length[new_ids]
                               [:, 0].cpu().numpy().tolist())
-        self.cur_episode_length[new_ids] = 0
-        if (len(self.lenbuffer) > 0):
+        self.current_episode_length[new_ids] = 0
+        if (len(self.avg_length_buffer) > 0):
             self.calculate_reward_avg()
 
     def calculate_reward_avg(self):
-        self.mean_episode_length = mean(self.lenbuffer)
-        self.mean_rewards = {"Episode/"+name:  mean(self.rewbuffer[name])
-                        for name in  self.current_episode_rewards.keys()} 
+        self.mean_episode_length = mean(self.avg_length_buffer)
+        self.mean_rewards = {"Episode/"+name:  mean(self.avg_return_buffer[name])
+                        for name in  self.current_episode_return.keys()} 
         self.total_mean_reward = mean(list(self.mean_rewards.values()))
 
     def print_to_terminal(self):   
