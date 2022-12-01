@@ -202,7 +202,8 @@ class OnPolicyRunner:
             self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
             self.tot_time += self.collection_time + self.learn_time
             self.log()
-            self.logger.log_to_wandb()
+            if wandb.run is not None:
+                self.logger.log_to_wandb()
             self.logger.print_to_terminal()
 
             if self.it % self.save_interval == 0:
