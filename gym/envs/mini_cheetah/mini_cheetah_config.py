@@ -129,8 +129,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
 class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
     seed = -1
-    class wandb:
-        what_to_log = {}
 
     class policy( LeggedRobotRunnerCfg.policy ):
         actor_hidden_dims = [256, 256, 256]
