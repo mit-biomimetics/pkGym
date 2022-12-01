@@ -9,7 +9,7 @@ def log_and_save(env, env_cfg, train_cfg, runner, args):
     # setup local code saving if enabled
     if check_local_saving_flag(train_cfg):
         save_paths = get_local_save_paths(env, env_cfg)
-        runner.configure_local_files(save_paths)
+        runner.logger.configure_local_files(save_paths)
 
     # setup WandB if enabled
     if wandb_helper.is_wandb_enabled(args):

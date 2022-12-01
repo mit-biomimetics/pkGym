@@ -1,14 +1,39 @@
 import pprint
 import wandb
-
+import torch
+from collections import deque
+from statistics import mean
+import os
+import shutil
 
 class Logger:
-    def __init__(self, path):
-        self.path = path
+    def __init__(self, num_envs, reward_keys, log_dir, device):
+        self.num_envs = num_envs
+        self.log_dir = log_dir
+        self.device = device
         self.log = {}
         self.it = 0
         self.tot_iter = 0
         self.learning_iter = 0
+
+        self.wandb = None
+        self.do_wandb = False
+        self.tot_timesteps = 0
+        self.tot_time = 0
+        self.current_learning_iteration = 0
+
+        self.current_episode_rewards = {name: torch.zeros(self.num_envs, dtype=torch.float,
+                                               device=self.device,
+                                               requires_grad=False)
+                                        for name in reward_keys}
+        self.cur_episode_length = torch.zeros(self.num_envs,
+                                         dtype=torch.float, device=self.device)
+        self.rewbuffer = {name:  deque(maxlen=100) for name in  reward_keys}   
+        self.lenbuffer = deque(maxlen=100)
+
+        self.mean_episode_length = 0.
+        self.mean_rewards = {"Episode/"+name:  0. for name in reward_keys} 
+        self.total_mean_reward = 0.
 
     def log_to_wandb(self):
         wandb.log(self.log)
@@ -20,6 +45,29 @@ class Logger:
         self.it = it
         self.tot_iter = tot_iter
         self.learning_iter = learning_iter
+
+    def log_current_reward(self, name, reward):
+        if name in self.current_episode_rewards.keys():
+            self.current_episode_rewards[name] += reward  
+    
+    def update_episode_buf(self, dones):
+        self.cur_episode_length += 1
+        new_ids = (dones > 0).nonzero(as_tuple=False)
+        for name in self.current_episode_rewards.keys():
+            self.rewbuffer[name].extend(self.current_episode_rewards[name]
+                                        [new_ids][:, 0].cpu().numpy().tolist())
+            self.current_episode_rewards[name][new_ids] = 0.
+        self.lenbuffer.extend(self.cur_episode_length[new_ids]
+                              [:, 0].cpu().numpy().tolist())
+        self.cur_episode_length[new_ids] = 0
+        if (len(self.lenbuffer) > 0):
+            self.calculate_reward_avg()
+
+    def calculate_reward_avg(self):
+        self.mean_episode_length = mean(self.lenbuffer)
+        self.mean_rewards = {"Episode/"+name:  mean(self.rewbuffer[name])
+                        for name in  self.current_episode_rewards.keys()} 
+        self.total_mean_reward = mean(list(self.mean_rewards.values()))
 
     def print_to_terminal(self):   
         width=80
@@ -48,3 +96,18 @@ class Logger:
                                self.learning_iter - self.it):.1f}s\n""")
 
         print(log_string)
+
+    def configure_local_files(self, save_paths):
+        # copy the relevant source files to the local logs for records
+        save_dir = self.log_dir+'/files/'
+        for save_path in save_paths:
+            if save_path['type'] == 'file':
+                os.makedirs(save_dir+save_path['target_dir'], exist_ok=True)
+                shutil.copy2(save_path['source_file'], 
+                              save_dir+save_path['target_dir'])
+            elif save_path['type'] == 'dir':
+                shutil.copytree(
+                    save_path['source_dir'], save_dir+save_path['target_dir'],
+                    ignore=shutil.ignore_patterns(*save_path['ignore_patterns']))
+            else:
+                print('WARNING: uncaught save path type:', save_path['type'])

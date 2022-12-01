@@ -97,33 +97,12 @@ class OnPolicyRunner:
         # Log
         self.log_dir = log_dir
         self.SE_path = os.path.join(self.log_dir, 'SE')   # log_dir for SE
-        self.wandb = None
-        self.do_wandb = False
-        self.tot_timesteps = 0
-        self.tot_time = 0
-        self.current_learning_iteration = 0
 
-        self.current_episode_rewards = {name: torch.zeros(self.env.num_envs, dtype=torch.float,
-                                               device=self.device,
-                                               requires_grad=False)
-                        for name in self.policy_cfg["reward"]["weights"].keys()}
-        self.current_episode_rewards.update({name: torch.zeros(self.env.num_envs,
-                                               dtype=torch.float,
-                                               device=self.device,
-                                               requires_grad=False)
-                        for name in self.policy_cfg["reward"]["termination_weight"].keys()})      
-        self.cur_episode_length = torch.zeros(self.env.num_envs,
-                                         dtype=torch.float, device=self.device)
-        self.rewbuffer = {name:  deque(maxlen=100)
-                        for name in  self.current_episode_rewards.keys()}   
-        self.lenbuffer = deque(maxlen=100)
-
-        self.mean_episode_length = 0.
-        self.mean_rewards = {"Episode/"+name:  0.
-                        for name in  self.current_episode_rewards.keys()} 
-        self.total_mean_reward = 0.
-
-        self.logger = Logger(log_dir)
+        reward_keys_to_log = self.policy_cfg["reward"]["weights"].keys() + \
+                        self.policy_cfg["reward"]["termination_weight"].keys()
+   
+        self.logger = Logger(self.env.num_envs, reward_keys_to_log, 
+                             log_dir, self.device)
 
 
     def parse_train_cfg(self, train_cfg):
@@ -136,21 +115,6 @@ class OnPolicyRunner:
             self.se_cfg = train_cfg['state_estimator']
         else:
             self.se_cfg = None
-
-    def configure_local_files(self, save_paths):
-        # copy the relevant source files to the local logs for records
-        save_dir = self.log_dir+'/files/'
-        for save_path in save_paths:
-            if save_path['type'] == 'file':
-                os.makedirs(save_dir+save_path['target_dir'], exist_ok=True)
-                shutil.copy2(save_path['source_file'], 
-                              save_dir+save_path['target_dir'])
-            elif save_path['type'] == 'dir':
-                shutil.copytree(
-                    save_path['source_dir'], save_dir+save_path['target_dir'],
-                    ignore=shutil.ignore_patterns(*save_path['ignore_patterns']))
-            else:
-                print('WARNING: uncaught save path type:', save_path['type'])
 
     def init_storage(self):
         num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
@@ -170,9 +134,8 @@ class OnPolicyRunner:
                               critic_obs_shape=[num_critic_obs],
                               action_shape=[num_actions])
 
-    def configure_wandb(self, wandb_in, log_freq=100, log_graph=True):
-        self.wandb = wandb_in
-        self.do_wandb = True
+    def configure_wandb(self, wandb, log_freq=100, log_graph=True):
+        self.wandb = wandb
         self.wandb.watch((self.alg.actor_critic.actor,
                           self.alg.actor_critic.critic),
                          log_freq=log_freq,
@@ -305,32 +268,8 @@ class OnPolicyRunner:
             reward = self.env.compute_reward({name: weight},
                                              modifier).to(self.device)
             total_rewards += reward
-            self.log_current_reward(name, reward)
+            self.logger.log_current_reward(name, reward)
         return total_rewards
-
-    def log_current_reward(self, name, reward):
-        if name in self.current_episode_rewards.keys():
-            self.current_episode_rewards[name] += reward  
-    
-    def update_episode_buf(self, dones):
-        self.cur_episode_length += 1
-        new_ids = (dones > 0).nonzero(as_tuple=False)
-        for name in self.current_episode_rewards.keys():
-            self.rewbuffer[name].extend(self.current_episode_rewards[name]
-                                        [new_ids][:, 0].cpu().numpy().tolist())
-            self.current_episode_rewards[name][new_ids] = 0.
-        self.lenbuffer.extend(self.cur_episode_length[new_ids]
-                              [:, 0].cpu().numpy().tolist())
-        self.cur_episode_length[new_ids] = 0
-        if (len(self.lenbuffer) > 0):
-            self.calculate_reward_avg()
-
-    def calculate_reward_avg(self):
-        self.mean_episode_length = mean(self.lenbuffer)
-        self.mean_rewards = {"Episode/"+name:  mean(self.rewbuffer[name])
-                        for name in  self.current_episode_rewards.keys()} 
-        self.total_mean_reward = mean(list(self.mean_rewards.values()))
-
 
     def log(self):
         fps = int(self.num_steps_per_env * self.env.num_envs \
