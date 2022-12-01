@@ -79,7 +79,8 @@ def play(args):
 
         actions = policy(obs.detach())
         interface.update(env)
-        env.step(actions.detach())
+        env.set_states(train_cfg.policy.actions, actions)
+        env.step()
         obs = env.get_states(train_cfg.policy.actor_obs)
 
 if __name__ == '__main__':
