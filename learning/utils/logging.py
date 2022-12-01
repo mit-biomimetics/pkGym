@@ -47,14 +47,15 @@ class Logger:
     
     def update_episode_buffer(self, dones):
         self.current_episode_length += 1
-        new_ids = (dones > 0).nonzero(as_tuple=False)
+        terminated_ids = (dones == True).nonzero()[:,0]
         for name in self.current_episode_return.keys():
             self.avg_return_buffer[name].extend(self.current_episode_return[name]
-                                        [new_ids][:, 0].cpu().numpy().tolist())
-            self.current_episode_return[name][new_ids] = 0.
-        self.avg_length_buffer.extend(self.current_episode_length[new_ids]
-                              [:, 0].cpu().numpy().tolist())
-        self.current_episode_length[new_ids] = 0
+                                        [terminated_ids].cpu().numpy().tolist())
+            self.current_episode_return[name][terminated_ids] = 0.
+            
+        self.avg_length_buffer.extend(self.current_episode_length[terminated_ids]
+                                        .cpu().numpy().tolist())
+        self.current_episode_length[terminated_ids] = 0
         if (len(self.avg_length_buffer) > 0):
             self.calculate_reward_avg()
 
