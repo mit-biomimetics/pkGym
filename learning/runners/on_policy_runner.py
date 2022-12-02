@@ -95,14 +95,12 @@ class OnPolicyRunner:
         # Log
         self.log_dir = log_dir
         self.SE_path = os.path.join(self.log_dir, 'SE')   # log_dir for SE
-
+        self.logger = Logger(log_dir, self.device)
+        
         reward_keys_to_log = list(self.policy_cfg["reward"]["weights"].keys())\
                              + list(self.policy_cfg["reward"]
                                     ["termination_weight"].keys())
-   
-        self.logger = Logger(self.env.num_envs, reward_keys_to_log, 
-                             log_dir, self.device)
-
+        self.logger.initialize_buffers(self.env.num_envs, reward_keys_to_log)
 
     def parse_train_cfg(self, train_cfg):
         self.cfg = train_cfg['runner']
@@ -134,11 +132,10 @@ class OnPolicyRunner:
                               action_shape=[num_actions])
 
     def configure_wandb(self, wandb, log_freq=100, log_graph=True):
-        self.logger.wandb = wandb
-        self.logger.wandb.watch((self.alg.actor_critic.actor,
-                                self.alg.actor_critic.critic),
-                                log_freq=log_freq,
-                                log_graph=log_graph)
+        wandb.watch((self.alg.actor_critic.actor,
+                    self.alg.actor_critic.critic),
+                    log_freq=log_freq,
+                    log_graph=log_graph)
 
     def reset_learn(self):
         self.current_learning_iteration = 0

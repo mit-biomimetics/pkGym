@@ -6,31 +6,29 @@ import os
 import shutil
 
 class Logger:
-    def __init__(self, num_envs, reward_keys, log_dir, device):
-        self.num_envs = num_envs
+    def __init__(self, log_dir, device):
         self.log_dir = log_dir
-        self.device = device
+        self.device = device        
+        self.avg_window = 100
         self.log = {}
         self.it = 0
         self.tot_iter = 0
         self.learning_iter = 0
-        self.wandb = None
-        self.avg_window = 100
+        self.mean_episode_length = 0.
+        self.total_mean_reward = 0.
 
-        self.current_episode_return = {name: torch.zeros(self.num_envs, 
+    def initialize_buffers(self, num_envs, reward_keys):
+        self.current_episode_return = {name: torch.zeros(num_envs, 
                                                 dtype=torch.float,
                                                device=self.device,
                                                requires_grad=False)
                                         for name in reward_keys}
-        self.current_episode_length = torch.zeros(self.num_envs,
+        self.current_episode_length = torch.zeros(num_envs,
                                          dtype=torch.float, device=self.device)
         self.avg_return_buffer = {name:  deque(maxlen=self.avg_window) 
-                                    for name in  reward_keys}   
+                                    for name in reward_keys}   
         self.avg_length_buffer = deque(maxlen=self.avg_window)
-
-        self.mean_episode_length = 0.
         self.mean_rewards = {"Episode/"+name:  0. for name in reward_keys} 
-        self.total_mean_reward = 0.
 
     def log_to_wandb(self):
         wandb.log(self.log)
@@ -49,7 +47,7 @@ class Logger:
     
     def update_episode_buffer(self, dones):
         self.current_episode_length += 1
-        terminated_ids = (dones == True).nonzero()[:,0]
+        terminated_ids = torch.where(dones == True)[0]
         for name in self.current_episode_return.keys():
             self.avg_return_buffer[name].extend(self.current_episode_return[name]
                                         [terminated_ids].cpu().numpy().tolist())
