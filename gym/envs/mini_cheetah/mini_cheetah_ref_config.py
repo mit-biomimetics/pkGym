@@ -13,63 +13,6 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         pass
 
     class init_state(MiniCheetahCfg.init_state):
-        """
-        Initial States of the Mini Cheetah
-        From Robot-Software/systems/quadruped/state_machine/FSM_State_RecoveryStand.cpp, line 38
-        Ab/ad: 0˚, hip: -45˚, knee: 91.5˚
-        Default pose is around 0.27
-        """
-
-        default_joint_angles = {
-            "lf_haa": 0.0,
-            "lh_haa": 0.0,
-            "rf_haa": 0.0,
-            "rh_haa": 0.0,
-
-            "lf_hfe": -0.785398,
-            "lh_hfe": -0.785398,
-            "rf_hfe": -0.785398,
-            "rh_hfe": -0.785398,
-
-            "lf_kfe": 1.596976,
-            "lh_kfe": 1.596976,
-            "rf_kfe": 1.596976,
-            "rh_kfe": 1.596976,
-        }
-
-        reset_mode = "reset_to_basic" 
-        # reset setup chooses how the initial conditions are chosen. 
-        # "reset_to_basic" = a single position
-        # "reset_to_range" = uniformly random from a range defined below
-
-        # * default COM for basic initialization 
-        pos = [0.0, 0.0, 0.33]  # x,y,z [m]
-        rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
-        lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
-        ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
-
-        # * initialization for random range setup
-
-        dof_pos_range = {'haa': [-0.0, 0.05],
-                         'hfe': [-0.85, -0.7],
-                         'kfe': [-1.6, 1.6]}
-
-        dof_vel_range = {'haa': [-0.1, 0.1],
-                         'hfe': [-0.1, 0.1],
-                         'kfe': [-0.1, 0.1]}
-
-        root_pos_range = [[0., 0.],  # x
-                          [0., 0.],  # y
-                          [0.34, 0.35],  # z
-                          [-0.1, 0.1],  # roll
-                          [-0.1, 0.1],  # pitch
-                          [-0.1, 0.1]]  # yaw
-        root_vel_range = [[-0.5, 1.0],  # x
-                          [-0.01, 0.01],  # y
-                          [-0.2, 0.2],  # z
-                          [-0.1, 0.1],  # roll
-                          [-0.1, 0.1],  # pitch
-                          [-0.1, 0.1]]  # yaw
 
         ref_traj = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/trajectories/single_leg.csv"
         ref_type = "Pos"
@@ -79,22 +22,28 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
         gait_freq = 4. #
-        
         dof_pos_decay = None  # set to None to disable
         ctrl_frequency = 100
         desired_sim_frequency = 500
+
+    class commands:
+        resampling_time = 10.  # time before command are changed[s]
+
+        class ranges:
+            lin_vel_x = [-1.0, 1.0]  # min max [m/s]
+            lin_vel_y = 1.  # max [m/s]
+            yaw_vel = 1    # max [rad/s]
+
+    class push_robots:
+        toggle = True
+        interval_s = 2
+        max_push_vel_xy = 0.05
 
     class domain_rand(MiniCheetahCfg.domain_rand):
         randomize_friction = True
         friction_range = [0.75, 1.05]
         randomize_base_mass = True
         added_mass_range = [-1., 3.]
-        # on ground planes the friction combination mode is averaging,
-        # i.e total friction = (foot_friction + 1.)/2.
-        friction_range = [0., 1.0]
-        push_robots = True
-        push_interval_s = 10
-        max_push_vel_xy = 0.2
 
     class asset(MiniCheetahCfg.asset):
         file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah_simple.urdf"

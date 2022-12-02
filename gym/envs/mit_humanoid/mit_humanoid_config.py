@@ -50,25 +50,16 @@ class MITHumanoidCfg(LeggedRobotCfg):
         #  "reset_to_traj" = feed in a trajectory to sample from.
 
         default_joint_angles = {  # = target angles [rad] when action = 0.0
-            'left_hip_yaw': 0.,
-            'left_hip_abad': 0.,
-            'left_hip_pitch': -0.4,
-            'left_knee': 0.9,  # 0.785,
-            'left_ankle': -0.45,
-            'left_shoulder_pitch': 0.,
-            'left_shoulder_abad': 0.,
-            'left_shoulder_yaw': 0.,
-            'left_elbow': 0.,
-            'right_hip_yaw': 0.,
-            'right_hip_abad': 0.,
-            'right_hip_pitch': -0.4,
-            'right_knee': 0.9,  # 0.785,
-            'right_ankle': -0.45,
-            'right_shoulder_pitch': 0.,
-            'right_shoulder_abad': 0.,
-            'right_shoulder_yaw': 0.,
-            'right_elbow': 0.
-        }
+            'hip_yaw': 0.,
+            'hip_abad': 0.,
+            'hip_pitch': -0.4,
+            'knee': 0.9,  # 0.785,
+            'ankle': -0.45,
+            'shoulder_pitch': 0.,
+            'shoulder_abad': 0.,
+            'shoulder_yaw': 0.,
+            'elbow': 0.
+             }
 
         #default COM for basic initialization 
         pos = [0.0, 0.0, 0.66]  # x,y,z [m]
@@ -141,14 +132,22 @@ class MITHumanoidCfg(LeggedRobotCfg):
         ctrl_frequency = 100
         desired_sim_frequency = 800
 
-    class domain_rand(LeggedRobotCfg.domain_rand):
-        randomize_friction = True
+    class commands:
+        resampling_time = 10.  # time before command are changed[s]
+        class ranges:
+            lin_vel_x = [-1.0, 1.0]  # min max [m/s]
+            lin_vel_y = 1.  # max [m/s]
+            yaw_vel = 1    # max [rad/s]
+    class push_robots:
+        push_robots = False
+        interval_s = 15
+        max_push_vel_xy = 0.05
+
+    class domain_rand:
+        randomize_friction = False
         friction_range = [0.5, 1.25]
         randomize_base_mass = True
         added_mass_range = [-1., 1.]
-        push_robots = False
-        push_interval_s = 7
-        max_push_vel_xy = 0.1
 
     class asset(LeggedRobotCfg.asset):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_sf.urdf'
