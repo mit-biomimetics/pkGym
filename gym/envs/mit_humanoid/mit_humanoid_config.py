@@ -32,7 +32,7 @@ from gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotRunnerC
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
-        num_envs = 4000
+        num_envs = 4096
         num_observations = 49+3*18  # 121
         num_actuators = 18
         episode_length_s = 100  # episode length in seconds

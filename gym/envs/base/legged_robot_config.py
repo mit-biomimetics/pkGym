@@ -39,7 +39,7 @@ class LeggedRobotCfg(BaseConfig):
         episode_length_s = 20  # episode length in seconds
 
     class terrain:
-        mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
+        mesh_type = 'plane' # "heightfield" # none, plane, heightfield or trimesh
         horizontal_scale = 0.1 # [m]
         vertical_scale = 0.005 # [m]
         border_size = 25 # [m]
@@ -195,7 +195,6 @@ class LeggedRobotRunnerCfg(BaseConfig):
                       "critic_obs_can_be_the_same_or_different_than_actor_obs"]
 
         actions = ["q_des"]
-
         class noise:
             dof_pos_obs = 0.01
             dof_vel = 1.5
