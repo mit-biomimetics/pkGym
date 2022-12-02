@@ -15,6 +15,7 @@ class Logger:
         self.tot_iter = 0
         self.learning_iter = 0
         self.wandb = None
+        self.avg_window = 100
 
         self.current_episode_return = {name: torch.zeros(self.num_envs, 
                                                 dtype=torch.float,
@@ -23,8 +24,9 @@ class Logger:
                                         for name in reward_keys}
         self.current_episode_length = torch.zeros(self.num_envs,
                                          dtype=torch.float, device=self.device)
-        self.avg_return_buffer = {name:  deque(maxlen=100) for name in  reward_keys}   
-        self.avg_length_buffer = deque(maxlen=100)
+        self.avg_return_buffer = {name:  deque(maxlen=self.avg_window) 
+                                    for name in  reward_keys}   
+        self.avg_length_buffer = deque(maxlen=self.avg_window)
 
         self.mean_episode_length = 0.
         self.mean_rewards = {"Episode/"+name:  0. for name in reward_keys} 
