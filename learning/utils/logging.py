@@ -18,11 +18,9 @@ class Logger:
         self.total_mean_reward = 0.
 
     def initialize_buffers(self, num_envs, reward_keys):
-        self.current_episode_return = {name: torch.zeros(num_envs, 
-                                                dtype=torch.float,
-                                               device=self.device,
-                                               requires_grad=False)
-                                        for name in reward_keys}
+        self.current_episode_return = \
+            {name: torch.zeros(num_envs, dtype=torch.float, device=self.device,
+                                requires_grad=False) for name in reward_keys}
         self.current_episode_length = torch.zeros(num_envs,
                                          dtype=torch.float, device=self.device)
         self.avg_return_buffer = {name:  deque(maxlen=self.avg_window) 
