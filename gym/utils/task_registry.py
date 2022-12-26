@@ -87,7 +87,6 @@ class TaskRegistry():
                   f"{1.0/env_cfg.control.desired_sim_frequency}"
                   f" to {env_cfg.sim_dt}.")
 
-
     def update_sim_cfg(self, args):
         self.sim["sim_device"] = args.sim_device
         self.sim["sim_device_id"] = args.sim_device_id

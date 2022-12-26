@@ -1,21 +1,14 @@
 import os
 from gym import LEGGED_GYM_ROOT_DIR
-from gym.utils.logging_and_saving import wandb_helper
 
 
-def log_and_save(env, env_cfg, train_cfg, runner, args, is_sweep=False):
+def log_and_save(env, env_cfg, train_cfg, runner):
     """Configure local and cloud code logging"""
 
     # setup local code saving if enabled
     if check_local_saving_flag(train_cfg):
         save_paths = get_local_save_paths(env, env_cfg)
         runner.logger.configure_local_files(save_paths)
-
-    # todo: add logic here so if a sweep, wandb has to be on or exception out
-
-    # setup WandB if enabled
-    if wandb_helper.is_wandb_enabled(args, is_sweep=is_sweep):
-        wandb_helper.setup_wandb(runner, args, is_sweep=is_sweep)
 
 
 def check_local_saving_flag(train_cfg):

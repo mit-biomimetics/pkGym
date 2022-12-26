@@ -2,6 +2,7 @@ import os
 import wandb
 from gym import LEGGED_GYM_ROOT_DIR
 
+
 # may need to totally change this function to return the project and entity
 # check if the args are set right, if so return those
 # otherwise check train_cfg if true, then load json entity and project
@@ -21,6 +22,7 @@ def is_wandb_enabled(args, is_sweep=False):
 
     return enable_wandb
 
+
 def get_wandb_project_and_entity(args, train_cfg):
     wandb_project_and_entity = None
 
@@ -36,6 +38,7 @@ def get_wandb_project_and_entity(args, train_cfg):
         }
 
     return wandb_project_and_entity
+
 
 def setup_wandb(policy_runner, args, is_sweep=False):
     experiment_name = f'{args.task}'

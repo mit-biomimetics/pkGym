@@ -2,7 +2,8 @@ import wandb
 import isaacgym
 from gym.envs import *
 from gym.utils import get_args, task_registry
-from gym.utils.logging_and_saving import local_code_save_helper, wandb_helper
+from gym.utils.logging_and_saving \
+    import local_code_save_helper, wandb_singleton
 
 
 # todo: feature upgrade, move this to yaml/json
@@ -68,6 +69,7 @@ def set_wandb_sweep_cfg_values(env_cfg, train_cfg, sweep_dict):
 
 def sweep_wandb():
     args = get_args()
+    wandb_helper = wandb_singleton.WandbSingleton()
     # * prepare environment
     env_cfg, train_cfg = task_registry.create_cfgs(args)
     task_registry.make_sim()
@@ -78,7 +80,9 @@ def sweep_wandb():
     task_registry.prepare_sim()  # this gets called in legged too for some reason?
 
     local_code_save_helper.log_and_save(
-        env, env_cfg, train_cfg, policy_runner, args, is_sweep=True)
+        env, env_cfg, train_cfg, policy_runner)
+    if wandb_helper.is_wandb_enabled():
+        wandb_helper.setup_wandb(policy_runner, is_sweep=True)
 
     parameter_dict = wandb.config
     # todo: fix this mismatch
@@ -93,7 +97,7 @@ def sweep_wandb():
         num_learning_iterations=train_cfg.runner.max_iterations,
         init_at_random_ep_len=True)
 
-    wandb_helper.close_wandb(args)
+    wandb_helper.close_wandb()
 
     task_registry.destroy_sim()
 
@@ -102,10 +106,21 @@ def start_sweeps(args):
     sweep_config = configure_sweep()
     # make one gym for all sweeps - each sweep makes its own sim
     task_registry.make_gym()
-    # todo: add the project name from args
-    sweep_id = wandb.sweep(
-        sweep_config, entity="ajm4", project="wandb-sweeps-testing")
-    wandb.agent(sweep_id, sweep_wandb, count=sweep_config['count'])
+    _, train_cfg = task_registry.create_cfgs(args)
+
+    wandb_helper = wandb_singleton.WandbSingleton()
+    wandb_helper.set_wandb_values(args, train_cfg)
+
+    project_name = wandb_helper.get_project_name()
+    entity_name = wandb_helper.get_entity_name()
+
+    if project_name is not None and entity_name is not None:
+        # todo: add the project name from args
+        sweep_id = wandb.sweep(
+            sweep_config, entity="ajm4", project="wandb-sweeps-testing")
+        wandb.agent(sweep_id, sweep_wandb, count=sweep_config['count'])
+    else:
+        print('ERROR: No WandB project and entity provided for sweeping')
 
 
 if __name__ == '__main__':
