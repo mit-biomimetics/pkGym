@@ -14,6 +14,10 @@ def log_and_save(env, env_cfg, train_cfg, runner, args):
     # setup WandB if enabled
     if wandb_helper.is_wandb_enabled(args):
         wandb_helper.setup_wandb(runner, args)
+    else:
+        print('\n'
+              ' WARNING: WandB flag set to True, but no project or entity '
+              'specified in the arguments. Setting WandB to False.', end='\n\n')
 
 
 def check_local_saving_flag(train_cfg):
