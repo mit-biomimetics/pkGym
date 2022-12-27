@@ -180,7 +180,7 @@ class LeggedRobotRunnerCfg(BaseConfig):
         enable_local_saving = True
 
     class wandb_settings():
-        enable_wandb = False
+        enable_wandb = True
 
     class policy:
         init_noise_std = 1.0

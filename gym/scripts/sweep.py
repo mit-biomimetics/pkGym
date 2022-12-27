@@ -45,9 +45,7 @@ def configure_sweep():
     return sweep_config
 
 
-def set_wandb_sweep_cfg_values(env_cfg, train_cfg, sweep_dict):
-    parameters_dict = sweep_dict['parameters']
-
+def set_wandb_sweep_cfg_values(env_cfg, train_cfg, parameters_dict):
     for key, value in parameters_dict.items():
         print('Setting: ' + key + ' = ' + str(value))
         locs = key.split('.')
@@ -85,13 +83,9 @@ def sweep_wandb():
         wandb_helper.setup_wandb(policy_runner, is_sweep=True)
 
     parameter_dict = wandb.config
-    # todo: fix this mismatch
-    sweep_dict = {
-        'parameters': parameter_dict
-    }
 
     # update the config settings based off the sweep_dict
-    set_wandb_sweep_cfg_values(env_cfg, train_cfg, sweep_dict)
+    set_wandb_sweep_cfg_values(env_cfg, train_cfg, parameter_dict)
 
     policy_runner.learn(
         num_learning_iterations=train_cfg.runner.max_iterations,
@@ -111,13 +105,12 @@ def start_sweeps(args):
     wandb_helper = wandb_singleton.WandbSingleton()
     wandb_helper.set_wandb_values(args, train_cfg)
 
-    project_name = wandb_helper.get_project_name()
-    entity_name = wandb_helper.get_entity_name()
-
-    if project_name is not None and entity_name is not None:
-        # todo: add the project name from args
+    if wandb_helper.get_project_name() is not None and \
+       wandb_helper.get_entity_name() is not None:
         sweep_id = wandb.sweep(
-            sweep_config, entity="ajm4", project="wandb-sweeps-testing")
+            sweep_config,
+            entity=wandb_helper.get_entity_name(),
+            project=wandb_helper.get_project_name())
         wandb.agent(sweep_id, sweep_wandb, count=sweep_config['count'])
     else:
         print('ERROR: No WandB project and entity provided for sweeping')

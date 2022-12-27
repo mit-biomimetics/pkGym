@@ -1,4 +1,5 @@
 import os
+import json
 import wandb
 from gym import LEGGED_GYM_ROOT_DIR
 
@@ -7,28 +8,40 @@ class WandbSingleton(object):
     def __new__(self):
         if not hasattr(self, 'instance'):
             self.instance = super(WandbSingleton, self).__new__(self)
-        self.entity_name = None
-        self.project_name = None
-        self.experiment_name = ''
-        self.enabled = False
+            self.entity_name = None
+            self.project_name = None
+            self.experiment_name = ''
+            self.enabled = False
+
         return self.instance
 
     def set_wandb_values(self, args, train_cfg=None):
-        if train_cfg is not None:
-            if hasattr(train_cfg, 'wandb_settings') and \
-               hasattr(train_cfg.wandb_settings, 'enable_wandb'):
-                # todo: load json
-                pass
+        # first priority for commandline args
+        if args.wandb_project is not None and args.wandb_entity is not None:
+            print('Recevied WandB entity and project from arguments.')
+            self.entity_name = args.wandb_entity
+            self.project_name = args.wandb_project
+        # second priority for JSON
+        elif train_cfg is not None and \
+            hasattr(train_cfg, 'wandb_settings') and \
+            hasattr(train_cfg.wandb_settings, 'enable_wandb') \
+                and train_cfg.wandb_settings.enable_wandb:
+            json_data = json.load(open(os.path.join(
+                LEGGED_GYM_ROOT_DIR, 'gym', 'user', 'wandb_config.json')))
+            print('Loaded WandB entity and project from JSON.')
+            self.entity_name = json_data['entity']
+            self.project_name = json_data['project']
+        # assume WandB is off and give a warning
+        else:
+            print('WARNING: WandB is disabled and will not save or log.')
+            return
 
         if args.task is not None:
             self.experiment_name = f'{args.task}'
 
-        if args.wandb_project is not None and args.wandb_entity is not None:
-            self.entity_name = args.wandb_entity
-            self.project_name = args.wandb_project
-
-        if self.entity_name is not None and self.project_name is not None:
-            self.enabled = True
+        print(f'Setting WandB project name: {self.project_name}\n' +
+              f'Setting WandB entitiy name: {self.entity_name}\n')
+        self.enabled = True
 
     def is_wandb_enabled(self):
         return self.enabled
