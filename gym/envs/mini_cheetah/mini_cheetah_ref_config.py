@@ -21,7 +21,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         # PD Drive parameters:
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
-        gait_freq = 4. #
+        gait_freq = 3. #
         dof_pos_decay = None  # set to None to disable
         ctrl_frequency = 100
         desired_sim_frequency = 500
@@ -77,7 +77,9 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
         # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
         activation = 'elu'
 
-        actor_obs = ["base_ang_vel",
+        actor_obs = ["base_height",
+                     "base_lin_vel",
+                     "base_ang_vel",
                      "projected_gravity",
                      "commands",
                      "dof_pos_obs",
@@ -97,8 +99,8 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                       "dof_pos_history",
                       "phase_obs"
                       ]
-                      
-        actions = ["dof_pos_target"]                  
+
+        actions = ["dof_pos_target"]
 
         class noise:
             dof_pos_obs = 0.005  # can be made very low
@@ -107,8 +109,6 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
             projected_gravity = 0.05
         class reward:
             make_PBRS = []
-
-            # TODO this could be directly a dict... but we're moving to json soonish?
             class weights:
                 tracking_lin_vel = 4.0
                 tracking_ang_vel = 1.0
@@ -154,6 +154,7 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                "dof_vel"]
         targets = ["base_height",
                    "base_lin_vel"]
+        states_to_write_to = targets
         # * neural network params
         class neural_net:
             activation = "elu"
@@ -163,8 +164,6 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
             # Done per layer, including initial layer (input-first, no last-output)
             # len(dropouts) == len(hidden_dims)
             dropouts = [0.1, 0.1, 0.1]
-
-        # TODO pull in state_estimator_nn into here.
 
     class runner(MiniCheetahRunnerCfg.runner):
         run_name = ''

@@ -74,8 +74,8 @@ def play(args):
         # * handle state-estimation
         if SE_ON:
             SE_obs = env.get_states(train_cfg.state_estimator.obs)
-            SE_prediction = state_estimator.predict(SE_obs)
-            obs = torch.cat((SE_prediction.detach(), obs.detach()), dim=1)
+            estimates = state_estimator.predict(SE_obs)
+            env.set_states(train_cfg.state_estimator.targets, estimates)
 
         actions = policy(obs.detach())
         interface.update(env)

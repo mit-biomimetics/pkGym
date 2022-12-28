@@ -56,8 +56,6 @@ class OnPolicyRunner:
 
         actor_critic_class = eval(self.cfg["policy_class_name"]) # ActorCritic
         num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
-        if self.cfg["SE_learner"] == "modular_SE":    # if using SE
-            num_actor_obs += self.get_obs_size(self.se_cfg["targets"])
         num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
         num_actions = self.get_action_size(self.policy_cfg["actions"])
         actor_critic: ActorCritic = actor_critic_class(num_actor_obs,
@@ -65,12 +63,8 @@ class OnPolicyRunner:
                                             num_actions,
                                             **self.policy_cfg).to(self.device)
 
-        # ! this is hardcoded
-        if self.cfg["algorithm_class_name"] == "PPO":
-            alg_class = eval(self.cfg["algorithm_class_name"]) # PPO
-            self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
-        else:
-            raise("No idea what algorithm you want from me here.")
+        alg_class = eval(self.cfg["algorithm_class_name"]) # PPO
+        self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
 
         if self.cfg["SE_learner"] == "modular_SE":
             num_SE_obs = self.get_obs_size(self.se_cfg["obs"])
@@ -96,7 +90,7 @@ class OnPolicyRunner:
         self.log_dir = log_dir
         self.SE_path = os.path.join(self.log_dir, 'SE')   # log_dir for SE
         self.logger = Logger(log_dir, self.device)
-        
+
         reward_keys_to_log = list(self.policy_cfg["reward"]["weights"].keys())\
                              + list(self.policy_cfg["reward"]
                                     ["termination_weight"].keys())
@@ -115,14 +109,6 @@ class OnPolicyRunner:
 
     def init_storage(self):
         num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
-        if self.cfg["SE_learner"] == "modular_SE":
-            num_SE_obs = self.get_obs_size(self.se_cfg["obs"])
-            num_SE_outputs = self.get_obs_size(self.se_cfg["targets"])
-            self.state_estimator.init_storage(self.env.num_envs,
-                                              self.num_steps_per_env,
-                                              [num_SE_obs],
-                                              [num_SE_outputs])
-            num_actor_obs += num_SE_outputs
         num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
         num_actions = self.get_action_size(self.policy_cfg["actions"])
         self.alg.init_storage(self.env.num_envs,
@@ -130,6 +116,13 @@ class OnPolicyRunner:
                               actor_obs_shape=[num_actor_obs],
                               critic_obs_shape=[num_critic_obs],
                               action_shape=[num_actions])
+        if self.cfg["SE_learner"] == "modular_SE":
+            num_SE_obs = self.get_obs_size(self.se_cfg["obs"])
+            num_SE_outputs = self.get_obs_size(self.se_cfg["targets"])
+            self.state_estimator.init_storage(self.env.num_envs,
+                                              self.num_steps_per_env,
+                                              [num_SE_obs],
+                                              [num_SE_outputs])
 
     def configure_wandb(self, wandb, log_freq=100, log_graph=True):
         wandb.watch((self.alg.actor_critic.actor,
@@ -141,24 +134,26 @@ class OnPolicyRunner:
         self.current_learning_iteration = 0
 
     def learn(self, num_learning_iterations, init_at_random_ep_len=False):
+
         if init_at_random_ep_len:
             self.env.episode_length_buf = torch.randint_like(self.env.episode_length_buf, high=int(self.env.max_episode_length))
 
         actor_obs = self.get_obs(self.policy_cfg["actor_obs"])
-        if self.cfg["SE_learner"] == "modular_SE":
-            SE_obs = self.get_obs(self.se_cfg["obs"])
-            SE_estimate = self.state_estimator.predict(SE_obs)
-            actor_obs = torch.cat((SE_estimate, actor_obs), dim=1)
         critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
 
         self.alg.actor_critic.train()
         self.num_learning_iterations = num_learning_iterations
-        self.tot_iter = self.current_learning_iteration + num_learning_iterations
-        for self.it in range(self.current_learning_iteration, self.tot_iter):
+        self.total_iter = self.current_learning_iteration \
+                        + num_learning_iterations
+        for self.it in range(self.current_learning_iteration, self.total_iter):
             start = time.time()
             # * Rollout
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
+
+                    if self.cfg["SE_learner"] == "modular_SE":
+                        self.do_state_estimation()
+
                     actions = self.alg.act(actor_obs, critic_obs)
                     self.set_actions(actions)
                     self.env.step()
@@ -171,16 +166,8 @@ class OnPolicyRunner:
                                                        modifier=self.env.dt)
                     rewards += self.get_and_log_rewards(self.policy_cfg["reward"]["termination_weight"])
 
-                    if self.cfg["SE_learner"] == "modular_SE":
-                        SE_obs = self.get_obs(self.se_cfg["obs"])
-                        SE_estimate = self.state_estimator.predict(SE_obs)
-                        actor_obs = torch.cat((SE_estimate, actor_obs), dim=1)
-                        SE_targets = self.get_obs(self.se_cfg["targets"])
-                        self.state_estimator.process_env_step(SE_obs,
-                                                              SE_targets)
-                    if self.cfg["algorithm_class_name"] == "PPO":
-                        timed_out = self.get_timed_out()
-                        self.alg.process_env_step(rewards, dones, timed_out)
+                    timed_out = self.get_timed_out()
+                    self.alg.process_env_step(rewards, dones, timed_out)
 
                     self.logger.update_episode_buffer(dones)
 
@@ -193,6 +180,7 @@ class OnPolicyRunner:
             self.mean_value_loss, self.mean_surrogate_loss = self.alg.update()
             if self.cfg["SE_learner"] == "modular_SE":
                 SE_loss = self.state_estimator.update()
+                self.logger.add_log({'Loss/state_estimator': SE_loss})
             stop = time.time()
             self.learn_time = stop - start
             self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
@@ -224,9 +212,9 @@ class OnPolicyRunner:
                     noise_tensor *= self.env.scales[obs]
                 noise_vec[obs_index:obs_index+obs_size] = noise_tensor
             obs_index += obs_size
-        return torch_rand_float(-1., 1., (self.env.num_envs, len(noise_vec)), 
-                                            self.device) * noise_vec
-    
+        return torch_rand_float(-1., 1., (self.env.num_envs, len(noise_vec)),
+                                self.device) * noise_vec
+
     def get_noisy_obs(self, obs_list, noise_dict):
         observation = self.get_obs(obs_list)
         return observation + self.get_noise(obs_list, noise_dict)
@@ -235,8 +223,19 @@ class OnPolicyRunner:
         observation = self.env.get_states(obs_list).to(self.device)
         return observation
 
-    def set_actions(self,actions):
+    def set_actions(self, actions):
         self.env.set_states(self.policy_cfg["actions"], actions)
+
+    def do_state_estimation(self, training=True):
+        SE_obs = self.get_obs(self.se_cfg["obs"])
+        state_estimates = self.state_estimator.predict(SE_obs)
+        self.set_state_estimates(state_estimates)
+        if training:
+            SE_targets = self.get_obs(self.se_cfg["targets"])
+            self.state_estimator.process_env_step(SE_obs, SE_targets)
+
+    def set_state_estimates(self, estimates):
+        self.env.set_states(self.se_cfg["states_to_write_to"], estimates)
 
     def get_timed_out(self):
         return self.env.get_states(["timed_out"]).to(self.device)
@@ -272,22 +271,22 @@ class OnPolicyRunner:
         mean_noise_std = self.alg.actor_critic.std.mean().item()
         self.logger.add_log(self.logger.mean_rewards)
         self.logger.add_log({
-                             "Loss/value_function" : self.mean_value_loss,
-                             "Loss/surrogate" : self.mean_surrogate_loss,
+                             "Loss/value_function": self.mean_value_loss,
+                             "Loss/surrogate": self.mean_surrogate_loss,
                              "Loss/learning_rate": self.alg.learning_rate,
-                             "Policy/mean_noise_std" : mean_noise_std,
+                             "Policy/mean_noise_std": mean_noise_std,
                              "Perf/total_fps": fps,
                              "Perf/collection_time": self.collection_time,
-                             "Perf/learning_time" : self.learn_time,
-                             "Train/mean_reward" : self.logger.total_mean_reward,
-                             "Train/mean_episode_length" : self.logger.mean_episode_length,
+                             "Perf/learning_time": self.learn_time,
+                             "Train/mean_reward": self.logger.total_mean_reward,
+                             "Train/mean_episode_length": self.logger.mean_episode_length,
                              "Train/total_timesteps": self.tot_timesteps,
                              "Train/iteration_time": self.collection_time+self.learn_time,
                              "Train/time": self.tot_time,
                              })
-        self.logger.update_iterations(self.it, self.tot_iter, 
+        self.logger.update_iterations(self.it, self.total_iter,
                                       self.num_learning_iterations)
-                        
+
         #TODO: iterate through the config for any extra things you might want to log
 
         if wandb.run is not None:
@@ -330,13 +329,11 @@ class OnPolicyRunner:
 
         return loaded_dict['infos']
 
-
     def get_state_estimator(self, device=None):
         self.state_estimator.state_estimator.eval()
         if device is not None:
             self.state_estimator.state_estimator.to(device)
         return self.state_estimator
-
 
     def get_inference_policy(self, device=None):
         # switch to evaluation mode (dropout for example)
@@ -344,7 +341,6 @@ class OnPolicyRunner:
         if device is not None:
             self.alg.actor_critic.to(device)
         return self.alg.actor_critic.actor.act_inference
-
 
     def export(self, path):
         self.alg.actor_critic.export_policy(path)
