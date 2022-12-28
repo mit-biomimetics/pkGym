@@ -33,7 +33,7 @@
 import isaacgym
 from gym.envs import *
 from gym.utils import get_args, task_registry
-from gym.utils.logging_and_saving import local_code_save_helper
+from gym.utils.logging_and_saving import local_code_save_helper, wandb_helper
 
 
 def train(args):
@@ -54,7 +54,7 @@ def train(args):
         num_learning_iterations=train_cfg.runner.max_iterations,
         init_at_random_ep_len=True)
 
-    local_code_save_helper.wandb_close(args)
+    wandb_helper.close_wandb(args)
 
 
 if __name__ == '__main__':
