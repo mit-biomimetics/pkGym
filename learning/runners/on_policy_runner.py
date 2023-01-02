@@ -42,6 +42,7 @@ from learning.env import VecEnv
 from learning.utils import remove_zero_weighted_rewards
 from learning.utils import Logger
 
+
 class OnPolicyRunner:
 
     def __init__(self,
@@ -54,14 +55,13 @@ class OnPolicyRunner:
         self.env = env
         self.parse_train_cfg(train_cfg)
 
-        actor_critic_class = eval(self.cfg["policy_class_name"]) # ActorCritic
         num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
         num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
         num_actions = self.get_action_size(self.policy_cfg["actions"])
-        actor_critic: ActorCritic = actor_critic_class(num_actor_obs,
-                                            num_critic_obs,
-                                            num_actions,
-                                            **self.policy_cfg).to(self.device)
+        actor_critic = ActorCritic(num_actor_obs,
+                                   num_critic_obs,
+                                   num_actions,
+                                   **self.policy_cfg).to(self.device)
 
         alg_class = eval(self.cfg["algorithm_class_name"]) # PPO
         self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
@@ -99,6 +99,7 @@ class OnPolicyRunner:
     def parse_train_cfg(self, train_cfg):
         self.cfg = train_cfg['runner']
         self.alg_cfg = train_cfg['algorithm']
+
         remove_zero_weighted_rewards(train_cfg['policy']['reward']['weights'])
         self.policy_cfg = train_cfg['policy']
 
@@ -108,7 +109,15 @@ class OnPolicyRunner:
             self.se_cfg = None
 
     def init_storage(self):
-        num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
+        num_actor_obs = self.get_obs_size(self.policy_cfg['actor_obs'])
+        if self.cfg['SE_learner'] == 'modular_SE':
+            num_SE_obs = self.get_obs_size(self.se_cfg['obs'])
+            num_SE_outputs = self.get_obs_size(self.se_cfg['targets'])
+            self.state_estimator.init_storage(self.env.num_envs,
+                                              self.num_steps_per_env,
+                                              [num_SE_obs],
+                                              [num_SE_outputs])
+            num_actor_obs += num_SE_outputs
         num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
         num_actions = self.get_action_size(self.policy_cfg["actions"])
         self.alg.init_storage(self.env.num_envs,
@@ -116,13 +125,6 @@ class OnPolicyRunner:
                               actor_obs_shape=[num_actor_obs],
                               critic_obs_shape=[num_critic_obs],
                               action_shape=[num_actions])
-        if self.cfg["SE_learner"] == "modular_SE":
-            num_SE_obs = self.get_obs_size(self.se_cfg["obs"])
-            num_SE_outputs = self.get_obs_size(self.se_cfg["targets"])
-            self.state_estimator.init_storage(self.env.num_envs,
-                                              self.num_steps_per_env,
-                                              [num_SE_obs],
-                                              [num_SE_outputs])
 
     def configure_wandb(self, wandb, log_freq=100, log_graph=True):
         wandb.watch((self.alg.actor_critic.actor,

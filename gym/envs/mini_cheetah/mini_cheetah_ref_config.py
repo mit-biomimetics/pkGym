@@ -141,8 +141,8 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
         num_mini_batches = 6  # mini batch size = num_envs*nsteps/nminibatches
         learning_rate = 5.e-5
         schedule = 'adaptive'  # can be adaptive, fixed
-        gamma = 0.99
-        lam = 0.95
+        discount_horizon = 0.75  # [s]
+        GAE_bootstrap_horizon = 0.2  # [s]
         desired_kl = 0.01
         max_grad_norm = 1.
     class state_estimator:

@@ -34,6 +34,7 @@ from typing import Tuple
 
 from learning.env import VecEnv
 from learning.runners import OnPolicyRunner
+from learning.utils import set_discount_from_horizon
 
 from gym import LEGGED_GYM_ROOT_DIR, LEGGED_GYM_ENVS_DIR
 from .helpers import get_args, update_cfg_from_args, class_to_dict, get_load_path, set_seed, parse_sim_params
@@ -75,18 +76,33 @@ class TaskRegistry():
     def update_and_parse_cfgs(self, env_cfg, train_cfg, args):
 
         update_cfg_from_args(env_cfg, train_cfg, args)
+        self.convert_frequencies_to_params(env_cfg, train_cfg)
         self.update_sim_cfg(args)
-        # * handle the ctrl_frequency
+
+    def convert_frequencies_to_params(self, env_cfg, train_cfg):
+        self.set_control_and_sim_dt(env_cfg, train_cfg)
+        self.set_discount_rates(train_cfg, env_cfg.control.ctrl_dt)
+
+    def set_control_and_sim_dt(self, env_cfg, train_cfg):
         env_cfg.control.decimation = int(env_cfg.control.desired_sim_frequency
                                          / env_cfg.control.ctrl_frequency)
         env_cfg.control.ctrl_dt = 1.0 / env_cfg.control.ctrl_frequency
         env_cfg.sim_dt = env_cfg.control.ctrl_dt / env_cfg.control.decimation
         self.sim_cfg["dt"] = env_cfg.sim_dt
         if env_cfg.sim_dt != 1.0/env_cfg.control.desired_sim_frequency:
-            print(f"****** Simulation dt adjusted from "
-                  f"{1.0/env_cfg.control.desired_sim_frequency}"
-                  f" to {env_cfg.sim_dt}.")
+            print(f'****** Simulation dt adjusted from '
+                  f'{1.0/env_cfg.control.desired_sim_frequency}'
+                  f' to {env_cfg.sim_dt}.')
 
+    def set_discount_rates(self, train_cfg, dt):
+
+        if hasattr(train_cfg.algorithm, 'discount_horizon'):
+            hrzn = train_cfg.algorithm.discount_horizon
+            train_cfg.algorithm.gamma = set_discount_from_horizon(dt, hrzn)
+
+        if hasattr(train_cfg.algorithm, 'GAE_bootstrap_horizon'):
+            hrzn = train_cfg.algorithm.GAE_bootstrap_horizon
+            train_cfg.algorithm.lam = set_discount_from_horizon(dt, hrzn)
 
     def update_sim_cfg(self, args):
         self.sim["sim_device"] = args.sim_device
@@ -100,8 +116,6 @@ class TaskRegistry():
         self.sim["params"].physx.num_subscenes = args.subscenes
         self.sim["params"].use_gpu_pipeline = args.use_gpu_pipeline
         isaacgym.gymutil.parse_sim_config(self.sim_cfg, self.sim["params"])
-
-
 
     def make_gym_and_sim(self):
         self.make_gym()
@@ -152,8 +166,11 @@ class TaskRegistry():
                          headless=self.sim["headless"])
         return env, env_cfg
 
-    def make_alg_runner(self, env, name=None, args=None, train_cfg=None, log_root="default") -> Tuple[OnPolicyRunner, LeggedRobotRunnerCfg]:
-        """ Creates the training algorithm  either from a registered namme or from the provided config file.
+    def make_alg_runner(self, env, name=None, args=None, train_cfg=None,
+                        log_root="default") -> Tuple[OnPolicyRunner,
+                                                     LeggedRobotRunnerCfg]:
+        """ Creates the training algorithm  either from a registered namme or
+        from the provided config file.
 
         Args:
             env (isaacgym.VecTaskPython): The environment to train (TODO: remove from within the algorithm)

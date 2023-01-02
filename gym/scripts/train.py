@@ -1,5 +1,3 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES.
-# All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
 #
 # Redistribution and use in source and binary forms, with or without
@@ -60,3 +58,4 @@ def train(args):
 if __name__ == '__main__':
     args = get_args()
     train(args)
+

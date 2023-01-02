@@ -115,9 +115,9 @@ class LeggedRobotCfg(BaseConfig):
         # PD Drive parameters:
         stiffness = {'joint_a': 10.0, 'joint_b': 15.}  # [N*m/rad]
         damping = {'joint_a': 1.0, 'joint_b': 1.5}     # [N*m*s/rad]
-        
+
         q_des_decay = None
-        
+
         ctrl_frequency = 100
         desired_sim_frequency = 200
 
