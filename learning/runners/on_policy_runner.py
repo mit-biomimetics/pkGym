@@ -81,7 +81,7 @@ class OnPolicyRunner:
         self.save_interval = self.cfg["save_interval"]
         self.tot_timesteps = 0
         self.tot_time = 0
-        self.current_learning_iteration = 0
+        self.it = 0
 
         # init storage and model
         self.init_storage()
@@ -130,8 +130,6 @@ class OnPolicyRunner:
                     log_freq=log_freq,
                     log_graph=log_graph)
 
-    def reset_learn(self):
-        self.current_learning_iteration = 0
 
     def learn(self, num_learning_iterations, init_at_random_ep_len=False):
 
@@ -143,9 +141,11 @@ class OnPolicyRunner:
 
         self.alg.actor_critic.train()
         self.num_learning_iterations = num_learning_iterations
-        self.total_iter = self.current_learning_iteration \
-                        + num_learning_iterations
-        for self.it in range(self.current_learning_iteration, self.total_iter):
+        self.tot_iter = self.it + num_learning_iterations
+
+        self.save()
+
+        for self.it in range(self.it+1, self.tot_iter+1):
             start = time.time()
             # * Rollout
             with torch.inference_mode():
@@ -189,17 +189,10 @@ class OnPolicyRunner:
             self.log()
 
             if self.it % self.save_interval == 0:
-                self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.it)))
-                if self.cfg["SE_learner"] == "modular_SE": 
-                    if not os.path.exists(self.SE_path):
-                        os.makedirs(self.SE_path)
-                    self.save_SE(os.path.join(self.SE_path, 'SE_{}.pt'.format(self.it)))
+                self.save()
 
-        self.current_learning_iteration += num_learning_iterations
         # * save
-        self.save(os.path.join(self.log_dir, 'model_{}.pt'.format(self.current_learning_iteration)))
-        if self.cfg["SE_learner"] == "modular_SE": 
-            self.save_SE(os.path.join(self.SE_path, 'SE_{}.pt'.format(self.current_learning_iteration)))
+        self.save()
 
     def get_noise(self, obs_list, noise_dict):
         noise_vec = torch.zeros(self.get_obs_size(obs_list), device=self.device)
@@ -284,7 +277,7 @@ class OnPolicyRunner:
                              "Train/iteration_time": self.collection_time+self.learn_time,
                              "Train/time": self.tot_time,
                              })
-        self.logger.update_iterations(self.it, self.total_iter,
+        self.logger.update_iterations(self.it, self.tot_iter,
                                       self.num_learning_iterations)
 
         #TODO: iterate through the config for any extra things you might want to log
@@ -299,35 +292,39 @@ class OnPolicyRunner:
     def get_infos(self):
         return self.env.extras
 
-    def save(self, path, infos=None):
+    def save(self):
+        path = os.path.join(self.log_dir, 'model_{}.pt'.format(self.it))
         torch.save({
             'model_state_dict': self.alg.actor_critic.state_dict(),
             'optimizer_state_dict': self.alg.optimizer.state_dict(),
-            'iter': self.current_learning_iteration,
-            'infos': infos,
-            }, path)
+            'iter': self.it},
+                   path)
+        if self.cfg["SE_learner"] == "modular_SE":
+            self.save_SE()
 
-    def save_SE(self, path, infos=None):
+    def save_SE(self):
+        if not os.path.exists(self.SE_path):
+                        os.makedirs(self.SE_path)
+        path = os.path.join(self.SE_path, 'SE_{}.pt'.format(self.it))
         torch.save({
             'model_state_dict': self.state_estimator.state_estimator.state_dict(),
             'optimizer_state_dict': self.state_estimator.optimizer.state_dict(),
-            'iter': self.current_learning_iteration,
-            'infos': infos,
-            }, path)
+            'iter': self.it},
+                   path)
 
     def load(self, path, load_optimizer=True):
         loaded_dict = torch.load(path)
         self.alg.actor_critic.load_state_dict(loaded_dict['model_state_dict'])
         if load_optimizer:
             self.alg.optimizer.load_state_dict(loaded_dict['optimizer_state_dict'])
-        self.current_learning_iteration = loaded_dict['iter']
+        self.it = loaded_dict['iter']
 
         if self.cfg["SE_learner"] == "modular_SE": 
             SE_path = path.replace("/model_", "/SE/SE_")
             SEloaded_dict = torch.load(SE_path)
             self.state_estimator.state_estimator.load_state_dict(SEloaded_dict['model_state_dict'])
 
-        return loaded_dict['infos']
+
 
     def get_state_estimator(self, device=None):
         self.state_estimator.state_estimator.eval()
