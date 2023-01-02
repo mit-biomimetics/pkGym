@@ -14,31 +14,30 @@ class_dict = {
     'Cartpole': '.cartpole.cartpole',
     'MiniCheetah': '.mini_cheetah.mini_cheetah',
     'MiniCheetahRef': '.mini_cheetah.mini_cheetah_ref',
-    'MIT_Humanoid': '.mit_humanoid.mit_humanoid'
+    'MIT_Humanoid': '.mit_humanoid.mit_humanoid',
 }
 
 config_dict = {
     'CartpoleCfg': '.cartpole.cartpole_config',
     'MiniCheetahCfg': '.mini_cheetah.mini_cheetah_config',
+    'MiniCheetahRefCfg': '.mini_cheetah.mini_cheetah_ref_config',
     'MITHumanoidCfg': '.mit_humanoid.mit_humanoid_config',
-    'MiniCheetahRefCfg': '.mini_cheetah.mini_cheetah_ref_config'
 }
 
 runner_config_dict = {
     'CartpoleRunnerCfg': '.cartpole.cartpole_config',
     'MiniCheetahRunnerCfg': '.mini_cheetah.mini_cheetah_config',
+    'MiniCheetahRefRunnerCfg': '.mini_cheetah.mini_cheetah_ref_config',
     'MITHumanoidRunnerCfg': '.mit_humanoid.mit_humanoid_config',
-    'MiniCheetahRefRunnerCfg': '.mini_cheetah.mini_cheetah_ref_config'
 }
 
 task_dict = {
-    'humanoid': ['MIT_Humanoid', 'MITHumanoidCfg', 'MITHumanoidRunnerCfg'],
+    'cartpole': ['Cartpole', 'CartpoleCfg', 'CartpoleRunnerCfg'],
     'mini_cheetah': ['MiniCheetah', 'MiniCheetahCfg', 'MiniCheetahRunnerCfg'],
     'mini_cheetah_ref':
         ['MiniCheetahRef', 'MiniCheetahRefCfg', 'MiniCheetahRefRunnerCfg'],
-    'cartpole': ['Cartpole', 'CartpoleCfg', 'CartpoleRunnerCfg']
+    'humanoid': ['MIT_Humanoid', 'MITHumanoidCfg', 'MITHumanoidRunnerCfg'],
 }
-
 
 for class_name, class_location in class_dict.items():
     locals()[class_name] = getattr(
