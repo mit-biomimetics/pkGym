@@ -109,15 +109,7 @@ class OnPolicyRunner:
             self.se_cfg = None
 
     def init_storage(self):
-        num_actor_obs = self.get_obs_size(self.policy_cfg['actor_obs'])
-        if self.cfg['SE_learner'] == 'modular_SE':
-            num_SE_obs = self.get_obs_size(self.se_cfg['obs'])
-            num_SE_outputs = self.get_obs_size(self.se_cfg['targets'])
-            self.state_estimator.init_storage(self.env.num_envs,
-                                              self.num_steps_per_env,
-                                              [num_SE_obs],
-                                              [num_SE_outputs])
-            num_actor_obs += num_SE_outputs
+        num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
         num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
         num_actions = self.get_action_size(self.policy_cfg["actions"])
         self.alg.init_storage(self.env.num_envs,
@@ -125,6 +117,13 @@ class OnPolicyRunner:
                               actor_obs_shape=[num_actor_obs],
                               critic_obs_shape=[num_critic_obs],
                               action_shape=[num_actions])
+        if self.cfg["SE_learner"] == "modular_SE":
+            num_SE_obs = self.get_obs_size(self.se_cfg["obs"])
+            num_SE_outputs = self.get_obs_size(self.se_cfg["targets"])
+            self.state_estimator.init_storage(self.env.num_envs,
+                                              self.num_steps_per_env,
+                                              [num_SE_obs],
+                                              [num_SE_outputs])
 
     def configure_wandb(self, wandb, log_freq=100, log_graph=True):
         wandb.watch((self.alg.actor_critic.actor,
@@ -325,7 +324,6 @@ class OnPolicyRunner:
             SE_path = path.replace("/model_", "/SE/SE_")
             SEloaded_dict = torch.load(SE_path)
             self.state_estimator.state_estimator.load_state_dict(SEloaded_dict['model_state_dict'])
-
 
 
     def get_state_estimator(self, device=None):

@@ -1,7 +1,7 @@
 
 from gym.envs.mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahRunnerCfg
 
-BASE_HEIGHT_REF = 0.32
+BASE_HEIGHT_REF = 0.35
 
 class MiniCheetahRefCfg(MiniCheetahCfg):
     class env(MiniCheetahCfg.env):
@@ -21,8 +21,8 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         # PD Drive parameters:
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
-        gait_freq = 3. #
-        dof_pos_decay = None  # set to None to disable
+        gait_freq = 3.5 #
+        dof_pos_decay = 0.15  # set to None to disable
         ctrl_frequency = 100
         desired_sim_frequency = 500
 
@@ -30,20 +30,20 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         resampling_time = 10.  # time before command are changed[s]
 
         class ranges:
-            lin_vel_x = [-1.0, 1.0]  # min max [m/s]
+            lin_vel_x = [-1.0, 4.0]  # min max [m/s]
             lin_vel_y = 1.  # max [m/s]
             yaw_vel = 1    # max [rad/s]
 
     class push_robots:
         toggle = True
         interval_s = 2
-        max_push_vel_xy = 0.05
+        max_push_vel_xy = 0.1
 
     class domain_rand(MiniCheetahCfg.domain_rand):
         randomize_friction = True
         friction_range = [0.75, 1.05]
         randomize_base_mass = True
-        added_mass_range = [-1., 3.]
+        added_mass_range = [-1., 1.]
 
     class asset(MiniCheetahCfg.asset):
         file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah_simple.urdf"
@@ -103,21 +103,21 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
         actions = ["dof_pos_target"]
 
         class noise:
-            dof_pos_obs = 0.005  # can be made very low
-            dof_vel = 0.005
-            ang_vel = [0.3, 0.15, 0.4]  # 0.027, 0.14, 0.37
-            projected_gravity = 0.05
+            # dof_pos_obs = 0.005  # can be made very low
+            # dof_vel = 0.005
+            # ang_vel = [0.1, 0.1, 0.1]  # 0.027, 0.14, 0.37
+            projected_gravity = 0.0
         class reward:
             make_PBRS = []
             class weights:
-                tracking_lin_vel = 4.0
+                tracking_lin_vel = 3.0
                 tracking_ang_vel = 1.0
-                lin_vel_z = 0.6
+                lin_vel_z = 0.1
                 ang_vel_xy = 0.0
-                orientation = 1.75
+                orientation = 1.5
                 torques = 5.e-7
                 dof_vel = 0.
-                min_base_height = 1.5
+                min_base_height = 1.
                 collision = 0.25
                 action_rate = 0.01  # -0.01
                 action_rate2 = 0.001  # -0.001
@@ -127,7 +127,7 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                 dof_near_home = 0.
                 reference_traj = 0.5
                 swing_grf = 0.75
-                stance_grf = 1.
+                stance_grf = 1.5
             class termination_weight:
                 termination = 15
 
@@ -152,8 +152,10 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                "projected_gravity",
                "dof_pos",
                "dof_vel"]
+
         targets = ["base_height",
                    "base_lin_vel"]
+
         states_to_write_to = targets
         # * neural network params
         class neural_net:
@@ -171,4 +173,4 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
         max_iterations = 1000  # number of policy updates
         SE_learner = 'modular_SE'
         algorithm_class_name = 'PPO'
-        num_steps_per_env = 32 # per iteration (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)
+        num_steps_per_env = 32
