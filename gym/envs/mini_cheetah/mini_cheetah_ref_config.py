@@ -169,7 +169,7 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
 
     class runner(MiniCheetahRunnerCfg.runner):
         run_name = ''
-        experiment_name = 'se_ref_D'
+        experiment_name = 'mini_cheetah_ref'
         max_iterations = 1000  # number of policy updates
         SE_learner = 'modular_SE'
         algorithm_class_name = 'PPO'
