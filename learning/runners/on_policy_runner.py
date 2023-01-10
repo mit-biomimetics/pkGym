@@ -222,11 +222,11 @@ class OnPolicyRunner:
 
     def do_state_estimation(self, training=True):
         SE_obs = self.get_obs(self.se_cfg["obs"])
-        state_estimates = self.state_estimator.predict(SE_obs)
-        self.set_state_estimates(state_estimates)
         if training:
             SE_targets = self.get_obs(self.se_cfg["targets"])
             self.state_estimator.process_env_step(SE_obs, SE_targets)
+        state_estimates = self.state_estimator.predict(SE_obs)
+        self.set_state_estimates(state_estimates)
 
     def set_state_estimates(self, estimates):
         self.env.set_states(self.se_cfg["states_to_write_to"], estimates)
