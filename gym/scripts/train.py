@@ -25,7 +25,7 @@ def train(args, wandb_helper):
         num_learning_iterations=train_cfg.runner.max_iterations,
         init_at_random_ep_len=True)
 
-    wandb_helper.close_wandb(args)
+    wandb_helper.close_wandb()
 
 
 if __name__ == '__main__':
