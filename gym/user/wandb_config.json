@@ -1,4 +1,4 @@
 {
-    "entity":"ajm4",
-    "project":"wandb-sweeps-testing"
+    "entity":"YOUR-WANDB-USERNAME",
+    "project":"YOUR-PROJECT-NAME"
 }

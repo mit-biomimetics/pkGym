@@ -105,15 +105,14 @@ class TaskRegistry():
         self.make_sim()
 
     def make_gym(self):
-        if not hasattr(self, '_gym'):
-            self._gym = isaacgym.gymapi.acquire_gym()
+        self._gym = isaacgym.gymapi.acquire_gym()
 
     def make_sim(self):
-        if not hasattr(self, '_sim'):
-            self._sim = self._gym.create_sim(self.sim["sim_device_id"],
-                                            self.sim["graphics_device_id"],
-                                            self.sim["physics_engine"],
-                                            self.sim["params"])
+        self._sim = self._gym.create_sim(
+            self.sim["sim_device_id"],
+            self.sim["graphics_device_id"],
+            self.sim["physics_engine"],
+            self.sim["params"])
 
     def prepare_sim(self):
         """
@@ -204,10 +203,6 @@ class TaskRegistry():
             print(f"Loading model from: {resume_path}")
             runner.load(resume_path)
         return runner, train_cfg
-
-    def destroy_sim(self):
-        self._gym.destroy_sim(self._sim)
-        delattr(self, '_sim')
 
 
 # make global task registry
