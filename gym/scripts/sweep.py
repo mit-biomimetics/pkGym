@@ -1,3 +1,5 @@
+import os
+import json
 import wandb
 import isaacgym
 from gym.envs import *
@@ -6,9 +8,9 @@ from gym.utils.logging_and_saving \
     import local_code_save_helper, wandb_singleton
 from torch.multiprocessing import Process
 from torch.multiprocessing import set_start_method
+from gym import LEGGED_GYM_ROOT_DIR
 
 
-# todo: feature upgrade, move this to yaml/json
 def configure_sweep():
     """Configure the sweep instructions including strategy,
        goal metric, and parameters to sweep over.
@@ -45,6 +47,12 @@ def configure_sweep():
     sweep_config['parameters'] = parameters_dict
 
     return sweep_config
+
+
+def load_sweep_config(file_name):
+    return json.load(open(os.path.join(
+        LEGGED_GYM_ROOT_DIR, 'gym', 'scripts',
+        'sweep_configs', file_name)))
 
 
 def set_wandb_sweep_cfg_values(env_cfg, train_cfg, parameters_dict):
@@ -110,6 +118,9 @@ def start_sweeps(args):
     sweep_config = configure_sweep()
     # make one gym for all sweeps - each sweep makes its own sim
     # task_registry.make_gym()
+    # * generate sweep_config programatically or from JSON file
+    # sweep_config = configure_sweep()
+    sweep_config = load_sweep_config('sweep_config_example.json')
     _, train_cfg = task_registry.create_cfgs(args)
 
     wandb_helper = wandb_singleton.WandbSingleton()
