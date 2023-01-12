@@ -5,7 +5,10 @@ from gym.utils.logging_and_saving \
     import local_code_save_helper, wandb_singleton
 
 
-def train(args, wandb_helper):
+def train():
+    args = get_args()
+    wandb_helper = wandb_singleton.WandbSingleton()
+
     # * prepare environment
     env_cfg, train_cfg = task_registry.create_cfgs(args)
     task_registry.make_gym_and_sim()
@@ -29,6 +32,4 @@ def train(args, wandb_helper):
 
 
 if __name__ == '__main__':
-    args = get_args()
-    wandb_helper = wandb_singleton.WandbSingleton()
-    train(args, wandb_helper)
+    train()
