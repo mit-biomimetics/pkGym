@@ -91,7 +91,7 @@ def train():
         env, env_cfg, train_cfg, policy_runner)
     wandb_helper.set_wandb_values(args, train_cfg)
     if wandb_helper.is_wandb_enabled():
-        wandb_helper.setup_wandb(policy_runner)
+        wandb_helper.setup_wandb(policy_runner, is_sweep=True)
 
     parameter_dict = wandb.config
 
