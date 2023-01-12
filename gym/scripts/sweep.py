@@ -4,6 +4,8 @@ from gym.envs import *
 from gym.utils import get_args, task_registry
 from gym.utils.logging_and_saving \
     import local_code_save_helper, wandb_singleton
+from torch.multiprocessing import Process
+from torch.multiprocessing import set_start_method
 
 
 # todo: feature upgrade, move this to yaml/json
@@ -24,13 +26,13 @@ def configure_sweep():
     }
 
     # set the number of sweeps to perform
-    count = 5
+    run_cap = 10
 
     # set the sweep parameters to change
     # can be ranges or lists of values
     parameters_dict = {
         'train_cfg.runner.max_iterations': {
-            'values': [10]
+            'values': [100]
         },
         'env_cfg.env.episode_length_s': {
             'min': 2,
@@ -39,7 +41,7 @@ def configure_sweep():
     }
 
     sweep_config['metric'] = metric
-    sweep_config['count'] = count
+    sweep_config['run_cap'] = run_cap
     sweep_config['parameters'] = parameters_dict
 
     return sweep_config
@@ -65,22 +67,23 @@ def set_wandb_sweep_cfg_values(env_cfg, train_cfg, parameters_dict):
         print('set ' + locs[-1] + ' to ' + str(getattr(attr, locs[-1])))
 
 
-def sweep_wandb():
+def train():
     args = get_args()
     wandb_helper = wandb_singleton.WandbSingleton()
     # * prepare environment
     env_cfg, train_cfg = task_registry.create_cfgs(args)
-    task_registry.make_sim()
+    task_registry.make_gym_and_sim()
     env, env_cfg = task_registry.make_env(name=args.task, env_cfg=env_cfg)
     # * then make env
     policy_runner, train_cfg = \
         task_registry.make_alg_runner(env=env, name=args.task, args=args)
-    task_registry.prepare_sim()  # this gets called in legged too for some reason?
+    task_registry.prepare_sim()
 
     local_code_save_helper.log_and_save(
         env, env_cfg, train_cfg, policy_runner)
+    wandb_helper.set_wandb_values(args, train_cfg)
     if wandb_helper.is_wandb_enabled():
-        wandb_helper.setup_wandb(policy_runner, is_sweep=True)
+        wandb_helper.setup_wandb(policy_runner)
 
     parameter_dict = wandb.config
 
@@ -93,13 +96,20 @@ def sweep_wandb():
 
     wandb_helper.close_wandb()
 
-    task_registry.destroy_sim()
+
+def sweep_wandb_mp():
+    # start a process and then call the train function
+    p = Process(target=train, args=())
+    p.start()
+    p.join()
+    p.kill()
 
 
 def start_sweeps(args):
+    set_start_method('spawn')
     sweep_config = configure_sweep()
     # make one gym for all sweeps - each sweep makes its own sim
-    task_registry.make_gym()
+    # task_registry.make_gym()
     _, train_cfg = task_registry.create_cfgs(args)
 
     wandb_helper = wandb_singleton.WandbSingleton()
@@ -111,7 +121,7 @@ def start_sweeps(args):
             sweep_config,
             entity=wandb_helper.get_entity_name(),
             project=wandb_helper.get_project_name())
-        wandb.agent(sweep_id, sweep_wandb, count=sweep_config['count'])
+        wandb.agent(sweep_id, sweep_wandb_mp, count=sweep_config['run_cap'])
     else:
         print('ERROR: No WandB project and entity provided for sweeping')
 
