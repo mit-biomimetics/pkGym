@@ -11,44 +11,6 @@ from torch.multiprocessing import set_start_method
 from gym import LEGGED_GYM_ROOT_DIR
 
 
-def configure_sweep():
-    '''Configure the sweep instructions including strategy,
-       goal metric, and parameters to sweep over.
-       Returns a dictionary to pass to WandB'''
-
-    # * set the sweep strategy
-    sweep_config = {
-        'method': 'random'
-    }
-
-    # * set the metric objective for the sweeps
-    metric = {
-        'name': 'Train/mean_reward',
-        'goal': 'maximize'
-    }
-
-    # * set the number of sweeps to perform
-    run_cap = 10
-
-    # * set the sweep parameters to change
-    # * can be ranges or lists of values
-    parameters_dict = {
-        'train_cfg.runner.max_iterations': {
-            'values': [100]
-        },
-        'env_cfg.env.episode_length_s': {
-            'min': 2,
-            'max': 10
-        }
-    }
-
-    sweep_config['metric'] = metric
-    sweep_config['run_cap'] = run_cap
-    sweep_config['parameters'] = parameters_dict
-
-    return sweep_config
-
-
 def load_sweep_config(file_name):
     return json.load(open(os.path.join(
         LEGGED_GYM_ROOT_DIR, 'gym', 'scripts',
@@ -119,8 +81,7 @@ def start_sweeps(args):
     # * required for multiprocessing CUDA workloads
     set_start_method('spawn')
 
-    # * generate sweep_config programatically or from JSON file
-    # sweep_config = configure_sweep()
+    # * load sweep_config from JSON file
     sweep_config = load_sweep_config('sweep_config_example.json')
 
     _, train_cfg = task_registry.create_cfgs(args)
