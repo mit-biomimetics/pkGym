@@ -12,26 +12,26 @@ from gym import LEGGED_GYM_ROOT_DIR
 
 
 def configure_sweep():
-    """Configure the sweep instructions including strategy,
+    '''Configure the sweep instructions including strategy,
        goal metric, and parameters to sweep over.
-       Returns a dictionary to pass to WandB"""
+       Returns a dictionary to pass to WandB'''
 
-    # set the sweep strategy
+    # * set the sweep strategy
     sweep_config = {
         'method': 'random'
     }
 
-    # set the metric objective for the sweeps
+    # * set the metric objective for the sweeps
     metric = {
         'name': 'Train/mean_reward',
         'goal': 'maximize'
     }
 
-    # set the number of sweeps to perform
+    # * set the number of sweeps to perform
     run_cap = 10
 
-    # set the sweep parameters to change
-    # can be ranges or lists of values
+    # * set the sweep parameters to change
+    # * can be ranges or lists of values
     parameters_dict = {
         'train_cfg.runner.max_iterations': {
             'values': [100]
@@ -78,6 +78,7 @@ def set_wandb_sweep_cfg_values(env_cfg, train_cfg, parameters_dict):
 def train():
     args = get_args()
     wandb_helper = wandb_singleton.WandbSingleton()
+
     # * prepare environment
     env_cfg, train_cfg = task_registry.create_cfgs(args)
     task_registry.make_gym_and_sim()
@@ -95,7 +96,7 @@ def train():
 
     parameter_dict = wandb.config
 
-    # update the config settings based off the sweep_dict
+    # * update the config settings based off the sweep_dict
     set_wandb_sweep_cfg_values(env_cfg, train_cfg, parameter_dict)
 
     policy_runner.learn(
@@ -106,7 +107,8 @@ def train():
 
 
 def sweep_wandb_mp():
-    # start a process and then call the train function
+    ''' start a new process for each train function '''
+
     p = Process(target=train, args=())
     p.start()
     p.join()
@@ -114,13 +116,13 @@ def sweep_wandb_mp():
 
 
 def start_sweeps(args):
+    # * required for multiprocessing CUDA workloads
     set_start_method('spawn')
-    sweep_config = configure_sweep()
-    # make one gym for all sweeps - each sweep makes its own sim
-    # task_registry.make_gym()
+
     # * generate sweep_config programatically or from JSON file
     # sweep_config = configure_sweep()
     sweep_config = load_sweep_config('sweep_config_example.json')
+
     _, train_cfg = task_registry.create_cfgs(args)
 
     wandb_helper = wandb_singleton.WandbSingleton()
