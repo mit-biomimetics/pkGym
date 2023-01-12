@@ -1,0 +1,17 @@
+{
+    "method": "random",
+    "metric": {
+        "name": "Train/mean_reward",
+        "goal": "maximize"
+    },
+    "run_cap": 10,
+    "parameters": {
+        "train_cfg.runner.max_iterations": {
+            "values": [10]
+        },
+        "env_cfg.env.episode_length_s": {
+            "min": 2,
+            "max": 10
+        }
+    }
+}
