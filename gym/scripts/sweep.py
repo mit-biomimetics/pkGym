@@ -83,6 +83,10 @@ def start_sweeps(args):
 
     # * load sweep_config from JSON file
     sweep_config = load_sweep_config('sweep_config_example.json')
+    # * set sweep_id if you have a previous id to use
+    sweep_id = None
+    if args.wandb_sweep_id is not None:
+        sweep_id = args.wandb_sweep_id
 
     _, train_cfg = task_registry.create_cfgs(args)
 
@@ -91,11 +95,17 @@ def start_sweeps(args):
 
     if wandb_helper.get_project_name() is not None and \
        wandb_helper.get_entity_name() is not None:
-        sweep_id = wandb.sweep(
-            sweep_config,
+        if sweep_id is None:
+            sweep_id = wandb.sweep(
+                sweep_config,
+                entity=wandb_helper.get_entity_name(),
+                project=wandb_helper.get_project_name())
+        wandb.agent(
+            sweep_id,
+            sweep_wandb_mp,
             entity=wandb_helper.get_entity_name(),
-            project=wandb_helper.get_project_name())
-        wandb.agent(sweep_id, sweep_wandb_mp, count=sweep_config['run_cap'])
+            project=wandb_helper.get_project_name(),
+            count=sweep_config['run_cap'])
     else:
         print('ERROR: No WandB project and entity provided for sweeping')
 
