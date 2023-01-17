@@ -179,9 +179,6 @@ class LeggedRobotRunnerCfg(BaseConfig):
     class logging():
         enable_local_saving = True
 
-    class wandb_settings():
-        enable_wandb = True
-
     class policy:
         init_noise_std = 1.0
         actor_hidden_dims = [512, 256, 128]

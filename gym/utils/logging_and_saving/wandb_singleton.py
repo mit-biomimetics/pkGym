@@ -16,18 +16,18 @@ class WandbSingleton(object):
         return self.instance
 
     def set_wandb_values(self, args, train_cfg=None):
+        # build the path for the wandb_config.json file
+        wandb_config_path = os.path.join(
+                LEGGED_GYM_ROOT_DIR, 'gym', 'user', 'wandb_config.json')
+
         # first priority for commandline args
         if args.wandb_project is not None and args.wandb_entity is not None:
             print('Recevied WandB entity and project from arguments.')
             self.entity_name = args.wandb_entity
             self.project_name = args.wandb_project
         # second priority for JSON
-        elif train_cfg is not None and \
-            hasattr(train_cfg, 'wandb_settings') and \
-            hasattr(train_cfg.wandb_settings, 'enable_wandb') \
-                and train_cfg.wandb_settings.enable_wandb:
-            json_data = json.load(open(os.path.join(
-                LEGGED_GYM_ROOT_DIR, 'gym', 'user', 'wandb_config.json')))
+        elif os.path.exists(wandb_config_path):
+            json_data = json.load(open(wandb_config_path))
             print('Loaded WandB entity and project from JSON.')
             self.entity_name = json_data['entity']
             self.project_name = json_data['project']
@@ -52,7 +52,12 @@ class WandbSingleton(object):
     def get_project_name(self):
         return self.project_name
 
-    def setup_wandb(self, policy_runner, is_sweep=False):
+    def setup_wandb(self, policy_runner, train_cfg, args, is_sweep=False):
+        self.set_wandb_values(args, train_cfg)
+
+        # short-circuit if the values say WandB is turned off
+        if not self.is_wandb_enabled():
+            return
 
         wandb.config = {}
 
