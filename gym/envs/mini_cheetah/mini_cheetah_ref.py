@@ -53,7 +53,7 @@ class MiniCheetahRef(MiniCheetah):
     def _switch(self):
         c_vel = torch.linalg.norm(self.commands, dim=1)
         return torch.exp(-torch.square(torch.max(torch.zeros_like(c_vel),
-                                                 c_vel-0.1))/0.1)
+                                                 c_vel-0.2))/0.1)
 
 
     def _reward_swing_grf(self):

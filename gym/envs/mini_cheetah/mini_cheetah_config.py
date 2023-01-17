@@ -177,11 +177,11 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
         clip_param = 0.2
         entropy_coef = 0.01
         num_learning_epochs = 5
-        num_mini_batches = 4 # mini batch size = num_envs*nsteps / nminibatches
-        learning_rate = 1.e-3 #5.e-4
-        schedule = 'adaptive' # could be adaptive, fixed
-        gamma = 0.99
-        lam = 0.95
+        num_mini_batches = 4  # mini batch size = num_envs*nsteps / nminibatches
+        learning_rate = 1.e-3  # 5.e-4
+        schedule = 'adaptive'  # could be adaptive, fixed
+        discount_horizon = 0.5  # [s]
+        GAE_bootstrap_horizon = 0.2  # [s]
         desired_kl = 0.01
         max_grad_norm = 1.
 

@@ -39,6 +39,5 @@ class TestEnvironments(unittest.TestCase):
                              f"{env.__class__.__name__} has extras: "
                              f"{', '.join(list(env.extras.keys()))}")
 
-
 if __name__ == '__main__':
     unittest.main()

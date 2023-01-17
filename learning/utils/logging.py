@@ -63,10 +63,10 @@ class Logger:
                         for name in  self.current_episode_return.keys()} 
         self.total_mean_reward = mean(list(self.mean_rewards.values()))
 
-    def print_to_terminal(self):   
+    def print_to_terminal(self):
         width=80
         pad=35
-        str = f" \033[1m Learning iteration {self.it+1}/{self.tot_iter} \033[0m "
+        str = f" \033[1m Learning iteration {self.it}/{self.tot_iter} \033[0m "
 
         log_string = (f"""{'#' * width}\n"""
                         f"""{str.center(width, ' ')}\n\n"""

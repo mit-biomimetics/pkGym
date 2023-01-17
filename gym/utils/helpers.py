@@ -48,7 +48,7 @@ def class_to_dict(obj, torch_device=None) -> dict:
     Keyword arguments:
     torch_device (opt): if specified, converts each element to a torch tensor.
     """
-    if not  hasattr(obj,"__dict__"):
+    if not hasattr(obj,"__dict__"):
         return obj
     result = {}
     for key in dir(obj):
@@ -67,6 +67,7 @@ def class_to_dict(obj, torch_device=None) -> dict:
             result[key] = element
     return result
 
+
 def update_class_from_dict(obj, dict):
     for key, val in dict.items():
         attr = getattr(obj, key, None)
@@ -75,6 +76,7 @@ def update_class_from_dict(obj, dict):
         else:
             setattr(obj, key, val)
     return
+
 
 def set_seed(seed):
     if seed == -1:
@@ -87,6 +89,7 @@ def set_seed(seed):
     os.environ['PYTHONHASHSEED'] = str(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+
 
 def parse_sim_params(args, cfg):
     # code from Isaac Gym Preview 2
@@ -112,30 +115,40 @@ def parse_sim_params(args, cfg):
 
     return sim_params
 
+
 def get_load_path(root, load_run=-1, checkpoint=-1):
+
+    run_path = select_run(root, load_run)
+    model_name = select_model(run_path, checkpoint)
+    load_path = os.path.join(run_path, model_name)
+    return load_path
+
+
+def select_run(root, load_run):
     try:
         runs = sorted(os.listdir(root),
                         key=lambda x: os.path.getctime(os.path.join(root, x)))
-        #TODO sort by date to handle change of month
-        # runs.sort()
         if 'exported' in runs: runs.remove('exported')
         last_run = os.path.join(root, runs[-1])
     except:
         raise ValueError("No runs in this directory: " + root)
-    if load_run==-1:
+    
+    if load_run == -1:
         load_run = last_run
     else:
         load_run = os.path.join(root, load_run)
+    return load_run
 
-    if checkpoint==-1:
+
+def select_model(load_run, checkpoint):
+    if checkpoint == -1:
         models = [file for file in os.listdir(load_run) if 'model' in file]
         models.sort(key=lambda m: '{0:0>15}'.format(m))
         model = models[-1]
     else:
         model = "model_{}.pt".format(checkpoint) 
+    return model
 
-    load_path = os.path.join(load_run, model)
-    return load_path
 
 def update_cfg_from_args(env_cfg, cfg_train, args):
     # seed
@@ -161,6 +174,7 @@ def update_cfg_from_args(env_cfg, cfg_train, args):
             cfg_train.runner.checkpoint = args.checkpoint
 
     return env_cfg, cfg_train
+
 
 def get_args():
     custom_parameters = [
