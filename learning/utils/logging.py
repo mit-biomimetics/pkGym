@@ -3,6 +3,8 @@ import torch
 from collections import deque
 from statistics import mean
 import os
+import stat
+import fnmatch
 import shutil
 
 class Logger:
@@ -92,16 +94,45 @@ class Logger:
         print(log_string)
 
     def configure_local_files(self, save_paths):
+        # create ignore patterns dynamically based on include patterns
+        def include_patterns(*patterns):
+            def _ignore_patterns(path, names):
+                keep = set(name for pattern in patterns for name in
+                           fnmatch.filter(names, pattern))
+                ignore = set(name for name in names if name not in keep and
+                             not os.path.isdir(os.path.join(path, name)))
+                return ignore
+            return _ignore_patterns
+
+        def removeEmptyFolders(path, removeRoot=True):
+            if not os.path.isdir(path):
+                return
+            # remove empty subfolders
+            files = os.listdir(path)
+            if len(files):
+                for f in files:
+                    fullpath = os.path.join(path, f)
+                    if os.path.isdir(fullpath):
+                        removeEmptyFolders(fullpath)
+            # if folder empty, delete it
+            files = os.listdir(path)
+            if len(files) == 0 and removeRoot:
+                os.rmdir(path)
+
         # copy the relevant source files to the local logs for records
         save_dir = self.log_dir+'/files/'
         for save_path in save_paths:
             if save_path['type'] == 'file':
-                os.makedirs(save_dir+save_path['target_dir'], exist_ok=True)
-                shutil.copy2(save_path['source_file'], 
-                              save_dir+save_path['target_dir'])
+                os.makedirs(save_dir+save_path['target_dir'],
+                            exist_ok=True)
+                shutil.copy2(save_path['source_file'],
+                             save_dir+save_path['target_dir'])
             elif save_path['type'] == 'dir':
                 shutil.copytree(
-                    save_path['source_dir'], save_dir+save_path['target_dir'],
-                    ignore=shutil.ignore_patterns(*save_path['ignore_patterns']))
+                    save_path['source_dir'],
+                    save_dir+save_path['target_dir'],
+                    ignore=include_patterns(
+                        *save_path['include_patterns']))
             else:
                 print('WARNING: uncaught save path type:', save_path['type'])
+        removeEmptyFolders(save_dir)
