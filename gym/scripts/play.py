@@ -43,6 +43,7 @@ import isaacgym
 
 def play(args):
     env_cfg, train_cfg = task_registry.create_cfgs(args)
+    env_cfg.env.num_envs = min(env_cfg.env.num_envs, 16)
     task_registry.make_gym_and_sim()
     env, env_cfg = task_registry.make_env(name=args.task, env_cfg=env_cfg)
 
@@ -74,8 +75,8 @@ def play(args):
         # * handle state-estimation
         if SE_ON:
             SE_obs = env.get_states(train_cfg.state_estimator.obs)
-            SE_prediction = state_estimator.predict(SE_obs)
-            obs = torch.cat((SE_prediction.detach(), obs.detach()), dim=1)
+            estimates = state_estimator.predict(SE_obs)
+            env.set_states(train_cfg.state_estimator.targets, estimates)
 
         actions = policy(obs.detach())
         interface.update(env)

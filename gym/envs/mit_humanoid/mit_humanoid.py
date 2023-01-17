@@ -35,7 +35,7 @@ class MIT_Humanoid(LeggedRobot):
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity w. squared exp
         return self._sqrdexp(self.base_lin_vel[:, 2]
-                             * self.scales["base_lin_vel"])
+                             / self.scales["base_lin_vel"])
 
     def _reward_orientation(self):
         # Penalize non flat base orientation
@@ -62,9 +62,9 @@ class MIT_Humanoid(LeggedRobot):
 
     def _reward_dof_vel(self):
         # Penalize dof velocities
-        return torch.sum(self._sqrdexp(self.dof_vel * self.scales['dof_vel']),
+        return torch.sum(self._sqrdexp(self.dof_vel / self.scales['dof_vel']),
                          dim=1)
 
     def _reward_dof_near_home(self):
         return torch.sum(self._sqrdexp((self.dof_pos - self.default_dof_pos)
-                                       * self.scales['dof_pos_obs']), dim=1)
+                                       / self.scales['dof_pos_obs']), dim=1)

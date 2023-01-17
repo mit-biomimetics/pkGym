@@ -15,7 +15,7 @@ class CartpoleCfg(FixedRobotCfg):
         default_joint_angles = {"slider_to_cart": 0.,
                                 "cart_to_pole": 0.}
 
-        reset_mode = "reset_to_range" 
+        reset_mode = "reset_to_range"
         # default setup chooses how the initial conditions are chosen. 
         # "reset_to_basic" = a single position
         # "reset_to_range" = uniformly random from a range defined below
@@ -107,8 +107,8 @@ class CartpoleRunnerCfg(FixedRobotCfgPPO):
         num_mini_batches = 4  # mini batch size = num_envs*nsteps / nminibatches
         learning_rate = 1.e-3  # 5.e-4
         schedule = 'adaptive'  # could be adaptive, fixed
-        gamma = 0.999
-        lam = 0.95
+        discount_horizon = 1.  # [s]
+        GAE_bootstrap_horizon = 0.2  # [s]
         desired_kl = 0.01
         max_grad_norm = 1.
 
