@@ -1,5 +1,6 @@
 
-from gym.envs.mini_cheetah.mini_cheetah_config import MiniCheetahCfg, MiniCheetahRunnerCfg
+from gym.envs.mini_cheetah.mini_cheetah_config \
+    import MiniCheetahCfg, MiniCheetahRunnerCfg
 
 BASE_HEIGHT_REF = 0.35
 

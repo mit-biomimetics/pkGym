@@ -10,7 +10,7 @@ import torch
 from typing import Tuple, Dict
 
 from gym.utils.math import quat_apply_yaw, wrap_to_pi, torch_rand_sqrt_float
-from gym.envs import LeggedRobot
+from gym.envs.base.legged_robot import LeggedRobot
 
 
 class MiniCheetah(LeggedRobot):
