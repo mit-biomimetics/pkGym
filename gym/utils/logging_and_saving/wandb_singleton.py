@@ -75,7 +75,7 @@ class WandbSingleton(object):
         wandb.run.log_code(
             os.path.join(LEGGED_GYM_ROOT_DIR, 'gym'))
 
-        policy_runner.configure_wandb(wandb)
+        policy_runner.wandb_attach_actor_critic(wandb)
 
     def close_wandb(self):
         if self.enabled:
