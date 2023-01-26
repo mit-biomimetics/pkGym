@@ -3,7 +3,6 @@ import torch
 from collections import deque
 from statistics import mean
 import os
-import stat
 import fnmatch
 import shutil
 
@@ -131,8 +130,7 @@ class Logger:
                 shutil.copytree(
                     save_path['source_dir'],
                     save_dir+save_path['target_dir'],
-                    ignore=include_patterns(
-                        *save_path['include_patterns']))
+                    ignore=include_patterns(*save_path['include_patterns']))
             else:
                 print('WARNING: uncaught save path type:', save_path['type'])
         removeEmptyFolders(save_dir)
