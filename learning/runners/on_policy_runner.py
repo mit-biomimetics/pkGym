@@ -89,7 +89,7 @@ class OnPolicyRunner:
         # Log
         self.log_dir = log_dir
         self.SE_path = os.path.join(self.log_dir, 'SE')   # log_dir for SE
-        self.logger = Logger(log_dir, self.device)
+        self.logger = Logger(log_dir, self.env.max_episode_length_s, self.device)
 
         reward_keys_to_log = list(self.policy_cfg["reward"]["weights"].keys())\
                              + list(self.policy_cfg["reward"]
