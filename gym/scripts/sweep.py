@@ -81,6 +81,8 @@ def start_sweeps(args):
 
     # * load sweep_config from JSON file
     sweep_config = load_sweep_config('sweep_config_example.json')
+    if args.wandb_sweep_config is not None:
+        sweep_config = load_sweep_config(args.wandb_sweep_config)
     # * set sweep_id if you have a previous id to use
     sweep_id = None
     if args.wandb_sweep_id is not None:
