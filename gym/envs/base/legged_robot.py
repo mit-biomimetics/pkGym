@@ -862,7 +862,7 @@ class LeggedRobot(BaseTask):
 
     def _reward_termination(self):
         # Terminal reward / penalty
-        return -1.*(self.reset_buf * ~self.timed_out)
+        return -(self.reset_buf * ~self.timed_out).float()
 
     def _reward_dof_pos_limits(self):
         # Penalize dof positions too close to the limit
