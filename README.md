@@ -19,9 +19,9 @@ pip install -r requirements.txt
    - Download and install Isaac Gym Preview 4 (Preview 3 should still work) from https://developer.nvidia.com/isaac-gym
      - Extract the zip package
      - Copy the `isaacgym` folder, and place it in a new location
-   - Install `issacgym` requirements
+   - Install `issacgym/python` requirements
    ```bash
-   cd <issacgym_python_location>
+   cd <issacgym_location>/python
    pip install -e .
    ```
 5. Run an example to validate
