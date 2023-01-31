@@ -125,7 +125,7 @@ class OnPolicyRunner:
                                               [num_SE_obs],
                                               [num_SE_outputs])
 
-    def wandb_attach_actor_critic(self, wandb, log_freq=100, log_graph=True):
+    def attach_to_wandb(self, wandb, log_freq=100, log_graph=True):
         wandb.watch((self.alg.actor_critic.actor,
                     self.alg.actor_critic.critic),
                     log_freq=log_freq,

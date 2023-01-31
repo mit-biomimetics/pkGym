@@ -18,21 +18,23 @@ class WandbSingleton(object):
     def set_wandb_values(self, args, train_cfg=None):
         # build the path for the wandb_config.json file
         wandb_config_path = os.path.join(
-                LEGGED_GYM_ROOT_DIR, 'gym', 'user', 'wandb_config.json')
+                LEGGED_GYM_ROOT_DIR, 'user', 'wandb_config.json')
 
-        # first priority for commandline args
-        if args.wandb_project is not None and args.wandb_entity is not None:
-            print('Recevied WandB entity and project from arguments.')
-            self.entity_name = args.wandb_entity
-            self.project_name = args.wandb_project
-        # second priority for JSON
-        elif os.path.exists(wandb_config_path):
+        # load entity and project name from JSON if it exists
+        if os.path.exists(wandb_config_path):
             json_data = json.load(open(wandb_config_path))
             print('Loaded WandB entity and project from JSON.')
             self.entity_name = json_data['entity']
             self.project_name = json_data['project']
-        # assume WandB is off and give a warning
-        else:
+        # override entity and project by commandline args if provided
+        if args.wandb_entity is not None:
+            print('Recevied WandB entity from arguments.')
+            self.entity_name = args.wandb_entity
+        if args.wandb_project is not None:
+            print('Recevied WandB project from arguments.')
+            self.project_name = args.wandb_project
+        # assume WandB is off and give a warning if entity or project is None
+        if self.entity_name is None or self.project_name is None:
             print('WARNING: WandB is disabled and will not save or log.')
             return
 
@@ -75,7 +77,7 @@ class WandbSingleton(object):
         wandb.run.log_code(
             os.path.join(LEGGED_GYM_ROOT_DIR, 'gym'))
 
-        policy_runner.wandb_attach_actor_critic(wandb)
+        policy_runner.attach_to_wandb(wandb)
 
     def close_wandb(self):
         if self.enabled:
