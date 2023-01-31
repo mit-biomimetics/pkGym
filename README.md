@@ -151,6 +151,19 @@ In addition to running agents sequentially on a single desktop, other computers 
 
 If you would like to create and multiple sweep_config.json files, you can name them however you would like using the `--wandb_sweep_config=todo` command line argument to select which file to find the JSON object to define the sweep.
 
+#### CLI Examples ####
+Manually setting WandB project and entity:  
+```python gym/scripts/train.py --task=a1 --wandb_entity=ajm4 --wandb_project=wandb_test_project```
+
+Using a wandb_config.json file:  
+```python gym/scripts/sweep.py --task=mini_cheetah --headless```
+
+Selecting a config file name:  
+```python gym/scripts/sweep.py --task=mini_cheetah --headless --wandb_sweep_config=sweep_config_example.json```
+
+Using the entity name in the wandb_config.json but overriding the project name:  
+```python gym/scripts/train.py --task=a1 --wandb_project=wandb_test_project```
+
 ---
 
 ### Troubleshooting ###
