@@ -33,9 +33,8 @@ class WandbSingleton(object):
         if args.wandb_project is not None:
             print('Recevied WandB project from arguments.')
             self.project_name = args.wandb_project
-        # assume WandB is off and give a warning if entity or project is None
+        # assume WandB is off if entity or project is None and short-circuit
         if self.entity_name is None or self.project_name is None:
-            print('WARNING: WandB is disabled and will not save or log.')
             return
 
         if args.task is not None:
@@ -59,6 +58,7 @@ class WandbSingleton(object):
 
         # short-circuit if the values say WandB is turned off
         if not self.is_wandb_enabled():
+            print('WARNING: WandB is disabled and will not save or log.')
             return
 
         wandb.config = {}
