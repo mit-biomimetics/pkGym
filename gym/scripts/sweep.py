@@ -1,10 +1,9 @@
 import os
 import json
 import wandb
+import isaacgym
 from torch.multiprocessing import Process
 from torch.multiprocessing import set_start_method
-
-import isaacgym
 
 from gym.envs import *
 from gym import LEGGED_GYM_ROOT_DIR
