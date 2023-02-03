@@ -3,7 +3,6 @@ import torch
 from collections import deque
 from statistics import mean
 import os
-import stat
 import fnmatch
 import shutil
 
