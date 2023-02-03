@@ -89,7 +89,7 @@ class OnPolicyRunner:
         # Log
         self.log_dir = log_dir
         self.SE_path = os.path.join(self.log_dir, 'SE')   # log_dir for SE
-        self.logger = Logger(log_dir, self.device)
+        self.logger = Logger(log_dir, self.env.max_episode_length_s, self.device)
 
         reward_keys_to_log = list(self.policy_cfg["reward"]["weights"].keys())\
                              + list(self.policy_cfg["reward"]
@@ -125,7 +125,7 @@ class OnPolicyRunner:
                                               [num_SE_obs],
                                               [num_SE_outputs])
 
-    def wandb_attach_actor_critic(self, wandb, log_freq=100, log_graph=True):
+    def attach_to_wandb(self, wandb, log_freq=100, log_graph=True):
         wandb.watch((self.alg.actor_critic.actor,
                     self.alg.actor_critic.critic),
                     log_freq=log_freq,
@@ -325,19 +325,17 @@ class OnPolicyRunner:
             SEloaded_dict = torch.load(SE_path)
             self.state_estimator.state_estimator.load_state_dict(SEloaded_dict['model_state_dict'])
 
-
-    def get_state_estimator(self, device=None):
-        self.state_estimator.state_estimator.eval()
-        if device is not None:
-            self.state_estimator.state_estimator.to(device)
-        return self.state_estimator
-
-    def get_inference_policy(self, device=None):
-        # switch to evaluation mode (dropout for example)
+    def switch_to_eval(self):
         self.alg.actor_critic.eval()
-        if device is not None:
-            self.alg.actor_critic.to(device)
-        return self.alg.actor_critic.actor.act_inference
+        if self.cfg["SE_learner"] == "modular_SE":
+            self.state_estimator.state_estimator.eval()
+
+    def get_inference_actions(self):
+        if self.cfg["SE_learner"] == "modular_SE":
+            self.do_state_estimation(training=False)
+        obs = self.get_obs(self.policy_cfg["actor_obs"])
+
+        return self.alg.actor_critic.actor.act_inference(obs)
 
     def export(self, path):
         self.alg.actor_critic.export_policy(path)

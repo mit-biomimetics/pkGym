@@ -2,13 +2,14 @@ import os
 import json
 import wandb
 import isaacgym
-from gym.envs import *
-from gym.utils import get_args, task_registry
-from gym.utils.logging_and_saving \
-    import local_code_save_helper, wandb_singleton
 from torch.multiprocessing import Process
 from torch.multiprocessing import set_start_method
+
+from gym.envs import *
 from gym import LEGGED_GYM_ROOT_DIR
+from gym.utils import get_args, task_registry
+from gym.utils.logging_and_saving import wandb_singleton
+from gym.scripts.train import train, setup
 
 
 def load_sweep_config(file_name):
@@ -37,39 +38,20 @@ def set_wandb_sweep_cfg_values(env_cfg, train_cfg, parameters_dict):
         print('set ' + locs[-1] + ' to ' + str(getattr(attr, locs[-1])))
 
 
-def train():
-    args = get_args()
-    wandb_helper = wandb_singleton.WandbSingleton()
-
-    # * prepare environment
-    env_cfg, train_cfg = task_registry.create_cfgs(args)
-    task_registry.make_gym_and_sim()
-    env, env_cfg = task_registry.make_env(name=args.task, env_cfg=env_cfg)
-    # * then make env
-    policy_runner, train_cfg = \
-        task_registry.make_alg_runner(env=env, name=args.task, args=args)
-    task_registry.prepare_sim()
-
-    local_code_save_helper.log_and_save(
-        env, env_cfg, train_cfg, policy_runner)
-    wandb_helper.setup_wandb(policy_runner, train_cfg, args, is_sweep=True)
-
-    parameter_dict = wandb.config
+def train_with_sweep_cfg():
+    env_cfg, train_cfg, policy_runner = setup()
 
     # * update the config settings based off the sweep_dict
+    parameter_dict = wandb.config
     set_wandb_sweep_cfg_values(env_cfg, train_cfg, parameter_dict)
 
-    policy_runner.learn(
-        num_learning_iterations=train_cfg.runner.max_iterations,
-        init_at_random_ep_len=True)
-
-    wandb_helper.close_wandb()
+    train(train_cfg=train_cfg, policy_runner=policy_runner)
 
 
 def sweep_wandb_mp():
     ''' start a new process for each train function '''
 
-    p = Process(target=train, args=())
+    p = Process(target=train_with_sweep_cfg, args=())
     p.start()
     p.join()
     p.kill()
@@ -80,7 +62,10 @@ def start_sweeps(args):
     set_start_method('spawn')
 
     # * load sweep_config from JSON file
-    sweep_config = load_sweep_config('sweep_config_example.json')
+    if args.wandb_sweep_config is not None:
+        sweep_config = load_sweep_config(args.wandb_sweep_config)
+    else:
+        sweep_config = load_sweep_config('sweep_config_example.json')
     # * set sweep_id if you have a previous id to use
     sweep_id = None
     if args.wandb_sweep_id is not None:
