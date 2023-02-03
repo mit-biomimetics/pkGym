@@ -95,7 +95,7 @@ class Logger:
 
     def configure_local_files(self, save_paths):
         # create ignore patterns dynamically based on include patterns
-        def include_patterns(*patterns):
+        def ignore_patterns_except(*patterns):
             def _ignore_patterns(path, names):
                 keep = set(name for pattern in patterns for name in
                            fnmatch.filter(names, pattern))
@@ -104,7 +104,7 @@ class Logger:
                 return ignore
             return _ignore_patterns
 
-        def removeEmptyFolders(path, removeRoot=True):
+        def remove_empty_folders(path, removeRoot=True):
             if not os.path.isdir(path):
                 return
             # remove empty subfolders
@@ -113,7 +113,7 @@ class Logger:
                 for f in files:
                     fullpath = os.path.join(path, f)
                     if os.path.isdir(fullpath):
-                        removeEmptyFolders(fullpath)
+                        remove_empty_folders(fullpath)
             # if folder empty, delete it
             files = os.listdir(path)
             if len(files) == 0 and removeRoot:
@@ -131,8 +131,8 @@ class Logger:
                 shutil.copytree(
                     save_path['source_dir'],
                     save_dir+save_path['target_dir'],
-                    ignore=include_patterns(
+                    ignore=ignore_patterns_except(
                         *save_path['include_patterns']))
             else:
                 print('WARNING: uncaught save path type:', save_path['type'])
-        removeEmptyFolders(save_dir)
+        remove_empty_folders(save_dir)
