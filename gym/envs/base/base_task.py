@@ -66,12 +66,14 @@ class BaseTask():
 
         # allocate buffers
         self.reset_buf = torch.ones(self.num_envs,
-                                    device=self.device, dtype=torch.long)
+                                    device=self.device,
+                                    dtype=torch.bool)
         self.episode_length_buf = torch.zeros(self.num_envs,
                                               device=self.device,
                                               dtype=torch.long)
         self.timed_out = torch.zeros(self.num_envs,
-                                    device=self.device, dtype=torch.bool)
+                                     device=self.device,
+                                     dtype=torch.bool)
 
         self.extras = {}
 

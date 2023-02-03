@@ -6,9 +6,9 @@ import os
 import shutil
 
 class Logger:
-    def __init__(self, log_dir, device):
+    def __init__(self, log_dir, max_episode_length_s, device):
         self.log_dir = log_dir
-        self.device = device        
+        self.device = device
         self.avg_window = 100
         self.log = {}
         self.it = 0
@@ -16,6 +16,7 @@ class Logger:
         self.learning_iter = 0
         self.mean_episode_length = 0.
         self.total_mean_reward = 0.
+        self.max_episode_length_s = max_episode_length_s
 
     def initialize_buffers(self, num_envs, reward_keys):
         self.current_episode_return = \
@@ -59,7 +60,7 @@ class Logger:
 
     def calculate_reward_avg(self):
         self.mean_episode_length = mean(self.avg_length_buffer)
-        self.mean_rewards = {"Episode/"+name:  mean(self.avg_return_buffer[name])
+        self.mean_rewards = {"Episode/"+name:  mean(self.avg_return_buffer[name]) / self.max_episode_length_s
                         for name in  self.current_episode_return.keys()} 
         self.total_mean_reward = mean(list(self.mean_rewards.values()))
 
