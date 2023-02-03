@@ -321,10 +321,8 @@ class FixedRobot(BaseTask):
         self.root_states = gymtorch.wrap_tensor(actor_root_state)
         self.dof_state = gymtorch.wrap_tensor(dof_state_tensor)
 
-        self.dof_pos = \
-            self.dof_state.view(n_envs, self.num_dof, 2)[..., 0]
-        self.dof_vel = \
-            self.dof_state.view(n_envs, self.num_dof, 2)[..., 1]
+        self.dof_pos = self.dof_state.view(n_envs, self.num_dof, 2)[..., 0]
+        self.dof_vel =  self.dof_state.view(n_envs, self.num_dof, 2)[..., 1]
         self.base_quat = self.root_states[:, 3:7]
 
         # shape: num_envs, num_bodies, xyz axis
@@ -580,7 +578,7 @@ class FixedRobot(BaseTask):
         nact = self.num_actuators
         dt2 = (self.dt*self.cfg.control.decimation)**2
         error = torch.square(self.dof_pos_history[:, :nact] \
-                            - self.dof_pos_history[:, nact:2*nact])/dt2
+                             - self.dof_pos_history[:, nact:2*nact])/dt2
         return -torch.sum(error, dim=1)
 
     def _reward_action_rate2(self):
@@ -598,7 +596,7 @@ class FixedRobot(BaseTask):
 
     def _reward_termination(self):
         # Terminal reward / penalty
-        return -self.reset_buf * ~self.time_out_buf
+        return -(self.reset_buf * ~self.time_out_buf).float()
 
     def _reward_dof_pos_limits(self):
         # Penalize dof positions too close to the limit
