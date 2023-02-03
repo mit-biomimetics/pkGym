@@ -28,21 +28,21 @@ class WandbSingleton(object):
             self.project_name = json_data['project']
         # override entity and project by commandline args if provided
         if args.wandb_entity is not None:
-            print('Recevied WandB entity from arguments.')
+            print('Received WandB entity from arguments.')
             self.entity_name = args.wandb_entity
         if args.wandb_project is not None:
-            print('Recevied WandB project from arguments.')
+            print('Received WandB project from arguments.')
             self.project_name = args.wandb_project
         # assume WandB is off if entity or project is None and short-circuit
-        if self.entity_name is None or self.project_name is None:
-            return
-
         if args.task is not None:
             self.experiment_name = f'{args.task}'
 
-        print(f'Setting WandB project name: {self.project_name}\n' +
-              f'Setting WandB entitiy name: {self.entity_name}\n')
-        self.enabled = True
+        if self.entity_name is None or self.project_name is None:
+            self.enabled = False
+        else:
+            print(f'Setting WandB project name: {self.project_name}\n' +
+                  f'Setting WandB entitiy name: {self.entity_name}\n')
+            self.enabled = True
 
     def is_wandb_enabled(self):
         return self.enabled
