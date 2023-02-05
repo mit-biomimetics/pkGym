@@ -6,6 +6,7 @@ import os
 import fnmatch
 import shutil
 
+
 class Logger:
     def __init__(self, log_dir, max_episode_length_s, device):
         self.log_dir = log_dir
@@ -22,13 +23,14 @@ class Logger:
     def initialize_buffers(self, num_envs, reward_keys):
         self.current_episode_return = \
             {name: torch.zeros(num_envs, dtype=torch.float, device=self.device,
-                                requires_grad=False) for name in reward_keys}
+                               requires_grad=False) for name in reward_keys}
         self.current_episode_length = torch.zeros(num_envs,
-                                         dtype=torch.float, device=self.device)
-        self.avg_return_buffer = {name:  deque(maxlen=self.avg_window) 
-                                    for name in reward_keys}   
+                                                  dtype=torch.float,
+                                                  device=self.device)
+        self.avg_return_buffer = {name:  deque(maxlen=self.avg_window)
+                                  for name in reward_keys}
         self.avg_length_buffer = deque(maxlen=self.avg_window)
-        self.mean_rewards = {"Episode/"+name:  0. for name in reward_keys} 
+        self.mean_rewards = {"Episode/"+name:  0. for name in reward_keys}
 
     def log_to_wandb(self):
         wandb.log(self.log)
@@ -43,26 +45,28 @@ class Logger:
 
     def log_current_reward(self, name, reward):
         if name in self.current_episode_return.keys():
-            self.current_episode_return[name] += reward  
-    
+            self.current_episode_return[name] += reward
     def update_episode_buffer(self, dones):
         self.current_episode_length += 1
         terminated_ids = torch.where(dones == True)[0]
         for name in self.current_episode_return.keys():
-            self.avg_return_buffer[name].extend(self.current_episode_return[name]
-                                        [terminated_ids].cpu().numpy().tolist())
+            self.avg_return_buffer[name].extend(
+                                    self.current_episode_return[name]
+                                    [terminated_ids].cpu().numpy().tolist())
             self.current_episode_return[name][terminated_ids] = 0.
-            
-        self.avg_length_buffer.extend(self.current_episode_length[terminated_ids]
-                                        .cpu().numpy().tolist())
+
+        self.avg_length_buffer.extend(
+            self.current_episode_length[terminated_ids].cpu().numpy().tolist())
         self.current_episode_length[terminated_ids] = 0
         if (len(self.avg_length_buffer) > 0):
             self.calculate_reward_avg()
 
     def calculate_reward_avg(self):
         self.mean_episode_length = mean(self.avg_length_buffer)
-        self.mean_rewards = {"Episode/"+name:  mean(self.avg_return_buffer[name]) / self.max_episode_length_s
-                        for name in  self.current_episode_return.keys()} 
+        self.mean_rewards = {"Episode/"+name:
+                             mean(self.avg_return_buffer[name])
+                             / self.max_episode_length_s
+                             for name in self.current_episode_return.keys()}
         self.total_mean_reward = mean(list(self.mean_rewards.values()))
 
     def print_to_terminal(self):
@@ -83,7 +87,7 @@ class Logger:
         for key, value in self.log.items():
             if "Episode/" in key:
                 log_string += f"""{f'Mean episode {key}:':>{pad}} {value:.4f}\n"""
-                
+
         log_string += (f"""{'-' * width}\n"""
                        f"""{'Total timesteps:':>{pad}} {self.log['Train/total_timesteps']}\n"""
                        f"""{'Iteration time:':>{pad}} {self.log['Train/iteration_time']:.2f}s\n"""
@@ -95,7 +99,7 @@ class Logger:
 
     def configure_local_files(self, save_paths):
         # create ignore patterns dynamically based on include patterns
-        def ignore_patterns_except(*patterns):
+        def create_ignored_pattern_except(*patterns):
             def _ignore_patterns(path, names):
                 keep = set(name for pattern in patterns for name in
                            fnmatch.filter(names, pattern))
@@ -131,7 +135,7 @@ class Logger:
                 shutil.copytree(
                     save_path['source_dir'],
                     save_dir+save_path['target_dir'],
-                    ignore=ignore_patterns_except(
+                    ignore=create_ignored_pattern_except(
                         *save_path['include_patterns']))
             else:
                 print('WARNING: uncaught save path type:', save_path['type'])
