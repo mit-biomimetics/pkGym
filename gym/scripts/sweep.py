@@ -76,8 +76,7 @@ def start_sweeps(args):
     wandb_helper = wandb_singleton.WandbSingleton()
     wandb_helper.set_wandb_values(args, train_cfg)
 
-    if wandb_helper.get_project_name() is not None and \
-       wandb_helper.get_entity_name() is not None:
+    if wandb_helper.is_wandb_enabled():
         if sweep_id is None:
             sweep_id = wandb.sweep(
                 sweep_config,
