@@ -126,6 +126,7 @@ class LeggedRobot(BaseTask):
         """
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_net_contact_force_tensor(self.sim)
+        self.gym.refresh_rigid_body_state_tensor(self.sim)
 
         self.episode_length_buf += 1
         self.common_step_counter += 1
@@ -141,6 +142,16 @@ class LeggedRobot(BaseTask):
                                                    self.root_states[:, 10:13])
         self.projected_gravity[:] = quat_rotate_inverse(self.base_quat,
                                                         self.gravity_vec)
+
+        self.end_effector_pos = (
+            self._rigid_body_state.view(self.num_envs, self.num_bodies, 13)
+            [:, self.end_effector_ids, 0:3]
+            - self.env_origins.unsqueeze(dim=1).expand(self.num_envs, 4, 3)
+        )
+        self.end_effector_vel = (
+            self._rigid_body_state.view(self.num_envs, self.num_bodies, 13)
+            [:, self.end_effector_ids, 7:10]
+        )
 
         self.base_height = self.root_states[:, 2:3]
 
@@ -447,7 +458,6 @@ class LeggedRobot(BaseTask):
         self.dof_state = gymtorch.wrap_tensor(dof_state_tensor)
         self._rigid_body_state = gymtorch.wrap_tensor(rigid_body_state)
 
-        self._rigid_body_pos = self._rigid_body_state.view(self.num_envs, self.num_bodies, 13)[..., 0:3]
         self.dof_pos = self.dof_state.view(self.num_envs, self.num_dof, 2)[..., 0]
         self.dof_vel = self.dof_state.view(self.num_envs, self.num_dof, 2)[..., 1]
         self.base_quat = self.root_states[:, 3:7]
@@ -492,6 +502,23 @@ class LeggedRobot(BaseTask):
                                                 self.root_states[:, 10:13])
         self.projected_gravity = quat_rotate_inverse(self.base_quat,
                                                      self.gravity_vec)
+
+        self.end_effector_ids = []
+        for end_effector_name in self.cfg.asset.end_effector_names:
+            self.end_effector_ids.extend([
+                self.body_names.index(body_name)
+                for body_name in self.body_names
+                if end_effector_name in body_name
+            ])
+        self.end_effector_pos = (
+            self._rigid_body_state.view(self.num_envs, self.num_bodies, 13)
+            [:, self.end_effector_ids, 0:3]
+            - self.env_origins.unsqueeze(dim=1).expand(self.num_envs, 4, 3)
+        )
+        self.end_effector_vel = (
+            self._rigid_body_state.view(self.num_envs, self.num_bodies, 13)
+            [:, self.end_effector_ids, 7:10]
+        )
 
         if self.cfg.terrain.measure_heights:
             self.height_points = self._init_height_points()
@@ -646,17 +673,17 @@ class LeggedRobot(BaseTask):
         rigid_shape_props_asset = self.gym.get_asset_rigid_shape_properties(robot_asset)
 
         # save body names from the asset
-        body_names = self.gym.get_asset_rigid_body_names(robot_asset)
+        self.body_names = self.gym.get_asset_rigid_body_names(robot_asset)
         self.dof_names = self.gym.get_asset_dof_names(robot_asset)
-        self.num_bodies = len(body_names)
+        self.num_bodies = len(self.body_names)
         # self.num_dofs = len(self.dof_names)  # ! replaced with num_dof
-        feet_names = [s for s in body_names if self.cfg.asset.foot_name in s]
+        feet_names = [s for s in self.body_names if self.cfg.asset.foot_name in s]
         penalized_contact_names = []
         for name in self.cfg.asset.penalize_contacts_on:
-            penalized_contact_names.extend([s for s in body_names if name in s])
+            penalized_contact_names.extend([s for s in self.body_names if name in s])
         termination_contact_names = []
         for name in self.cfg.asset.terminate_after_contacts_on:
-            termination_contact_names.extend([s for s in body_names if name in s])
+            termination_contact_names.extend([s for s in self.body_names if name in s])
 
         base_init_state_list = self.cfg.init_state.pos + self.cfg.init_state.rot + self.cfg.init_state.lin_vel + self.cfg.init_state.ang_vel
         self.base_init_state = to_torch(base_init_state_list, device=self.device, requires_grad=False)

@@ -126,6 +126,7 @@ class LeggedRobotCfg(BaseConfig):
         foot_name = "None"  # name of the feet bodies, used to index body state and contact force tensors
         penalize_contacts_on = []
         terminate_after_contacts_on = []
+        end_effector_names = []
         disable_gravity = False
         disable_motors = False
         collapse_fixed_joints = True  # merge bodies connected by fixed joints. Specific fixed joints can be kept by adding " <... dont_collapse="true">
