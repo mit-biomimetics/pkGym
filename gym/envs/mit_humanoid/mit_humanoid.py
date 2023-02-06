@@ -8,7 +8,7 @@ from isaacgym import gymtorch, gymapi, gymutil
 import torch
 from typing import Tuple, Dict
 from gym.utils.math import *
-from gym.envs import LeggedRobot
+from gym.envs.base.legged_robot import LeggedRobot
 
 
 class MIT_Humanoid(LeggedRobot):

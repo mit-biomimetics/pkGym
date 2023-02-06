@@ -28,7 +28,8 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotRunnerCfg
+from gym.envs.base.legged_robot_config \
+    import LeggedRobotCfg, LeggedRobotRunnerCfg
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):

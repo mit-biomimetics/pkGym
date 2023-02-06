@@ -10,6 +10,7 @@ wandb/
 gym/wandb
 *.DS_Store
 *.zip
+user/wandb_config.json
 
 
 # Byte-compiled / optimized / DLL files

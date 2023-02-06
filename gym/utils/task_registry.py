@@ -95,7 +95,6 @@ class TaskRegistry():
                   f' to {env_cfg.sim_dt}.')
 
     def set_discount_rates(self, train_cfg, dt):
-
         if hasattr(train_cfg.algorithm, 'discount_horizon'):
             hrzn = train_cfg.algorithm.discount_horizon
             train_cfg.algorithm.gamma = set_discount_from_horizon(dt, hrzn)
@@ -125,10 +124,11 @@ class TaskRegistry():
         self._gym = isaacgym.gymapi.acquire_gym()
 
     def make_sim(self):
-        self._sim = self._gym.create_sim(self.sim["sim_device_id"],
-                                        self.sim["graphics_device_id"],
-                                        self.sim["physics_engine"],
-                                        self.sim["params"])
+        self._sim = self._gym.create_sim(
+            self.sim["sim_device_id"],
+            self.sim["graphics_device_id"],
+            self.sim["physics_engine"],
+            self.sim["params"])
 
     def prepare_sim(self):
         """

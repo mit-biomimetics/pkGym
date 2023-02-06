@@ -9,7 +9,7 @@ import torch
 from isaacgym.torch_utils import torch_rand_float, to_torch
 from gym.utils.math import exp_avg_filter
 
-from gym.envs import MiniCheetah
+from gym.envs.mini_cheetah.mini_cheetah import MiniCheetah
 
 import pandas as pd
 

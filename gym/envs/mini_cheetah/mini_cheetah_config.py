@@ -1,5 +1,6 @@
 
-from gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotRunnerCfg
+from gym.envs.base.legged_robot_config \
+    import LeggedRobotCfg, LeggedRobotRunnerCfg
 
 BASE_HEIGHT_REF = 0.33
 

@@ -51,7 +51,6 @@ from gym.utils.math import (random_sample, wrap_to_pi, quat_apply_yaw,
                             exp_avg_filter)
 
 from gym.utils.helpers import class_to_dict
-from .legged_robot_config import LeggedRobotCfg
 
 class LeggedRobot(BaseTask):
     def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
