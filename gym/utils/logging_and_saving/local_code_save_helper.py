@@ -25,33 +25,21 @@ def check_local_saving_flag(train_cfg):
 def get_local_save_paths(env, env_cfg):
     """Create a save_paths object for saving code locally"""
 
-    runners_dir = os.path.join(LEGGED_GYM_ROOT_DIR, 'learning', 'runners')
-    runners_target = os.path.join('learning', 'runners')
+    learning_dir = os.path.join(LEGGED_GYM_ROOT_DIR, 'learning')
+    learning_target = os.path.join('learning')
 
-    envs_dir = os.path.join(LEGGED_GYM_ROOT_DIR, 'gym', 'envs')
-    envs_target = os.path.join('envs')
-
-    scripts_dir = os.path.join(LEGGED_GYM_ROOT_DIR, 'gym', 'scripts')
-    scripts_target = os.path.join('scripts')
-
-    utils_dir = os.path.join(LEGGED_GYM_ROOT_DIR, 'gym', 'utils')
-    utils_target = os.path.join('utils')
+    gym_dir = os.path.join(LEGGED_GYM_ROOT_DIR, 'gym')
+    gym_target = os.path.join('gym')
 
     # list of things to copy
     # source paths need the full path and target are relative to log_dir
     save_paths = [
-        {'type': 'dir', 'source_dir': runners_dir,
-                        'target_dir': runners_target,
-            'ignore_patterns': ['__pycache__*']},
-        {'type': 'dir', 'source_dir': envs_dir,
-                        'target_dir': envs_target,
-            'ignore_patterns': ['__pycache__*']},
-        {'type': 'dir', 'source_dir': scripts_dir,
-                        'target_dir': scripts_target,
-            'ignore_patterns': ['__pycache__*', 'wandb*']},
-        {'type': 'dir', 'source_dir': utils_dir,
-                        'target_dir': utils_target,
-            'ignore_patterns': ['__pycache__*']}
+        {'type': 'dir', 'source_dir': learning_dir,
+                        'target_dir': learning_target,
+            'include_patterns': ('*.py', '*.json')},
+        {'type': 'dir', 'source_dir': gym_dir,
+                        'target_dir': gym_target,
+            'include_patterns': ('*.py', '*.json')}
     ]
 
     return save_paths
