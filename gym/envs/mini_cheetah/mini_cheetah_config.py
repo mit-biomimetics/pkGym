@@ -82,10 +82,8 @@ class MiniCheetahCfg(LeggedRobotCfg):
         added_mass_range = [-1., 1.]
 
     class asset(LeggedRobotCfg.asset):
-        file = (
-            "{LEGGED_GYM_ROOT_DIR}/resources/robots/"
-            + "mini_cheetah/urdf/mini_cheetah_simple.urdf"
-        )
+        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/" \
+               + "mini_cheetah/urdf/mini_cheetah_simple.urdf"
         foot_name = "foot"
         penalize_contacts_on = []
         terminate_after_contacts_on = ["base", "thigh"]
@@ -136,8 +134,7 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
             "commands",
             "dof_pos_obs",
             "dof_vel",
-            "dof_pos_history",
-        ]
+            "dof_pos_history"]
         critic_obs = [
             "base_height",
             "base_lin_vel",
@@ -146,8 +143,7 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
             "commands",
             "dof_pos_obs",
             "dof_vel",
-            "dof_pos_history",
-        ]
+            "dof_pos_history"]
 
         actions = ["dof_pos_target"]
 
