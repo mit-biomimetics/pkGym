@@ -3,7 +3,9 @@ import torch
 from collections import deque
 from statistics import mean
 import os
+import fnmatch
 import shutil
+
 
 class Logger:
     def __init__(self, log_dir, max_episode_length_s, device):
@@ -21,13 +23,14 @@ class Logger:
     def initialize_buffers(self, num_envs, reward_keys):
         self.current_episode_return = \
             {name: torch.zeros(num_envs, dtype=torch.float, device=self.device,
-                                requires_grad=False) for name in reward_keys}
+                               requires_grad=False) for name in reward_keys}
         self.current_episode_length = torch.zeros(num_envs,
-                                         dtype=torch.float, device=self.device)
-        self.avg_return_buffer = {name:  deque(maxlen=self.avg_window) 
-                                    for name in reward_keys}   
+                                                  dtype=torch.float,
+                                                  device=self.device)
+        self.avg_return_buffer = {name:  deque(maxlen=self.avg_window)
+                                  for name in reward_keys}
         self.avg_length_buffer = deque(maxlen=self.avg_window)
-        self.mean_rewards = {"Episode/"+name:  0. for name in reward_keys} 
+        self.mean_rewards = {"Episode/"+name:  0. for name in reward_keys}
 
     def log_to_wandb(self):
         wandb.log(self.log)
@@ -48,8 +51,9 @@ class Logger:
         self.current_episode_length += 1
         terminated_ids = torch.where(dones == True)[0]
         for name in self.current_episode_return.keys():
-            self.avg_return_buffer[name].extend(self.current_episode_return[name]
-                                        [terminated_ids].cpu().numpy().tolist())
+            self.avg_return_buffer[name].extend(
+                                    self.current_episode_return[name]
+                                    [terminated_ids].cpu().numpy().tolist())
             self.current_episode_return[name][terminated_ids] = 0.
 
         self.avg_length_buffer.extend(self.current_episode_length[terminated_ids]
@@ -91,16 +95,45 @@ class Logger:
         print(log_string)
 
     def configure_local_files(self, save_paths):
+        # create ignore patterns dynamically based on include patterns
+        def create_ignored_pattern_except(*patterns):
+            def _ignore_patterns(path, names):
+                keep = set(name for pattern in patterns for name in
+                           fnmatch.filter(names, pattern))
+                ignore = set(name for name in names if name not in keep and
+                             not os.path.isdir(os.path.join(path, name)))
+                return ignore
+            return _ignore_patterns
+
+        def remove_empty_folders(path, removeRoot=True):
+            if not os.path.isdir(path):
+                return
+            # remove empty subfolders
+            files = os.listdir(path)
+            if len(files):
+                for f in files:
+                    fullpath = os.path.join(path, f)
+                    if os.path.isdir(fullpath):
+                        remove_empty_folders(fullpath)
+            # if folder empty, delete it
+            files = os.listdir(path)
+            if len(files) == 0 and removeRoot:
+                os.rmdir(path)
+
         # copy the relevant source files to the local logs for records
         save_dir = self.log_dir+'/files/'
         for save_path in save_paths:
             if save_path['type'] == 'file':
-                os.makedirs(save_dir+save_path['target_dir'], exist_ok=True)
-                shutil.copy2(save_path['source_file'], 
-                              save_dir+save_path['target_dir'])
+                os.makedirs(save_dir+save_path['target_dir'],
+                            exist_ok=True)
+                shutil.copy2(save_path['source_file'],
+                             save_dir+save_path['target_dir'])
             elif save_path['type'] == 'dir':
                 shutil.copytree(
-                    save_path['source_dir'], save_dir+save_path['target_dir'],
-                    ignore=shutil.ignore_patterns(*save_path['ignore_patterns']))
+                    save_path['source_dir'],
+                    save_dir+save_path['target_dir'],
+                    ignore=create_ignored_pattern_except(
+                        *save_path['include_patterns']))
             else:
                 print('WARNING: uncaught save path type:', save_path['type'])
+        remove_empty_folders(save_dir)

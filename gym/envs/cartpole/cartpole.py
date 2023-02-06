@@ -34,7 +34,7 @@ from isaacgym.torch_utils import *
 from isaacgym import gymtorch, gymapi, gymutil
 
 import torch
-from gym.envs import FixedRobot
+from gym.envs.base.fixed_robot import FixedRobot
 
 class Cartpole(FixedRobot):
 

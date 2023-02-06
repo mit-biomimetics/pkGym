@@ -131,25 +131,40 @@ https://hackmd.io/@yHrQmxajTZOYt87bbz6YRg/SJbscyN3t
 
 #### What is WandB? ####
 
-"[WandB](https://wandb.ai/site) is a central dashboard to keep track of your hyperparameters, system metrics, and predictions so you can compare models live, and share your findings."
+WandB is a machine learning dashboard to track hyperparameters, metrics, logs and source code to compare models live, store all training data in one place accessible by any web browser, and share your results easily with others. WandB is integrated with both normal single run training and sweeping through the train.py and sweep.py scripts. By default, WandB is disabled and no logging of training progress is made while a network will be trained. When in this mode, networks and source code will still be saved locally to the `logs` directory. 
 
-##### Why do we use it? #####
+#### Using WandB ####
 
-WandB's logging is the state of the art tool for deploying any system that trains neural networks. It offers an attractive interface for figure creation, and easy to use API, and the ability to automatically sweep hyperparameters.
+To enable WandB, two pieces of information must be given to the script. The first is the WandB entity name, which is the username of the account to log to, and the second is a WandB project name, which is the name that all data will be saved under during training in the WandB console. 
 
-##### How do we use it? #####
+There are two ways to pass this information to the scripts. The first is by command line argument using the flags `--wandb_entity=todo` and `--wandb_project=todo`, replacing “todo” with the relevant information for your run. The second method is by JSON config file. An example config file, `gym/user/wandb_config_example.json` is included in the directory but must be renamed to `wandb_config.json` for the scripts to read it. By default `wandb_config.json` is ignored by GIT via the `.gitignore` file to not pollute the repository. 
 
-Once you've completed the WandB quickstart (installing and logging in), there are three required steps to tracking your experiments with WandB:
-1. Within the `env/[your system]/[your system]_config.py` file, add `do_wandb=True` to the `[your system]CfgPPO` class structure
-2. Add `--wannd_project=[your project name]` to your python run arguments
-3. Add `--wandb_entity=[your wandb username]` to your python run arguments
+The scripts will first look for a command line argument and then check if there is a JSON config file. The command line settings are the highest priority and will override the JSON config.
 
-Example:
-1. `class MITHumanoidCfgPPO(LeggedRobotCfgPPO): [\newline]
-    do_wandb = True`
-3. ```python /isaacgym3/python/gpuGym/gpugym/scripts/train.py --task=mit_humanoid --wandb_entity=sheim --wandb_project=humanoid```
+#### Using Sweeps ####
 
-----
+A sweep allows for training multiple runs with different hyperparameter settings automatically. Sweeps are controlled by WandB, so creating an account and enabling it for your setup is required.
+
+There are two main facilitators of a sweep: the sweep controller and sweeping agents. A single controller is created for each sweep and selects the hyperparameters to test for each individual run. The sweep controller is created by the sweep.py script on the start of a sweep but exists in the cloud through WandB’s servers. The controller consumes a sweep config, that is specified in a sweep_config.json file, and follows the prescribed behavior to pass parameters to the sweeping agents. A sweeping agent is an individual run of training that receives its settings from the sweep controller. When the sweep.py script is run, a single sweep controller is made that returns a sweep_id for the sweep and then an agent is created as another process that consumes the sweep_id and receives its settings from the controller before performing the training run. Once completed an agent will fully shut down and the sweep.py script will create another agent to perform the next run (if there are still new runs to complete). 
+
+In addition to running agents sequentially on a single desktop, other computers connected to WandB can also control agents to complete the workload. Using the sweep_id that the sweep controller creates, any other computer connected to your WandB can use that ID to create more agents to run in parallel. Using the command line argument `--wandb_sweep_id=todo`, the sweep.py script will not create a new sweep controller and instead communicate with the first controller to request parameters for another agent to train. This can be done with multiple computers to parallelize sweeping across many systems. Note: multiple agents can be trained simultaneously on the same machine (VRAM permitting) but in general this doesn’t improve performance much over running sequentially as processing speed is the main limitation on a single machine.
+
+If you would like to create and multiple sweep_config.json files, you can name them however you would like using the `--wandb_sweep_config=todo` command line argument to select which file to find the JSON object to define the sweep.
+
+#### CLI Examples ####
+Manually setting WandB project and entity:  
+```python gym/scripts/train.py --task=a1 --wandb_entity=ajm4 --wandb_project=wandb_test_project```
+
+Using a wandb_config.json file:  
+```python gym/scripts/sweep.py --task=mini_cheetah --headless```
+
+Selecting a config file name:  
+```python gym/scripts/sweep.py --task=mini_cheetah --headless --wandb_sweep_config=sweep_config_example.json```
+
+Using the entity name in the wandb_config.json but overriding the project name:  
+```python gym/scripts/train.py --task=a1 --wandb_project=wandb_test_project```
+
+---
 
 ### Troubleshooting ###
 1. If you get the following error: `ImportError: libpython3.8m.so.1.0: cannot open shared object file: No such file or directory`, do: `sudo apt install libpython3.8`
