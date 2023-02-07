@@ -146,8 +146,14 @@ class LeggedRobot(BaseTask):
             self._rigid_body_pos[:, self.end_effector_ids]
             - self.env_origins.unsqueeze(dim=1).expand(
                 self.num_envs, len(self.end_effector_ids), 3))
-        self.end_effector_vel = \
-            self._rigid_body_lin_vel[:, self.end_effector_ids]
+        self.end_effector_quat = \
+            self._rigid_body_rot[:, self.end_effector_ids]
+        self.end_effector_lin_vel = quat_rotate_inverse(
+            self.base_quat,
+            self._rigid_body_lin_vel[:, self.end_effector_ids])
+        self.end_effector_ang_vel = quat_rotate_inverse(
+            self.base_quat,
+            self._rigid_body_ang_vel[:, self.end_effector_ids])
 
         self.base_height = self.root_states[:, 2:3]
 
@@ -466,7 +472,7 @@ class LeggedRobot(BaseTask):
             self.num_envs, self.num_bodies, 13)[..., 3:7]
         self._rigid_body_lin_vel = self._rigid_body_state.view(
             self.num_envs, self.num_bodies, 13)[..., 7:10]
-        self._rigid_ang_vel = self._rigid_body_state.view(
+        self._rigid_body_ang_vel = self._rigid_body_state.view(
             self.num_envs, self.num_bodies, 13)[..., 10:13]
 
         # initialize some data used later on
