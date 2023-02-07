@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 from .utils import create_MLP
 
