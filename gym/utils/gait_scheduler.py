@@ -5,7 +5,7 @@ class gait_scheduler():
     def __init__(self,cfg_gait,num_envs,device,dt):
         self.num_envs = num_envs
         self.device = device
-        
+
         self.phase_offsets = cfg_gait.phase_offsets
         self.switchingPhaseNominal = cfg_gait.switchingPhaseNominal
         self.nom_gait_period = cfg_gait.nom_gait_period
@@ -21,7 +21,7 @@ class gait_scheduler():
                                  device=self.device, requires_grad=False)
 
         # * init buffer for individual leg phase variable
-        
+
         # self.LegPhase = torch.hstack((self.phase_offsets[0]*torch.ones(self.num_envs, 1, dtype=torch.float,
         #                          device=self.device, requires_grad=False),\
         #                                self.phase_offsets[1]*torch.ones(self.num_envs, 1, dtype=torch.float,
@@ -36,7 +36,7 @@ class gait_scheduler():
         #                          device=self.device, requires_grad=False),\
         #                                self.phase_offsets[1]*torch.ones(self.num_envs, 1, dtype=torch.float,
         #                          device=self.device, requires_grad=False)))
-        
+
 
         self.LegPhase = torch.tensor([],device=self.device, requires_grad=False)
         self.LegPhaseStance = torch.tensor([],device=self.device, requires_grad=False)
@@ -53,10 +53,10 @@ class gait_scheduler():
 
             self.LegPhaseSwing = torch.hstack((self.LegPhaseSwing,self.phase_offsets[i]*torch.ones(self.num_envs, 1, dtype=torch.float,
                                     device=self.device, requires_grad=False)))
-            
+
         A=10
         print("v1 = "+ str(self.LegPhase))
-        
+
         #print(self.LegPhaseSwing)
 
 
@@ -97,13 +97,13 @@ if __name__== "__main__":
     import math as mt
     import matplotlib.pyplot as plt
     import numpy as np
-    
+
     # gait config class needed to initialize the gait scheduler
     class gait():
         nom_gait_period = 0.8
         phase_offsets = [0, 0.5, 0.1] # phase offset for each leg the length of this vector also determined the nb of legs used for the gait schedule
         switchingPhaseNominal = 0.5 # switch phase from stance to swing
-    
+
     # environment step dt
     dt = 0.002
     cfg_gait = gait()
@@ -119,9 +119,9 @@ if __name__== "__main__":
     leg_phase = np.zeros([num_env,numlegs, N_iter])
     stance_phase = np.zeros([num_env,numlegs, N_iter])
     swing_phase = np.zeros([num_env,numlegs, N_iter])
-    
+
     time = (np.arange(0,N_iter)*dt)
-    
+
     for i in range(N_iter):
         GS.increment_phase()
 
@@ -130,11 +130,10 @@ if __name__== "__main__":
         stance_phase[:,:,i] = GS.LegPhaseStance.detach().cpu().numpy()
         swing_phase[:,:,i] = GS.LegPhaseSwing.detach().cpu().numpy()
 
-    
     nrows = 5
     ncols = 1
     idx=1
-    
+
     plt.figure()
     plt.subplot(nrows, ncols, idx);idx+=1
     plt.plot(time, main_phase.T)
