@@ -1,13 +1,12 @@
-from gym import LEGGED_GYM_ROOT_DIR
 import os
-import copy
-import isaacgym
-from gym.envs import *
-from gym.utils import  get_args, task_registry, Logger, class_to_dict
-from gym.utils import KeyboardInterface, GamepadInterface
-import numpy as np
+
+from gym.envs import __init__
+from gym import LEGGED_GYM_ROOT_DIR
+from gym.utils import get_args, task_registry
+from gym.utils import KeyboardInterface
+
+# torch needs to be imported after isaacgym imports in local source
 import torch
-import isaacgym
 
 
 def play(args):
@@ -23,7 +22,7 @@ def play(args):
                                                           args=args,
                                                           train_cfg=train_cfg)
 
-    # switch to evaluation mode (dropout for example)
+    # * switch to evaluation mode (dropout for example)
     ppo_runner.switch_to_eval()
 
     if EXPORT_POLICY:
@@ -39,6 +38,7 @@ def play(args):
         interface.update(env)
         env.set_states(train_cfg.policy.actions, actions)
         env.step()
+
 
 if __name__ == '__main__':
     EXPORT_POLICY = True

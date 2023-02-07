@@ -1,6 +1,4 @@
-import isaacgym
-
-from gym.envs import *
+from gym.envs import __init__
 from gym.utils import get_args, task_registry
 from gym.utils.logging_and_saving \
     import local_code_save_helper, wandb_singleton

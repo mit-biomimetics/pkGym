@@ -29,6 +29,8 @@
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
 import os
+from isaacgym import gymapi
+from isaacgym import gymutil
 from datetime import datetime
 from typing import Tuple
 
@@ -41,7 +43,6 @@ from .helpers import get_args, update_cfg_from_args, class_to_dict, get_load_pat
 from gym.envs.base.legged_robot_config import (LeggedRobotCfg,
                                                LeggedRobotRunnerCfg)
 from gym.envs.base.base_config import BaseConfig
-import isaacgym
 from gym.envs.base.sim_config import SimCfg
 
 
@@ -110,18 +111,18 @@ class TaskRegistry():
         self.sim["physics_engine"] = args.physics_engine
         self.sim["headless"] = args.headless
 
-        self.sim["params"] = isaacgym.gymapi.SimParams()
+        self.sim["params"] = gymapi.SimParams()
         self.sim["params"].physx.use_gpu = args.use_gpu
         self.sim["params"].physx.num_subscenes = args.subscenes
         self.sim["params"].use_gpu_pipeline = args.use_gpu_pipeline
-        isaacgym.gymutil.parse_sim_config(self.sim_cfg, self.sim["params"])
+        gymutil.parse_sim_config(self.sim_cfg, self.sim["params"])
 
     def make_gym_and_sim(self):
         self.make_gym()
         self.make_sim()
 
     def make_gym(self):
-        self._gym = isaacgym.gymapi.acquire_gym()
+        self._gym = gymapi.acquire_gym()
 
     def make_sim(self):
         self._sim = self._gym.create_sim(
