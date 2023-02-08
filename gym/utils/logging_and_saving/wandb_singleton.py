@@ -37,7 +37,8 @@ class WandbSingleton(object):
         if args.task is not None:
             self.experiment_name = f'{args.task}'
 
-        if self.entity_name is None or self.project_name is None:
+        if (self.entity_name is None or self.project_name is None
+           or args.disable_wandb):
             self.enabled = False
         else:
             print(f'Setting WandB project name: {self.project_name}\n' +
