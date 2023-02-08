@@ -6,16 +6,18 @@
 # todo prune nearby
 # todo add privileged observatiosn too?
 import torch
-import numpy as np
+
 from algorithms.storage import RolloutStorage
+
 
 class LongTermStorage:
 
     # * initialization with State Estimator
     def __init__(self, num_envs, num_transitions_per_env, LT_storage_size,
-                    actor_obs_shape, critic_obs_shape, actions_shape, se_shape=None,
-                    priv_obs_only=True,
-                    device='cpu'):
+                 actor_obs_shape, critic_obs_shape,
+                 actions_shape, se_shape=None,
+                 priv_obs_only=True,
+                 device='cpu'):
 
         self.device = device
         self.actor_obs_shape = actor_obs_shape
@@ -23,47 +25,47 @@ class LongTermStorage:
         self.actions_shape = actions_shape
         # * start rollout storage
         self.rollout = RolloutStorage(num_envs, num_transitions_per_env,
-                                        actor_obs_shape, critic_obs_shape,
-                                        actions_shape, se_shape, self.device)
+                                      actor_obs_shape, critic_obs_shape,
+                                      actions_shape, se_shape, self.device)
 
         # * initialize long-term storage
         self.data_count = 0  # amount of data stored
-        # if not priv_obs_only:
-        self.actor_obs = torch.zeros(LT_storage_size, *actor_obs_shape,
-                                device=self.device)
-        self.next_actor_obs = torch.zeros(LT_storage_size, *actor_obs_shape,
-                                device=self.device)
+        # * if not priv_obs_only:
+        self.actor_obs = torch.zeros(
+            LT_storage_size, *actor_obs_shape, device=self.device)
+        self.next_actor_obs = torch.zeros(
+            LT_storage_size, *actor_obs_shape, device=self.device)
 
         if critic_obs_shape[0] is None:
             self.critic_obs_shape = actor_obs_shape
-            self.critic_obs = torch.zeros(LT_storage_size,
-                                    *actor_obs_shape, device=self.device)
-            self.next_critic_obs = torch.zeros(LT_storage_size,
-                                    *actor_obs_shape, device=self.device)
+            self.critic_obs = torch.zeros(
+                LT_storage_size, *actor_obs_shape, device=self.device)
+            self.next_critic_obs = torch.zeros(
+                LT_storage_size, *actor_obs_shape, device=self.device)
         else:
             self.critic_obs_shape = critic_obs_shape
-            self.critic_obs = torch.zeros(LT_storage_size,
-                                    *critic_obs_shape, device=self.device)
-            self.next_critic_obs = torch.zeros(LT_storage_size,
-                                    *critic_obs_shape, device=self.device)
+            self.critic_obs = torch.zeros(
+                LT_storage_size, *critic_obs_shape, device=self.device)
+            self.next_critic_obs = torch.zeros(
+                LT_storage_size, *critic_obs_shape, device=self.device)
 
-        self.rewards = torch.zeros(LT_storage_size, 1,
-                                    device=self.device)
-        self.actions = torch.zeros(LT_storage_size, *actions_shape,
-                                    device=self.device)
-        self.dones = torch.zeros(LT_storage_size, 1,
-                                    device=self.device).byte()
-        # trackers
+        self.rewards = torch.zeros(
+            LT_storage_size, 1, device=self.device)
+        self.actions = torch.zeros(
+            LT_storage_size, *actions_shape, device=self.device)
+        self.dones = torch.zeros(
+            LT_storage_size, 1, device=self.device).byte()
+        # * trackers
         self.LT_storage_size = LT_storage_size
         # self.num_envs = num_envs
         self.step = 0
 
     def add_LT_transitions(self, actor_obs, critic_obs, actions,
-                            next_actor_obs, next_critic_obs, rewards):
+                           next_actor_obs, next_critic_obs, rewards):
         n_add = actor_obs.shape[0]  # how many are being added, same for all
         count = self.data_count
         if count > self.LT_storage_size:
-            raise("Overflow LT storage.")
+            raise ("Overflow LT storage.")
         elif count == self.LT_storage_size:
             # * already in overflow, replace randomly
             indices = torch.randint(count, n_add)
@@ -75,7 +77,7 @@ class LongTermStorage:
             self.rewards[indices] = rewards
         elif count+n_add >= self.LT_storage_size:
             # * will overflow, keep random set of incoming
-            # only keep as many as will fit
+            # * only keep as many as will fit
             indices = torch.randperm(n_add)[:self.LT_storage_size - count]
             self.actor_obs[count:, :] = actor_obs[indices, :]
             self.critic_obs[count:, :] = critic_obs[indices, :]
@@ -86,8 +88,8 @@ class LongTermStorage:
 
             indices = torch.randperm(count + n_add)[:self.LT_storage_size]
             temp = torch.cat((self.actor_obs[:count, :],
-                                self.rollout.observations.flatten(end_dim=1)),
-                                dim=0)
+                              self.rollout.observations.flatten(end_dim=1)),
+                             dim=0)
             self.actor_obs = temp[indices, :]
             count = self.LT_storage_size
         else:
@@ -122,12 +124,15 @@ class LongTermStorage:
     #         next_is_not_terminal = 1.0 - self.dones[step].float()
     #         delta = self.rewards[step] + next_is_not_terminal * gamma \
     #                     * next_values - self.values[step]
-    #         advantage = delta + next_is_not_terminal * gamma * lam * advantage
+    #         advantage = (
+    #             delta + next_is_not_terminal * gamma * lam * advantage)
     #         self.returns[step] = advantage + self.values[step]
 
     #     # Compute and normalize the advantages
     #     self.advantages = self.returns - self.values
-    #     self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + 1e-8)
+    #    self.advantages = (
+    #        (self.advantages - self.advantages.mean())
+    #        / (self.advantages.std() + 1e-8))
 
     def compute_advantages(self, gamma, lam):
         """
@@ -174,7 +179,8 @@ class LongTermStorage:
     #             target_values_batch = values[batch_idx]
     #             target_q_values_batch = q_values[batch_idx]
     #             # returns_batch = returns[batch_idx]
-    #             # old_actions_log_prob_batch = old_actions_log_prob[batch_idx]
+    #             # old_actions_log_prob_batch = \
+    #             #     old_actions_log_prob[batch_idx]
     #             # advantages_batch = advantages[batch_idx]
     #             # old_mu_batch = old_mu[batch_idx]
     #             # old_sigma_batch = old_sigma[batch_idx]

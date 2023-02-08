@@ -1,11 +1,12 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES.
+# All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
-# 1. Redistributions of source code must retain the above copyright notice, this
-# list of conditions and the following disclaimer.
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
 #
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 # this list of conditions and the following disclaimer in the documentation
@@ -17,20 +18,22 @@
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+# THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
 import torch
 
 from .base_storage import BaseStorage
+
 
 class RolloutStorage(BaseStorage):
     """ A standard rollout storage, implemented for for PPO.
@@ -46,7 +49,7 @@ class RolloutStorage(BaseStorage):
             self.actions_log_prob = None
             self.action_mean = None
             self.action_sigma = None
-        
+
         def clear(self):
             self.__init__()
 
@@ -60,11 +63,13 @@ class RolloutStorage(BaseStorage):
         self.actions_shape = actions_shape
 
         # * Core
-        self.observations = torch.zeros(num_transitions_per_env, num_envs,
-                                        *obs_shape, device=self.device)
+        self.observations = torch.zeros(
+            num_transitions_per_env, num_envs, *obs_shape,
+            device=self.device)
         if privileged_obs_shape[0] is not None:
-            self.privileged_observations = torch.zeros(num_transitions_per_env,
-                        num_envs, *privileged_obs_shape, device=self.device)
+            self.privileged_observations = torch.zeros(
+                num_transitions_per_env, num_envs, *privileged_obs_shape,
+                device=self.device)
         else:
             self.privileged_observations = None
 
@@ -91,8 +96,8 @@ class RolloutStorage(BaseStorage):
 
         self.num_transitions_per_env = num_transitions_per_env
         self.num_envs = num_envs
-        # fill count indexes the current fill of the storage.
-        # for rollout storage, this implicitly indicates the step as well.
+        # * fill count indexes the current fill of the storage.
+        # * for rollout storage, this implicitly indicates the step as well.
         self.fill_count = 0
 
     def add_transitions(self, transition: Transition):
@@ -100,12 +105,14 @@ class RolloutStorage(BaseStorage):
             raise AssertionError("Rollout buffer overflow")
         self.observations[self.fill_count].copy_(transition.observations)
         if self.privileged_observations is not None:
-            self.privileged_observations[self.fill_count].copy_(transition.critic_observations)
+            self.privileged_observations[self.fill_count].copy_(
+                transition.critic_observations)
         self.actions[self.fill_count].copy_(transition.actions)
         self.rewards[self.fill_count].copy_(transition.rewards)
         self.dones[self.fill_count].copy_(transition.dones)
         self.values[self.fill_count].copy_(transition.values)
-        self.actions_log_prob[self.fill_count].copy_(transition.actions_log_prob.view(-1, 1))
+        self.actions_log_prob[self.fill_count].copy_(
+            transition.actions_log_prob.view(-1, 1))
         self.mu[self.fill_count].copy_(transition.action_mean)
         self.sigma[self.fill_count].copy_(transition.action_sigma)
         self.fill_count += 1
@@ -121,17 +128,18 @@ class RolloutStorage(BaseStorage):
             else:
                 next_values = self.values[fill_count + 1]
             next_is_not_terminal = 1.0 - self.dones[fill_count].float()
-            delta = self.rewards[fill_count] \
-                    + next_is_not_terminal * gamma * next_values \
-                    - self.values[fill_count]
-            advantage = delta \
-                        + next_is_not_terminal * gamma * lam * advantage
+            delta = (
+                self.rewards[fill_count] + next_is_not_terminal
+                * gamma * next_values - self.values[fill_count])
+            advantage = (
+                delta + next_is_not_terminal * gamma * lam * advantage)
             self.returns[fill_count] = advantage + self.values[fill_count]
 
         # * Compute and normalize the advantages
         self.advantages = self.returns - self.values
-        self.advantages = (self.advantages - self.advantages.mean()) \
-                           / (self.advantages.std() + 1e-8)
+        self.advantages = (
+            (self.advantages - self.advantages.mean())
+            / (self.advantages.std() + 1e-8))
 
     def get_statistics(self):
         done = self.dones
@@ -181,5 +189,5 @@ class RolloutStorage(BaseStorage):
                 old_mu_batch = old_mu[batch_idx]
                 old_sigma_batch = old_sigma[batch_idx]
                 yield obs_batch, critic_observations_batch, actions_batch, \
-                      target_values_batch, advantages_batch, returns_batch, \
-                      old_actions_log_prob_batch, old_mu_batch, old_sigma_batch
+                    target_values_batch, advantages_batch, returns_batch, \
+                    old_actions_log_prob_batch, old_mu_batch, old_sigma_batch
