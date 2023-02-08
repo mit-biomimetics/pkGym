@@ -468,7 +468,7 @@ class LeggedRobot(BaseTask):
 
         self._rigid_body_pos = self._rigid_body_state.view(
             self.num_envs, self.num_bodies, 13)[..., 0:3]
-        self._rigid_body_rot = self._rigid_body_state.view(
+        self._rigid_body_quat = self._rigid_body_state.view(
             self.num_envs, self.num_bodies, 13)[..., 3:7]
         self._rigid_body_lin_vel = self._rigid_body_state.view(
             self.num_envs, self.num_bodies, 13)[..., 7:10]
