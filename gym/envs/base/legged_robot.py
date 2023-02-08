@@ -147,13 +147,15 @@ class LeggedRobot(BaseTask):
             - self.env_origins.unsqueeze(dim=1).expand(
                 self.num_envs, len(self.end_effector_ids), 3))
         self.end_effector_quat = \
-            self._rigid_body_rot[:, self.end_effector_ids]
-        self.end_effector_lin_vel = quat_rotate_inverse(
-            self.base_quat,
-            self._rigid_body_lin_vel[:, self.end_effector_ids])
-        self.end_effector_ang_vel = quat_rotate_inverse(
-            self.base_quat,
-            self._rigid_body_ang_vel[:, self.end_effector_ids])
+            self._rigid_body_quat[:, self.end_effector_ids]
+
+        for index in range(len(self.end_effector_ids)):
+            self.end_effector_lin_vel[:, index, :] = quat_rotate_inverse(
+                self.base_quat,
+                self._rigid_body_lin_vel[:, self.end_effector_ids][:, index, :])
+            self.end_effector_ang_vel[:, index, :] = quat_rotate_inverse(
+                self.base_quat,
+                self._rigid_body_ang_vel[:, self.end_effector_ids][:, index, :])
 
         self.base_height = self.root_states[:, 2:3]
 
@@ -533,8 +535,23 @@ class LeggedRobot(BaseTask):
             self._rigid_body_pos[:, self.end_effector_ids]
             - self.env_origins.unsqueeze(dim=1).expand(
                 self.num_envs, len(self.end_effector_ids), 3))
-        self.end_effector_vel = \
-            self._rigid_body_lin_vel[:, self.end_effector_ids]
+        self.end_effector_quat = \
+            self._rigid_body_quat[:, self.end_effector_ids]
+
+        self.end_effector_lin_vel = torch.zeros(
+            self.num_envs, len(self.end_effector_ids), 3,
+            dtype=torch.float, device=self.device, requires_grad=False)
+        self.end_effector_ang_vel = torch.zeros(
+            self.num_envs, len(self.end_effector_ids), 3,
+            dtype=torch.float, device=self.device, requires_grad=False)
+
+        for index in range(len(self.end_effector_ids)):
+            self.end_effector_lin_vel[:, index, :] = quat_rotate_inverse(
+                self.base_quat,
+                self._rigid_body_lin_vel[:, self.end_effector_ids][:, index, :])
+            self.end_effector_ang_vel[:, index, :] = quat_rotate_inverse(
+                self.base_quat,
+                self._rigid_body_ang_vel[:, self.end_effector_ids][:, index, :])
 
         if self.cfg.terrain.measure_heights:
             self.height_points = self._init_height_points()
