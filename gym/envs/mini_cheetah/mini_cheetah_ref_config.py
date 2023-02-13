@@ -22,7 +22,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         # PD Drive parameters:
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
-        gait_freq = 3.5 #
+        gait_freq = 3.5
         dof_pos_decay = 0.15  # set to None to disable
         ctrl_frequency = 100
         desired_sim_frequency = 500
@@ -109,13 +109,12 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
             # ang_vel = [0.1, 0.1, 0.1]  # 0.027, 0.14, 0.37
             projected_gravity = 0.0
         class reward:
-            make_PBRS = []
             class weights:
                 tracking_lin_vel = 3.0
                 tracking_ang_vel = 1.0
-                lin_vel_z = 0.1
-                ang_vel_xy = 0.0
-                orientation = 1.5
+                # lin_vel_z = 0.1
+                ang_vel_xy = 0.
+                # orientation = 1.5
                 torques = 5.e-7
                 dof_vel = 0.
                 min_base_height = 1.
@@ -126,11 +125,21 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                 dof_pos_limits = 0.
                 feet_contact_forces = 0.
                 dof_near_home = 0.
-                reference_traj = 0.5
-                swing_grf = 0.75
-                stance_grf = 1.5
+                reference_traj = 0.1
+                swing_grf = 0.5
+                stance_grf = 0.5
             class termination_weight:
                 termination = 15
+
+        class PBRS:
+            gamma = 1
+            class weights:
+                lin_vel_z = 1.
+                reference_traj = 1.
+                orientation = 1.
+                min_base_height = 1.
+                swing_grf = 0.75
+                stance_grf = 1.5
 
     class algorithm( MiniCheetahRunnerCfg.algorithm):
         # training params
@@ -161,7 +170,7 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
         # * neural network params
         class neural_net:
             activation = "elu"
-            hidden_dims = [256, 128, 64]  # None will default to 256, 128
+            hidden_dims = [256, 128]  # None will default to 256, 128
             # dropouts: randomly zeros output of a node.
             # specify the probability of a dropout, 0 means no dropouts.
             # Done per layer, including initial layer (input-first, no last-output)
@@ -171,7 +180,7 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
     class runner(MiniCheetahRunnerCfg.runner):
         run_name = ''
         experiment_name = 'mini_cheetah_ref'
-        max_iterations = 1000  # number of policy updates
+        max_iterations = 500  # number of policy updates
         SE_learner = 'modular_SE'
         algorithm_class_name = 'PPO'
         num_steps_per_env = 32

@@ -45,7 +45,7 @@ class Logger:
 
     def log_current_reward(self, name, reward):
         if name in self.current_episode_return.keys():
-            self.current_episode_return[name] += reward  
+            self.current_episode_return[name] += reward
 
     def update_episode_buffer(self, dones):
         self.current_episode_length += 1

@@ -222,7 +222,6 @@ class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
             height_measurements = 0.1
 
         class reward:
-            make_PBRS = []
             class weights:
                 tracking_ang_vel = 0.5
                 tracking_lin_vel = 0.5

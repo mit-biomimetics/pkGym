@@ -110,9 +110,9 @@ class LeggedRobot(BaseTask):
             self.gym.refresh_dof_state_tensor(self.sim)
         self._post_physics_step()
 
-        self._check_termination()
+        self._check_terminations_and_timeouts()
 
-        env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
+        env_ids = self.to_be_reset.nonzero(as_tuple=False).flatten()
         self._reset_idx(env_ids)
 
 
@@ -153,18 +153,8 @@ class LeggedRobot(BaseTask):
                    % int(self.cfg.commands.resampling_time / self.dt)==0)
         self._resample_commands(env_ids.nonzero(as_tuple=False).flatten())
         if self.cfg.push_robots:
-            if (self.common_step_counter
-                % self.cfg.push_interval == 0):
+            if (self.common_step_counter % self.cfg.push_interval == 0):
                     self._push_robots()
-
-
-    def _check_termination(self):
-        """ Check if environments need to be reset
-        """
-        self.reset_buf = torch.any(torch.norm(self.contact_forces[:, self.termination_contact_indices, :], dim=-1) > 1., dim=1)
-        self.timed_out = self.episode_length_buf > self.max_episode_length  # no terminal reward for time-outs
-        self.reset_buf |= self.timed_out
-
 
     def _reset_idx(self, env_ids):
         """ Reset some environments.
@@ -183,7 +173,6 @@ class LeggedRobot(BaseTask):
         # reset buffers
         self.dof_pos_history[env_ids] = 0.
         self.episode_length_buf[env_ids] = 0
-        self.reset_buf[env_ids] = 1
 
     def _initialize_sim(self):
         """ Creates simulation, terrain and evironments
@@ -861,7 +850,7 @@ class LeggedRobot(BaseTask):
 
     def _reward_termination(self):
         # Terminal reward / penalty
-        return -(self.reset_buf * ~self.timed_out).float()
+        return -self.terminated.float()
 
     def _reward_dof_pos_limits(self):
         # Penalize dof positions too close to the limit

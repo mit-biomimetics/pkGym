@@ -204,7 +204,6 @@ class LeggedRobotRunnerCfg(BaseConfig):
             height_measurements = 0.1
 
         class reward:
-            make_PBRS = []
             class weights:
                 termination = .0
                 tracking_lin_vel = .0

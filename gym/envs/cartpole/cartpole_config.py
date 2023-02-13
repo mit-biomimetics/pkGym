@@ -84,7 +84,6 @@ class CartpoleRunnerCfg(FixedRobotCfgPPO):
             pole_vel = 0.010
             actuation = 0.00
         class reward:
-            make_PBRS = []
 
             class weights:
                 pole_pos = 5

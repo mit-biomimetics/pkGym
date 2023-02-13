@@ -30,8 +30,7 @@ def train(train_cfg, policy_runner):
     wandb_helper = wandb_singleton.WandbSingleton()
 
     policy_runner.learn(
-        num_learning_iterations=train_cfg.runner.max_iterations,
-        init_at_random_ep_len=True)
+        num_learning_iterations=train_cfg.runner.max_iterations)
 
     wandb_helper.close_wandb()
 
