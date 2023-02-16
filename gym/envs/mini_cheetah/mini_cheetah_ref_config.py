@@ -84,27 +84,28 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
         # * can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
         activation = 'elu'
 
-        actor_obs = [
-            "base_height",
-            "base_lin_vel",
-            "base_ang_vel",
-            "projected_gravity",
-            "commands",
-            "dof_pos_obs",
-            "dof_vel",
-            "dof_pos_history",
-            "phase_obs"]
+        actor_obs = ["base_height",
+                     "base_lin_vel",
+                     "base_ang_vel",
+                     "projected_gravity",
+                     "commands",
+                     "dof_pos_obs",
+                     "dof_vel",
+                     "dof_pos_history",
+                     "phase_obs"
+                     ]
 
         critic_obs = [
-            "base_height",
-            "base_lin_vel",
-            "base_ang_vel",
-            "projected_gravity",
-            "commands",
-            "dof_pos_obs",
-            "dof_vel",
-            "dof_pos_history",
-            "phase_obs"]
+                      "base_height",
+                      "base_lin_vel",
+                      "base_ang_vel",
+                      "projected_gravity",
+                      "commands",
+                      "dof_pos_obs",
+                      "dof_vel",
+                      "dof_pos_history",
+                      "phase_obs"
+                      ]
 
         actions = ["dof_pos_target"]
 
@@ -147,7 +148,7 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
         clip_param = 0.2
         entropy_coef = 0.01
         num_learning_epochs = 6
-        # * mini batch size = num_envs*nsteps/nminibatches
+        # mini batch size = num_envs*nsteps/nminibatches
         num_mini_batches = 6
         learning_rate = 5.e-5
         schedule = 'adaptive'  # can be adaptive, fixed
@@ -158,7 +159,7 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
 
     class state_estimator:
         num_learning_epochs = 10
-        # * mini batch size = num_envs*nsteps / nminibatches
+        # mini batch size = num_envs*nsteps / nminibatches
         num_mini_batches = 1
         obs = [
             "base_ang_vel",

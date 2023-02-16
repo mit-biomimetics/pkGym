@@ -170,7 +170,7 @@ class LeggedRobotCfg(BaseConfig):
     class reward_settings:
         # * tracking reward = exp(-error^2/sigma)
         tracking_sigma = 0.25
-        # * ercentage of urdf limits, values above this limit are penalized
+        # * percentage of urdf limits, values above this limit are penalized
         soft_dof_pos_limit = 1.
         soft_dof_vel_limit = 1.
         soft_torque_limit = 1.

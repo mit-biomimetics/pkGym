@@ -11,26 +11,26 @@ class MiniCheetahRef(MiniCheetah):
         # * reference traj
         csv_path = cfg.init_state.ref_traj.format(
             LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
-        self.leg_ref = to_torch(
-            pd.read_csv(csv_path).to_numpy(), device=sim_device)
+        self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy(),
+                                device=sim_device)
         self.omega = 2*torch.pi*cfg.control.gait_freq
         super().__init__(gym, sim, cfg, sim_params, sim_device, headless)
 
     def _init_buffers(self):
         super()._init_buffers()
-        self.phase = torch.zeros(
-            self.num_envs, 1,
-            dtype=torch.float, device=self.device, requires_grad=False)
-        self.phase_obs = torch.zeros(
-            self.num_envs, 2,
-            dtype=torch.float, device=self.device, requires_grad=False)
+        self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
+                                 device=self.device, requires_grad=False)
+        self.phase_obs = torch.zeros(self.num_envs, 2, dtype=torch.float,
+                                     device=self.device, requires_grad=False)
+
 
     def _reset_system(self, env_ids):
         super()._reset_system(env_ids)
         self.dof_pos_avg[env_ids] = 0.
-        self.phase[env_ids] = torch_rand_float(
-            0, torch.pi,
-            shape=self.phase[env_ids].shape, device=self.device)
+        self.phase[env_ids] = torch_rand_float(0, torch.pi,
+                                               shape=self.phase[env_ids].shape,
+                                               device=self.device)
+
 
     def _post_physics_step(self):
         """ Update all states that are not handled in PhysX """
@@ -46,8 +46,8 @@ class MiniCheetahRef(MiniCheetah):
 
     def _reward_swing_grf(self):
         """Reward non-zero grf during swing (0 to pi)"""
-        in_contact = torch.gt(torch.norm(
-            self.contact_forces[:, self.feet_indices, :], dim=-1), 50.)
+        in_contact = torch.gt(torch.norm(self.contact_forces[:,
+                                            self.feet_indices, :], dim=-1), 50.)
         ph_off = torch.lt(self.phase, torch.pi)
         rew = in_contact*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1)
         return -torch.sum(rew.float(), dim=1)*(1-self._switch())
@@ -65,9 +65,7 @@ class MiniCheetahRef(MiniCheetah):
         """REWARDS EACH LEG INDIVIDUALLY BASED ON ITS POSITION IN THE CYCLE"""
         # * dof position error
         error = self._get_ref() + self.default_dof_pos - self.dof_pos
-        reward = torch.sum(
-            self._sqrdexp(error)
-            - torch.abs(error)*0.2, dim=1)/12.  # normalize by n_dof
+        reward = torch.mean(self._sqrdexp(error) - torch.abs(error)*0.2, dim=1)
         # * only when commanded velocity is higher
         return reward*(1-self._switch())
 

@@ -46,8 +46,6 @@ class CartpoleCfg(FixedRobotCfg):
             "{LEGGED_GYM_ROOT_DIR}/resources/robots/"
             + "cartpole/urdf/cartpole.urdf")
         flip_visual_attachments = False
-
-        # * Toggles to keep
         disable_gravity = False
         disable_motors = False  # all torques set to 0
 

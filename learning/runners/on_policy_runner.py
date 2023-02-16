@@ -64,9 +64,9 @@ class OnPolicyRunner:
                                    num_actions,
                                    **self.policy_cfg).to(self.device)
 
-        alg_class = eval(self.cfg["algorithm_class_name"])  # PPO
-        self.alg: PPO = alg_class(
-            actor_critic, device=self.device, **self.alg_cfg)
+        alg_class = eval(self.cfg["algorithm_class_name"])
+        self.alg: PPO = alg_class(actor_critic,
+                                  device=self.device, **self.alg_cfg)
 
         if self.cfg["SE_learner"] == "modular_SE":
             num_SE_obs = self.get_obs_size(self.se_cfg["obs"])
@@ -91,11 +91,10 @@ class OnPolicyRunner:
         # * Log
         self.log_dir = log_dir
         self.SE_path = os.path.join(self.log_dir, 'SE')  # log_dir for SE
-        self.logger = Logger(
-            log_dir, self.env.max_episode_length_s, self.device)
+        self.logger = Logger(log_dir, self.env.max_episode_length_s,
+                             self.device)
 
-        reward_keys_to_log = (
-            list(self.policy_cfg["reward"]["weights"].keys())
+        reward_keys_to_log = (list(self.policy_cfg["reward"]["weights"].keys())
             + list(self.policy_cfg["reward"]["termination_weight"].keys()))
         self.logger.initialize_buffers(self.env.num_envs, reward_keys_to_log)
 
@@ -163,8 +162,8 @@ class OnPolicyRunner:
                     self.set_actions(actions)
                     self.env.step()
 
-                    actor_obs = self.get_noisy_obs(
-                        self.policy_cfg["actor_obs"], self.policy_cfg["noise"])
+                    actor_obs = self.get_noisy_obs(self.policy_cfg["actor_obs"],
+                                                   self.policy_cfg["noise"])
                     critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
                     dones = self.get_dones()
                     rewards = self.get_and_log_rewards(
@@ -202,8 +201,8 @@ class OnPolicyRunner:
         self.save()
 
     def get_noise(self, obs_list, noise_dict):
-        noise_vec = torch.zeros(
-            self.get_obs_size(obs_list), device=self.device)
+        noise_vec = torch.zeros(self.get_obs_size(obs_list),
+                                device=self.device)
         obs_index = 0
         for obs in obs_list:
             obs_size = self.get_obs_size([obs])
@@ -258,9 +257,8 @@ class OnPolicyRunner:
         Computes each reward on the fly and returns.
         Also takes care of logging...
         '''
-        total_rewards = torch.zeros(
-            self.env.num_envs,
-            device=self.device, dtype=torch.float)
+        total_rewards = torch.zeros(self.env.num_envs,
+                                    device=self.device, dtype=torch.float)
         for name, weight in reward_weights.items():
             reward = self.env.compute_reward({name: weight},
                                              modifier).to(self.device)
@@ -328,11 +326,9 @@ class OnPolicyRunner:
 
     def load(self, path, load_optimizer=True):
         loaded_dict = torch.load(path)
-        self.alg.actor_critic.load_state_dict(
-            loaded_dict['model_state_dict'])
+        self.alg.actor_critic.load_state_dict(loaded_dict['model_state_dict'])
         if load_optimizer:
-            self.alg.optimizer.load_state_dict(
-                loaded_dict['optimizer_state_dict'])
+            self.alg.optimizer.load_state_dict(loaded_dict['optimizer_state_dict'])
         self.it = loaded_dict['iter']
 
         if self.cfg["SE_learner"] == "modular_SE":

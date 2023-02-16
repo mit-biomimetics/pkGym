@@ -59,8 +59,8 @@ class FixedRobot(BaseTask):
 
             if self.cfg.asset.disable_motors:
                 self.torques[:] = 0.
-            torques_to_gym_tensor = torch.zeros(
-                self.num_envs, self.num_dof, device=self.device)
+            torques_to_gym_tensor = torch.zeros(self.num_envs, self.num_dof,
+                                                device=self.device)
 
             # todo encapsulate
             next_torques_idx = 0
@@ -104,8 +104,7 @@ class FixedRobot(BaseTask):
         self.dof_pos_history[:, nact:2*nact] = self.dof_pos_history[:, :nact]
         self.dof_pos_history[:, :nact] = self.dof_pos_target
 
-        self.dof_pos_obs = \
-            (self.dof_pos-self.default_dof_pos)*self.scales["dof_pos"]
+        self.dof_pos_obs = (self.dof_pos-self.default_dof_pos)
 
     def _check_termination(self):
         """
@@ -198,7 +197,8 @@ class FixedRobot(BaseTask):
                 try:  # ! this seems like a crime...
                     self.torque_limits[i] = props["effort"][i].item()
                 except:
-                    pass
+                    print("WARNING: passive joints need to be listed after "
+                          + "active joints in the URDF.")
                 # * soft limits
                 m = (self.dof_pos_limits[i, 0] + self.dof_pos_limits[i, 1]) / 2
                 r = self.dof_pos_limits[i, 1] - self.dof_pos_limits[i, 0]
@@ -231,15 +231,15 @@ class FixedRobot(BaseTask):
         """
         dof_pos_target = self.dof_pos_target
         if self.cfg.control.dof_pos_decay:
-            self.dof_pos_avg = exp_avg_filter(
-                self.dof_pos_target, self.dof_pos_avg,
-                self.cfg.control.dof_pos_decay)
+            self.dof_pos_avg = exp_avg_filter(self.dof_pos_target,
+                                              self.dof_pos_avg,
+                                              self.cfg.control.dof_pos_decay)
             dof_pos_target = self.dof_pos_avg
 
-        actuated_dof_pos = torch.zeros(
-            self.num_envs, self.num_actuators, device=self.device)
-        actuated_dof_vel = torch.zeros(
-            self.num_envs, self.num_actuators, device=self.device)
+        actuated_dof_pos = torch.zeros(self.num_envs, self.num_actuators,
+                                       device=self.device)
+        actuated_dof_vel = torch.zeros(self.num_envs, self.num_actuators,
+                                       device=self.device)
         for dof_idx in range(self.num_dof):
             idx = 0
             if self.cfg.control.actuated_joints_mask[dof_idx]:
@@ -248,8 +248,8 @@ class FixedRobot(BaseTask):
                 idx += 1
 
         torques = (
-            self.p_gains * (
-                dof_pos_target + self.default_act_pos - actuated_dof_pos)
+            self.p_gains * (dof_pos_target + self.default_act_pos
+                            - actuated_dof_pos)
             + self.d_gains * (self.dof_vel_target - actuated_dof_vel)
             + self.tau_ff)
         torques = torch.clip(torques, -self.torque_limits, self.torque_limits)

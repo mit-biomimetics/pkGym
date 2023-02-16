@@ -63,9 +63,8 @@ class RolloutStorage(BaseStorage):
         self.actions_shape = actions_shape
 
         # * Core
-        self.observations = torch.zeros(
-            num_transitions_per_env, num_envs, *obs_shape,
-            device=self.device)
+        self.observations = torch.zeros(num_transitions_per_env, num_envs,
+                                        *obs_shape, device=self.device)
         if privileged_obs_shape[0] is not None:
             self.privileged_observations = torch.zeros(
                 num_transitions_per_env, num_envs, *privileged_obs_shape,
@@ -128,18 +127,16 @@ class RolloutStorage(BaseStorage):
             else:
                 next_values = self.values[fill_count + 1]
             next_is_not_terminal = 1.0 - self.dones[fill_count].float()
-            delta = (
-                self.rewards[fill_count] + next_is_not_terminal
-                * gamma * next_values - self.values[fill_count])
-            advantage = (
-                delta + next_is_not_terminal * gamma * lam * advantage)
+            delta = (self.rewards[fill_count]
+                     + next_is_not_terminal * gamma * next_values
+                     - self.values[fill_count])
+            advantage = delta + next_is_not_terminal * gamma * lam * advantage
             self.returns[fill_count] = advantage + self.values[fill_count]
 
         # * Compute and normalize the advantages
         self.advantages = self.returns - self.values
-        self.advantages = (
-            (self.advantages - self.advantages.mean())
-            / (self.advantages.std() + 1e-8))
+        self.advantages = ((self.advantages - self.advantages.mean())
+                           / (self.advantages.std() + 1e-8))
 
     def get_statistics(self):
         done = self.dones

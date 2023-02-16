@@ -26,10 +26,10 @@ class MiniCheetahCfg(LeggedRobotCfg):
         reset_mode = "reset_to_basic"
 
         # * default COM for basic initialization
-        pos = [0.0, 0.0, 0.33]      # x,y,z [m]
+        pos = [0.0, 0.0, 0.33]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
-        lin_vel = [0.0, 0.0, 0.0]   # x,y,z [m/s]
-        ang_vel = [0.0, 0.0, 0.0]   # x,y,z [rad/s]
+        lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
+        ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
 
         # * initialization for random range setup
         dof_pos_range = {'haa': [-0.05, 0.05],

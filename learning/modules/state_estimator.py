@@ -21,9 +21,8 @@ class StateEstimatorNN(nn.Module):
                   + str([key for key in kwargs.keys()]))
         super().__init__()
 
-        self.NN = create_MLP(
-            num_inputs, num_outputs, hidden_dims,
-            activation, dropouts)
+        self.NN = create_MLP(num_inputs, num_outputs, hidden_dims,
+                             activation, dropouts)
         print(f"State Estimator MLP: {self.NN}")
 
     def evaluate(self, observations):

@@ -5,25 +5,23 @@ from gym.envs.base.legged_robot import LeggedRobot
 
 class MiniCheetah(LeggedRobot):
     def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
-        super().__init__(
-            gym, sim, cfg, sim_params, sim_device, headless)
+        super().__init__(gym, sim, cfg, sim_params, sim_device, headless)
 
     def _init_buffers(self):
         super()._init_buffers()
         self.dof_pos_obs = torch.zeros_like(self.dof_pos, requires_grad=False)
-        self.base_height = torch.zeros(
-            self.num_envs, 1, dtype=torch.float,
-            device=self.device, requires_grad=False)
+        self.base_height = torch.zeros(self.num_envs, 1,
+                                       dtype=torch.float, device=self.device)
 
     def _reward_lin_vel_z(self):
         """Penalize z axis base linear velocity with squared exp"""
-        return self._sqrdexp(
-            self.base_lin_vel[:, 2] / self.scales["base_lin_vel"])
+        return self._sqrdexp(self.base_lin_vel[:, 2]
+                             / self.scales["base_lin_vel"])
 
     def _reward_ang_vel_xy(self):
         """Penalize xy axes base angular velocity"""
-        error = self._sqrdexp(
-            self.base_ang_vel[:, :2] / self.scales["base_ang_vel"])
+        error = self._sqrdexp(self.base_ang_vel[:, :2]
+                              / self.scales["base_ang_vel"])
         return torch.sum(error, dim=1)
 
     def _reward_orientation(self):
@@ -38,8 +36,7 @@ class MiniCheetah(LeggedRobot):
         error = (base_height-self.cfg.reward_settings.base_height_target)
         error /= self.scales["base_height"]
         error = torch.clamp(error, max=0, min=None).flatten()
-        return torch.exp(
-            -torch.square(error) / self.cfg.reward_settings.tracking_sigma)
+        return self._sqrdexp(error)
 
     def _reward_tracking_lin_vel(self):
         """Tracking of linear velocity commands (xy axes)"""

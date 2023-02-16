@@ -89,9 +89,8 @@ class TaskRegistry():
         self.set_discount_rates(train_cfg, env_cfg.control.ctrl_dt)
 
     def set_control_and_sim_dt(self, env_cfg, train_cfg):
-        env_cfg.control.decimation = int(
-            env_cfg.control.desired_sim_frequency
-            / env_cfg.control.ctrl_frequency)
+        env_cfg.control.decimation = int(env_cfg.control.desired_sim_frequency
+                                         / env_cfg.control.ctrl_frequency)
         env_cfg.control.ctrl_dt = 1.0 / env_cfg.control.ctrl_frequency
         env_cfg.sim_dt = env_cfg.control.ctrl_dt / env_cfg.control.decimation
         self.sim_cfg["dt"] = env_cfg.sim_dt

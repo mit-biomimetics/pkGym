@@ -46,9 +46,8 @@ class Terrain:
             return
         self.env_length = cfg.terrain_length
         self.env_width = cfg.terrain_width
-        self.proportions = \
-            [np.sum(cfg.terrain_proportions[:i+1])
-             for i in range(len(cfg.terrain_proportions))]
+        self.proportions = [np.sum(cfg.terrain_proportions[:i+1])
+                            for i in range(len(cfg.terrain_proportions))]
 
         self.cfg.num_sub_terrains = cfg.num_rows * cfg.num_cols
         self.env_origins = np.zeros((cfg.num_rows, cfg.num_cols, 3))
@@ -85,9 +84,8 @@ class Terrain:
 
     def randomized_terrain(self):
         for k in range(self.cfg.num_sub_terrains):
-            # * Env coordinates in the world
-            (i, j) = np.unravel_index(
-                k, (self.cfg.num_rows, self.cfg.num_cols))
+            # Env coordinates in the world
+            (i, j) = np.unravel_index(k, (self.cfg.num_rows, self.cfg.num_cols))
 
             choice = np.random.uniform(0, 1)
             difficulty = np.random.choice([0.5, 0.75, 0.9])
@@ -106,9 +104,8 @@ class Terrain:
     def selected_terrain(self):
         terrain_type = self.cfg.terrain_kwargs.pop('type')
         for k in range(self.cfg.num_sub_terrains):
-            # * Env coordinates in the world
-            (i, j) = np.unravel_index(
-                k, (self.cfg.num_rows, self.cfg.num_cols))
+            # Env coordinates in the world
+            (i, j) = np.unravel_index(k, (self.cfg.num_rows, self.cfg.num_cols))
 
             terrain = terrain_utils.SubTerrain(
                 "terrain",
