@@ -94,14 +94,14 @@ class OnPolicyRunner:
         self.logger = Logger(log_dir, self.env.max_episode_length_s,
                              self.device)
 
-        reward_keys_to_log = list(self.policy_cfg["reward"]["weights"].keys())\
-                             + list(self.policy_cfg["reward"]
-                                    ["termination_weight"].keys())
+        reward_keys_to_log = \
+            list(self.policy_cfg["reward"]["weights"].keys()) \
+            + list(self.policy_cfg["reward"]["termination_weight"].keys())
 
         # * initialize PBRS logging.
         if 'PBRS' in self.policy_cfg.keys():
-            reward_keys_to_log += ["PBRS_" + x for x
-                                   in self.policy_cfg['PBRS']['weights'].keys()]
+            reward_keys_to_log += [
+                "PBRS_" + x for x in self.policy_cfg['PBRS']['weights'].keys()]
 
         self.logger.initialize_buffers(self.env.num_envs, reward_keys_to_log)
 
@@ -111,7 +111,6 @@ class OnPolicyRunner:
 
         remove_zero_weighted_rewards(train_cfg['policy']['reward']['weights'])
         self.policy_cfg = train_cfg['policy']
-
 
         if 'state_estimator' in train_cfg:
             self.se_cfg = train_cfg['state_estimator']
@@ -180,8 +179,9 @@ class OnPolicyRunner:
                     self.set_actions(actions)
                     self.env.step()
 
-                    actor_obs = self.get_noisy_obs(self.policy_cfg['actor_obs'],
-                                                   self.policy_cfg['noise'])
+                    actor_obs = self.get_noisy_obs(
+                        self.policy_cfg['actor_obs'],
+                        self.policy_cfg['noise'])
                     critic_obs = self.get_obs(self.policy_cfg['critic_obs'])
                     # * get time_outs
                     timed_out = self.get_timed_out()
@@ -323,19 +323,19 @@ class OnPolicyRunner:
         mean_noise_std = self.alg.actor_critic.std.mean().item()
         self.logger.add_log(self.logger.mean_rewards)
         self.logger.add_log({
-                             'Loss/value_function': self.mean_value_loss,
-                             'Loss/surrogate': self.mean_surrogate_loss,
-                             'Loss/learning_rate': self.alg.learning_rate,
-                             'Policy/mean_noise_std': mean_noise_std,
-                             'Perf/total_fps': fps,
-                             'Perf/collection_time': self.collection_time,
-                             'Perf/learning_time': self.learn_time,
-                             'Train/mean_reward': self.logger.total_mean_reward,
-                             'Train/mean_episode_length': self.logger.mean_episode_length,
-                             'Train/total_timesteps': self.tot_timesteps,
-                             'Train/iteration_time': self.collection_time+self.learn_time,
-                             'Train/time': self.tot_time,
-                             })
+            'Loss/value_function': self.mean_value_loss,
+            'Loss/surrogate': self.mean_surrogate_loss,
+            'Loss/learning_rate': self.alg.learning_rate,
+            'Policy/mean_noise_std': mean_noise_std,
+            'Perf/total_fps': fps,
+            'Perf/collection_time': self.collection_time,
+            'Perf/learning_time': self.learn_time,
+            'Train/mean_reward': self.logger.total_mean_reward,
+            'Train/mean_episode_length': self.logger.mean_episode_length,
+            'Train/total_timesteps': self.tot_timesteps,
+            'Train/iteration_time': self.collection_time+self.learn_time,
+            'Train/time': self.tot_time,
+            })
         self.logger.update_iterations(self.it, self.tot_iter,
                                       self.num_learning_iterations)
 
@@ -375,10 +375,11 @@ class OnPolicyRunner:
         loaded_dict = torch.load(path)
         self.alg.actor_critic.load_state_dict(loaded_dict['model_state_dict'])
         if load_optimizer:
-            self.alg.optimizer.load_state_dict(loaded_dict['optimizer_state_dict'])
+            self.alg.optimizer.load_state_dict(
+                loaded_dict['optimizer_state_dict'])
         self.it = loaded_dict['iter']
 
-        if self.cfg['SE_learner'] == 'modular_SE': 
+        if self.cfg['SE_learner'] == 'modular_SE':
             SE_path = path.replace('/model_', '/SE/SE_')
             SEloaded_dict = torch.load(SE_path)
             self.state_estimator.state_estimator.load_state_dict(
