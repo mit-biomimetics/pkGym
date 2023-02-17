@@ -1,13 +1,14 @@
 import importlib
+
 from gym.utils.task_registry import task_registry
 
-# To add a new env:
-# 1. add the base env and env class name and location to the class dict
-# 2. add the config name and location to the config dict
-# 3. add the runner confg name and location to the runner config dict
-# 3. register the task experiment name to the env/config/ppo classes
+# * To add a new env:
+# * 1. add the base env and env class name and location to the class dict
+# * 2. add the config name and location to the config dict
+# * 3. add the runner confg name and location to the runner config dict
+# * 3. register the task experiment name to the env/config/ppo classes
 
-# from y import x where {y:x}
+# * from y import x where {y:x}
 class_dict = {
     'LeggedRobot': '.base.legged_robot',
     'FixedRobot': '.base.fixed_robot',
@@ -48,10 +49,12 @@ for config_name, config_location in config_dict.items():
 for runner_config_name, runner_config_location in runner_config_dict.items():
     locals()[runner_config_name] = getattr(
         importlib.import_module(
-            runner_config_location, __name__), runner_config_name)
+            runner_config_location, __name__),
+        runner_config_name)
 
 for task_name, class_list in task_dict.items():
-    task_registry.register(task_name,
-                           locals()[class_list[0]],
-                           locals()[class_list[1]](),
-                           locals()[class_list[2]]())
+    task_registry.register(
+        task_name,
+        locals()[class_list[0]],
+        locals()[class_list[1]](),
+        locals()[class_list[2]]())

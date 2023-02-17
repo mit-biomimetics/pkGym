@@ -1,6 +1,7 @@
 from isaacgym import gymapi
 import torch
 
+
 class KeyboardInterface():
     def __init__(self, env):
         env.gym.subscribe_viewer_keyboard_event(env.viewer,

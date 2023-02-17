@@ -1,8 +1,8 @@
-
 from gym.envs.mini_cheetah.mini_cheetah_config \
     import MiniCheetahCfg, MiniCheetahRunnerCfg
 
 BASE_HEIGHT_REF = 0.35
+
 
 class MiniCheetahRefCfg(MiniCheetahCfg):
     class env(MiniCheetahCfg.env):
@@ -15,11 +15,13 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
 
     class init_state(MiniCheetahCfg.init_state):
 
-        ref_traj = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/trajectories/single_leg.csv"
+        ref_traj = (
+            "{LEGGED_GYM_ROOT_DIR}/resources/robots/"
+            + "mini_cheetah/trajectories/single_leg.csv")
         ref_type = "Pos"
 
     class control(MiniCheetahCfg.control):
-        # PD Drive parameters:
+        # * PD Drive parameters:
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
         gait_freq = 3.5
@@ -47,7 +49,9 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         added_mass_range = [-1., 1.]
 
     class asset(MiniCheetahCfg.asset):
-        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/mini_cheetah/urdf/mini_cheetah_simple.urdf"
+        file = (
+            "{LEGGED_GYM_ROOT_DIR}/resources/robots/"
+            + "mini_cheetah/urdf/mini_cheetah_simple.urdf")
         foot_name = "foot"
         penalize_contacts_on = ["shank"]
         terminate_after_contacts_on = ["base", "thigh"]
@@ -70,12 +74,14 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
     class scaling(MiniCheetahCfg.scaling):
         pass
 
+
 class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
     seed = -1
-    class policy( MiniCheetahRunnerCfg.policy ):
+
+    class policy(MiniCheetahRunnerCfg.policy):
         actor_hidden_dims = [256, 256, 128]
         critic_hidden_dims = [256, 256, 128]
-        # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+        # * can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
         activation = 'elu'
 
         actor_obs = ["base_height",
@@ -108,6 +114,7 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
             # dof_vel = 0.005
             # ang_vel = [0.1, 0.1, 0.1]  # 0.027, 0.14, 0.37
             projected_gravity = 0.0
+
         class reward:
             class weights:
                 tracking_lin_vel = 3.0
@@ -148,32 +155,39 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
         clip_param = 0.2
         entropy_coef = 0.01
         num_learning_epochs = 6
-        num_mini_batches = 6  # mini batch size = num_envs*nsteps/nminibatches
+        # mini batch size = num_envs*nsteps/nminibatches
+        num_mini_batches = 6
         learning_rate = 5.e-5
         schedule = 'adaptive'  # can be adaptive, fixed
         discount_horizon = 0.75  # [s]
         GAE_bootstrap_horizon = 0.2  # [s]
         desired_kl = 0.01
         max_grad_norm = 1.
+
     class state_estimator:
         num_learning_epochs = 10
-        num_mini_batches = 1  # mini batch size = num_envs*nsteps / nminibatches
-        obs = ["base_ang_vel",
-               "projected_gravity",
-               "dof_pos",
-               "dof_vel"]
+        # mini batch size = num_envs*nsteps / nminibatches
+        num_mini_batches = 1
+        obs = [
+            "base_ang_vel",
+            "projected_gravity",
+            "dof_pos",
+            "dof_vel"]
 
-        targets = ["base_height",
-                   "base_lin_vel"]
+        targets = [
+            "base_height",
+            "base_lin_vel"]
 
         states_to_write_to = targets
         # * neural network params
+
         class neural_net:
             activation = "elu"
             hidden_dims = [256, 128]  # None will default to 256, 128
             # dropouts: randomly zeros output of a node.
             # specify the probability of a dropout, 0 means no dropouts.
-            # Done per layer, including initial layer (input-first, no last-output)
+            # Done per layer, including initial layer
+            # (input-first, no last-output)
             # len(dropouts) == len(hidden_dims)
             dropouts = [0.1, 0.1, 0.1]
 
