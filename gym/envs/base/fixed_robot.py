@@ -81,9 +81,9 @@ class FixedRobot(BaseTask):
             self.gym.refresh_dof_state_tensor(self.sim)
 
         self._post_physics_step()
-        self._check_termination()
+        self._check_terminations_and_timeouts()
 
-        env_ids = self.reset_buf.nonzero(as_tuple=False).flatten()
+        env_ids = self.to_be_reset.nonzero(as_tuple=False).flatten()
         self._reset_idx(env_ids)
 
     def _pre_physics_step(self):
@@ -104,14 +104,7 @@ class FixedRobot(BaseTask):
         self.dof_pos_history[:, nact:2*nact] = self.dof_pos_history[:, :nact]
         self.dof_pos_history[:, :nact] = self.dof_pos_target
 
-        self.dof_pos_obs = (self.dof_pos-self.default_dof_pos)
-
-    def _check_termination(self):
-        """
-        Check if the task has been terminated.
-        """
-        self.time_out_buf = self.episode_length_buf > self.max_episode_length
-        self.reset_buf |= self.time_out_buf
+        self.dof_pos_obs = (self.dof_pos-self.default_dof_pos)*self.scales["dof_pos"]
 
     def _reset_idx(self, env_ids):
         """ Reset some environments.
@@ -131,7 +124,6 @@ class FixedRobot(BaseTask):
         # * reset buffers
         self.dof_pos_history[env_ids] = 0.
         self.episode_length_buf[env_ids] = 0
-        self.reset_buf[env_ids] = 1
 
     def _initialize_sim(self):
         """ Creates simulation, terrain and evironments
@@ -632,8 +624,8 @@ class FixedRobot(BaseTask):
                 dim=-1) > 0.1), dim=1)
 
     def _reward_termination(self):
-        """Terminal reward / penalty"""
-        return -(self.reset_buf * ~self.time_out_buf).float()
+        # Terminal reward / penalty
+        return -self.terminated.float()
 
     def _reward_dof_pos_limits(self):
         """Penalize dof positions too close to the limit"""

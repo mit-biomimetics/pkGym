@@ -66,10 +66,13 @@ class BaseTask():
         torch._C._jit_set_profiling_mode(False)
         torch._C._jit_set_profiling_executor(False)
 
-        # * allocate buffers
-        self.reset_buf = torch.ones(self.num_envs,
-                                    device=self.device,
-                                    dtype=torch.bool)
+        # allocate buffers
+        self.to_be_reset = torch.ones(self.num_envs,
+                                      device=self.device,
+                                      dtype=torch.bool)
+        self.terminated = torch.ones(self.num_envs,
+                                     device=self.device,
+                                     dtype=torch.bool)
         self.episode_length_buf = torch.zeros(self.num_envs,
                                               device=self.device,
                                               dtype=torch.long)
@@ -129,27 +132,32 @@ class BaseTask():
         self.step()
 
     def _reset_buffers(self):
-        self.reset_buf[:] = False
+        self.to_be_reset[:] = False
+        self.terminated[:] = False
+        self.timed_out[:] = False
 
-    def compute_reward(self, reward_weights, modifier=1):
+    def compute_reward(self, reward_weights):
         ''' Compute and return a torch tensor of rewards
-        reward_weights: dict with keys matching reward names,
-            and values matching weights
-        modifier: additional weight applied to all weights
+        reward_weights: dict with keys matching reward names, and values matching weights
         '''
-        not_terminated = self.reset_buf & self.timed_out | ~self.reset_buf
-        reward = torch.zeros(
-            self.num_envs,
-            device=self.device, dtype=torch.float)
+        reward = torch.zeros(self.num_envs,
+                             device=self.device, dtype=torch.float)
         for name, weight in reward_weights.items():
-            if "termination" in name:
-                reward += weight*self._eval_reward(name)
-            else:
-                reward += weight*self._eval_reward(name)*not_terminated
-        return modifier*reward
+            reward += weight*self._eval_reward(name)
+        return reward
 
     def _eval_reward(self, name):
         return eval('self._reward_'+name+'()')
+
+    def _check_terminations_and_timeouts(self):
+        """ Check if environments need to be reset
+        """
+        contact_forces = \
+            self.contact_forces[:, self.termination_contact_indices, :]
+        self.terminated = \
+            torch.any(torch.norm(contact_forces, dim=-1) > 1., dim=1)
+        self.timed_out = self.episode_length_buf > self.max_episode_length
+        self.to_be_reset = self.timed_out | self.terminated
 
     def step(self, actions):
         raise NotImplementedError

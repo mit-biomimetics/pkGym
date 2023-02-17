@@ -91,7 +91,6 @@ class CartpoleRunnerCfg(FixedRobotCfgPPO):
             actuation = 0.00
 
         class reward:
-            make_PBRS = []
 
             class weights:
                 pole_pos = 5

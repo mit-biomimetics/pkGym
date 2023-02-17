@@ -151,8 +151,6 @@ class FixedRobotCfgPPO(BaseConfig):
             noise = 0.1  # implement as needed, also in your robot class
 
         class rewards:
-            make_PBRS = []
-
             class weights:
                 torques = 0.
                 dof_vel = 0.
