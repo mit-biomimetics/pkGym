@@ -21,11 +21,6 @@ class MIT_Humanoid(LeggedRobot):
 
     def _init_buffers(self):
         super()._init_buffers()
-        self.dof_pos_obs = torch.zeros_like(self.dof_pos)
-        self.base_height = torch.zeros(self.num_envs, 1,
-                                       dtype=torch.float,
-                                       device=self.device)
-
 
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity w. squared exp
