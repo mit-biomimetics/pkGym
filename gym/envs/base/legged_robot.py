@@ -142,6 +142,7 @@ class LeggedRobot(BaseTask):
         self.projected_gravity[:] = quat_rotate_inverse(self.base_quat,
                                                         self.gravity_vec)
 
+        # * end_effector_pos is world-frame and converted to env_origin
         self.end_effector_pos = (
             self._rigid_body_pos[:, self.end_effector_ids]
             - self.env_origins.unsqueeze(dim=1).expand(
@@ -149,6 +150,7 @@ class LeggedRobot(BaseTask):
         self.end_effector_quat = \
             self._rigid_body_quat[:, self.end_effector_ids]
 
+        # * end_effector vels are body-relative like body vels above
         for index in range(len(self.end_effector_ids)):
             self.end_effector_lin_vel[:, index, :] = quat_rotate_inverse(
                 self.base_quat,
@@ -523,7 +525,7 @@ class LeggedRobot(BaseTask):
         body_names = [body_tuple[0] for body_tuple in
                       sorted(body_dict.items(),
                              key=lambda body_tuple:body_tuple[1])]
-        #* construct a list of id numbers corresponding to end_effectors
+        # * construct a list of id numbers corresponding to end_effectors
         self.end_effector_ids = []
         for end_effector_name in self.cfg.asset.end_effector_names:
             self.end_effector_ids.extend([
@@ -531,6 +533,7 @@ class LeggedRobot(BaseTask):
                 for body_name in body_names
                 if end_effector_name in body_name])
 
+        # * end_effector_pos is world-frame and converted to env_origin
         self.end_effector_pos = (
             self._rigid_body_pos[:, self.end_effector_ids]
             - self.env_origins.unsqueeze(dim=1).expand(
@@ -545,6 +548,7 @@ class LeggedRobot(BaseTask):
             self.num_envs, len(self.end_effector_ids), 3,
             dtype=torch.float, device=self.device, requires_grad=False)
 
+        # * end_effector vels are body-relative like body vels above
         for index in range(len(self.end_effector_ids)):
             self.end_effector_lin_vel[:, index, :] = quat_rotate_inverse(
                 self.base_quat,
