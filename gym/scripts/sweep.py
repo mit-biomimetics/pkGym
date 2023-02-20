@@ -1,15 +1,15 @@
 import os
 import json
 import wandb
-import isaacgym
-from torch.multiprocessing import Process
-from torch.multiprocessing import set_start_method
 
-from gym.envs import *
 from gym import LEGGED_GYM_ROOT_DIR
+from gym.scripts.train import train, setup
 from gym.utils import get_args, task_registry
 from gym.utils.logging_and_saving import wandb_singleton
-from gym.scripts.train import train, setup
+
+# torch needs to be imported after isaacgym imports in local source
+from torch.multiprocessing import Process
+from torch.multiprocessing import set_start_method
 
 
 def load_sweep_config(file_name):

@@ -1,35 +1,6 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-# 
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice, this
-# list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-# this list of conditions and the following disclaimer in the documentation
-# and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Copyright (c) 2021 ETH Zurich, Nikita Rudin
-
 from gym.envs.base.legged_robot_config \
     import LeggedRobotCfg, LeggedRobotRunnerCfg
+
 
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
@@ -42,19 +13,18 @@ class MITHumanoidCfg(LeggedRobotCfg):
     class terrain(LeggedRobotCfg.terrain):
         pass
 
-
     class init_state(LeggedRobotCfg.init_state):
+        # * default setup chooses how the initial conditions are chosen.
+        # * "reset_to_basic" = a single position with added randomized noise.
+        # * "reset_to_range" = a range of joint positions and velocities.
+        # * "reset_to_traj" = feed in a trajectory to sample from.
         reset_mode = "reset_to_range"
-        # default setup chooses how the initial conditions are chosen.
-        # "reset_to_basic" = a single position with some randomized noise on top.
-        # "reset_to_range" = a range of joint positions and velocities.
-        #  "reset_to_traj" = feed in a trajectory to sample from.
 
         default_joint_angles = {  # = target angles [rad] when action = 0.0
             'hip_yaw': 0.,
             'hip_abad': 0.,
             'hip_pitch': -0.4,
-            'knee': 0.9,  # 0.785,
+            'knee': 0.9,
             'ankle': -0.45,
             'shoulder_pitch': 0.,
             'shoulder_abad': 0.,
@@ -62,13 +32,13 @@ class MITHumanoidCfg(LeggedRobotCfg):
             'elbow': 0.
              }
 
-        #default COM for basic initialization 
-        pos = [0.0, 0.0, 0.66]  # x,y,z [m]
+        # * default COM for basic initialization
+        pos = [0.0, 0.0, 0.66]      # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
-        lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
-        ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
+        lin_vel = [0.0, 0.0, 0.0]   # x,y,z [m/s]
+        ang_vel = [0.0, 0.0, 0.0]   # x,y,z [rad/s]
 
-        # initialization for random range setup
+        # * initialization for random range setup
 
         dof_pos_range = {'hip_yaw': [0., 0.],
                          'hip_abad': [0., 0.],
@@ -91,8 +61,8 @@ class MITHumanoidCfg(LeggedRobotCfg):
                          'elbow': [0., 0.]
                          }
 
-        root_pos_range = [[0., 0.],  # x
-                          [0., 0.],  # y
+        root_pos_range = [[0., 0.],     # x
+                          [0., 0.],     # y
                           [0.7, 0.72],  # z
                           [-0.1, 0.1],  # roll
                           [-0.1, 0.1],  # pitch
@@ -106,7 +76,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
                           [-0.1, 0.1]]  # yaw
 
     class control(LeggedRobotCfg.control):
-        # PD Drive parameters:
+        # * PD Drive parameters:
         stiffness = {'hip_yaw': 30.,
                      'hip_abad': 30.,
                      'hip_pitch': 30.,
@@ -116,7 +86,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
                      'shoulder_abad': 40.,
                      'shoulder_yaw': 40.,
                      'elbow': 40.,
-                    }  # [N*m/rad]
+                     }  # [N*m/rad]
         damping = {'hip_yaw': 5.,
                    'hip_abad': 5.,
                    'hip_pitch': 5.,
@@ -126,7 +96,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
                    'shoulder_abad': 5.,
                    'shoulder_yaw': 5.,
                    'elbow': 5.,
-                    }  # [N*m*s/rad]     # [N*m*s/rad]
+                   }  # [N*m*s/rad]
 
         # * exponential average decay for action scale
         dof_pos_decay = None  # set to None to disable
@@ -135,10 +105,12 @@ class MITHumanoidCfg(LeggedRobotCfg):
 
     class commands:
         resampling_time = 10.  # time before command are changed[s]
+
         class ranges:
             lin_vel_x = [-1.0, 1.0]  # min max [m/s]
             lin_vel_y = 1.  # max [m/s]
             yaw_vel = 1    # max [rad/s]
+
     class push_robots:
         push_robots = False
         interval_s = 15
@@ -151,15 +123,18 @@ class MITHumanoidCfg(LeggedRobotCfg):
         added_mass_range = [-1., 1.]
 
     class asset(LeggedRobotCfg.asset):
-        file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/mit_humanoid/urdf/humanoid_R_sf.urdf'
+        file = (
+            '{LEGGED_GYM_ROOT_DIR}/resources/robots/'
+            + 'mit_humanoid/urdf/humanoid_R_sf.urdf')
         foot_name = 'foot'
         penalize_contacts_on = ['base', 'arm']
         terminate_after_contacts_on = ['base']
         end_effector_names = ['hand', 'foot']
         flip_visual_attachments = False
-        self_collisions = 1 # 1 to disagble, 0 to enable...bitwise filter
+        self_collisions = 1  # 1 to disagble, 0 to enable...bitwise filter
         collapse_fixed_joints = False
-        # see GymDofDriveModeFlags (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
+        # * see GymDofDriveModeFlags
+        # * (0 is none, 1 is pos tgt, 2 is vel tgt, 3 effort)
         default_dof_drive_mode = 3
         disable_gravity = False
         disable_motors = False
@@ -186,29 +161,31 @@ class MITHumanoidCfg(LeggedRobotCfg):
         # todo check order of joints, create per-joint scaling
         dof_pos = 3.14
         dof_pos_obs = dof_pos
-        # Action scales
+        # * Action scales
         dof_pos_target = dof_pos
         tau_ff = 0.1
+
 
 class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
     seed = -1
     runner_class_name = 'OnPolicyRunner'
+
     class policy:
         init_noise_std = 1.0
         actor_hidden_dims = [512, 256, 128]
         critic_hidden_dims = [512, 256, 128]
-        # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+        # * can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
         activation = 'elu'
 
-        actor_obs = ["base_height",
-                     "base_lin_vel",
-                     "base_ang_vel",
-                     "projected_gravity",
-                     "commands",
-                     "dof_pos_obs",
-                     "dof_vel",
-                     "dof_pos_history"]
-
+        actor_obs = [
+            "base_height",
+            "base_lin_vel",
+            "base_ang_vel",
+            "projected_gravity",
+            "commands",
+            "dof_pos_obs",
+            "dof_vel",
+            "dof_pos_history"]
         critic_obs = actor_obs
 
         actions = ["dof_pos_target"]
@@ -223,7 +200,6 @@ class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
             height_measurements = 0.1
 
         class reward:
-            make_PBRS = []
             class weights:
                 tracking_ang_vel = 0.5
                 tracking_lin_vel = 0.5
@@ -238,18 +214,21 @@ class MITHumanoidRunnerCfg(LeggedRobotRunnerCfg):
                 stand_still = 0.
                 dof_pos_limits = 0.0
                 dof_near_home = 0.5
+
             class termination_weight:
                 termination = 15
+
     class algorithm(LeggedRobotRunnerCfg.algorithm):
-         # training params
+        # * training params
         value_loss_coef = 1.0
         use_clipped_value_loss = True
         clip_param = 0.2
         entropy_coef = 0.001
         num_learning_epochs = 5
-        num_mini_batches = 4 # mini batch size = num_envs*nsteps / nminibatches
+        # * mini batch size = num_envs*nsteps / nminibatches
+        num_mini_batches = 4
         learning_rate = 5.e-4
-        schedule = 'adaptive' # could be adaptive, fixed
+        schedule = 'adaptive'  # could be adaptive, fixed
         gamma = 0.999
         lam = 0.95
         desired_kl = 0.01

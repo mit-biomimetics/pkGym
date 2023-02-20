@@ -1,7 +1,7 @@
-from isaacgym import gymapi
 import os
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+
 
 class GamepadInterface():
     def __init__(self, env):
@@ -9,7 +9,8 @@ class GamepadInterface():
         pygame.joystick.init()
         print("__________________________________________________________")
         if pygame.joystick.get_count() == 1:
-            print("Using gamepad interface, overriding default comand settings")
+            print("Using gamepad interface, "
+                  + "overriding default comand settings")
             print("left joystick: forward, strafe left, "
                   "backward, strafe right")
             print("right joystick (left/right): yaw left/right")
@@ -30,7 +31,6 @@ class GamepadInterface():
         else:
             print("WARNING: failed to initialize gamepad.")
         print("__________________________________________________________")
-
 
     def update(self, env):
         for event in pygame.event.get():

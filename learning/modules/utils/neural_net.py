@@ -1,5 +1,4 @@
 import torch.nn as nn
-from torch.distributions import Normal
 
 
 def create_MLP(num_inputs, num_outputs, hidden_dims, activation,

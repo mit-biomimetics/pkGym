@@ -1,4 +1,3 @@
-
 import torch.nn as nn
 import torch.optim as optim
 
@@ -15,6 +14,7 @@ class StateEstimator:
     process_env_step() function stores values in a rollout storage
     """
     state_estimator: StateEstimatorNN
+
     def __init__(self,
                  state_estimator,    # nn module
                  learning_rate=1e-3,
@@ -41,17 +41,14 @@ class StateEstimator:
                                     lr=learning_rate)
         self.SE_loss_fn = nn.MSELoss()
 
-
     def init_storage(self, num_envs, num_transitions_per_env,
                      obs_shape, se_shape):
         self.storage = SERolloutStorage(num_envs, num_transitions_per_env,
                                         obs_shape, se_shape,
                                         device=self.device)
 
-
     def predict(self, obs):
         return self.state_estimator.evaluate(obs)
-
 
     def process_env_step(self, obs, SE_targets):
         # Record the transition
@@ -59,7 +56,6 @@ class StateEstimator:
         self.transition.observations = obs
         self.storage.add_transitions(self.transition)
         self.transition.clear()
-
 
     def update(self):
         """ Update the SE neural network weights via supervised learning """
