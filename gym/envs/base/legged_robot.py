@@ -520,6 +520,9 @@ class LeggedRobot(BaseTask):
                                                 self.root_states[:, 10:13])
         self.projected_gravity = quat_rotate_inverse(self.base_quat,
                                                      self.gravity_vec)
+        self.dof_pos_obs = torch.zeros_like(self.dof_pos)
+        self.base_height = torch.zeros(self.num_envs, 1,
+                                       dtype=torch.float, device=self.device)
 
         # * get the body_name to body_index dict
         body_dict = self.gym.get_actor_rigid_body_dict(

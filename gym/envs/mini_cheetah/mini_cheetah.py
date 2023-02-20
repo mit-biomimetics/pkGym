@@ -9,9 +9,6 @@ class MiniCheetah(LeggedRobot):
 
     def _init_buffers(self):
         super()._init_buffers()
-        self.dof_pos_obs = torch.zeros_like(self.dof_pos, requires_grad=False)
-        self.base_height = torch.zeros(self.num_envs, 1,
-                                       dtype=torch.float, device=self.device)
 
     def _reward_lin_vel_z(self):
         """Penalize z axis base linear velocity with squared exp"""
