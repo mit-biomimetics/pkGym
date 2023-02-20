@@ -116,6 +116,7 @@ class LeggedRobot(BaseTask):
         """
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_net_contact_force_tensor(self.sim)
+        self.gym.refresh_rigid_body_state_tensor(self.sim)
 
         self.episode_length_buf += 1
         self.common_step_counter += 1
@@ -132,6 +133,25 @@ class LeggedRobot(BaseTask):
         self.projected_gravity[:] = quat_rotate_inverse(
             self.base_quat, self.gravity_vec)
 
+        # * end_effector_pos is world-frame and converted to env_origin
+        self.end_effector_pos = (
+            self._rigid_body_pos[:, self.end_effector_ids]
+            - self.env_origins.unsqueeze(dim=1).expand(
+                self.num_envs, len(self.end_effector_ids), 3))
+        self.end_effector_quat = \
+            self._rigid_body_quat[:, self.end_effector_ids]
+
+        # * end_effector vels are body-relative like body vels above
+        for index in range(len(self.end_effector_ids)):
+            self.end_effector_lin_vel[:, index, :] = quat_rotate_inverse(
+                self.base_quat,
+                self._rigid_body_lin_vel[:, self.end_effector_ids]
+                                        [:, index, :])
+            self.end_effector_ang_vel[:, index, :] = quat_rotate_inverse(
+                self.base_quat,
+                self._rigid_body_ang_vel[:, self.end_effector_ids]
+                                        [:, index, :])
+
         self.base_height = self.root_states[:, 2:3]
 
         nact = self.num_actuators
@@ -145,7 +165,7 @@ class LeggedRobot(BaseTask):
         self._resample_commands(env_ids.nonzero(as_tuple=False).flatten())
         if self.cfg.push_robots:
             if (self.common_step_counter % self.cfg.push_interval == 0):
-                    self._push_robots()
+                self._push_robots()
 
     def _reset_idx(self, env_ids):
         """ Reset some environments.
@@ -436,21 +456,27 @@ class LeggedRobot(BaseTask):
         self.dof_state = gymtorch.wrap_tensor(dof_state_tensor)
         self._rigid_body_state = gymtorch.wrap_tensor(rigid_body_state)
 
-        self._rigid_body_pos = \
-            self._rigid_body_state.view(
-                self.num_envs, self.num_bodies, 13)[..., 0:3]
-        self.dof_pos = \
-            self.dof_state.view(
-                self.num_envs, self.num_dof, 2)[..., 0]
-        self.dof_vel = \
-            self.dof_state.view(
-                self.num_envs, self.num_dof, 2)[..., 1]
+        self._rigid_body_pos = self._rigid_body_state.view(
+            self.num_envs, self.num_bodies, 13)[..., 0:3]
+        self.dof_pos = self.dof_state.view(
+            self.num_envs, self.num_dof, 2)[..., 0]
+        self.dof_vel = self.dof_state.view(
+            self.num_envs, self.num_dof, 2)[..., 1]
         self.base_quat = self.root_states[:, 3:7]
 
         # * shape: num_envs, num_bodies, xyz axis
         self.contact_forces = (
             gymtorch.wrap_tensor(net_contact_forces)
             .view(self.num_envs, -1, 3))
+
+        self._rigid_body_pos = self._rigid_body_state.view(
+            self.num_envs, self.num_bodies, 13)[..., 0:3]
+        self._rigid_body_quat = self._rigid_body_state.view(
+            self.num_envs, self.num_bodies, 13)[..., 3:7]
+        self._rigid_body_lin_vel = self._rigid_body_state.view(
+            self.num_envs, self.num_bodies, 13)[..., 7:10]
+        self._rigid_body_ang_vel = self._rigid_body_state.view(
+            self.num_envs, self.num_bodies, 13)[..., 10:13]
 
         # * initialize some data used later on
         self.common_step_counter = 0
@@ -494,6 +520,47 @@ class LeggedRobot(BaseTask):
                                                 self.root_states[:, 10:13])
         self.projected_gravity = quat_rotate_inverse(self.base_quat,
                                                      self.gravity_vec)
+
+        # * get the body_name to body_index dict
+        body_dict = self.gym.get_actor_rigid_body_dict(
+            self.envs[0], self.actor_handles[0])
+        # * extract a list of body_names where the index is the id number
+        body_names = [body_tuple[0] for body_tuple in
+                      sorted(body_dict.items(),
+                             key=lambda body_tuple:body_tuple[1])]
+        # * construct a list of id numbers corresponding to end_effectors
+        self.end_effector_ids = []
+        for end_effector_name in self.cfg.asset.end_effector_names:
+            self.end_effector_ids.extend([
+                body_names.index(body_name)
+                for body_name in body_names
+                if end_effector_name in body_name])
+
+        # * end_effector_pos is world-frame and converted to env_origin
+        self.end_effector_pos = (
+            self._rigid_body_pos[:, self.end_effector_ids]
+            - self.env_origins.unsqueeze(dim=1).expand(
+                self.num_envs, len(self.end_effector_ids), 3))
+        self.end_effector_quat = \
+            self._rigid_body_quat[:, self.end_effector_ids]
+
+        self.end_effector_lin_vel = torch.zeros(
+            self.num_envs, len(self.end_effector_ids), 3,
+            dtype=torch.float, device=self.device, requires_grad=False)
+        self.end_effector_ang_vel = torch.zeros(
+            self.num_envs, len(self.end_effector_ids), 3,
+            dtype=torch.float, device=self.device, requires_grad=False)
+
+        # * end_effector vels are body-relative like body vels above
+        for index in range(len(self.end_effector_ids)):
+            self.end_effector_lin_vel[:, index, :] = quat_rotate_inverse(
+                self.base_quat,
+                self._rigid_body_lin_vel[:, self.end_effector_ids]
+                                        [:, index, :])
+            self.end_effector_ang_vel[:, index, :] = quat_rotate_inverse(
+                self.base_quat,
+                self._rigid_body_ang_vel[:, self.end_effector_ids]
+                                        [:, index, :])
 
         if self.cfg.terrain.measure_heights:
             self.height_points = self._init_height_points()

@@ -87,6 +87,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         foot_name = "foot"
         penalize_contacts_on = []
         terminate_after_contacts_on = ["base", "thigh"]
+        end_effector_names = ['foot']
         # * merge bodies connected by fixed joints.
         collapse_fixed_joints = False
         # * 1 to disable, 0 to enable...bitwise filter

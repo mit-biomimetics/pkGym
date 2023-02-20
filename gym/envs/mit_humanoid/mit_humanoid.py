@@ -1,23 +1,11 @@
-from isaacgym.torch_utils import to_torch
-
 import torch
-from gym.envs.base.legged_robot import LeggedRobot
 
-END_EFFECTOR = ["left_hand", "right_hand", "left_toe", "left_heel",
-                "right_toe", "right_heel"]
+from gym.envs.base.legged_robot import LeggedRobot
 
 
 class MIT_Humanoid(LeggedRobot):
     def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
         super().__init__(gym, sim, cfg, sim_params, sim_device, headless)
-        # get end_effector IDs for forward kinematics
-        body_ids = []
-        for body_name in END_EFFECTOR:
-            body_id = self.gym.find_actor_rigid_body_handle(
-                self.envs[0], self.actor_handles[0], body_name)
-            body_ids.append(body_id)
-        self.end_eff_ids = to_torch(body_ids, device=self.device,
-                                    dtype=torch.long)
 
     def _init_buffers(self):
         super()._init_buffers()
@@ -25,7 +13,6 @@ class MIT_Humanoid(LeggedRobot):
         self.base_height = torch.zeros(self.num_envs, 1,
                                        dtype=torch.float,
                                        device=self.device)
-
 
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity w. squared exp
