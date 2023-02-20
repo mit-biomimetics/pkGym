@@ -137,6 +137,7 @@ class LeggedRobotCfg(BaseConfig):
         foot_name = "None"
         penalize_contacts_on = []
         terminate_after_contacts_on = []
+        end_effector_names = []
         disable_gravity = False
         disable_motors = False
         # * merge bodies connected by fixed joints.

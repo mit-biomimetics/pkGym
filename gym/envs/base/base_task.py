@@ -138,7 +138,8 @@ class BaseTask():
 
     def compute_reward(self, reward_weights):
         ''' Compute and return a torch tensor of rewards
-        reward_weights: dict with keys matching reward names, and values matching weights
+        reward_weights: dict with keys matching reward names, and values
+            matching weights
         '''
         reward = torch.zeros(self.num_envs,
                              device=self.device, dtype=torch.float)

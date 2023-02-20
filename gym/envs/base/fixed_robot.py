@@ -104,7 +104,7 @@ class FixedRobot(BaseTask):
         self.dof_pos_history[:, nact:2*nact] = self.dof_pos_history[:, :nact]
         self.dof_pos_history[:, :nact] = self.dof_pos_target
 
-        self.dof_pos_obs = (self.dof_pos-self.default_dof_pos)*self.scales["dof_pos"]
+        self.dof_pos_obs = self.dof_pos - self.default_dof_pos
 
     def _reset_idx(self, env_ids):
         """ Reset some environments.

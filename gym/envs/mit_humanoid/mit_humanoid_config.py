@@ -129,6 +129,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         foot_name = 'foot'
         penalize_contacts_on = ['base', 'arm']
         terminate_after_contacts_on = ['base']
+        end_effector_names = ['hand', 'foot']
         flip_visual_attachments = False
         self_collisions = 1  # 1 to disagble, 0 to enable...bitwise filter
         collapse_fixed_joints = False
