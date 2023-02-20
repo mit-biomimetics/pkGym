@@ -135,11 +135,13 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                 reference_traj = 0.1
                 swing_grf = 0.5
                 stance_grf = 0.5
+
             class termination_weight:
                 termination = 15
 
         class PBRS:
             gamma = 1
+
             class weights:
                 lin_vel_z = 1.
                 reference_traj = 1.
@@ -148,7 +150,7 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                 swing_grf = 0.75
                 stance_grf = 1.5
 
-    class algorithm( MiniCheetahRunnerCfg.algorithm):
+    class algorithm(MiniCheetahRunnerCfg.algorithm):
         # training params
         value_loss_coef = 1.0
         use_clipped_value_loss = True
