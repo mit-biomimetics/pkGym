@@ -3,7 +3,7 @@
 <!-- URDF for MIT Humanoid
 Version Specifics: "Reduced" and "Simple Foot" and "Back"
 Reduced: collision geometries only on feet, hands, and torso
-Simple Foot: foot approximated as single box-contact 
+Simple Foot: foot approximated as single box-contact
 Back: Humanoid has curved back with collision geometry -->
 
 <robot
@@ -14,8 +14,7 @@ Back: Humanoid has curved back with collision geometry -->
       <origin
         xyz="0.009598 0.000935 0.151714"
         rpy="0 0 0" />
-      <mass
-        value="7.954054" />
+      <mass value="7.954054" />
       <inertia
         ixx="0.168459"
         ixy="0.000124"
@@ -35,7 +34,7 @@ Back: Humanoid has curved back with collision geometry -->
       <material
         name="">
         <color
-          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
       </material>
     </visual>
          <collision>
@@ -45,16 +44,14 @@ Back: Humanoid has curved back with collision geometry -->
             </geometry>
     </collision>
   </link>
-  
-  
+
   <link
     name="back">
     <inertial>
       <origin
         xyz="0.0 0.0 0.0"
         rpy="0 0 0" />
-      <mass
-        value="0.1" />
+      <mass value="0.1" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -105,8 +102,7 @@ Back: Humanoid has curved back with collision geometry -->
       <origin
         xyz="-0.065362  -0.000128  -0.063947"
         rpy="0 0 0" />
-      <mass
-        value=" 0.842752" />
+      <mass value=" 0.842752" />
       <inertia
         ixx="0.001502 "
         ixy="0.000004 "
@@ -131,7 +127,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="left_hip_yaw"
+    name="06_left_hip_yaw"
     type="revolute">
     <origin
       xyz="0 0.082 0"
@@ -142,8 +138,7 @@ Back: Humanoid has curved back with collision geometry -->
       link="left_hip_yaw" />
     <axis
       xyz="0 0 -1" />
-    <!-- <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/> -->
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+    <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
   <link
     name="left_hip_abad">
@@ -151,8 +146,7 @@ Back: Humanoid has curved back with collision geometry -->
       <origin
         xyz=" 0.067579  -0.013035 0.000132"
         rpy="0 0 0" />
-      <mass
-        value="1.199631" />
+      <mass value="1.199631" />
       <inertia
         ixx="0.001745 "
         ixy="0.000003 "
@@ -177,7 +171,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="left_hip_abad"
+    name="07_left_hip_abad"
     type="revolute">
     <origin
       xyz="-0.06435 0 -.07499"
@@ -188,17 +182,15 @@ Back: Humanoid has curved back with collision geometry -->
       link="left_hip_abad" />
     <axis
       xyz="1 0 0" />
-          <!-- <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/> -->
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+          <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
- <link 
+ <link
     name="left_upper_leg">
     <inertial>
       <origin
         xyz=" -0.001100  0.026032 -0.078842"
         rpy="0 0 0" />
-      <mass
-        value="2.634789" />
+      <mass value="2.634789" />
       <inertia
         ixx="0.024489 "
         ixy="0.000068 "
@@ -223,7 +215,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="left_hip_pitch"
+    name="08_left_hip_pitch"
     type="revolute">
     <origin
       xyz="0.08837 -0.00284 -0.01385"
@@ -234,18 +226,16 @@ Back: Humanoid has curved back with collision geometry -->
       link="left_upper_leg" />
     <axis
       xyz="0 1 0" />
-          <limit effort="72" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/>
+          <limit effort="72" lower="-3" upper="3" velocity="40"/>
   </joint>
-  
+
   <link
     name="left_lower_leg">
     <inertial>
       <origin
         xyz="0.005232 0.000457  -0.131581"
         rpy="0 0 0" />
-      <mass
-        value="0.346291" />
+      <mass value="0.346291" />
       <inertia
         ixx=" 0.002952 "
         ixy=" 0.0"
@@ -270,7 +260,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="left_knee"
+    name="09_left_knee"
     type="revolute">
     <origin
       xyz="-0.01306 0.0 -0.24916"
@@ -281,26 +271,26 @@ Back: Humanoid has curved back with collision geometry -->
       link="left_lower_leg" />
     <axis
       xyz="0 1 0" />
-          <limit effort="144" lower="0." upper="3." velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0792"/>
+          <limit effort="144" lower="0." upper="3." velocity="20"/>
   </joint>
-  
+
    <link
     name="left_foot">
     <inertial>
       <origin
         xyz="0.022696 0.0 -0.013879 "
         rpy="0 0 0" />
-      <mass
-        value=" 0.279583" />
+      <mass value=" 0.279583" />
       <inertia
         ixx="0.000092"
         ixy="0.0"
         ixz="-0.000054 "
-        iyy="0.000806 "
+        iyy="0.08 "
         iyz="0.0 "
         izz="0.000769" />
     </inertial>
+    <!-- Foot inertia Iyy default: 0.000806
+    Modified to account for reflected motor inertia -->
     <visual>
       <origin
         xyz="0 0 0"
@@ -316,14 +306,14 @@ Back: Humanoid has curved back with collision geometry -->
       </material>
     </visual>
     <collision>
-        <origin rpy="1.57079 0 0" xyz="0.02 0.0 -0.03"/>
+        <origin rpy="1.57079 0 0" xyz="0.03 0.0 -0.03"/>
         <geometry>
-            <box size="0.17 0.02 0.05"/>
+            <box size="0.20 0.02 0.04"/>
         </geometry>
     </collision>
   </link>
   <joint
-    name="left_ankle"
+    name="10_left_ankle"
     type="revolute">
     <origin
       xyz="0.0 0.0 -0.2785"
@@ -334,8 +324,7 @@ Back: Humanoid has curved back with collision geometry -->
       link="left_foot" />
     <axis
       xyz="0 1 0" />
-          <limit effort="68" lower="-1.5" upper="1.5" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.04752"/>
+          <limit effort="68" lower="-1.5" upper="1.5" velocity="24"/>
   </joint>
 
  <link
@@ -344,8 +333,7 @@ Back: Humanoid has curved back with collision geometry -->
       <origin
         xyz="-0.065362  0.000128  -0.063947"
         rpy="0 0 0" />
-      <mass
-        value=" 0.842752" />
+      <mass value=" 0.842752" />
       <inertia
         ixx="0.001502 "
         ixy="-0.000004 "
@@ -370,7 +358,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="right_hip_yaw"
+    name="01_right_hip_yaw"
     type="revolute">
     <origin
       xyz="0 -0.082 0"
@@ -381,18 +369,16 @@ Back: Humanoid has curved back with collision geometry -->
       link="right_hip_yaw" />
     <axis
       xyz="0 0 1" />
-    <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+    <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
-  
+
   <link
     name="right_hip_abad">
     <inertial>
       <origin
         xyz=" 0.067579  0.013035 0.000132"
         rpy="0 0 0" />
-      <mass
-        value="1.199631" />
+      <mass value="1.199631" />
       <inertia
         ixx="0.001745 "
         ixy="-0.000003 "
@@ -417,7 +403,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="right_hip_abad"
+    name="02_right_hip_abad"
     type="revolute">
     <origin
       xyz="-0.06435 0 -.07499"
@@ -428,18 +414,16 @@ Back: Humanoid has curved back with collision geometry -->
       link="right_hip_abad" />
     <axis
       xyz="-1 0 0" />
-          <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+          <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
-  
+
  <link
     name="right_upper_leg">
     <inertial>
       <origin
         xyz=" -0.001100  -0.026032 -0.078842"
         rpy="0 0 0" />
-      <mass
-        value="2.634789" />
+      <mass value="2.634789" />
       <inertia
         ixx="0.024489 "
         ixy="-0.000068 "
@@ -464,7 +448,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="right_hip_pitch"
+    name="03_right_hip_pitch"
     type="revolute">
     <origin
       xyz="0.08837 0.00284 -0.01385"
@@ -475,18 +459,16 @@ Back: Humanoid has curved back with collision geometry -->
       link="right_upper_leg" />
     <axis
       xyz="0 1 0" />
-          <limit effort="72" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/>
+          <limit effort="72" lower="-3" upper="3" velocity="40"/>
   </joint>
-  
+
   <link
     name="right_lower_leg">
     <inertial>
       <origin
         xyz="0.005232 -0.000457  -0.131581"
         rpy="0 0 0" />
-      <mass
-        value="0.346291" />
+      <mass value="0.346291" />
       <inertia
         ixx=" 0.002952 "
         ixy=" 0.0"
@@ -511,7 +493,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="right_knee"
+    name="04_right_knee"
     type="revolute">
     <origin
       xyz="-0.01306 0.0 -0.24916"
@@ -522,26 +504,26 @@ Back: Humanoid has curved back with collision geometry -->
       link="right_lower_leg" />
     <axis
       xyz="0 1 0" />
-          <limit effort="144" lower="0." upper="3.0" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0792"/>
+          <limit effort="144" lower="0." upper="3.0" velocity="20"/>
   </joint>
-  
+
    <link
     name="right_foot">
     <inertial>
       <origin
         xyz="0.022696 0.0 -0.013879 "
         rpy="0 0 0" />
-      <mass
-        value=" 0.279583" />
+      <mass value=" 0.279583" />
       <inertia
         ixx="0.000092"
         ixy="0.0"
         ixz="0.000054 "
-        iyy="0.000806 "
+        iyy="0.08 "
         iyz="0.0 "
         izz="0.000769" />
     </inertial>
+    <!-- Foot inertia Iyy default: 0.000806
+    Modified to account for reflected motor inertia -->
     <visual>
       <origin
         xyz="0 0 0"
@@ -557,14 +539,14 @@ Back: Humanoid has curved back with collision geometry -->
       </material>
     </visual>
     <collision>
-        <origin rpy="1.57079 0 0" xyz="0.02 0.0 -0.03"/>
+        <origin rpy="1.57079 0 0" xyz="0.03 0.0 -0.03"/>
         <geometry>
-            <box size="0.17 0.02 0.05"/>
+            <box size="0.20 0.02 0.04"/>
         </geometry>
     </collision>
   </link>
   <joint
-    name="right_ankle"
+    name="05_right_ankle"
     type="revolute">
     <origin
       xyz="0.0 0.0 -0.2785"
@@ -575,11 +557,8 @@ Back: Humanoid has curved back with collision geometry -->
       link="right_foot" />
     <axis
       xyz="0 1 0" />
-          <limit effort="68" lower="-1.5" upper="1.5" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.04752"/>
+          <limit effort="68" lower="-1.5" upper="1.5" velocity="24"/>
   </joint>
-
-  
 
   <!-- Left Arm -->
   <link
@@ -588,8 +567,7 @@ Back: Humanoid has curved back with collision geometry -->
       <origin
         xyz="0.009518 0.053027 0.000060"
         rpy="0 0 0" />
-      <mass
-        value="0.788506" />
+      <mass value="0.788506" />
       <inertia
         ixx="0.001363 "
         ixy="0.000024 "
@@ -614,7 +592,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="left_shoulder_pitch"
+    name="15_left_shoulder_pitch"
     type="revolute">
     <origin
       xyz="0.01911 0.17608 0.30392"
@@ -625,8 +603,7 @@ Back: Humanoid has curved back with collision geometry -->
       link="left_shoulder" />
     <axis
       xyz="0 1 0" />
-          <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+          <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
   
   <link
@@ -635,8 +612,7 @@ Back: Humanoid has curved back with collision geometry -->
       <origin
         xyz="0.000117 0.000122 -0.082758"
         rpy="0 0 0" />
-      <mass
-        value="0.801249" />
+      <mass value="0.801249" />
       <inertia
         ixx=" 0.001136 "
         ixy="0.000001 "
@@ -661,7 +637,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="left_shoulder_abad"
+    name="16_left_shoulder_abad"
     type="revolute">
     <origin
       xyz="0 .05760 0"
@@ -672,19 +648,17 @@ Back: Humanoid has curved back with collision geometry -->
       link="left_shoulder_2" />
     <axis
       xyz="1 0 0" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+        <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
   <!--  -->
-  
+
   <link
     name="left_upper_arm">
     <inertial>
       <origin
         xyz="-0.000073 -0.016471  -0.063210"
         rpy="0 0 0" />
-      <mass
-        value="0.905588" />
+      <mass value="0.905588" />
       <inertia
         ixx=" 0.001353 "
         ixy="0.000002 "
@@ -709,7 +683,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="left_shoulder_yaw"
+    name="17_left_shoulder_yaw"
     type="revolute">
     <origin
       xyz="0 0 -.10250"
@@ -720,8 +694,7 @@ Back: Humanoid has curved back with collision geometry -->
       link="left_upper_arm" />
     <axis
       xyz="0 0 -1" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+        <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
 
   
@@ -731,8 +704,7 @@ Back: Humanoid has curved back with collision geometry -->
       <origin
         xyz="-0.007103 -0.000073 -0.099203"
         rpy="0 0 0" />
-      <mass
-        value="0.348390" />
+      <mass value="0.348390" />
       <inertia
         ixx="0.003400 "
         ixy="0.0 "
@@ -757,7 +729,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="left_elbow"
+    name="18_left_elbow"
     type="revolute">
     <origin
       xyz="0 0 -.15750"
@@ -768,8 +740,7 @@ Back: Humanoid has curved back with collision geometry -->
       link="left_lower_arm" />
     <axis
       xyz="0 1 0" />
-        <limit effort="55" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0304"/>
+        <limit effort="55" lower="-3" upper="3" velocity="30"/>
   </joint>
   <link
     name="left_hand">
@@ -777,8 +748,7 @@ Back: Humanoid has curved back with collision geometry -->
       <origin
         xyz="0.0 -0.0 -0.27"
         rpy="0 0 0" />
-      <mass
-        value="0.0" />
+      <mass value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -813,8 +783,7 @@ Back: Humanoid has curved back with collision geometry -->
       <origin
         xyz="0.009518 -0.053027 0.000060"
         rpy="0 0 0" />
-      <mass
-        value="0.788506" />
+      <mass value="0.788506" />
       <inertia
         ixx="0.001363 "
         ixy="-0.000024 "
@@ -839,7 +808,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="right_shoulder_pitch"
+    name="11_right_shoulder_pitch"
     type="revolute">
     <origin
       xyz="0.01911 -0.17608 0.30392"
@@ -850,18 +819,16 @@ Back: Humanoid has curved back with collision geometry -->
       link="right_shoulder" />
     <axis
       xyz="0 1 0" />
-          <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+          <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
-  
+
   <link
     name="right_shoulder_2">
     <inertial>
       <origin
         xyz="0.000117 -0.000122 -0.082758"
         rpy="0 0 0" />
-      <mass
-        value="0.801249" />
+      <mass value="0.801249" />
       <inertia
         ixx=" 0.001136 "
         ixy="-0.000001 "
@@ -886,7 +853,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="right_shoulder_abad"
+    name="12_right_shoulder_abad"
     type="revolute">
     <origin
       xyz="0 -.05760 0"
@@ -897,8 +864,7 @@ Back: Humanoid has curved back with collision geometry -->
       link="right_shoulder_2" />
     <axis
       xyz="-1 0 0" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+        <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
   <!--  -->
   
@@ -908,8 +874,7 @@ Back: Humanoid has curved back with collision geometry -->
       <origin
         xyz="-0.000073 0.016471  -0.063210"
         rpy="0 0 0" />
-      <mass
-        value="0.905588" />
+      <mass value="0.905588" />
       <inertia
         ixx=" 0.001353 "
         ixy="-0.000002 "
@@ -934,7 +899,7 @@ Back: Humanoid has curved back with collision geometry -->
     </visual>
   </link>
   <joint
-    name="right_shoulder_yaw"
+    name="13_right_shoulder_yaw"
     type="revolute">
     <origin
       xyz="0 0 -.10250"
@@ -945,8 +910,7 @@ Back: Humanoid has curved back with collision geometry -->
       link="right_upper_arm" />
     <axis
       xyz="0 0 1" />
-        <limit effort="34" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/>
+        <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
 
   
@@ -956,8 +920,7 @@ Back: Humanoid has curved back with collision geometry -->
       <origin
         xyz="-0.007103 -0.000073 -0.099203"
         rpy="0 0 0" />
-      <mass
-        value="0.348390" />
+      <mass value="0.348390" />
       <inertia
         ixx="0.003400 "
         ixy="0.0 "
@@ -988,7 +951,7 @@ Back: Humanoid has curved back with collision geometry -->
         </collision> -->
   </link>
   <joint
-    name="right_elbow"
+    name="14_right_elbow"
     type="revolute">
     <origin
       xyz="0 0 -.15750"
@@ -999,8 +962,7 @@ Back: Humanoid has curved back with collision geometry -->
       link="right_lower_arm" />
     <axis
       xyz="0 1 0" />
-        <limit effort="55" lower="-6.28" upper="6.28" velocity="50"/>
-    <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0304"/>
+        <limit effort="55" lower="-3" upper="3" velocity="30"/>
   </joint>
     <link
     name="right_hand">
@@ -1008,8 +970,7 @@ Back: Humanoid has curved back with collision geometry -->
       <origin
         xyz="0.0 -0.0 -0.27"
         rpy="0 0 0" />
-      <mass
-        value="0.0" />
+      <mass value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
