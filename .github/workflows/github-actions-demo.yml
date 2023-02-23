@@ -1,4 +1,4 @@
-name: GitHub Actions Demo
+name: GPUgym Unit Testing
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: [pull_request]
 jobs:
@@ -6,10 +6,14 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Set up env
+        uses: actions/checkout@v3
+        with:
+          submodules: false
 
       - name: Run Tests
         run: |
+          echo ${{ github.workspace }}
           source ~/anaconda3/etc/profile.d/conda.sh
           conda activate gpugym
           cd tests
