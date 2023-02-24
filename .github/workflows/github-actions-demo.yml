@@ -6,6 +6,13 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
 
     steps:
+      - name: Clear Actions runner cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/github/actions
+          key: ${{ runner.os }}-actions-${{ hashFiles('**/action.yml') }}
+          run-id: ${{ github.run_id }}
+
       - name: Set up env
         uses: actions/checkout@v3
         with:
