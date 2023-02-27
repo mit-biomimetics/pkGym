@@ -6,17 +6,17 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
 
     steps:
-      - name: Set up env
+      - name: Check out repo
         uses: actions/checkout@v3
-        with:
-          submodules: false
 
-      - name: Run Tests
+      - name: Install and setup env
         run: |
-          echo ${{ github.workspace }}
           source ~/anaconda3/etc/profile.d/conda.sh
           conda activate CIgym
           pip install -e .
+
+      - name: Run Tests
+        run: |
           cd tests
           python -m unittest
-          pip uninstall gpuGym
+          # pip uninstall gpuGym
