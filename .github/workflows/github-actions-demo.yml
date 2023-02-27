@@ -9,12 +9,6 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
 
-      - name: Install and setup env
-        run: |
-          source ~/anaconda3/etc/profile.d/conda.sh
-          conda activate CIgym
-          pip install -e .
-
       - name: Run Tests
         run: |
           source ~/anaconda3/etc/profile.d/conda.sh
