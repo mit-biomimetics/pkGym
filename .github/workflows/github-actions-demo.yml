@@ -1,18 +1,11 @@
 name: GPUgym Unit Testing
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+run-name: Running unit tests
 on: [pull_request]
 jobs:
   Explore-GitHub-Actions:
     runs-on: [self-hosted, Linux, X64]
 
     steps:
-      - name: Clear Actions runner cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/github/actions
-          key: ${{ runner.os }}-actions-${{ hashFiles('**/action.yml') }}
-          run-id: ${{ github.run_id }}
-
       - name: Set up env
         uses: actions/checkout@v3
         with:
@@ -22,6 +15,8 @@ jobs:
         run: |
           echo ${{ github.workspace }}
           source ~/anaconda3/etc/profile.d/conda.sh
-          conda activate gpugym
+          conda activate CIgym
+          pip install -e .
           cd tests
           python -m unittest
+          pip uninstall gpuGym
