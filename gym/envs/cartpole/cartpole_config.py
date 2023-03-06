@@ -6,10 +6,9 @@ from gym.envs.base.fixed_robot_config import FixedRobotCfg, FixedRobotCfgPPO
 class CartpoleCfg(FixedRobotCfg):
 
     class env(FixedRobotCfg.env):
-        num_envs = 1024
+        num_envs = 4024
         num_actuators = 1  # 1 for the cart force
-        episode_length_s = 10
-
+        episode_length_s = 20
     class terrain(FixedRobotCfg.terrain):
         pass
 
@@ -37,8 +36,8 @@ class CartpoleCfg(FixedRobotCfg):
         actuated_joints_mask = [1,  # slider_to_cart
                                 0]  # cart_to_pole
 
-        ctrl_frequency = 100
-        desired_sim_frequency = 200
+        ctrl_frequency = 250
+        desired_sim_frequency = 500
 
     class asset(FixedRobotCfg.asset):
         # * Things that differ
@@ -69,11 +68,17 @@ class CartpoleRunnerCfg(FixedRobotCfgPPO):
     class policy(FixedRobotCfgPPO.policy):
         init_noise_std = 1.0
         num_layers = 2
-        num_units = 64
+        num_units = 32
         actor_hidden_dims = [num_units] * num_layers
         critic_hidden_dims = [num_units] * num_layers
-        # * can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
-        activation = 'elu'
+        activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+
+        actor_obs = ["cart_obs",
+                     "pole_trig_obs",
+                     "dof_vel",
+                     "cart_vel_square",
+                     "pole_vel_square"
+                     ]
 
         actor_obs = [
             "dof_pos",
@@ -97,7 +102,7 @@ class CartpoleRunnerCfg(FixedRobotCfgPPO):
                 pole_vel = 0.025
                 cart_pos = 1
                 torques = 0.1
-                dof_vel = 0.0
+                dof_vel = 0.1
                 collision = 0.0
                 upright_pole = 10
 
@@ -123,7 +128,7 @@ class CartpoleRunnerCfg(FixedRobotCfgPPO):
     class runner(FixedRobotCfgPPO.runner):
         policy_class_name = 'ActorCritic'
         algorithm_class_name = 'PPO'
-        num_steps_per_env = 24  # per iteration
+        num_steps_per_env = 96  # per iteration
         max_iterations = 500  # number of policy updates
 
         # * logging

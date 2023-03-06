@@ -31,7 +31,7 @@ class KeyboardInterface():
         print("______________________________________________________________")
 
         env.commands[:] = 0.
-        # never resample
+        env.cfg.commands.resampling_time = env.max_episode_length_s + 1
         self.max_vel_backward = -1.
         self.max_vel_forward = 4.
         self.increment_x = (self.max_vel_forward-self.max_vel_backward)*0.1

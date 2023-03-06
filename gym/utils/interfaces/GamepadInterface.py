@@ -19,7 +19,7 @@ class GamepadInterface():
             self.joystick = pygame.joystick.Joystick(0)
 
             env.commands[:] = 0.
-            # never resample
+            env.cfg.commands.resampling_time = env.max_episode_length_s + 1
             self.max_vel_backward = -1.
             self.max_vel_forward = 4.
             self.max_vel_sideways = 1.

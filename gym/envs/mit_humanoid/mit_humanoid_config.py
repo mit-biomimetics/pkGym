@@ -112,7 +112,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
             yaw_vel = 1    # max [rad/s]
 
     class push_robots:
-        push_robots = False
+        toggle = False
         interval_s = 15
         max_push_vel_xy = 0.05
 

@@ -161,6 +161,7 @@ class OnPolicyRunner:
         rewards = 0.*self.get_rewards(reward_weights)
         if 'PBRS' in self.policy_cfg.keys():
             PBRS_weights = self.policy_cfg['PBRS']['weights']
+            remove_zero_weighted_rewards(PBRS_weights)
             PBRS_gamma = self.policy_cfg['PBRS']['gamma']
 
         for self.it in range(self.it+1, self.tot_iter+1):
@@ -197,7 +198,7 @@ class OnPolicyRunner:
                     if 'PBRS' in self.policy_cfg.keys():
                         rewards += self.get_and_log_PBRS_rewards(
                                 PBRS_weights, PBRS_prestep=PBRS_prestep,
-                                gamma=PBRS_gamma, mask=dones)
+                                gamma=PBRS_gamma, mask=~dones)
 
                     self.alg.process_env_step(rewards, dones, timed_out)
                     self.logger.update_episode_buffer(dones)
@@ -236,7 +237,7 @@ class OnPolicyRunner:
                 noise_tensor = \
                     torch.ones(obs_size).to(self.device) * noise_dict[obs]
                 if obs in self.env.scales.keys():
-                    noise_tensor *= self.env.scales[obs]
+                    noise_tensor /= self.env.scales[obs]
                 noise_vec[obs_index:obs_index+obs_size] = noise_tensor
             obs_index += obs_size
         return torch_rand_float(-1., 1., (self.env.num_envs, len(noise_vec)),
@@ -251,7 +252,11 @@ class OnPolicyRunner:
         return observation
 
     def set_actions(self, actions):
-        self.env.set_states(self.policy_cfg['actions'], actions)
+        if hasattr(self.env.cfg.scaling, "clip_actions"):
+            actions = torch.clip(actions,
+                                 -self.env.cfg.scaling.clip_actions,
+                                 self.env.cfg.scaling.clip_actions)
+        self.env.set_states(self.policy_cfg["actions"], actions)
 
     def do_state_estimation(self, training=True):
         SE_obs = self.get_obs(self.se_cfg['obs'])

@@ -173,15 +173,12 @@ class FixedRobot(BaseTask):
         if env_id == 0:  # ? why only for env_id == 0?
             self.dof_pos_limits = torch.zeros(self.num_dof, 2,
                                               dtype=torch.float,
-                                              device=self.device,
-                                              requires_grad=False)
+                                              device=self.device)
             self.dof_vel_limits = torch.zeros(self.num_dof, dtype=torch.float,
-                                              device=self.device,
-                                              requires_grad=False)
+                                              device=self.device)
             self.torque_limits = torch.zeros(self.num_actuators,
                                              dtype=torch.float,
-                                             device=self.device,
-                                             requires_grad=False)
+                                             device=self.device)
             for i in range(len(props)):
                 self.dof_pos_limits[i, 0] = props["lower"][i].item()
                 self.dof_pos_limits[i, 1] = props["upper"][i].item()
@@ -320,44 +317,39 @@ class FixedRobot(BaseTask):
         # * initialize some data used later on
         self.common_step_counter = 0
         self.extras = {}
-        self.gravity_vec = to_torch(
-            get_axis_params(-1., self.up_axis_idx),
-            device=self.device).repeat((n_envs, 1))
-        self.forward_vec = to_torch(
-            [1., 0., 0.],
-            device=self.device).repeat((n_envs, 1))
-        self.torques = torch.zeros(
-            n_envs, self.num_actuators,
-            dtype=torch.float, device=self.device, requires_grad=False)
-        self.p_gains = torch.zeros(
-            self.num_actuators,
-            dtype=torch.float, device=self.device, requires_grad=False)
-        self.d_gains = torch.zeros(
-            self.num_actuators,
-            dtype=torch.float, device=self.device, requires_grad=False)
-        self.actions = torch.zeros(
-            n_envs, self.num_actuators,
-            dtype=torch.float, device=self.device, requires_grad=False)
-        self.dof_pos_target = torch.zeros(
-            self.num_envs, self.num_actuators,
-            dtype=torch.float, device=self.device, requires_grad=False)
-        self.dof_vel_target = torch.zeros(
-            self.num_envs, self.num_actuators,
-            dtype=torch.float, device=self.device, requires_grad=False)
-        self.tau_ff = torch.zeros(
-            self.num_envs, self.num_actuators,
-            dtype=torch.float, device=self.device, requires_grad=False)
-        self.dof_pos_history = torch.zeros(
-            self.num_envs, self.num_actuators*3,
-            dtype=torch.float, device=self.device, requires_grad=False)
+        self.gravity_vec = to_torch(get_axis_params(-1., self.up_axis_idx),
+                                    device=self.device).repeat((n_envs, 1))
+        self.forward_vec = to_torch([1., 0., 0.],
+                                    device=self.device).repeat((n_envs, 1))
+        self.torques = torch.zeros(n_envs, self.num_actuators,
+                                   dtype=torch.float, device=self.device)
+        self.p_gains = torch.zeros(self.num_actuators,
+                                   dtype=torch.float, device=self.device)
+        self.d_gains = torch.zeros(self.num_actuators,
+                                   dtype=torch.float, device=self.device)
+        self.actions = torch.zeros(n_envs, self.num_actuators,
+                                   dtype=torch.float, device=self.device)
+        self.dof_pos_target = torch.zeros(self.num_envs, self.num_actuators,
+                                          dtype=torch.float,
+                                          device=self.device)
+        self.dof_vel_target = torch.zeros(self.num_envs,
+                                          self.num_actuators,
+                                          dtype=torch.float,
+                                          device=self.device)
+        self.tau_ff = torch.zeros(self.num_envs, self.num_actuators,
+                                  dtype=torch.float, device=self.device)
+        self.dof_pos_history = torch.zeros(self.num_envs,
+                                           self.num_actuators*3,
+                                           dtype=torch.float,
+                                           device=self.device)
         # * joint positions offsets and PD gains
         # * added: default_act_pos, to differentiate from passive joints
-        self.default_dof_pos = torch.zeros(
-            self.num_dof,
-            dtype=torch.float, device=self.device, requires_grad=False)
-        self.default_act_pos = torch.zeros(
-            self.num_actuators,
-            dtype=torch.float, device=self.device, requires_grad=False)
+        self.default_dof_pos = torch.zeros(self.num_dof,
+                                           dtype=torch.float,
+                                           device=self.device)
+        self.default_act_pos = torch.zeros(self.num_actuators,
+                                           dtype=torch.float,
+                                           device=self.device)
         actuated_idx = []  # temp
         for i in range(self.num_dof):
             name = self.dof_names[i]
@@ -407,22 +399,22 @@ class FixedRobot(BaseTask):
     def initialize_ranges_for_initial_conditions(self):
         self.dof_pos_range = torch.zeros(
             self.num_dof, 2,
-            dtype=torch.float, device=self.device, requires_grad=False)
+            dtype=torch.float, device=self.device)
         self.dof_vel_range = torch.zeros(
             self.num_dof, 2,
-            dtype=torch.float, device=self.device, requires_grad=False)
+            dtype=torch.float, device=self.device)
 
         for joint, vals in self.cfg.init_state.dof_pos_range.items():
             for i in range(self.num_dof):
                 if joint in self.dof_names[i]:
-                    self.dof_pos_range[i, :] = to_torch(
-                        vals, device=self.device)
+                    self.dof_pos_range[i, :] = to_torch(vals,
+                                                        device=self.device)
 
         for joint, vals in self.cfg.init_state.dof_vel_range.items():
             for i in range(self.num_dof):
                 if joint in self.dof_names[i]:
-                    self.dof_vel_range[i, :] = to_torch(
-                        vals, device=self.device)
+                    self.dof_vel_range[i, :] = to_torch(vals,
+                                                        device=self.device)
 
     def _create_ground_plane(self):
         """ Adds a ground plane to the simulation, sets friction and
@@ -540,7 +532,7 @@ class FixedRobot(BaseTask):
 
         self.penalised_contact_indices = torch.zeros(
             len(penalized_contact_names),
-            dtype=torch.long, device=self.device, requires_grad=False)
+            dtype=torch.long, device=self.device)
         for i in range(len(penalized_contact_names)):
             self.penalised_contact_indices[i] = \
                 self.gym.find_actor_rigid_body_handle(
@@ -549,7 +541,7 @@ class FixedRobot(BaseTask):
 
         self.termination_contact_indices = torch.zeros(
             len(termination_contact_names),
-            dtype=torch.long, device=self.device, requires_grad=False)
+            dtype=torch.long, device=self.device)
         for i in range(len(termination_contact_names)):
             self.termination_contact_indices[i] = \
                 self.gym.find_actor_rigid_body_handle(
@@ -564,7 +556,7 @@ class FixedRobot(BaseTask):
         self.custom_origins = False
         self.env_origins = torch.zeros(
             self.num_envs, 3,
-            device=self.device, requires_grad=False)
+            device=self.device)
         # * create a grid of robots
         num_cols = np.floor(np.sqrt(self.num_envs))
         num_rows = np.ceil(self.num_envs / num_cols)

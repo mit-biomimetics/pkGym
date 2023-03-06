@@ -19,9 +19,9 @@ class MiniCheetahRef(MiniCheetah):
     def _init_buffers(self):
         super()._init_buffers()
         self.phase = torch.zeros(self.num_envs, 1, dtype=torch.float,
-                                 device=self.device, requires_grad=False)
+                                 device=self.device)
         self.phase_obs = torch.zeros(self.num_envs, 2, dtype=torch.float,
-                                     device=self.device, requires_grad=False)
+                                     device=self.device)
 
 
     def _reset_system(self, env_ids):

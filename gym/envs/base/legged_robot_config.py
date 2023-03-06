@@ -218,6 +218,7 @@ class LeggedRobotRunnerCfg(BaseConfig):
             "critic_obs_can_be_the_same_or_different_than_actor_obs"]
 
         actions = ["q_des"]
+        # add_noise = True
 
         class noise:
             dof_pos_obs = 0.01

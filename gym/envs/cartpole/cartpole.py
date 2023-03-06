@@ -37,8 +37,30 @@ from gym.envs.base.fixed_robot import FixedRobot
 
 class Cartpole(FixedRobot):
 
+    def _init_buffers(self):
+        super()._init_buffers()
+        n_envs = self.num_envs
+        self.cart_vel_square = torch.zeros(n_envs, 1,
+                                           dtype=torch.float,
+                                           device=self.device)
+        self.pole_vel_square = torch.zeros(n_envs, 1,
+                                           dtype=torch.float,
+                                           device=self.device)
+        self.pole_trig_obs = torch.zeros(n_envs, 2,
+                                         dtype=torch.float,
+                                         device=self.device)
+        self.cart_obs = torch.zeros(n_envs, 1,
+                                    dtype=torch.float,
+                                    device=self.device)
+
     def _post_physics_step(self):
         super()._post_physics_step()
+        self.pole_trig_obs = torch.cat((torch.sin(self.dof_pos[:, 1:]),
+                                        torch.cos(self.dof_pos[:, 1:])),
+                                       dim=1)
+        self.cart_obs = self.dof_pos[:, 0:1].square()
+        self.cart_vel_square = self.dof_vel[:, 0:1].square()
+        self.pole_vel_square = self.dof_vel[:, 1:2].square()
 
     def _reward_pole_pos(self):
         return torch.cos(self.dof_pos[:, 1])
@@ -52,4 +74,4 @@ class Cartpole(FixedRobot):
         return -cart_pos.square()
 
     def _reward_upright_pole(self):
-        return self._sqrdexp(self.dof_pos[:, 1] / self.scales["dof_pos"][1])
+        return self._sqrdexp(1.-torch.cos(self.dof_pos[:, 1]))
