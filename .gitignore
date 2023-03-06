@@ -11,7 +11,7 @@ gym/wandb
 *.DS_Store
 *.zip
 user/wandb_config.json
-
+*trajectories/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
