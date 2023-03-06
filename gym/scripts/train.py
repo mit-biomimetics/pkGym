@@ -11,6 +11,7 @@ def setup():
     # * prepare environment
     env_cfg, train_cfg = task_registry.create_cfgs(args)
     task_registry.make_gym_and_sim()
+    wandb_helper.setup_wandb(env_cfg=env_cfg, train_cfg=train_cfg, args=args)
     env, env_cfg = task_registry.make_env(name=args.task, env_cfg=env_cfg)
     # * then make env
     policy_runner, train_cfg = \
@@ -19,7 +20,7 @@ def setup():
 
     local_code_save_helper.log_and_save(
         env, env_cfg, train_cfg, policy_runner)
-    wandb_helper.setup_wandb(policy_runner, train_cfg, args)
+    wandb_helper.attach_runner(policy_runner=policy_runner)
 
     return env_cfg, train_cfg, policy_runner
 

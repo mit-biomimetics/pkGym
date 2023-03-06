@@ -18,33 +18,8 @@ def load_sweep_config(file_name):
         'sweep_configs', file_name)))
 
 
-def set_wandb_sweep_cfg_values(env_cfg, train_cfg, parameters_dict):
-    for key, value in parameters_dict.items():
-        print('Setting: ' + key + ' = ' + str(value))
-        locs = key.split('.')
-
-        if locs[0] == 'train_cfg':
-            attr = train_cfg
-        elif locs[0] == 'env_cfg':
-            attr = env_cfg
-        else:
-            print('Unrecognized cfg: ' + locs[0])
-            break
-
-        for loc in locs[1:-1]:
-            attr = getattr(attr, loc)
-
-        setattr(attr, locs[-1], value)
-        print('set ' + locs[-1] + ' to ' + str(getattr(attr, locs[-1])))
-
-
 def train_with_sweep_cfg():
     env_cfg, train_cfg, policy_runner = setup()
-
-    # * update the config settings based off the sweep_dict
-    parameter_dict = wandb.config
-    set_wandb_sweep_cfg_values(env_cfg, train_cfg, parameter_dict)
-
     train(train_cfg=train_cfg, policy_runner=policy_runner)
 
 
