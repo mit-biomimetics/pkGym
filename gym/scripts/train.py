@@ -22,7 +22,7 @@ def setup():
         env, env_cfg, train_cfg, policy_runner)
     wandb_helper.attach_runner(policy_runner=policy_runner)
 
-    return env_cfg, train_cfg, policy_runner
+    return train_cfg, policy_runner
 
 
 def train(train_cfg, policy_runner):
@@ -36,5 +36,5 @@ def train(train_cfg, policy_runner):
 
 
 if __name__ == '__main__':
-    _, train_cfg, policy_runner = setup()
+    train_cfg, policy_runner = setup()
     train(train_cfg=train_cfg, policy_runner=policy_runner)

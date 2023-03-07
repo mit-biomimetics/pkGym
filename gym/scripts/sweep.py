@@ -4,7 +4,7 @@ import wandb
 
 from gym import LEGGED_GYM_ROOT_DIR
 from gym.scripts.train import train, setup
-from gym.utils import get_args, task_registry
+from gym.utils import get_args
 from gym.utils.logging_and_saving import wandb_singleton
 
 # torch needs to be imported after isaacgym imports in local source
@@ -19,7 +19,7 @@ def load_sweep_config(file_name):
 
 
 def train_with_sweep_cfg():
-    env_cfg, train_cfg, policy_runner = setup()
+    train_cfg, policy_runner = setup()
     train(train_cfg=train_cfg, policy_runner=policy_runner)
 
 
@@ -46,10 +46,8 @@ def start_sweeps(args):
     if args.wandb_sweep_id is not None:
         sweep_id = args.wandb_sweep_id
 
-    _, train_cfg = task_registry.create_cfgs(args)
-
     wandb_helper = wandb_singleton.WandbSingleton()
-    wandb_helper.set_wandb_values(args, train_cfg)
+    wandb_helper.set_wandb_values(args)
 
     if wandb_helper.is_wandb_enabled():
         if sweep_id is None:

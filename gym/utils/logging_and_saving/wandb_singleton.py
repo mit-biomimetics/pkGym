@@ -16,10 +16,10 @@ class WandbSingleton(object):
 
         return self.instance
 
-    def set_wandb_values(self, args, train_cfg=None):
+    def set_wandb_values(self, args):
         # build the path for the wandb_config.json file
         wandb_config_path = os.path.join(
-                LEGGED_GYM_ROOT_DIR, 'user', 'wandb_config.json')
+            LEGGED_GYM_ROOT_DIR, 'user', 'wandb_config.json')
 
         # load entity and project name from JSON if it exists
         if os.path.exists(wandb_config_path):
@@ -79,7 +79,7 @@ class WandbSingleton(object):
         return self.project_name
 
     def setup_wandb(self, env_cfg, train_cfg, args, is_sweep=False):
-        self.set_wandb_values(args, train_cfg)
+        self.set_wandb_values(args)
 
         # short-circuit if the values say WandB is turned off
         if not self.is_wandb_enabled():
