@@ -67,7 +67,6 @@ class WandbSingleton(object):
                 attr = getattr(attr, loc)
 
             setattr(attr, locs[-1], value)
-            print('set ' + locs[-1] + ' to ' + str(getattr(attr, locs[-1])))
 
     def is_wandb_enabled(self):
         return self.enabled
