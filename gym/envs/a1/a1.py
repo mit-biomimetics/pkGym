@@ -1,14 +1,11 @@
 import torch
+
 from gym.envs.base.legged_robot import LeggedRobot
 
 
 class A1(LeggedRobot):
     def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
-        super().__init__(gym,
-                         sim,
-                         cfg,
-                         sim_params, sim_device,
-                         headless)
+        super().__init__(gym, sim, cfg, sim_params, sim_device, headless)
 
     def _init_buffers(self):
         super()._init_buffers()
