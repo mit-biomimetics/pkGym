@@ -12,13 +12,14 @@ class WandbSingleton(object):
             self.project_name = None
             self.experiment_name = ''
             self.enabled = False
+            self.parameters_dict = None
 
         return self.instance
 
-    def set_wandb_values(self, args, train_cfg=None):
+    def set_wandb_values(self, args):
         # build the path for the wandb_config.json file
         wandb_config_path = os.path.join(
-                LEGGED_GYM_ROOT_DIR, 'user', 'wandb_config.json')
+            LEGGED_GYM_ROOT_DIR, 'user', 'wandb_config.json')
 
         # load entity and project name from JSON if it exists
         if os.path.exists(wandb_config_path):
@@ -45,6 +46,28 @@ class WandbSingleton(object):
                   f'Setting WandB entitiy name: {self.entity_name}\n')
             self.enabled = True
 
+    def set_wandb_sweep_cfg_values(self, env_cfg, train_cfg):
+        if not self.is_wandb_enabled():
+            return
+
+        # * update the config settings based off the sweep_dict
+        for key, value in self.parameters_dict.items():
+            print('Setting: ' + key + ' = ' + str(value))
+            locs = key.split('.')
+
+            if locs[0] == 'train_cfg':
+                attr = train_cfg
+            elif locs[0] == 'env_cfg':
+                attr = env_cfg
+            else:
+                print('Unrecognized cfg: ' + locs[0])
+                break
+
+            for loc in locs[1:-1]:
+                attr = getattr(attr, loc)
+
+            setattr(attr, locs[-1], value)
+
     def is_wandb_enabled(self):
         return self.enabled
 
@@ -54,8 +77,8 @@ class WandbSingleton(object):
     def get_project_name(self):
         return self.project_name
 
-    def setup_wandb(self, policy_runner, train_cfg, args, is_sweep=False):
-        self.set_wandb_values(args, train_cfg)
+    def setup_wandb(self, env_cfg, train_cfg, args, is_sweep=False):
+        self.set_wandb_values(args)
 
         # short-circuit if the values say WandB is turned off
         if not self.is_wandb_enabled():
@@ -78,6 +101,12 @@ class WandbSingleton(object):
         wandb.run.log_code(
             os.path.join(LEGGED_GYM_ROOT_DIR, 'gym'))
 
+        self.parameters_dict = wandb.config
+        self.set_wandb_sweep_cfg_values(env_cfg=env_cfg, train_cfg=train_cfg)
+
+    def attach_runner(self, policy_runner):
+        if not self.is_wandb_enabled():
+            return
         policy_runner.attach_to_wandb(wandb)
 
     def close_wandb(self):

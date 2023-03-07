@@ -4,7 +4,7 @@ import wandb
 
 from gym import LEGGED_GYM_ROOT_DIR
 from gym.scripts.train import train, setup
-from gym.utils import get_args, task_registry
+from gym.utils import get_args
 from gym.utils.logging_and_saving import wandb_singleton
 
 # torch needs to be imported after isaacgym imports in local source
@@ -18,33 +18,8 @@ def load_sweep_config(file_name):
         'sweep_configs', file_name)))
 
 
-def set_wandb_sweep_cfg_values(env_cfg, train_cfg, parameters_dict):
-    for key, value in parameters_dict.items():
-        print('Setting: ' + key + ' = ' + str(value))
-        locs = key.split('.')
-
-        if locs[0] == 'train_cfg':
-            attr = train_cfg
-        elif locs[0] == 'env_cfg':
-            attr = env_cfg
-        else:
-            print('Unrecognized cfg: ' + locs[0])
-            break
-
-        for loc in locs[1:-1]:
-            attr = getattr(attr, loc)
-
-        setattr(attr, locs[-1], value)
-        print('set ' + locs[-1] + ' to ' + str(getattr(attr, locs[-1])))
-
-
 def train_with_sweep_cfg():
-    env_cfg, train_cfg, policy_runner = setup()
-
-    # * update the config settings based off the sweep_dict
-    parameter_dict = wandb.config
-    set_wandb_sweep_cfg_values(env_cfg, train_cfg, parameter_dict)
-
+    train_cfg, policy_runner = setup()
     train(train_cfg=train_cfg, policy_runner=policy_runner)
 
 
@@ -71,10 +46,8 @@ def start_sweeps(args):
     if args.wandb_sweep_id is not None:
         sweep_id = args.wandb_sweep_id
 
-    _, train_cfg = task_registry.create_cfgs(args)
-
     wandb_helper = wandb_singleton.WandbSingleton()
-    wandb_helper.set_wandb_values(args, train_cfg)
+    wandb_helper.set_wandb_values(args)
 
     if wandb_helper.is_wandb_enabled():
         if sweep_id is None:
