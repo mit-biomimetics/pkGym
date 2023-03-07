@@ -39,28 +39,28 @@
   <link name="pole">
     <visual>
       <geometry>
-        <box size="0.04 0.06 1.0"/>	
+        <box size="0.04 0.06 2.0"/>
       </geometry>
-      <origin xyz="0 0 0.47"/>
+      <origin xyz="0 0 1."/>
       <material name="pole_mat">
         <color rgba="0.1 0.1 0.3 1"/>
       </material>
     </visual>
     <collision>
       <geometry>
-        <box size="0.04 0.06 1.0"/>	
+        <box size="0.04 0.06 2.0"/>
       </geometry>
-      <origin xyz="0 0 0.47"/>
+      <origin xyz="0 0 1."/>
     </collision>
     <inertial>
       <mass value="1"/>
-      <origin xyz="0 0 0.47"/>
+      <origin xyz="0 0 1."/>
     </inertial>
   </link>
 
   <joint name="slider_to_cart" type="prismatic">
     <axis xyz="0 1 0"/>
-    <origin xyz="0 0 0"/>
+    <origin xyz="0 0 0.1"/>
     <parent link="slider"/>
     <child link="cart"/>
     <limit effort="10.0" lower="-4" upper="4" velocity="100"/>

@@ -25,13 +25,10 @@ class CartpoleCfg(FixedRobotCfg):
         # * initial conditions for reset_to_range
         dof_pos_range = {'slider_to_cart': [-2.5, 2.5],
                          'cart_to_pole': [-torch.pi, torch.pi]}
-        dof_vel_range = {'slider_to_cart': [-0.1, 0.1],
-                         'cart_to_pole': [-0.1, 0.1]}
+        dof_vel_range = {'slider_to_cart': [-1., 1.],
+                         'cart_to_pole': [-1., 1.]}
 
     class control(FixedRobotCfg.control):
-        # * PD Drive parameters:
-        stiffness = {'slider_to_cart': 10.}  # [N*m/rad]
-        damping = {'slider_to_cart': 0.5}  # [N*m*s/rad]
 
         actuated_joints_mask = [1,  # slider_to_cart
                                 0]  # cart_to_pole
@@ -52,13 +49,16 @@ class CartpoleCfg(FixedRobotCfg):
         pass
 
     class scaling(FixedRobotCfg.scaling):
-        dof_pos = [1/3., 1/torch.pi]
-        dof_vel = [1/20., 1/(4*torch.pi)]
+        dof_pos = [4., 3.14]
+        dof_vel = [5., 5.]
+
+        cart_obs = 5.
+        dof_vel = 5.
+        cart_vel_square = 10.
+        pole_vel_square = 25.
 
         # * Action scales
         tau_ff = 10
-        dof_pos_target = 4
-
 
 class CartpoleRunnerCfg(FixedRobotCfgPPO):
     # We need random experiments to run
@@ -80,15 +80,11 @@ class CartpoleRunnerCfg(FixedRobotCfgPPO):
                      "pole_vel_square"
                      ]
 
-        actor_obs = [
-            "dof_pos",
-            "dof_vel"]
         critic_obs = actor_obs
 
         actions = ["tau_ff"]
 
         class noise:
-            noise = 0.1  # implement as needed, also in your robot class
             cart_pos = 0.001
             pole_pos = 0.001
             cart_vel = 0.010
@@ -100,11 +96,11 @@ class CartpoleRunnerCfg(FixedRobotCfgPPO):
             class weights:
                 pole_pos = 5
                 pole_vel = 0.025
-                cart_pos = 1
+                cart_pos = 2
                 torques = 0.1
                 dof_vel = 0.1
-                collision = 0.0
-                upright_pole = 10
+                upright_pole = 25.
+                # energy = 10
 
             class termination_weight:
                 termination = 0.
