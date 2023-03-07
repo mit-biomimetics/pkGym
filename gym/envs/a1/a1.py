@@ -31,7 +31,7 @@ class A1(LeggedRobot):
     def _reward_orientation(self):
         ''' Penalize non flat base orientation '''
         error = torch.square(self.projected_gravity[:, :2]) \
-                                / self.cfg.reward_settings.tracking_sigma
+            / self.cfg.reward_settings.tracking_sigma
         return torch.sum(torch.exp(-error), dim=1)
 
     def _reward_min_base_height(self):
