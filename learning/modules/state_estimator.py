@@ -21,6 +21,8 @@ class StateEstimatorNN(nn.Module):
                   + str([key for key in kwargs.keys()]))
         super().__init__()
 
+        self.num_inputs = num_inputs
+        self.num_outputs = num_outputs
         self.NN = create_MLP(num_inputs, num_outputs, hidden_dims,
                              activation, dropouts)
         print(f"State Estimator MLP: {self.NN}")
@@ -32,7 +34,11 @@ class StateEstimatorNN(nn.Module):
         import os
         import copy
         os.makedirs(path, exist_ok=True)
-        path = os.path.join(path, 'SE.pt')
+        path_ts = os.path.join(path, 'SE.pt')
+        path_onnx = os.path.join(path, 'SE.onnx')
         model = copy.deepcopy(self.NN).to('cpu')
-        traced_script_module = torch.jit.script(model)
-        traced_script_module.save(path)
+        model.eval()
+        input = torch.rand(self.num_inputs,)
+        model_traced = torch.jit.trace(model, input)
+        torch.jit.save(model_traced, path_ts)
+        torch.onnx.export(model_traced, input, path_onnx)

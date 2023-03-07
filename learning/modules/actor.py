@@ -19,6 +19,8 @@ class Actor(nn.Module):
                   + str([key for key in kwargs.keys()]))
         super().__init__()
 
+        self.num_obs = num_obs
+        self.num_actions = num_actions
         self.NN = create_MLP(num_obs, num_actions, hidden_dims, activation)
 
         # Action noise
@@ -62,7 +64,12 @@ class Actor(nn.Module):
         import os
         import copy
         os.makedirs(path, exist_ok=True)
-        path = os.path.join(path, 'policy.pt')
+        path_ts = os.path.join(path, 'policy.pt')
+        path_onnx = os.path.join(path, 'policy.onnx')
         model = copy.deepcopy(self.NN).to('cpu')
-        traced_script_module = torch.jit.script(model)
-        traced_script_module.save(path)
+        model.eval()
+        input = torch.rand(self.num_obs,)
+        model_traced = torch.jit.trace(model, input)
+        torch.jit.save(model_traced, path_ts)
+        torch.onnx.export(model_traced, input, path_onnx)
+        
