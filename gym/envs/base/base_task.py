@@ -135,8 +135,6 @@ class BaseTask():
         self.to_be_reset[:] = False
         self.terminated[:] = False
         self.timed_out[:] = False
-        self.dof_pos_target[:] = 0.
-        self.dof_vel_target[:] = 0.
 
     def compute_reward(self, reward_weights):
         ''' Compute and return a torch tensor of rewards
