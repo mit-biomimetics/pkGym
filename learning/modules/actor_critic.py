@@ -1,23 +1,22 @@
-import torch
 import torch.nn as nn
-from torch.distributions import Normal
-from torch.nn.modules import rnn
-from .utils import create_MLP
+
 from .actor import Actor
 from .critic import Critic
 
+
 class ActorCritic(nn.Module):
-    def __init__(self, num_actor_obs,
-                       num_critic_obs,
-                       num_actions,
-                       actor_hidden_dims=[256, 256, 256],
-                       critic_hidden_dims=[256, 256, 256],
-                       activation="elu",
-                       init_noise_std=1.0,
-                       **kwargs):
+    def __init__(self, num_actor_obs, num_critic_obs, num_actions,
+                 actor_hidden_dims=[256, 256, 256],
+                 critic_hidden_dims=[256, 256, 256],
+                 activation="elu",
+                 init_noise_std=1.0,
+                 **kwargs):
 
         if kwargs:
-            print("ActorCritic.__init__ got unexpected arguments, which will be ignored: " + str([key for key in kwargs.keys()]))
+            print(
+                "ActorCritic.__init__ got unexpected arguments, "
+                "which will be ignored: "
+                + str([key for key in kwargs.keys()]))
         super(ActorCritic, self).__init__()
 
         self.actor = Actor(num_actor_obs,
@@ -44,7 +43,7 @@ class ActorCritic(nn.Module):
     @property
     def entropy(self):
         return self.actor.entropy
-    
+
     @property
     def std(self):
         return self.actor.std

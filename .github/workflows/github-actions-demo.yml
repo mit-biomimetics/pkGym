@@ -1,0 +1,17 @@
+name: GPUgym Unit Testing
+run-name: Running unit tests
+on: [pull_request]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: [self-hosted, Linux, X64]
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+
+      - name: Run Tests
+        run: |
+          source ~/anaconda3/etc/profile.d/conda.sh
+          conda activate CIgym
+          cd tests
+          python -m unittest

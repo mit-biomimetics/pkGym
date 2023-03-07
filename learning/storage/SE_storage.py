@@ -1,5 +1,7 @@
-from .base_storage import BaseStorage
 import torch
+
+from .base_storage import BaseStorage
+
 
 class SERolloutStorage(BaseStorage):
     """ Store episodic data for supervised learning of the state-estimator.
@@ -44,7 +46,8 @@ class SERolloutStorage(BaseStorage):
         """
         batch_size = self.num_envs * self.num_transitions_per_env
         mini_batch_size = batch_size // num_mini_batches
-        indices = torch.randperm(num_mini_batches*mini_batch_size, requires_grad=False, device=self.device)
+        indices = torch.randperm(num_mini_batches*mini_batch_size,
+                                 requires_grad=False, device=self.device)
 
         observations = self.observations.flatten(0, 1)
         SE_targets = self.SE_targets.flatten(0, 1)

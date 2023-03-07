@@ -11,8 +11,7 @@ Heel-Toe: separate heel and toe contacts -->
       <origin
         xyz="0.009598 0.000935 0.151714"
         rpy="0 0 0" />
-      <mass
-        value="7.954054" />
+      <mass value="7.954054" />
       <inertia
         ixx="0.168459"
         ixy="0.000124"
@@ -42,15 +41,13 @@ Heel-Toe: separate heel and toe contacts -->
       </geometry>
     </collision>
   </link>
-
-  <!-- LEFT LEG -->
-  <link name="left_hip_yaw">
+  <link
+    name="left_hip_yaw">
     <inertial>
       <origin
         xyz="-0.065362  -0.000128  -0.063947"
         rpy="0 0 0" />
-      <mass
-        value=" 0.842752" />
+      <mass value=" 0.842752" />
       <inertia
         ixx="0.001502 "
         ixy="0.000004 "
@@ -74,23 +71,24 @@ Heel-Toe: separate heel and toe contacts -->
       </material>
     </visual>
   </link>
-  <joint name="left_hip_yaw" type="revolute">
+  <joint
+    name="06_left_hip_yaw"
+    type="revolute">
     <origin
       xyz="0 0.082 0"
       rpy="0 -0.174533 0" />
     <parent link="base" />
     <child link="left_hip_yaw" />
     <axis xyz="0 0 -1" />
-    <limit effort="34" lower="-3" upper="3" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
+    <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
-  <link name="left_hip_abad">
+  <link
+    name="left_hip_abad">
     <inertial>
       <origin
         xyz=" 0.067579  -0.013035 0.000132"
         rpy="0 0 0" />
-      <mass
-        value="1.199631" />
+      <mass value="1.199631" />
       <inertia
         ixx="0.001745 "
         ixy="0.000003 "
@@ -114,23 +112,23 @@ Heel-Toe: separate heel and toe contacts -->
       </material>
     </visual>
   </link>
-  <joint name="left_hip_abad" type="revolute">
+  <joint
+    name="07_left_hip_abad"
+    type="revolute">
     <origin
       xyz="-0.06435 0 -.07499"
       rpy="0.0 0.436332 0.0"/>
     <parent link="left_hip_yaw" />
     <child link="left_hip_abad" />
     <axis xyz="1 0 0" />
-    <limit effort="34" lower="-3" upper="3" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
+    <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
   <link  name="left_upper_leg">
     <inertial>
       <origin
         xyz=" -0.001100  0.026032 -0.078842"
         rpy="0 0 0" />
-      <mass
-        value="2.634789" />
+      <mass value="2.634789" />
       <inertia
         ixx="0.024489 "
         ixy="0.000068 "
@@ -150,27 +148,27 @@ Heel-Toe: separate heel and toe contacts -->
       <material
         name="">
         <color
-          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+          rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
   </link>
-  <joint name="left_hip_pitch" type="revolute">
+  <joint
+    name="08_left_hip_pitch"
+    type="revolute">
     <origin
       xyz="0.08837 -0.00284 -0.01385"
       rpy="0 -0.261799 0" />
     <parent link="left_hip_abad" />
     <child link="left_upper_leg" />
     <axis xyz="0 1 0" />
-    <limit effort="72" lower="-3" upper="3" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/> -->
+    <limit effort="72" lower="-3" upper="3" velocity="40"/>
   </joint>
   <link name="left_lower_leg">
     <inertial>
       <origin
         xyz="0.005232 0.000457  -0.131581"
         rpy="0 0 0" />
-      <mass
-        value="0.346291" />
+      <mass value="0.346291" />
       <inertia
         ixx=" 0.002952 "
         ixy=" 0.0"
@@ -194,31 +192,33 @@ Heel-Toe: separate heel and toe contacts -->
       </material>
     </visual>
   </link>
-  <joint name="left_knee" type="revolute">
+  <joint
+    name="09_left_knee"
+    type="revolute">
     <origin
       xyz="-0.01306 0.0 -0.24916"
       rpy="0 0 0" />
     <parent link="left_upper_leg" />
     <child link="left_lower_leg" />
     <axis xyz="0 1 0" />
-    <limit effort="144" lower="0." upper="3." velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0792"/> -->
+    <limit effort="144" lower="0." upper="3." velocity="20"/>
   </joint>
   <link name="left_foot">
     <inertial>
       <origin
         xyz="0.022696 0.0 -0.013879 "
         rpy="0 0 0" />
-      <mass
-        value=" 0.279583" />
+      <mass value=" 0.279583" />
       <inertia
         ixx="0.000092"
         ixy="0.0"
         ixz="-0.000054 "
-        iyy="0.0806 "
+        iyy="0.08 "
         iyz="0.0 "
         izz="0.000769" />
     </inertial>
+    <!-- Foot inertia Iyy default: 0.000806
+    Modified to account for reflected motor inertia -->
     <visual>
       <origin
         xyz="0 0 0"
@@ -247,16 +247,14 @@ Heel-Toe: separate heel and toe contacts -->
     <parent link="left_lower_leg" />
     <child link="left_foot" />
     <axis xyz="0 1 0" />
-    <limit effort="68" lower="-1.5" upper="1.5" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.04752"/> -->
+    <limit effort="68" lower="-1.5" upper="1.5" velocity="24"/>
   </joint>
   <link name="left_toe">
     <inertial>
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
-      <mass
-        value="0.001" />
+      <mass value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -268,7 +266,7 @@ Heel-Toe: separate heel and toe contacts -->
       <collision>
         <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
         <geometry>
-          <box size="0.08 0.02 0.05"/>
+          <box size="0.08 0.04 0.02"/>
         </geometry>
     </collision>
   </link>
@@ -277,8 +275,7 @@ Heel-Toe: separate heel and toe contacts -->
       <origin
         xyz="0 0 0"
         rpy="0 0 0" />
-      <mass
-        value="0.001" />
+      <mass value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -290,13 +287,13 @@ Heel-Toe: separate heel and toe contacts -->
       <collision>
         <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
         <geometry>
-          <box size="0.06 0.02 0.05"/>
+          <box size="0.06 0.04 0.02"/>
         </geometry>
     </collision>
   </link>
   <joint name="left_toe_link" type="fixed">
     <origin
-      xyz="0.085 0.0 -0.02"
+      xyz="0.085 0.0 -0.03"
       rpy="0 0 0" />
     <parent
       link="left_foot" />
@@ -305,7 +302,7 @@ Heel-Toe: separate heel and toe contacts -->
   </joint>
   <joint name="left_heel_link" type="fixed">
     <origin
-      xyz="-0.05 0.0 -0.02"
+      xyz="-0.05 0.0 -0.03"
       rpy="0 0 0" />
     <parent
       link="left_foot" />
@@ -319,8 +316,7 @@ Heel-Toe: separate heel and toe contacts -->
       <origin
         xyz="-0.065362  0.000128  -0.063947"
         rpy="0 0 0" />
-      <mass
-        value=" 0.842752" />
+      <mass value=" 0.842752" />
       <inertia
         ixx="0.001502 "
         ixy="-0.000004 "
@@ -344,7 +340,9 @@ Heel-Toe: separate heel and toe contacts -->
       </material>
     </visual>
   </link>
-  <joint name="right_hip_yaw" type="revolute">
+  <joint
+    name="01_right_hip_yaw"
+    type="revolute">
     <origin
       xyz="0 -0.082 0"
       rpy="0 -0.174533 0" />
@@ -354,16 +352,14 @@ Heel-Toe: separate heel and toe contacts -->
       link="right_hip_yaw" />
     <axis
       xyz="0 0 1" />
-    <limit effort="34" lower="-3" upper="3" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
+    <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
   <link name="right_hip_abad">
     <inertial>
       <origin
         xyz=" 0.067579  0.013035 0.000132"
         rpy="0 0 0" />
-      <mass
-        value="1.199631" />
+      <mass value="1.199631" />
       <inertia
         ixx="0.001745 "
         ixy="-0.000003 "
@@ -387,7 +383,9 @@ Heel-Toe: separate heel and toe contacts -->
       </material>
     </visual>
   </link>
-  <joint name="right_hip_abad" type="revolute">
+  <joint
+    name="02_right_hip_abad"
+    type="revolute">
     <origin
       xyz="-0.06435 0 -.07499"
       rpy="0.0 0.436332 0.0"/>
@@ -397,16 +395,14 @@ Heel-Toe: separate heel and toe contacts -->
       link="right_hip_abad" />
     <axis
       xyz="-1 0 0" />
-          <limit effort="34" lower="-3" upper="3" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
+          <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
   <link name="right_upper_leg">
     <inertial>
       <origin
         xyz=" -0.001100  -0.026032 -0.078842"
         rpy="0 0 0" />
-      <mass
-        value="2.634789" />
+      <mass value="2.634789" />
       <inertia
         ixx="0.024489 "
         ixy="-0.000068 "
@@ -430,7 +426,9 @@ Heel-Toe: separate heel and toe contacts -->
       </material>
     </visual>
   </link>
-  <joint name="right_hip_pitch" type="revolute">
+  <joint
+    name="03_right_hip_pitch"
+    type="revolute">
     <origin
       xyz="0.08837 0.00284 -0.01385"
       rpy="0 -0.261799 0" />
@@ -440,16 +438,14 @@ Heel-Toe: separate heel and toe contacts -->
       link="right_upper_leg" />
     <axis
       xyz="0 1 0" />
-        <limit effort="72" lower="-3" upper="3" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0198"/> -->
+        <limit effort="72" lower="-3" upper="3" velocity="40"/>
   </joint>
   <link name="right_lower_leg">
     <inertial>
       <origin
         xyz="0.005232 -0.000457  -0.131581"
         rpy="0 0 0" />
-      <mass
-        value="0.346291" />
+      <mass value="0.346291" />
       <inertia
         ixx=" 0.002952 "
         ixy=" 0.0"
@@ -473,7 +469,9 @@ Heel-Toe: separate heel and toe contacts -->
       </material>
     </visual>
   </link>
-  <joint name="right_knee" type="revolute">
+  <joint
+    name="04_right_knee"
+    type="revolute">
     <origin
       xyz="-0.01306 0.0 -0.24916"
       rpy="0 0 0" />
@@ -483,24 +481,24 @@ Heel-Toe: separate heel and toe contacts -->
       link="right_lower_leg" />
     <axis
       xyz="0 1 0" />
-          <limit effort="144" lower="0." upper="3.0" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0792"/> -->
+          <limit effort="144" lower="0." upper="3.0" velocity="20"/>
   </joint>
   <link name="right_foot">
     <inertial>
       <origin
         xyz="0.022696 0.0 -0.013879 "
         rpy="0 0 0" />
-      <mass
-        value=" 0.279583" />
+      <mass value=" 0.279583" />
       <inertia
         ixx="0.000092"
         ixy="0.0"
         ixz="0.000054 "
-        iyy="0.000806 "
+        iyy="0.08 "
         iyz="0.0 "
         izz="0.000769" />
     </inertial>
+    <!-- Foot inertia Iyy default: 0.000806
+    Modified to account for reflected motor inertia -->
     <visual>
       <origin
         xyz="0 0 0"
@@ -515,14 +513,10 @@ Heel-Toe: separate heel and toe contacts -->
           rgba="0.52941176470588 0.752941176470588 0.2941176470588 1" />
       </material>
     </visual>
-    <!-- <collision>
-        <origin rpy="1.57079 0 0" xyz="0.02 0.0 -0.03"/>
-        <geometry>
-            <box size="0.17 0.02 0.05"/>
-        </geometry>
-    </collision> -->
   </link>
-  <joint name="right_ankle" type="revolute">
+  <joint
+    name="05_right_ankle"
+    type="revolute">
     <origin
       xyz="0.0 0.0 -0.2785"
       rpy="0 0 0" />
@@ -532,16 +526,14 @@ Heel-Toe: separate heel and toe contacts -->
       link="right_foot" />
     <axis
       xyz="0 1 0" />
-          <limit effort="68" lower="-1.5" upper="1.5" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.04752"/> -->
+          <limit effort="68" lower="-1.5" upper="1.5" velocity="24"/>
   </joint>
   <link name="right_toe">
     <inertial>
       <origin
         xyz="0.0 0.0 0.0"
         rpy="0 0 0" />
-      <mass
-        value="0.001" />
+      <mass value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -553,7 +545,7 @@ Heel-Toe: separate heel and toe contacts -->
       <collision>
             <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
-                <box size="0.08 0.02 0.05"/>
+                <box size="0.08 0.04 0.02"/>
             </geometry>
     </collision>
   </link>
@@ -562,8 +554,7 @@ Heel-Toe: separate heel and toe contacts -->
       <origin
         xyz="0.0 -0.0 0.0"
         rpy="0 0 0" />
-      <mass
-        value="0.001" />
+      <mass value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -575,13 +566,13 @@ Heel-Toe: separate heel and toe contacts -->
       <collision>
             <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
-                <box size="0.06 0.02 0.05"/>
+                <box size="0.06 0.04 0.02"/>
             </geometry>
     </collision>
   </link>
   <joint name="right_toe_link" type="fixed">
     <origin
-      xyz="0.085 0.0 -0.02"
+      xyz="0.085 0.0 -0.03"
       rpy="0 0 0" />
     <parent
       link="right_foot" />
@@ -590,22 +581,21 @@ Heel-Toe: separate heel and toe contacts -->
   </joint>
   <joint name="right_heel_link" type="fixed">
     <origin
-      xyz="-0.05 0.0 -0.02"
+      xyz="-0.05 0.0 -0.03"
       rpy="0 0 0" />
     <parent
       link="right_foot" />
     <child
       link="right_heel" />
   </joint>
-
-  <!-- LEFT ARM -->
-  <link name="left_shoulder">
+  <!-- Left Arm -->
+  <link
+    name="left_shoulder">
     <inertial>
       <origin
         xyz="0.009518 0.053027 0.000060"
         rpy="0 0 0" />
-      <mass
-        value="0.788506" />
+      <mass value="0.788506" />
       <inertia
         ixx="0.001363 "
         ixy="0.000024 "
@@ -629,7 +619,9 @@ Heel-Toe: separate heel and toe contacts -->
       </material>
     </visual>
   </link>
-  <joint name="left_shoulder_pitch" type="revolute">
+  <joint
+    name="15_left_shoulder_pitch"
+    type="revolute">
     <origin
       xyz="0.01911 0.17608 0.30392"
       rpy="0 0 0" />
@@ -639,16 +631,16 @@ Heel-Toe: separate heel and toe contacts -->
       link="left_shoulder" />
     <axis
       xyz="0 1 0" />
-          <limit effort="34" lower="-3" upper="3" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
+          <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
-  <link name="left_shoulder_2">
+  
+  <link
+    name="left_shoulder_2">
     <inertial>
       <origin
         xyz="0.000117 0.000122 -0.082758"
         rpy="0 0 0" />
-      <mass
-        value="0.801249" />
+      <mass value="0.801249" />
       <inertia
         ixx=" 0.001136 "
         ixy="0.000001 "
@@ -672,7 +664,9 @@ Heel-Toe: separate heel and toe contacts -->
       </material>
     </visual>
   </link>
-  <joint name="left_shoulder_abad" type="revolute">
+  <joint
+    name="16_left_shoulder_abad"
+    type="revolute">
     <origin
       xyz="0 .05760 0"
       rpy="0.0 0 0" />
@@ -682,16 +676,17 @@ Heel-Toe: separate heel and toe contacts -->
       link="left_shoulder_2" />
     <axis
       xyz="1 0 0" />
-        <limit effort="34" lower="-3" upper="3" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
+        <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
-  <link name="left_upper_arm">
+  <!--  -->
+  
+  <link
+    name="left_upper_arm">
     <inertial>
       <origin
         xyz="-0.000073 -0.016471  -0.063210"
         rpy="0 0 0" />
-      <mass
-        value="0.905588" />
+      <mass value="0.905588" />
       <inertia
         ixx=" 0.001353 "
         ixy="0.000002 "
@@ -715,7 +710,9 @@ Heel-Toe: separate heel and toe contacts -->
       </material>
     </visual>
   </link>
-  <joint name="left_shoulder_yaw" type="revolute">
+  <joint
+    name="17_left_shoulder_yaw"
+    type="revolute">
     <origin
       xyz="0 0 -.10250"
       rpy="0.0 0 0" />
@@ -725,16 +722,16 @@ Heel-Toe: separate heel and toe contacts -->
       link="left_upper_arm" />
     <axis
       xyz="0 0 -1" />
-        <limit effort="34" lower="-3" upper="3" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
+        <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
-  <link name="left_lower_arm">
+
+  <link
+    name="left_lower_arm">
     <inertial>
       <origin
         xyz="-0.007103 -0.000073 -0.099203"
         rpy="0 0 0" />
-      <mass
-        value="0.348390" />
+      <mass value="0.348390" />
       <inertia
         ixx="0.003400 "
         ixy="0.0 "
@@ -758,7 +755,9 @@ Heel-Toe: separate heel and toe contacts -->
       </material>
     </visual>
   </link>
-  <joint name="left_elbow" type="revolute">
+  <joint
+    name="18_left_elbow"
+    type="revolute">
     <origin
       xyz="0 0 -.15750"
       rpy="0 0 0.0" />
@@ -768,16 +767,15 @@ Heel-Toe: separate heel and toe contacts -->
       link="left_lower_arm" />
     <axis
       xyz="0 1 0" />
-        <limit effort="55" lower="-3" upper="3" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0304"/> -->
+        <limit effort="55" lower="-3" upper="3" velocity="30"/>
   </joint>
-  <link name="left_hand">
+  <link
+    name="left_hand">
     <inertial>
       <origin
         xyz="0.0 -0.0 -0.27"
         rpy="0 0 0" />
-      <mass
-        value="0.001" />
+      <mass value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -793,7 +791,9 @@ Heel-Toe: separate heel and toe contacts -->
       </geometry>
     </collision>
   </link>
-  <joint name="left_hand_link" type="fixed">
+  <joint
+    name="left_hand_link"
+    type="fixed">
     <origin
       xyz="0 0 -0.27"
       rpy="0 0 0" />
@@ -803,14 +803,14 @@ Heel-Toe: separate heel and toe contacts -->
       link="left_hand" />
   </joint>
 
-  <!-- RIGHT ARM -->
-  <link name="right_shoulder">
+  <!-- Right Arm -->
+  <link
+    name="right_shoulder">
     <inertial>
       <origin
         xyz="0.009518 -0.053027 0.000060"
         rpy="0 0 0" />
-      <mass
-        value="0.788506" />
+      <mass value="0.788506" />
       <inertia
         ixx="0.001363 "
         ixy="-0.000024 "
@@ -834,7 +834,9 @@ Heel-Toe: separate heel and toe contacts -->
       </material>
     </visual>
   </link>
-  <joint name="right_shoulder_pitch" type="revolute">
+  <joint
+    name="11_right_shoulder_pitch"
+    type="revolute">
     <origin
       xyz="0.01911 -0.17608 0.30392"
       rpy="0 0 0" />
@@ -844,16 +846,16 @@ Heel-Toe: separate heel and toe contacts -->
       link="right_shoulder" />
     <axis
       xyz="0 1 0" />
-          <limit effort="34" lower="-3" upper="3" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
+          <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
-  <link name="right_shoulder_2">
+
+  <link
+    name="right_shoulder_2">
     <inertial>
       <origin
         xyz="0.000117 -0.000122 -0.082758"
         rpy="0 0 0" />
-      <mass
-        value="0.801249" />
+      <mass value="0.801249" />
       <inertia
         ixx=" 0.001136 "
         ixy="-0.000001 "
@@ -877,7 +879,9 @@ Heel-Toe: separate heel and toe contacts -->
       </material>
     </visual>
   </link>
-  <joint name="right_shoulder_abad" type="revolute">
+  <joint
+    name="12_right_shoulder_abad"
+    type="revolute">
     <origin
       xyz="0 -.05760 0"
       rpy="0.0 0 0" />
@@ -887,16 +891,17 @@ Heel-Toe: separate heel and toe contacts -->
       link="right_shoulder_2" />
     <axis
       xyz="-1 0 0" />
-        <limit effort="34" lower="-3" upper="3" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
+        <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
-  <link name="right_upper_arm">
+  <!--  -->
+  
+  <link
+    name="right_upper_arm">
     <inertial>
       <origin
         xyz="-0.000073 0.016471  -0.063210"
         rpy="0 0 0" />
-      <mass
-        value="0.905588" />
+      <mass value="0.905588" />
       <inertia
         ixx=" 0.001353 "
         ixy="-0.000002 "
@@ -920,7 +925,9 @@ Heel-Toe: separate heel and toe contacts -->
       </material>
     </visual>
   </link>
-  <joint name="right_shoulder_yaw" type="revolute">
+  <joint
+    name="13_right_shoulder_yaw"
+    type="revolute">
     <origin
       xyz="0 0 -.10250"
       rpy="0.0 0 0" />
@@ -930,16 +937,16 @@ Heel-Toe: separate heel and toe contacts -->
       link="right_upper_arm" />
     <axis
       xyz="0 0 1" />
-        <limit effort="34" lower="-3" upper="3" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.01188"/> -->
+        <limit effort="34" lower="-3" upper="3" velocity="48"/>
   </joint>
-  <link name="right_lower_arm">
+
+  <link
+    name="right_lower_arm">
     <inertial>
       <origin
         xyz="-0.007103 -0.000073 -0.099203"
         rpy="0 0 0" />
-      <mass
-        value="0.348390" />
+      <mass value="0.348390" />
       <inertia
         ixx="0.003400 "
         ixy="0.0 "
@@ -969,7 +976,9 @@ Heel-Toe: separate heel and toe contacts -->
             </geometry>
         </collision> -->
   </link>
-  <joint name="right_elbow" type="revolute">
+  <joint
+    name="14_right_elbow"
+    type="revolute">
     <origin
       xyz="0 0 -.15750"
       rpy="0 0 0.0" />
@@ -979,16 +988,15 @@ Heel-Toe: separate heel and toe contacts -->
       link="right_lower_arm" />
     <axis
       xyz="0 1 0" />
-        <limit effort="55" lower="-3" upper="3" velocity="50"/>
-    <!-- <dynamics damping="0.0" friction="0.0" rotor_inertia="0.0304"/> -->
+        <limit effort="55" lower="-3" upper="3" velocity="30"/>
   </joint>
-  <link name="right_hand">
+    <link
+    name="right_hand">
     <inertial>
       <origin
         xyz="0.0 -0.0 -0.27"
         rpy="0 0 0" />
-      <mass
-        value="0.001" />
+      <mass value="0.001" />
       <inertia
         ixx="0.0"
         ixy="0.0"
@@ -1004,7 +1012,9 @@ Heel-Toe: separate heel and toe contacts -->
         </geometry>
     </collision>
   </link>
-  <joint name="right_hand_link" type="fixed">
+  <joint
+    name="right_hand_link"
+    type="fixed">
     <origin
       xyz="0 0 -0.27"
       rpy="0 0 0" />
