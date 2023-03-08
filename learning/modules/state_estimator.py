@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from .utils import create_MLP
+from .utils import export_network
 
 
 class StateEstimatorNN(nn.Module):
@@ -21,6 +22,8 @@ class StateEstimatorNN(nn.Module):
                   + str([key for key in kwargs.keys()]))
         super().__init__()
 
+        self.num_inputs = num_inputs
+        self.num_outputs = num_outputs
         self.NN = create_MLP(num_inputs, num_outputs, hidden_dims,
                              activation, dropouts)
         print(f"State Estimator MLP: {self.NN}")
@@ -29,10 +32,4 @@ class StateEstimatorNN(nn.Module):
         return self.NN(observations)
 
     def export(self, path):
-        import os
-        import copy
-        os.makedirs(path, exist_ok=True)
-        path = os.path.join(path, 'SE.pt')
-        model = copy.deepcopy(self.NN).to('cpu')
-        traced_script_module = torch.jit.script(model)
-        traced_script_module.save(path)
+        export_network(self.NN, "state_estimator", path, self.num_inputs)

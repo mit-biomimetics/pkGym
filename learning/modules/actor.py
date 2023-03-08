@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.distributions import Normal
 from .utils import create_MLP
+from .utils import export_network
 
 
 class Actor(nn.Module):
@@ -19,6 +20,8 @@ class Actor(nn.Module):
                   + str([key for key in kwargs.keys()]))
         super().__init__()
 
+        self.num_obs = num_obs
+        self.num_actions = num_actions
         self.NN = create_MLP(num_obs, num_actions, hidden_dims, activation)
 
         # Action noise
@@ -59,10 +62,4 @@ class Actor(nn.Module):
         return actions_mean
 
     def export(self, path):
-        import os
-        import copy
-        os.makedirs(path, exist_ok=True)
-        path = os.path.join(path, 'policy.pt')
-        model = copy.deepcopy(self.NN).to('cpu')
-        traced_script_module = torch.jit.script(model)
-        traced_script_module.save(path)
+        export_network(self.NN, "policy", path, self.num_obs)

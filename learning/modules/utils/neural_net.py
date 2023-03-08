@@ -1,4 +1,6 @@
-import torch.nn as nn
+import torch
+import os
+import copy
 
 
 def create_MLP(num_inputs, num_outputs, hidden_dims, activation,
@@ -20,32 +22,56 @@ def create_MLP(num_inputs, num_outputs, hidden_dims, activation,
             else:
                 add_layer(layers, hidden_dims[i], hidden_dims[i+1],
                           activation, dropouts[i+1])
-    return nn.Sequential(*layers)
+    return torch.nn.Sequential(*layers)
 
 
 def get_activation(act_name):
     if act_name == "elu":
-        return nn.ELU()
+        return torch.nn.ELU()
     elif act_name == "selu":
-        return nn.SELU()
+        return torch.nn.SELU()
     elif act_name == "relu":
-        return nn.ReLU()
+        return torch.nn.ReLU()
     elif act_name == "crelu":
-        return nn.ReLU()
+        return torch.nn.ReLU()
     elif act_name == "lrelu":
-        return nn.LeakyReLU()
+        return torch.nn.LeakyReLU()
     elif act_name == "tanh":
-        return nn.Tanh()
+        return torch.nn.Tanh()
     elif act_name == "sigmoid":
-        return nn.Sigmoid()
+        return torch.nn.Sigmoid()
     else:
         print("invalid activation function!")
         return None
 
 
 def add_layer(layer_list, num_inputs, num_outputs, activation=None, dropout=0):
-    layer_list.append(nn.Linear(num_inputs, num_outputs))
+    layer_list.append(torch.nn.Linear(num_inputs, num_outputs))
     if dropout > 0:
-        layer_list.append(nn.Dropout(p=dropout))
+        layer_list.append(torch.nn.Dropout(p=dropout))
     if activation is not None:
         layer_list.append(activation)
+
+
+def export_network(network, network_name, path, num_inputs):
+    """
+    Thsi function traces and exports the given network module in .pt and
+    .onnx file formats. These can be used for evaluation on other systems
+    without needing a Pytorch environment.
+
+    :param network:         PyTorch neural network module
+    :param network_name:    (string) Network will be saved with this name
+    :path:                  (string) Network will be saved to this location
+    :param num_inputs:      (int) Number of inputs to the network module
+    """
+
+    os.makedirs(path, exist_ok=True)
+    path_TS = os.path.join(path, network_name + '.pt')   # TorchScript path
+    path_onnx = os.path.join(path, network_name + '.onnx')   # ONNX path
+    model = copy.deepcopy(network).to('cpu')
+    # To trace model, must be evaluated once with arbitrary input
+    model.eval()
+    dummy_input = torch.rand(num_inputs,)
+    model_traced = torch.jit.trace(model, dummy_input)
+    torch.jit.save(model_traced, path_TS)
+    torch.onnx.export(model_traced, dummy_input, path_onnx)
