@@ -38,7 +38,6 @@ class LeggedRobotCfg(BaseConfig):
         num_envs = 4096
         num_actuators = 12
         env_spacing = 3.  # not used with heightfields/trimeshes
-        send_timeouts = True  # send time out information to the algorithm
         episode_length_s = 20  # episode length in seconds
 
     class terrain:

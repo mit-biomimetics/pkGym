@@ -16,6 +16,7 @@ class_dict = {
     'MiniCheetah': '.mini_cheetah.mini_cheetah',
     'MiniCheetahRef': '.mini_cheetah.mini_cheetah_ref',
     'MIT_Humanoid': '.mit_humanoid.mit_humanoid',
+    "Anymal": '.anymal_c.anymal',
     'A1': '.a1.a1',
     'HumanoidRunning': '.mit_humanoid.humanoid_running',
 }
@@ -26,6 +27,7 @@ config_dict = {
     'MiniCheetahRefCfg': '.mini_cheetah.mini_cheetah_ref_config',
     'MITHumanoidCfg': '.mit_humanoid.mit_humanoid_config',
     'A1Cfg': '.a1.a1_config',
+    'AnymalCFlatCfg': '.anymal_c.flat.anymal_c_flat_config',
     'HumanoidRunningCfg': '.mit_humanoid.humanoid_running_config',
 }
 
@@ -35,6 +37,7 @@ runner_config_dict = {
     'MiniCheetahRefRunnerCfg': '.mini_cheetah.mini_cheetah_ref_config',
     'MITHumanoidRunnerCfg': '.mit_humanoid.mit_humanoid_config',
     'A1RunnerCfg': '.a1.a1_config',
+    'AnymalCFlatRunnerCfg': '.anymal_c.flat.anymal_c_flat_config',
     'HumanoidRunningRunnerCfg': '.mit_humanoid.humanoid_running_config',
 }
 
@@ -45,6 +48,7 @@ task_dict = {
         ['MiniCheetahRef', 'MiniCheetahRefCfg', 'MiniCheetahRefRunnerCfg'],
     'humanoid': ['MIT_Humanoid', 'MITHumanoidCfg', 'MITHumanoidRunnerCfg'],
     'a1': ['A1', 'A1Cfg', 'A1RunnerCfg'],
+    'flat_anymal_c': ['Anymal', 'AnymalCFlatCfg', 'AnymalCFlatRunnerCfg'],
     'humanoid_running': ['HumanoidRunning', 'HumanoidRunningCfg', 'HumanoidRunningRunnerCfg'],
 }
 
