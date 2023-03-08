@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from .utils import create_MLP
+from .utils import save_network
 
 
 class StateEstimatorNN(nn.Module):
@@ -31,14 +32,4 @@ class StateEstimatorNN(nn.Module):
         return self.NN(observations)
 
     def export(self, path):
-        import os
-        import copy
-        os.makedirs(path, exist_ok=True)
-        path_ts = os.path.join(path, 'SE.pt')
-        path_onnx = os.path.join(path, 'SE.onnx')
-        model = copy.deepcopy(self.NN).to('cpu')
-        model.eval()
-        input = torch.rand(self.num_inputs,)
-        model_traced = torch.jit.trace(model, input)
-        torch.jit.save(model_traced, path_ts)
-        torch.onnx.export(model_traced, input, path_onnx)
+        save_network(self.NN, "SE", self.num_inputs, path)

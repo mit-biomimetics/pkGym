@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.distributions import Normal
 from .utils import create_MLP
+from .utils import save_network
 
 
 class Actor(nn.Module):
@@ -61,15 +62,4 @@ class Actor(nn.Module):
         return actions_mean
 
     def export(self, path):
-        import os
-        import copy
-        os.makedirs(path, exist_ok=True)
-        path_ts = os.path.join(path, 'policy.pt')
-        path_onnx = os.path.join(path, 'policy.onnx')
-        model = copy.deepcopy(self.NN).to('cpu')
-        model.eval()
-        input = torch.rand(self.num_obs,)
-        model_traced = torch.jit.trace(model, input)
-        torch.jit.save(model_traced, path_ts)
-        torch.onnx.export(model_traced, input, path_onnx)
-        
+        save_network(self.NN, "policy", self.num_obs, path)
