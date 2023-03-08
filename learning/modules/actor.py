@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.distributions import Normal
 from .utils import create_MLP
-from .utils import save_network
+from .utils import export_network
 
 
 class Actor(nn.Module):
@@ -62,4 +62,4 @@ class Actor(nn.Module):
         return actions_mean
 
     def export(self, path):
-        save_network(self.NN, "policy", self.num_obs, path)
+        export_network(self.NN, "policy", path, self.num_obs)

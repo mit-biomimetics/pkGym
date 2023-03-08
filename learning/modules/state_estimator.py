@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from .utils import create_MLP
-from .utils import save_network
+from .utils import export_network
 
 
 class StateEstimatorNN(nn.Module):
@@ -32,4 +32,4 @@ class StateEstimatorNN(nn.Module):
         return self.NN(observations)
 
     def export(self, path):
-        save_network(self.NN, "SE", self.num_inputs, path)
+        export_network(self.NN, "state_estimator", path, self.num_inputs)
