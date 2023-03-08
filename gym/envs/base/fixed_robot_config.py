@@ -8,7 +8,6 @@ class FixedRobotCfg(BaseConfig):
         num_actuators = 1
         env_spacing = 4.  # not used with heightfields/trimeshes
         root_height = 2.
-        send_timeouts = True  # send time out information to the algorithm
         episode_length_s = 4  # episode length in seconds
 
     class terrain:
