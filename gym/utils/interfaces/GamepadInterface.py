@@ -1,7 +1,6 @@
 import os
-import pygame
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-
+import pygame
 
 class GamepadInterface():
     def __init__(self, env):
