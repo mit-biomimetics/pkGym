@@ -26,9 +26,9 @@ class MiniCheetahRef(MiniCheetah):
     def _reset_system(self, env_ids):
         super()._reset_system(env_ids)
         self.dof_pos_avg[env_ids] = 0.
-        self.phase[env_ids] = torch_rand_float(0, torch.pi,
-                                               shape=self.phase[env_ids].shape,
-                                               device=self.device)
+        # self.phase[env_ids] = torch_rand_float(0, torch.pi,
+        #                                        shape=self.phase[env_ids].shape,
+        #                                        device=self.device)
 
     def _post_physics_step(self):
         """ Update all states that are not handled in PhysX """
@@ -40,7 +40,7 @@ class MiniCheetahRef(MiniCheetah):
     def _switch(self):
         c_vel = torch.linalg.norm(self.commands, dim=1)
         return torch.exp(-torch.square(torch.max(torch.zeros_like(c_vel),
-                                                 c_vel-0.2))/0.1)
+                                                 c_vel-0.1))/0.1)
 
     def _reward_swing_grf(self):
         """Reward non-zero grf during swing (0 to pi)"""
@@ -64,6 +64,7 @@ class MiniCheetahRef(MiniCheetah):
         """REWARDS EACH LEG INDIVIDUALLY BASED ON ITS POSITION IN THE CYCLE"""
         # * dof position error
         error = self._get_ref() + self.default_dof_pos - self.dof_pos
+        error /= self.scales["dof_pos"]
         reward = torch.mean(self._sqrdexp(error) - torch.abs(error)*0.2, dim=1)
         # * only when commanded velocity is higher
         return reward*(1-self._switch())

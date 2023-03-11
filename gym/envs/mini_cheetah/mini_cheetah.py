@@ -29,8 +29,7 @@ class MiniCheetah(LeggedRobot):
 
     def _reward_min_base_height(self):
         """Squared exponential saturating at base_height target"""
-        base_height = self.root_states[:, 2].unsqueeze(1)
-        error = (base_height-self.cfg.reward_settings.base_height_target)
+        error = (self.base_height-self.cfg.reward_settings.base_height_target)
         error /= self.scales["base_height"]
         error = torch.clamp(error, max=0, min=None).flatten()
         return self._sqrdexp(error)
