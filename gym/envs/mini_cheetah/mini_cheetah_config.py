@@ -106,7 +106,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         tracking_sigma = 0.25
 
     class scaling(LeggedRobotCfg.scaling):
-        base_ang_vel = 3.14*(BASE_HEIGHT_REF/9.81)**0.5
+        base_ang_vel = 3.14/(BASE_HEIGHT_REF/9.81)**0.5
         base_lin_vel = 1.
         commands = 1
         dof_vel = 100.  # ought to be roughly max expected speed.
@@ -180,13 +180,13 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
         use_clipped_value_loss = True
         clip_param = 0.2
         entropy_coef = 0.01
-        num_learning_epochs = 5
+        num_learning_epochs = 6
         # * mini batch size = num_envs*nsteps / nminibatches
-        num_mini_batches = 4
+        num_mini_batches = 6
         learning_rate = 1.e-3
         schedule = 'adaptive'  # can be adaptive or fixed
-        discount_horizon = 0.5  # [s]
-        GAE_bootstrap_horizon = 0.2  # [s]
+        # discount_horizon = 0.5  # [s]
+        # GAE_bootstrap_horizon = 0.2  # [s]
         desired_kl = 0.01
         max_grad_norm = 1.
 
