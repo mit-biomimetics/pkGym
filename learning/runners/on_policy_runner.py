@@ -49,7 +49,6 @@ class OnPolicyRunner:
     def __init__(self,
                  env: VecEnv,
                  train_cfg,
-                 log_dir=None,
                  device='cpu'):
 
         self.device = device
@@ -89,9 +88,9 @@ class OnPolicyRunner:
         self.init_storage()
 
         # * Log
-        self.log_dir = log_dir
+        self.log_dir = train_cfg["log_dir"]
         self.SE_path = os.path.join(self.log_dir, 'SE')  # log_dir for SE
-        self.logger = Logger(log_dir, self.env.max_episode_length_s,
+        self.logger = Logger(self.log_dir, self.env.max_episode_length_s,
                              self.device)
 
         reward_keys_to_log = \

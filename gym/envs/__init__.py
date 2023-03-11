@@ -49,7 +49,9 @@ task_dict = {
     'humanoid': ['MIT_Humanoid', 'MITHumanoidCfg', 'MITHumanoidRunnerCfg'],
     'a1': ['A1', 'A1Cfg', 'A1RunnerCfg'],
     'flat_anymal_c': ['Anymal', 'AnymalCFlatCfg', 'AnymalCFlatRunnerCfg'],
-    'humanoid_running': ['HumanoidRunning', 'HumanoidRunningCfg', 'HumanoidRunningRunnerCfg'],
+    'humanoid_running': ['HumanoidRunning',
+                         'HumanoidRunningCfg',
+                         'HumanoidRunningRunnerCfg'],
 }
 
 for class_name, class_location in class_dict.items():

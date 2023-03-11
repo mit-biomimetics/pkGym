@@ -136,14 +136,15 @@ class HumanoidRunningCfg(LeggedRobotCfg):
         added_mass_range = [-1., 1.]
 
     class asset(LeggedRobotCfg.asset):
-        # file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/rom/urdf/humanoid_fixed_arms_full.urdf'
+        # file = ('{LEGGED_GYM_ROOT_DIR}/resources/robots/rom/urdf/'
+        #         +'humanoid_fixed_arms_full.urdf')
         file = (
             '{LEGGED_GYM_ROOT_DIR}/resources/robots/'
             + 'mit_humanoid/urdf/humanoid_F_sf.urdf')
         keypoints = ["base"]
         end_effectors = ['left_foot', 'right_foot']
         # end_effector_names = ['left_toe', 'left_heel',
-                            #   'right_toe', 'right_heel']
+        #                       'right_toe', 'right_heel']
         foot_name = 'foot'
         terminate_after_contacts_on = [
             'base',
@@ -223,6 +224,7 @@ class HumanoidRunningRunnerCfg(LeggedRobotRunnerCfg):
 
         add_noise = True
         noise_level = 1.0  # scales other values
+
         class noise:
             base_height = 0.05
             base_lin_vel = 0.1
@@ -249,11 +251,13 @@ class HumanoidRunningRunnerCfg(LeggedRobotRunnerCfg):
                 orientation = 1.
                 hip_yaw_zero = 2.
                 hip_abad_symmetry = 0.2
+
             class termination_weight:
                 termination = 1
 
         class PBRS:
             gamma = 1
+
             class weights:
                 base_height = 1.0
                 orientation = 1.0

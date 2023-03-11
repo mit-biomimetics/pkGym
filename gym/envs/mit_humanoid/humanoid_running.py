@@ -1,7 +1,5 @@
 import torch
-from isaacgym import gymtorch
-from isaacgym.torch_utils import *
-from gym.utils.math import *
+
 from gym.envs import LeggedRobot
 
 

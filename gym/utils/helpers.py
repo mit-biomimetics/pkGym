@@ -35,6 +35,7 @@ import numpy as np
 import random
 from isaacgym import gymapi
 from isaacgym import gymutil
+from gym import LEGGED_GYM_ROOT_DIR
 import torch
 from isaacgym.torch_utils import to_torch
 
@@ -114,8 +115,8 @@ def parse_sim_params(args, cfg):
     return sim_params
 
 
-def get_load_path(root, load_run=-1, checkpoint=-1):
-
+def get_load_path(name, load_run=-1, checkpoint=-1):
+    root = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', name)
     run_path = select_run(root, load_run)
     model_name = select_model(run_path, checkpoint)
     load_path = os.path.join(run_path, model_name)
