@@ -106,7 +106,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
 
 
 class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
-    seed = -1
+    seed = 1
 
     class policy(MiniCheetahRunnerCfg.policy):
         actor_hidden_dims = [256, 256, 128]
