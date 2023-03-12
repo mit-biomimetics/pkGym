@@ -325,11 +325,15 @@ class LeggedRobot(BaseTask):
         else:
             dof_pos_target = self.dof_pos_target
 
-        torques = (
-            self.p_gains*(
-                dof_pos_target + self.default_dof_pos - self.dof_pos)
-            + self.d_gains*(self.dof_vel_target - self.dof_vel)
-            + self.tau_ff)
+        # ! difference: legacy multiplies dof_pos_target with action_scale
+        # ! we instead apply that when setting (which is before filtering)
+        # ! not 100% if before or after filtering will make a difference
+        # ! tested, but doesn't seem to make a difference...
+        torques = (self.p_gains*(dof_pos_target
+                                 + self.default_dof_pos
+                                 - self.dof_pos)
+                   + self.d_gains*(self.dof_vel_target - self.dof_vel)
+                   + self.tau_ff)
         torques = torch.clip(torques, -self.torque_limits, self.torque_limits)
         return torques.view(self.torques.shape)
 

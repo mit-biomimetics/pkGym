@@ -163,6 +163,15 @@ class OnPolicyRunner:
             remove_zero_weighted_rewards(PBRS_weights)
             PBRS_gamma = self.policy_cfg['PBRS']['gamma']
 
+
+        # * burn in with some steps
+        # for iterations in range(0, 10):
+        #     with torch.inference_mode():
+        #         for i in range(self.num_steps_per_env):
+        #             actions = self.get_inference_actions()
+        #             self.set_actions(actions)
+        #             self.env.step()
+
         for self.it in range(self.it+1, self.tot_iter+1):
             start = time.time()
             # * Rollout

@@ -37,6 +37,8 @@ class MiniCheetahRef(MiniCheetah):
         self.phase_obs = torch.cat((torch.sin(self.phase),
                                     torch.cos(self.phase)), dim=1)
 
+        self.dof_pos_history[:, :self.num_actuators] = self.dof_pos_avg
+
     def _switch(self):
         c_vel = torch.linalg.norm(self.commands, dim=1)
         return torch.exp(-torch.square(torch.max(torch.zeros_like(c_vel),
