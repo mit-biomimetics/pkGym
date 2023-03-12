@@ -170,7 +170,7 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                 stance_grf = 1.5
 
             class termination_weight:
-                termination = 15
+                termination = 15./100.
 
         # class PBRS:
         #     gamma = 1
