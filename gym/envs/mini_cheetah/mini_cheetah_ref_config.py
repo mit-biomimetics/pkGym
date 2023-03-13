@@ -46,7 +46,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
         gait_freq = 4.
-        dof_pos_decay = 0.15  # set to None to disable
+        dof_pos_decay = 1.  # 0.15  # set to None to disable
         ctrl_frequency = 100
         desired_sim_frequency = 1000
 
@@ -101,7 +101,6 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         dof_pos = 4*[0.1, 1., 2]  # hip-abad, hip-pitch, knee
         dof_pos_obs = dof_pos
         dof_pos_target = 0.75  # action_scale
-
         tau_ff = 4*[18, 18, 28]  # hip-abad, hip-pitch, knee
 
 
