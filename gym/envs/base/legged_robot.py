@@ -325,11 +325,11 @@ class LeggedRobot(BaseTask):
         else:
             dof_pos_target = self.dof_pos_target
 
-        torques = (
-            self.p_gains*(
-                dof_pos_target + self.default_dof_pos - self.dof_pos)
-            + self.d_gains*(self.dof_vel_target - self.dof_vel)
-            + self.tau_ff)
+        torques = (self.p_gains*(dof_pos_target
+                                 + self.default_dof_pos
+                                 - self.dof_pos)
+                   + self.d_gains*(self.dof_vel_target - self.dof_vel)
+                   + self.tau_ff)
         torques = torch.clip(torques, -self.torque_limits, self.torque_limits)
         return torques.view(self.torques.shape)
 
@@ -959,19 +959,17 @@ class LeggedRobot(BaseTask):
         """Penalize changes in actions"""
         nact = self.num_actuators
         dt2 = (self.dt*self.cfg.control.decimation)**2
-        error = torch.square(
-            self.dof_pos_history[:, :nact]
-            - self.dof_pos_history[:, nact:2*nact])/dt2
+        error = torch.square(self.dof_pos_history[:, :nact]
+                             - self.dof_pos_history[:, nact:2*nact])/dt2
         return -torch.sum(error, dim=1)
 
     def _reward_action_rate2(self):
         """Penalize changes in actions"""
         nact = self.num_actuators
         dt2 = (self.dt*self.cfg.control.decimation)**2
-        error = torch.square(
-            self.dof_pos_history[:, :nact]
-            - 2*self.dof_pos_history[:, nact:2*nact]
-            + self.dof_pos_history[:, 2*nact:])/dt2
+        error = torch.square(self.dof_pos_history[:, :nact]
+                             - 2*self.dof_pos_history[:, nact:2*nact]
+                             + self.dof_pos_history[:, 2*nact:])/dt2
         return -torch.sum(error, dim=1)
 
     def _reward_collision(self):

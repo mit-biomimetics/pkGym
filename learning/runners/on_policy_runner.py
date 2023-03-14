@@ -101,7 +101,7 @@ class OnPolicyRunner:
         if 'PBRS' in self.policy_cfg.keys():
             reward_keys_to_log += [
                 "PBRS_" + x for x in self.policy_cfg['PBRS']['weights'].keys()]
-
+        reward_keys_to_log += ["Total_reward"]
         self.logger.initialize_buffers(self.env.num_envs, reward_keys_to_log)
 
     def parse_train_cfg(self, train_cfg):
@@ -198,6 +198,8 @@ class OnPolicyRunner:
                         rewards += self.get_and_log_PBRS_rewards(
                                 PBRS_weights, PBRS_prestep=PBRS_prestep,
                                 gamma=PBRS_gamma, mask=~dones)
+
+                    self.logger.log_current_reward('Total_reward', rewards)
 
                     self.alg.process_env_step(rewards, dones, timed_out)
                     self.logger.update_episode_buffer(dones)
