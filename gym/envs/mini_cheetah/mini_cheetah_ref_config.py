@@ -15,7 +15,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
 
     class init_state(MiniCheetahCfg.init_state):
         reset_mode = "reset_to_basic"
-        # * default COM for basic initialization 
+        # * default COM for basic initialization
         pos = [0.0, 0.0, 0.33]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
@@ -129,7 +129,6 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                      "commands",
                      "dof_pos_obs",
                      "dof_vel",
-                    #  "dof_pos_history",
                      "phase_obs"
                      ]
 
