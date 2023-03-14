@@ -23,14 +23,12 @@ class MiniCheetahRef(MiniCheetah):
         self.phase_obs = torch.zeros(self.num_envs, 2, dtype=torch.float,
                                      device=self.device)
 
-
     def _reset_system(self, env_ids):
         super()._reset_system(env_ids)
         self.dof_pos_avg[env_ids] = 0.
         self.phase[env_ids] = torch_rand_float(0, torch.pi,
                                                shape=self.phase[env_ids].shape,
                                                device=self.device)
-
 
     def _post_physics_step(self):
         """ Update all states that are not handled in PhysX """
@@ -46,8 +44,9 @@ class MiniCheetahRef(MiniCheetah):
 
     def _reward_swing_grf(self):
         """Reward non-zero grf during swing (0 to pi)"""
-        in_contact = torch.gt(torch.norm(self.contact_forces[:,
-                                            self.feet_indices, :], dim=-1), 50.)
+        in_contact = \
+            torch.gt(torch.norm(self.contact_forces[:, self.feet_indices, :],
+                                dim=-1), 50.)
         ph_off = torch.lt(self.phase, torch.pi)
         rew = in_contact*torch.cat((ph_off, ~ph_off, ~ph_off, ph_off), dim=1)
         return -torch.sum(rew.float(), dim=1)*(1-self._switch())

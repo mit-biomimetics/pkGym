@@ -47,9 +47,11 @@ task_dict = {
     'mini_cheetah_ref':
         ['MiniCheetahRef', 'MiniCheetahRefCfg', 'MiniCheetahRefRunnerCfg'],
     'humanoid': ['MIT_Humanoid', 'MITHumanoidCfg', 'MITHumanoidRunnerCfg'],
+    'humanoid_running': ['HumanoidRunning',
+                         'HumanoidRunningCfg',
+                         'HumanoidRunningRunnerCfg'],
     'a1': ['A1', 'A1Cfg', 'A1RunnerCfg'],
     'flat_anymal_c': ['Anymal', 'AnymalCFlatCfg', 'AnymalCFlatRunnerCfg'],
-    'humanoid_running': ['HumanoidRunning', 'HumanoidRunningCfg', 'HumanoidRunningRunnerCfg'],
 }
 
 for class_name, class_location in class_dict.items():

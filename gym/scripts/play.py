@@ -8,6 +8,7 @@ from gym.utils import KeyboardInterface
 # torch needs to be imported after isaacgym imports in local source
 import torch
 
+
 def setup(args):
     env_cfg, train_cfg = task_registry.create_cfgs(args)
     env_cfg.env.num_envs = min(env_cfg.env.num_envs, 16)
