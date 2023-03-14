@@ -120,21 +120,11 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                      "commands",
                      "dof_pos_obs",
                      "dof_vel",
-                     "dof_pos_history",
+                    #  "dof_pos_history",
                      "phase_obs"
                      ]
 
-        critic_obs = [
-                      "base_height",
-                      "base_lin_vel",
-                      "base_ang_vel",
-                      "projected_gravity",
-                      "commands",
-                      "dof_pos_obs",
-                      "dof_vel",
-                      "dof_pos_history",
-                      "phase_obs"
-                      ]
+        critic_obs = actor_obs
 
         actions = ["dof_pos_target"]
 
