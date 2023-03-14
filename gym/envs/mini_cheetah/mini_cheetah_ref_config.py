@@ -105,7 +105,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
 
 
 class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
-    seed = 1
+    seed = -1
 
     class policy(MiniCheetahRunnerCfg.policy):
         actor_hidden_dims = [256, 256, 128]
@@ -139,13 +139,15 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
         actions = ["dof_pos_target"]
 
         class noise:
-            # dof_pos_obs = 0.005  # can be made very low
-            # dof_vel = 0.005
-            # ang_vel = [0.1, 0.1, 0.1]  # 0.027, 0.14, 0.37
-            dof_pos = 0.005
-            dof_vel = 0.005
-            ang_vel = [0.3, 0.15, 0.4]
-            gravity_vec = 0.05
+            dof_pos_obs = 0.  # 0.005  # can be made very low
+            dof_vel = 0.  # 0.005
+            ang_vel = 0.  # [0.1, 0.1, 0.1]  # 0.027, 0.14, 0.37
+            base_ang_vel = 0.  # 0.
+            dof_pos = 0.  # 0.005
+            dof_vel = 0.  # 0.005
+            lin_vel = 0.  # 0.
+            ang_vel = 0.  # [0.3, 0.15, 0.4]
+            gravity_vec = 0.  # 0.05
 
         class reward:
             class weights:

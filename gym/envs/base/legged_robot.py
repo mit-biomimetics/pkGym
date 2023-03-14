@@ -963,9 +963,8 @@ class LeggedRobot(BaseTask):
         """Penalize changes in actions"""
         nact = self.num_actuators
         dt2 = (self.dt*self.cfg.control.decimation)**2
-        error = torch.square(
-            self.dof_pos_history[:, :nact]
-            - self.dof_pos_history[:, nact:2*nact])/dt2
+        error = torch.square(self.dof_pos_history[:, :nact]
+                             - self.dof_pos_history[:, nact:2*nact])/dt2
         return -torch.sum(error, dim=1)
 
     def _reward_action_rate2(self):
