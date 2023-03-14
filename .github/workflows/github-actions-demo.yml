@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  Explore-GitHub-Actions:
+  Self-hosted-unit-testing:
     runs-on: [self-hosted, Linux, X64]
 
     steps:
@@ -19,4 +19,4 @@ jobs:
           source ~/anaconda3/etc/profile.d/conda.sh
           conda activate CIgym
           cd tests
-          python -m unittest
+          python -m pytest
