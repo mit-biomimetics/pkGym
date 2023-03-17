@@ -82,7 +82,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
     class asset(MiniCheetahCfg.asset):
         file = (
             "{LEGGED_GYM_ROOT_DIR}/resources/robots/"
-            + "mini_cheetah/urdf/mini_cheetah_simple.urdf")
+            + "mini_cheetah/urdf/mini_cheetah_rotor.urdf")
         foot_name = "foot"
         penalize_contacts_on = ["shank"]
         terminate_after_contacts_on = ["base", "thigh"]
