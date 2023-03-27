@@ -179,6 +179,8 @@ class TaskRegistry():
             # load config files
             env_cfg, _ = self.get_cfgs(name)
         set_seed(env_cfg.seed)
+        import torch
+        print("seed set 1: ", torch.rand(4))
         env = task_class(gym=self._gym, sim=self._sim, cfg=env_cfg,
                          sim_params=self.sim["params"],
                          sim_device=self.sim["sim_device"],
@@ -230,6 +232,7 @@ class TaskRegistry():
         else:
             if name is not None:
                 print(f"'train_cfg' provided -> Ignoring 'name={name}'")
+        
         # * override cfg from args (if specified)
         _, train_cfg = update_cfg_from_args(None, train_cfg, args)
 
@@ -245,6 +248,8 @@ class TaskRegistry():
                                         checkpoint=train_cfg.runner.checkpoint)
             print(f"Loading model from: {resume_path}")
             runner.load(resume_path)
+        
+
         return runner, train_cfg
 
 

@@ -389,7 +389,7 @@
     <origin rpy="0.0 0 0.0" xyz="0.0 0.049 -0.2085"/>
     <parent link="lh_thigh"/>
     <child link="lh_shank"/>
-    <limit effort="28" lower="0.12" upper="4.97" velocity="26.8"/>
+    <limit effort="28" lower="-2.7" upper="2.7" velocity="26.8"/>
 </joint>
 
 <link name="lh_shank">
