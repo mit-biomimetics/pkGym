@@ -26,9 +26,9 @@ class MiniCheetahCfg(LeggedRobotCfg):
         reset_mode = "reset_to_basic"
 
         # * default COM for basic initialization
-        pos = [0.0, 0.0, 0.33]  # x,y,z [m]
+        pos = [0.0, 0.0, 0.5]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
-        lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
+        lin_vel = [0.0, 0.0, 1.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
 
         # * initialization for random range setup
@@ -176,7 +176,7 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
                 dof_near_home = 1.
 
             class termination_weight:
-                termination = 1.
+                termination = 0.01
 
     class algorithm(LeggedRobotRunnerCfg.algorithm):
         # * training params
