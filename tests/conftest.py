@@ -19,8 +19,8 @@ def pytest_sessionstart(session):
         env_cfg, train_cfg = _task_registry.create_cfgs(args)
         _task_registry.update_sim_cfg(args)
         _task_registry.make_sim()
-        env, _ = _task_registry.make_env(name=env_name,
-                                         env_cfg=env_cfg)
+        env = _task_registry.make_env(name=env_name,
+                                      env_cfg=env_cfg)
         environment_dict[env_name] = env
         environment_list.append(environment_dict[env_name])
         _task_registry._gym.destroy_sim(_task_registry._sim)

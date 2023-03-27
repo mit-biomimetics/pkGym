@@ -151,30 +151,30 @@ def select_model(load_run, checkpoint):
     return model
 
 
-def update_cfg_from_args(env_cfg, cfg_train, args):
+def update_cfg_from_args(env_cfg, train_cfg, args):
     # * seed
     if env_cfg is not None:
         # * num envs
         if args.num_envs is not None:
             env_cfg.env.num_envs = args.num_envs
-    if cfg_train is not None:
+    if train_cfg is not None:
         if args.seed is not None:
-            cfg_train.seed = args.seed
+            train_cfg.seed = args.seed
         # * alg runner parameters
         if args.max_iterations is not None:
-            cfg_train.runner.max_iterations = args.max_iterations
+            train_cfg.runner.max_iterations = args.max_iterations
         if args.resume:
-            cfg_train.runner.resume = args.resume
+            train_cfg.runner.resume = args.resume
         if args.experiment_name is not None:
-            cfg_train.runner.experiment_name = args.experiment_name
+            train_cfg.runner.experiment_name = args.experiment_name
         if args.run_name is not None:
-            cfg_train.runner.run_name = args.run_name
+            train_cfg.runner.run_name = args.run_name
         if args.load_run is not None:
-            cfg_train.runner.load_run = args.load_run
+            train_cfg.runner.load_run = args.load_run
         if args.checkpoint is not None:
-            cfg_train.runner.checkpoint = args.checkpoint
-
-    return env_cfg, cfg_train
+            train_cfg.runner.checkpoint = args.checkpoint
+        if args.rl_device is not None:
+            train_cfg.runner.device = args.rl_device
 
 
 def get_args():
