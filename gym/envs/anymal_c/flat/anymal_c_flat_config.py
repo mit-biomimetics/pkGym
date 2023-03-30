@@ -69,7 +69,6 @@ class AnymalCFlatCfg(LeggedRobotCfg):
         use_actuator_network = False
         actuator_net_file = "{LEGGED_GYM_ROOT_DIR}/resources/" \
                             + "actuator_nets/anydrive_v3_lstm.pt"
-        dof_pos_decay = 0.35  # set to None to disable
         ctrl_frequency = 80
         desired_sim_frequency = 400
 

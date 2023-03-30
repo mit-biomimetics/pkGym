@@ -71,8 +71,6 @@ class A1Cfg(LeggedRobotCfg):
         stiffness = {'joint': 20.}  # [N*m/rad]
         damping = {'joint': 0.5}     # [N*m*s/rad]
 
-        dof_pos_decay = 0.35  # set to None to disable
-
         ctrl_frequency = 100
         desired_sim_frequency = 500
 

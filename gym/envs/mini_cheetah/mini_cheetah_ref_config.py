@@ -46,7 +46,6 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
         gait_freq = 4.
-        dof_pos_decay = 1.  # 0.15  # set to None to disable
         ctrl_frequency = 100
         desired_sim_frequency = 1000
 
@@ -185,7 +184,7 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
         num_mini_batches = 6
         learning_rate = 5.e-5
         schedule = 'adaptive'  # can be adaptive, fixed
-        # discount_horizon = 0.75  # [s]  # ! check
+        # discount_horizon = 0.75  # [s]
         # GAE_bootstrap_horizon = 0.2  # [s]
         gamma = 0.99
         lam = 0.99

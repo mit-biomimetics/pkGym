@@ -40,7 +40,6 @@ class FixedRobotCfg(BaseConfig):
         stiffness = {'joint_a': 10.0}  # [N*m/rad]
         damping = {'joint_a': 0.5}     # [N*m*s/rad]
 
-        dof_pos_decay = None
         actuated_joints_mask = []  # for each dof: 1 if actuated, 0 if passive
 
         ctrl_frequency = 100

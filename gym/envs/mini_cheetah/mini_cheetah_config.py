@@ -55,9 +55,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
         # * PD Drive parameters:
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
-
-        dof_pos_decay = 0.35  # set to None to disable
-
         ctrl_frequency = 100
         desired_sim_frequency = 500
 

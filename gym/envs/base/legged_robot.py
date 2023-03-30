@@ -317,19 +317,11 @@ class LeggedRobot(BaseTask):
         return props
 
     def _compute_torques(self):
-        if self.cfg.control.dof_pos_decay:
-            self.dof_pos_avg = exp_avg_filter(self.dof_pos_target,
-                                              self.dof_pos_avg,
-                                              self.cfg.control.dof_pos_decay)
-            dof_pos_target = self.dof_pos_avg
-        else:
-            dof_pos_target = self.dof_pos_target
-
         # ! difference: legacy multiplies dof_pos_target with action_scale
         # ! we instead apply that when setting (which is before filtering)
         # ! not 100% if before or after filtering will make a difference
         # ! tested, but doesn't seem to make a difference...
-        torques = (self.p_gains*(dof_pos_target
+        torques = (self.p_gains*(self.dof_pos_target
                                  + self.default_dof_pos
                                  - self.dof_pos)
                    + self.d_gains*(self.dof_vel_target - self.dof_vel)
@@ -549,10 +541,6 @@ class LeggedRobot(BaseTask):
         if self.cfg.terrain.measure_heights:
             self.height_points = self._init_height_points()
         self.measured_heights = 0
-
-        self.dof_pos_avg = torch.zeros(
-            self.num_envs, self.num_actuators,
-            dtype=torch.float, device=self.device)
 
         # * joint positions offsets and PD gains
         self.default_dof_pos = torch.zeros(

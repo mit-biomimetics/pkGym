@@ -25,10 +25,9 @@ class MiniCheetahRef(MiniCheetah):
 
     def _reset_system(self, env_ids):
         super()._reset_system(env_ids)
-        self.dof_pos_avg[env_ids] = 0.
-        # self.phase[env_ids] = torch_rand_float(0, torch.pi,
-        #                                        shape=self.phase[env_ids].shape,
-        #                                        device=self.device)
+        self.phase[env_ids] = torch_rand_float(0, torch.pi,
+                                               shape=self.phase[env_ids].shape,
+                                               device=self.device)
 
     def _post_physics_step(self):
         """ Update all states that are not handled in PhysX """
@@ -36,8 +35,6 @@ class MiniCheetahRef(MiniCheetah):
         self.phase = torch.fmod(self.phase+self.dt*self.omega, 2*torch.pi)
         self.phase_obs = torch.cat((torch.sin(self.phase),
                                     torch.cos(self.phase)), dim=1)
-
-        self.dof_pos_history[:, :self.num_actuators] = self.dof_pos_avg
 
     def _resample_commands(self, env_ids):
         """ Randommly select commands of some environments
