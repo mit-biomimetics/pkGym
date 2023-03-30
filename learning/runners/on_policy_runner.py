@@ -85,10 +85,6 @@ class OnPolicyRunner:
             list(self.policy_cfg["reward"]["weights"].keys()) \
             + list(self.policy_cfg["reward"]["termination_weight"].keys())
 
-        # * initialize PBRS logging.
-        if 'PBRS' in self.policy_cfg.keys():
-            reward_keys_to_log += [
-                "PBRS_" + x for x in self.policy_cfg['PBRS']['weights'].keys()]
         reward_keys_to_log += ["Total_reward"]
         self.logger.initialize_buffers(self.env.num_envs, reward_keys_to_log)
 
@@ -134,28 +130,12 @@ class OnPolicyRunner:
         reward_weights = self.policy_cfg['reward']['weights']
         termination_weight = self.policy_cfg['reward']['termination_weight']
         rewards = 0.*self.get_rewards(reward_weights)
-        if 'PBRS' in self.policy_cfg.keys():
-            PBRS_weights = self.policy_cfg['PBRS']['weights']
-            remove_zero_weighted_rewards(PBRS_weights)
-            PBRS_gamma = self.policy_cfg['PBRS']['gamma']
-
-
-        # * burn in with some steps
-        # for iterations in range(0, 10):
-        #     with torch.inference_mode():
-        #         for i in range(self.num_steps_per_env):
-        #             actions = self.get_inference_actions()
-        #             self.set_actions(actions)
-        #             self.env.step()
 
         for self.it in range(self.it+1, self.tot_iter+1):
             start = time.time()
             # * Rollout
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
-                    if 'PBRS' in self.policy_cfg.keys():
-                        PBRS_prestep = self.get_PBRS_prestep(PBRS_weights)
-
                     actions = self.alg.act(actor_obs, critic_obs)
                     self.set_actions(actions)
                     self.env.step()
@@ -174,12 +154,6 @@ class OnPolicyRunner:
                                                         mask=~terminated)
                     rewards += self.get_and_log_rewards(termination_weight,
                                                         mask=terminated)
-
-                    if 'PBRS' in self.policy_cfg.keys():
-                        rewards += self.get_and_log_PBRS_rewards(
-                                PBRS_weights, PBRS_prestep=PBRS_prestep,
-                                gamma=PBRS_gamma, mask=~dones)
-
                     self.logger.log_current_reward('Total_reward', rewards)
 
                     self.alg.process_env_step(rewards, dones, timed_out)
@@ -266,25 +240,6 @@ class OnPolicyRunner:
             reward = mask * self.get_rewards({name: weight}, modifier)
             total_rewards += reward
             self.logger.log_current_reward(name, reward)
-        return total_rewards
-
-    def get_PBRS_prestep(self, reward_weights):
-        PBRS_prestep = {}
-        for name, weight in reward_weights.items():
-            reward = self.get_rewards({name: weight}, modifier=-1)
-            PBRS_prestep.update({name: reward})
-        return PBRS_prestep
-
-    def get_and_log_PBRS_rewards(self, reward_weights, PBRS_prestep,
-                                 gamma, mask):
-        total_rewards = torch.zeros(self.env.num_envs,
-                                    device=self.device, dtype=torch.float)
-        for name, weight in reward_weights.items():
-            reward = PBRS_prestep[name]
-            reward += self.env.compute_reward({name: weight}).to(self.device)
-            reward *= mask * gamma
-            total_rewards += reward
-            self.logger.log_current_reward('PBRS_'+name, reward)
         return total_rewards
 
     def get_rewards(self, reward_weights, modifier=1):

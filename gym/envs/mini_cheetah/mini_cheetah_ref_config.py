@@ -162,17 +162,6 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
             class termination_weight:
                 termination = 15./100.
 
-        # class PBRS:
-        #     gamma = 1
-
-        #     class weights:
-        #         lin_vel_z = 1.
-        #         reference_traj = 1.
-        #         orientation = 1.
-        #         min_base_height = 1.
-        #         swing_grf = 0.75
-        #         stance_grf = 1.5
-
     class algorithm(MiniCheetahRunnerCfg.algorithm):
         # training params
         value_loss_coef = 1.0

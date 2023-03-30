@@ -165,7 +165,6 @@ class A1RunnerCfg(LeggedRobotRunnerCfg):
             projected_gravity = 0.02
 
         class reward(LeggedRobotRunnerCfg.policy.reward):
-            make_PBRS = []
 
             class weights(LeggedRobotRunnerCfg.policy.reward.weights):
                 tracking_lin_vel = 1.0
