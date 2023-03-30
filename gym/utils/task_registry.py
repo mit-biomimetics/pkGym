@@ -146,12 +146,6 @@ class TaskRegistry():
             self.sim["physics_engine"],
             self.sim["params"])
 
-    def prepare_sim(self):
-        """
-        Must be called before running simulator, after adding all environments.
-        """
-        self._gym.prepare_sim(self._sim)
-
     def make_env(self, name, env_cfg=None) -> Tuple[VecEnv, LeggedRobotCfg]:
         """ Creates an environment either from a registered namme or from the
             provided config file.

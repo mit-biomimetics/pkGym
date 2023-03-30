@@ -16,7 +16,6 @@ def setup():
     # * then make env
     policy_runner, train_cfg = \
         task_registry.make_alg_runner(env=env, name=args.task, args=args)
-    task_registry.prepare_sim()
 
     local_code_save_helper.log_and_save(
         env, env_cfg, train_cfg, policy_runner)
