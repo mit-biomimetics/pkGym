@@ -191,37 +191,9 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
         desired_kl = 0.01
         max_grad_norm = 1.
 
-    # class state_estimator:
-    #     num_learning_epochs = 10
-    #     # mini batch size = num_envs*nsteps / nminibatches
-    #     num_mini_batches = 1
-    #     obs = [
-    #         "base_ang_vel",
-    #         "projected_gravity",
-    #         "dof_pos",
-    #         "dof_vel"]
-
-    #     targets = [
-    #         "base_height",
-    #         "base_lin_vel"]
-
-    #     states_to_write_to = targets
-    #     # * neural network params
-
-    #     class neural_net:
-    #         activation = "elu"
-    #         hidden_dims = [256, 128, 64]  # None will default to 256, 128
-    #         # dropouts: randomly zeros output of a node.
-    #         # specify the probability of a dropout, 0 means no dropouts.
-    #         # Done per layer, including initial layer
-    #         # (input-first, no last-output)
-    #         # len(dropouts) == len(hidden_dims)
-    #         dropouts = [0.1, 0.1, 0.1]
-
     class runner(MiniCheetahRunnerCfg.runner):
         run_name = ''
         experiment_name = 'mini_cheetah_ref'
         max_iterations = 500  # number of policy updates
-        SE_learner = None
         algorithm_class_name = 'PPO'
         num_steps_per_env = 32

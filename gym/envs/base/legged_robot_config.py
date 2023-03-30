@@ -262,7 +262,6 @@ class LeggedRobotRunnerCfg(BaseConfig):
         algorithm_class_name = 'PPO'
         num_steps_per_env = 24
         max_iterations = 1500
-        SE_learner = None
         save_interval = 50
         run_name = ''
         experiment_name = 'legged_robot'

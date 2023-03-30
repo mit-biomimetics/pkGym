@@ -195,6 +195,5 @@ class AnymalCFlatRunnerCfg(LeggedRobotRunnerCfg):
         run_name = ''
         experiment_name = 'flat_anymal_c'
         algorithm_class_name = 'PPO'
-        SE_learner = None
         max_iterations = 1000  # number of policy updates
         num_steps_per_env = 24

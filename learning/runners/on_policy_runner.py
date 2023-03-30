@@ -36,9 +36,8 @@ import wandb
 import torch
 from isaacgym.torch_utils import torch_rand_float
 
-from learning.algorithms import PPO, StateEstimator
+from learning.algorithms import PPO
 from learning.modules import ActorCritic
-from learning.modules import StateEstimatorNN
 from learning.env import VecEnv
 from learning.utils import remove_zero_weighted_rewards
 from learning.utils import Logger
@@ -66,17 +65,6 @@ class OnPolicyRunner:
         alg_class = eval(self.cfg["algorithm_class_name"])
         self.alg: PPO = alg_class(actor_critic,
                                   device=self.device, **self.alg_cfg)
-
-        if self.cfg["SE_learner"] == "modular_SE":
-            num_SE_obs = self.get_obs_size(self.se_cfg["obs"])
-            num_SE_outputs = self.get_obs_size(self.se_cfg["targets"])
-            state_estimator_nn = StateEstimatorNN(num_SE_obs,
-                                                  num_SE_outputs,
-                                                  **self.se_cfg["neural_net"])
-            state_estimator_nn.to(self.device)
-            self.state_estimator = StateEstimator(state_estimator_nn,
-                                                  device=self.device,
-                                                  **self.se_cfg)
 
         self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
@@ -111,11 +99,6 @@ class OnPolicyRunner:
         remove_zero_weighted_rewards(train_cfg['policy']['reward']['weights'])
         self.policy_cfg = train_cfg['policy']
 
-        if 'state_estimator' in train_cfg:
-            self.se_cfg = train_cfg['state_estimator']
-        else:
-            self.se_cfg = None
-
     def init_storage(self):
         num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
         num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
@@ -125,13 +108,6 @@ class OnPolicyRunner:
                               actor_obs_shape=[num_actor_obs],
                               critic_obs_shape=[num_critic_obs],
                               action_shape=[num_actions])
-        if self.cfg["SE_learner"] == "modular_SE":
-            num_SE_obs = self.get_obs_size(self.se_cfg["obs"])
-            num_SE_outputs = self.get_obs_size(self.se_cfg["targets"])
-            self.state_estimator.init_storage(self.env.num_envs,
-                                              self.num_steps_per_env,
-                                              [num_SE_obs],
-                                              [num_SE_outputs])
 
     def attach_to_wandb(self, wandb, log_freq=100, log_graph=True):
         wandb.watch((self.alg.actor_critic.actor,
@@ -177,10 +153,6 @@ class OnPolicyRunner:
             # * Rollout
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
-
-                    if self.cfg["SE_learner"] == "modular_SE":
-                        self.do_state_estimation()
-
                     if 'PBRS' in self.policy_cfg.keys():
                         PBRS_prestep = self.get_PBRS_prestep(PBRS_weights)
 
@@ -221,9 +193,6 @@ class OnPolicyRunner:
                 self.alg.compute_returns(critic_obs)
 
             self.mean_value_loss, self.mean_surrogate_loss = self.alg.update()
-            if self.cfg['SE_learner'] == 'modular_SE':
-                SE_loss = self.state_estimator.update()
-                self.logger.add_log({'Loss/state_estimator': SE_loss})
             stop = time.time()
             self.learn_time = stop - start
             self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
@@ -267,17 +236,6 @@ class OnPolicyRunner:
                                  -self.env.cfg.scaling.clip_actions,
                                  self.env.cfg.scaling.clip_actions)
         self.env.set_states(self.policy_cfg["actions"], actions)
-
-    def do_state_estimation(self, training=True):
-        SE_obs = self.get_obs(self.se_cfg['obs'])
-        if training:
-            SE_targets = self.get_obs(self.se_cfg['targets'])
-            self.state_estimator.process_env_step(SE_obs, SE_targets)
-        state_estimates = self.state_estimator.predict(SE_obs)
-        self.set_state_estimates(state_estimates)
-
-    def set_state_estimates(self, estimates):
-        self.env.set_states(self.se_cfg['states_to_write_to'], estimates)
 
     def get_timed_out(self):
         return self.env.get_states(['timed_out']).to(self.device)
@@ -371,20 +329,6 @@ class OnPolicyRunner:
             'optimizer_state_dict': self.alg.optimizer.state_dict(),
             'iter': self.it},
                    path)
-        if self.cfg['SE_learner'] == 'modular_SE':
-            self.save_SE()
-
-    def save_SE(self):
-        if not os.path.exists(self.SE_path):
-            os.makedirs(self.SE_path)
-        path = os.path.join(self.SE_path, 'SE_{}.pt'.format(self.it))
-        torch.save({
-            'model_state_dict':
-                self.state_estimator.state_estimator.state_dict(),
-            'optimizer_state_dict':
-                self.state_estimator.optimizer.state_dict(),
-            'iter': self.it},
-                   path)
 
     def load(self, path, load_optimizer=True):
         loaded_dict = torch.load(path)
@@ -394,24 +338,12 @@ class OnPolicyRunner:
                 loaded_dict['optimizer_state_dict'])
         self.it = loaded_dict['iter']
 
-        if self.cfg['SE_learner'] == 'modular_SE':
-            SE_path = path.replace('/model_', '/SE/SE_')
-            SEloaded_dict = torch.load(SE_path)
-            self.state_estimator.state_estimator.load_state_dict(
-                SEloaded_dict['model_state_dict'])
-
     def switch_to_eval(self):
         self.alg.actor_critic.eval()
-        if self.cfg["SE_learner"] == "modular_SE":
-            self.state_estimator.state_estimator.eval()
 
     def get_inference_actions(self):
-        if self.cfg["SE_learner"] == "modular_SE":
-            self.do_state_estimation(training=False)
         obs = self.get_obs(self.policy_cfg["actor_obs"])
         return self.alg.actor_critic.actor.act_inference(obs)
 
     def export(self, path):
         self.alg.actor_critic.export_policy(path)
-        if self.cfg["SE_learner"] is not None:
-            self.state_estimator.export(path)

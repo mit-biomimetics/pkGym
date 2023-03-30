@@ -206,7 +206,6 @@ class A1RunnerCfg(LeggedRobotRunnerCfg):
         run_name = ''
         experiment_name = 'a1'
         max_iterations = 500  # number of policy updates
-        SE_learner = None
         algorithm_class_name = 'PPO'
         # per iteration
         # (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)
