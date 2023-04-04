@@ -101,6 +101,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         dof_pos_obs = dof_pos
         dof_pos_target = 0.75  # action_scale
         tau_ff = 4*[18, 18, 28]  # hip-abad, hip-pitch, knee
+        commands = [base_lin_vel, base_lin_vel, base_ang_vel]
 
 
 class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):

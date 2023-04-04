@@ -225,7 +225,7 @@ class OnPolicyRunner:
         return self.env.get_states(action_list)[0].shape[0]
 
     def get_and_log_rewards(self, reward_weights, modifier=1,
-                            mask=True):
+                            mask=None):
         '''
         Computes each reward on the fly, sends them to logging, and returns the
         total reward.
@@ -234,6 +234,9 @@ class OnPolicyRunner:
         mask: a boolean tensor of shape (num_envs), to toggle which rewards are
               computed
         '''
+
+        if mask is None:
+            mask = 1.0
         total_rewards = torch.zeros(self.env.num_envs,
                                     device=self.device, dtype=torch.float)
         for name, weight in reward_weights.items():
