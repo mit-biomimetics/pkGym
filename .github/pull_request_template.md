@@ -10,7 +10,6 @@ Point out the desired behavior, and not just the "check that this appears" (othe
 
 ## Checklist before requesting a review
 - [ ] I have linted my code with flake8 (either in your editor, or from the CLI with `flake8 gpugym/gym` and `flake8 gpugym/learning`)*
-- [ ] I have performed a self-review of my code
 - [ ] I have assigned a reviewer
 - [ ] I have added the PR to the project, and tagged with with priority
 - [ ] If it is a core feature, I have added tests.
