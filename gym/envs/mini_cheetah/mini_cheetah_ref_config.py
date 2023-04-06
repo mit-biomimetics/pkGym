@@ -105,7 +105,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
 
 
 class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
-    seed = -1
+    seed = 1
 
     class policy(MiniCheetahRunnerCfg.policy):
         actor_hidden_dims = [256, 256, 128]
@@ -157,8 +157,8 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                 feet_contact_forces = 0.
                 dof_near_home = 0.
                 reference_traj = 0.5
-                swing_grf = 0.75
-                stance_grf = 1.5
+                swing_grf = 0.  # 0.75
+                stance_grf = 0.  # 1.5
 
             class termination_weight:
                 termination = 15./100.
@@ -184,6 +184,6 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
     class runner(MiniCheetahRunnerCfg.runner):
         run_name = ''
         experiment_name = 'mini_cheetah_ref'
-        max_iterations = 500  # number of policy updates
+        max_iterations = 1000  # number of policy updates
         algorithm_class_name = 'PPO'
         num_steps_per_env = 32
