@@ -9,6 +9,48 @@ class HumanoidRunning(LeggedRobot):
 
     def _init_buffers(self):
         super()._init_buffers()
+
+        # * get the body_name to body_index dict
+        body_dict = self.gym.get_actor_rigid_body_dict(
+            self.envs[0], self.actor_handles[0])
+        # * extract a list of body_names where the index is the id number
+        body_names = [body_tuple[0] for body_tuple in
+                    sorted(body_dict.items(),
+                            key=lambda body_tuple:body_tuple[1])]
+        # * construct a list of id numbers corresponding to end_effectors
+        self.end_effector_ids = []
+        for end_effector_name in self.cfg.asset.end_effector_names:
+            self.end_effector_ids.extend([
+                body_names.index(body_name)
+                for body_name in body_names
+                if end_effector_name in body_name])
+
+        # * end_effector_pos is world-frame and converted to env_origin
+        self.end_effector_pos = (
+            self._rigid_body_pos[:, self.end_effector_ids]
+            - self.env_origins.unsqueeze(dim=1).expand(
+                self.num_envs, len(self.end_effector_ids), 3))
+        self.end_effector_quat = \
+            self._rigid_body_quat[:, self.end_effector_ids]
+
+        self.end_effector_lin_vel = torch.zeros(
+            self.num_envs, len(self.end_effector_ids), 3,
+            dtype=torch.float, device=self.device)
+        self.end_effector_ang_vel = torch.zeros(
+            self.num_envs, len(self.end_effector_ids), 3,
+            dtype=torch.float, device=self.device)
+
+        # * end_effector vels are body-relative like body vels above
+        for index in range(len(self.end_effector_ids)):
+            self.end_effector_lin_vel[:, index, :] = quat_rotate_inverse(
+                self.base_quat,
+                self._rigid_body_lin_vel[:, self.end_effector_ids]
+                                        [:, index, :])
+            self.end_effector_ang_vel[:, index, :] = quat_rotate_inverse(
+                self.base_quat,
+                self._rigid_body_ang_vel[:, self.end_effector_ids]
+                                        [:, index, :])
+
         # * separate legs and arms
         self.dof_pos_target_legs = torch.zeros(self.num_envs, 10,
                                                dtype=torch.float,
@@ -56,6 +98,25 @@ class HumanoidRunning(LeggedRobot):
         self.dof_pos_arms = self.dof_pos[:, 10:]
         self.dof_vel_legs = self.dof_vel[:, :10]
         self.dof_vel_arms = self.dof_vel[:, 10:]
+
+        # * end_effector_pos is world-frame and converted to env_origin
+        self.end_effector_pos = (
+            self._rigid_body_pos[:, self.end_effector_ids]
+            - self.env_origins.unsqueeze(dim=1).expand(
+                self.num_envs, len(self.end_effector_ids), 3))
+        self.end_effector_quat = \
+            self._rigid_body_quat[:, self.end_effector_ids]
+
+        # * end_effector vels are body-relative like body vels above
+        for index in range(len(self.end_effector_ids)):
+            self.end_effector_lin_vel[:, index, :] = quat_rotate_inverse(
+                self.base_quat,
+                self._rigid_body_lin_vel[:, self.end_effector_ids]
+                                        [:, index, :])
+            self.end_effector_ang_vel[:, index, :] = quat_rotate_inverse(
+                self.base_quat,
+                self._rigid_body_ang_vel[:, self.end_effector_ids]
+                                        [:, index, :])
 
     def _resample_commands(self, env_ids):
         super()._resample_commands(env_ids)

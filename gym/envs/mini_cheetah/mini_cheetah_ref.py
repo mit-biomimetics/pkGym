@@ -8,7 +8,6 @@ from gym.envs.mini_cheetah.mini_cheetah import MiniCheetah
 
 class MiniCheetahRef(MiniCheetah):
     def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
-        # * reference traj
         csv_path = cfg.init_state.ref_traj.format(
             LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
         self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy(),
@@ -37,30 +36,11 @@ class MiniCheetahRef(MiniCheetah):
                                     torch.cos(self.phase)), dim=1)
 
     def _resample_commands(self, env_ids):
-        """ Randommly select commands of some environments
-
-        Args:
-            env_ids (List[int]): Environments ids for which new commands are needed
-        """
-        self.commands[env_ids, 0] = torch_rand_float(
-            self.command_ranges["lin_vel_x"][0],
-            self.command_ranges["lin_vel_x"][1],
-            (len(env_ids), 1),
-            device=self.device).squeeze(1)
-        self.commands[env_ids, 1] = torch_rand_float(
-            -self.command_ranges["lin_vel_y"],
-            self.command_ranges["lin_vel_y"],
-            (len(env_ids), 1),
-            device=self.device).squeeze(1)
-        self.commands[env_ids, 2] = torch_rand_float(
-            -self.command_ranges["yaw_vel"],
-            self.command_ranges["yaw_vel"],
-            (len(env_ids), 1),
-            device=self.device).squeeze(1)
+        super()._resample_commands(env_ids)
         # * with 10% chance, reset to 0 commands
-        self.commands[env_ids, :3] *= (torch_rand_float(0, 1, (len(env_ids), 1), device=self.device).squeeze(1) < 0.9).unsqueeze(1)
-        # * set small commands to zero
-        self.commands[env_ids, :3] *= (torch.norm(self.commands[env_ids, :3], dim=1) > 0.2).unsqueeze(1)
+        rand_ids = torch_rand_float(0, 1, (len(env_ids), 1),
+                                    device=self.device).squeeze(1)
+        self.commands[env_ids, :3] *= (rand_ids < 0.9).unsqueeze(1)
 
     def _switch(self):
         c_vel = torch.linalg.norm(self.commands, dim=1)
@@ -89,7 +69,7 @@ class MiniCheetahRef(MiniCheetah):
         """REWARDS EACH LEG INDIVIDUALLY BASED ON ITS POSITION IN THE CYCLE"""
         # * dof position error
         error = self._get_ref() + self.default_dof_pos - self.dof_pos
-        error /= self.scales["dof_pos"]
+        error /= self.scales['dof_pos']
         reward = torch.mean(self._sqrdexp(error) - torch.abs(error)*0.2, dim=1)
         # * only when commanded velocity is higher
         return reward*(1-self._switch())

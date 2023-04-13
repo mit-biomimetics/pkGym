@@ -15,27 +15,36 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
 
     class init_state(MiniCheetahCfg.init_state):
         reset_mode = "reset_to_basic"
-        # * default COM for basic initialization 
+        # * default COM for basic initialization
         pos = [0.0, 0.0, 0.33]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
         default_joint_angles = {
-            "lf_haa": 0.0,
-            "lh_haa": 0.0,
-            "rf_haa": 0.0,
-            "rh_haa": 0.0,
-
-            "lf_hfe": -0.785398,
-            "lh_hfe": -0.785398,
-            "rf_hfe": -0.785398,
-            "rh_hfe": -0.785398,
-
-            "lf_kfe": 1.596976,
-            "lh_kfe": 1.596976,
-            "rf_kfe": 1.596976,
-            "rh_kfe": 1.596976,
+            "haa": 0.0,
+            "hfe": -0.785398,
+            "kfe": 1.596976,
         }
+        # * range
+        # * initialization for random range setup
+        dof_pos_range = {'haa': [-0.05, 0.05],
+                         'hfe': [-0.85, -0.6],
+                         'kfe': [-1.45, 1.72]}
+        dof_vel_range = {'haa': [0., 0.],
+                         'hfe': [0., 0.],
+                         'kfe': [0., 0.]}
+        root_pos_range = [[0., 0.],       # x
+                          [0., 0.],       # y
+                          [0.35, 0.4],    # z
+                          [0., 0.],       # roll
+                          [0., 0.],       # pitch
+                          [0., 0.]]       # yaw
+        root_vel_range = [[-0.5, 2.],  # x
+                          [0., 0.],       # y
+                          [-0.05, 0.05],  # z
+                          [0., 0.],       # roll
+                          [0., 0.],       # pitch
+                          [0., 0.]]       # yaw
 
         ref_traj = (
             "{LEGGED_GYM_ROOT_DIR}/resources/robots/"
@@ -45,7 +54,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         # * PD Drive parameters:
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
-        gait_freq = 4.
+        gait_freq = 2.
         ctrl_frequency = 100
         desired_sim_frequency = 1000
 
@@ -105,7 +114,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
 
 
 class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
-    seed = 1
+    seed = -1
 
     class policy(MiniCheetahRunnerCfg.policy):
         actor_hidden_dims = [256, 256, 128]
@@ -120,7 +129,6 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                      "commands",
                      "dof_pos_obs",
                      "dof_vel",
-                    #  "dof_pos_history",
                      "phase_obs"
                      ]
 
@@ -148,21 +156,20 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                 orientation = 1.75
                 torques = 5.e-7
                 dof_vel = 0.
-                min_base_height = 1.5  # ! check implementation
+                min_base_height = 1.5
                 collision = 0.25
-                action_rate = 0.01  # -0.01
-                action_rate2 = 0.001  # -0.001
+                action_rate = 0.01
+                action_rate2 = 0.001
                 stand_still = 0.5
                 dof_pos_limits = 0.
                 feet_contact_forces = 0.
                 dof_near_home = 0.
                 reference_traj = 0.5
-                swing_grf = 0.  # 0.75
-                stance_grf = 0.  # 1.5
+                swing_grf = 0.75
+                stance_grf = 1.5
 
             class termination_weight:
-                termination = 15./100.
-
+                termination = 0.15
     class algorithm(MiniCheetahRunnerCfg.algorithm):
         # training params
         value_loss_coef = 1.0
@@ -174,8 +181,8 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
         num_mini_batches = 6
         learning_rate = 5.e-5
         schedule = 'adaptive'  # can be adaptive, fixed
-        # discount_horizon = 0.75  # [s]
-        # GAE_bootstrap_horizon = 0.2  # [s]
+        discount_horizon = 1.  # [s]
+        GAE_bootstrap_horizon = 1.  # [s]
         gamma = 0.99
         lam = 0.99
         desired_kl = 0.01
@@ -184,6 +191,6 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
     class runner(MiniCheetahRunnerCfg.runner):
         run_name = ''
         experiment_name = 'mini_cheetah_ref'
-        max_iterations = 1000  # number of policy updates
+        max_iterations = 500  # number of policy updates
         algorithm_class_name = 'PPO'
         num_steps_per_env = 32

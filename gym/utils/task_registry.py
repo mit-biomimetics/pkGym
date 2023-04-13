@@ -234,10 +234,6 @@ class TaskRegistry():
         # * save resume path before creating a new log_dir
         resume = train_cfg.runner.resume
         if resume:
-            # * load previously trained model
-            log_root = os.path.join(LEGGED_GYM_ROOT_DIR,
-                                    'logs',
-                                    train_cfg.runner.experiment_name)
             resume_path = get_load_path(name=train_cfg.runner.experiment_name,
                                         load_run=train_cfg.runner.load_run,
                                         checkpoint=train_cfg.runner.checkpoint)

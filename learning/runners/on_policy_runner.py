@@ -156,6 +156,8 @@ class OnPolicyRunner:
                                                         mask=terminated)
                     self.logger.log_current_reward('Total_reward', rewards)
 
+                    self.logger.log_current_reward('Total_reward', rewards)
+
                     self.alg.process_env_step(rewards, dones, timed_out)
                     self.logger.update_episode_buffer(dones)
                     rewards *= 0.

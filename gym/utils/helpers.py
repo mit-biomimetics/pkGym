@@ -179,7 +179,7 @@ def update_cfg_from_args(env_cfg, cfg_train, args):
 
 def get_args():
     custom_parameters = [
-        {"name": "--task", "type": str, "default": "anymal_c_flat", "help":
+        {"name": "--task", "type": str, "default": "cartpole", "help":
             "Resume training or start testing from a checkpoint. "
             "Overrides config file if provided."},
         {"name": "--resume", "action": "store_true", "default": False, "help":
