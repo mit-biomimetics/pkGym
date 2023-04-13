@@ -1,3 +1,5 @@
+isaacgym/*
+*venv*
 logs/
 artifacts/
 gym/scripts/wandb/

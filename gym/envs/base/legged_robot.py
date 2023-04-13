@@ -90,7 +90,8 @@ class LeggedRobot(BaseTask):
         # * step physics and render each frame
         self._render()
         for _ in range(self.cfg.control.decimation):
-            self.torques = self._compute_torques()
+            # print("SEED TEST: ", torch.rand(1))
+            self.torques = (self._compute_torques()).view(self.torques.shape)
 
             if self.cfg.asset.disable_motors:
                 self.torques[:] = 0.
@@ -101,6 +102,9 @@ class LeggedRobot(BaseTask):
             if self.device == 'cpu':
                 self.gym.fetch_results(self.sim, True)
             self.gym.refresh_dof_state_tensor(self.sim)
+            self.gym.refresh_actor_root_state_tensor(self.sim)
+            self.gym.refresh_net_contact_force_tensor(self.sim)
+            self.gym.refresh_rigid_body_state_tensor(self.sim)
 
         self._post_physics_step()
         self._check_terminations_and_timeouts()
@@ -292,8 +296,7 @@ class LeggedRobot(BaseTask):
         torques = (self.p_gains*(self.dof_pos_target
                                  + self.default_dof_pos
                                  - self.dof_pos)
-                   + self.d_gains*(self.dof_vel_target - self.dof_vel)
-                   + self.tau_ff)
+                   -self.d_gains*self.dof_vel)
         torques = torch.clip(torques, -self.torque_limits, self.torque_limits)
         return torques.view(self.torques.shape)
 
@@ -666,6 +669,7 @@ class LeggedRobot(BaseTask):
         env_upper = gymapi.Vec3(0., 0., 0.)
         self.actor_handles = []
         self.envs = []
+        
         for i in range(self.num_envs):
             # * create env instance
             env_handle = self.gym.create_env(self.sim, env_lower, env_upper,
@@ -690,7 +694,6 @@ class LeggedRobot(BaseTask):
                 env_handle, robot_handle, body_props, recomputeInertia=True)
             self.envs.append(env_handle)
             self.actor_handles.append(robot_handle)
-
         self.feet_indices = torch.zeros(
             len(feet_names),
             dtype=torch.long, device=self.device)
