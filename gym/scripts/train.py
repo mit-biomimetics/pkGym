@@ -29,7 +29,7 @@ def train(train_cfg, policy_runner):
 
     policy_runner.learn(
         num_learning_iterations=train_cfg.runner.max_iterations,
-        init_at_random_ep_len=False)
+        init_at_random_ep_len=True)
 
     wandb_helper.close_wandb()
 

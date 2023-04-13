@@ -174,8 +174,6 @@ class TaskRegistry():
             # load config files
             env_cfg, _ = self.get_cfgs(name)
         set_seed(env_cfg.seed)
-        import torch
-        print("seed set 1: ", torch.rand(4))
         env = task_class(gym=self._gym, sim=self._sim, cfg=env_cfg,
                          sim_params=self.sim["params"],
                          sim_device=self.sim["sim_device"],

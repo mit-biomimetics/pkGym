@@ -26,9 +26,9 @@ class MiniCheetahCfg(LeggedRobotCfg):
         reset_mode = "reset_to_basic"
 
         # * default COM for basic initialization
-        pos = [0.0, 0.0, 0.5]  # x,y,z [m]
+        pos = [0.0, 0.0, 0.33]  # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0]  # x,y,z,w [quat]
-        lin_vel = [0.0, 0.0, 1.0]  # x,y,z [m/s]
+        lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
         ang_vel = [0.0, 0.0, 0.0]  # x,y,z [rad/s]
 
         # * initialization for random range setup
@@ -117,7 +117,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
 
 
 class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
-    seed = 100
+    seed = -1
 
     class policy(LeggedRobotRunnerCfg.policy):
         actor_hidden_dims = [256, 256, 256]
@@ -132,8 +132,7 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
             "projected_gravity",
             "commands",
             "dof_pos_obs",
-            "dof_vel",
-            # "dof_pos_history"
+            "dof_vel"
             ]
         critic_obs = [
             "base_height",
@@ -142,8 +141,7 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
             "projected_gravity",
             "commands",
             "dof_pos_obs",
-            "dof_vel",
-            # "dof_pos_history"
+            "dof_vel"
             ]
 
         actions = ["dof_pos_target"]

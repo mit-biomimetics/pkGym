@@ -90,8 +90,7 @@ class LeggedRobot(BaseTask):
         # * step physics and render each frame
         self._render()
         for _ in range(self.cfg.control.decimation):
-            # print("SEED TEST: ", torch.rand(1))
-            self.torques = (self._compute_torques()).view(self.torques.shape)
+            self.torques = self._compute_torques()
 
             if self.cfg.asset.disable_motors:
                 self.torques[:] = 0.
@@ -102,9 +101,6 @@ class LeggedRobot(BaseTask):
             if self.device == 'cpu':
                 self.gym.fetch_results(self.sim, True)
             self.gym.refresh_dof_state_tensor(self.sim)
-            self.gym.refresh_actor_root_state_tensor(self.sim)
-            self.gym.refresh_net_contact_force_tensor(self.sim)
-            self.gym.refresh_rigid_body_state_tensor(self.sim)
 
         self._post_physics_step()
         self._check_terminations_and_timeouts()
@@ -296,7 +292,8 @@ class LeggedRobot(BaseTask):
         torques = (self.p_gains*(self.dof_pos_target
                                  + self.default_dof_pos
                                  - self.dof_pos)
-                   -self.d_gains*self.dof_vel)
+                   + self.d_gains*(self.dof_vel_target - self.dof_vel)
+                   + self.tau_ff)
         torques = torch.clip(torques, -self.torque_limits, self.torque_limits)
         return torques.view(self.torques.shape)
 

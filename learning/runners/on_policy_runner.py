@@ -120,9 +120,6 @@ class OnPolicyRunner:
 
         actor_obs = self.get_obs(self.policy_cfg["actor_obs"])
         critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
-        # test seed:
-        print("SEED TEST: ", torch.rand(4).to("cuda"))
-
         self.alg.actor_critic.train()
         self.num_learning_iterations = num_learning_iterations
         self.tot_iter = self.it + num_learning_iterations
@@ -204,10 +201,7 @@ class OnPolicyRunner:
 
     def get_noisy_obs(self, obs_list, noise_dict):
         observation = self.get_obs(obs_list)
-        if self.policy_cfg['add_noise']:
-            return observation + self.get_noise(obs_list, noise_dict)
-        else:
-            return observation
+        return observation + self.get_noise(obs_list, noise_dict)
 
     def get_obs(self, obs_list):
         observation = self.env.get_states(obs_list).to(self.device)
