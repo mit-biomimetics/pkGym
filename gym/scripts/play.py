@@ -19,7 +19,6 @@ def setup(args):
     task_registry.make_gym_and_sim()
     env, env_cfg = task_registry.make_env(name=args.task, env_cfg=env_cfg)
     env.cfg.init_state.reset_mode = "reset_to_basic"
-    task_registry.prepare_sim()
     train_cfg.runner.resume = True
     runner, train_cfg = task_registry.make_alg_runner(env=env,
                                                       name=args.task,

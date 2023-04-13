@@ -55,9 +55,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
         # * PD Drive parameters:
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
-
-        dof_pos_decay = 0.35  # set to None to disable
-
         ctrl_frequency = 100
         desired_sim_frequency = 500
 
@@ -185,8 +182,8 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
         num_mini_batches = 6
         learning_rate = 1.e-3
         schedule = 'adaptive'  # can be adaptive or fixed
-        discount_horizon = 0.5  # [s]
-        GAE_bootstrap_horizon = 0.2  # [s]
+        # discount_horizon = 0.5  # [s]
+        # GAE_bootstrap_horizon = 0.2  # [s]
         desired_kl = 0.01
         max_grad_norm = 1.
 
@@ -195,7 +192,6 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
         experiment_name = 'mini_cheetah'
         # * number of policy updates
         max_iterations = 1000
-        SE_learner = None
         algorithm_class_name = 'PPO'
         # * per iteration
         # * (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)

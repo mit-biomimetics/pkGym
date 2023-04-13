@@ -98,8 +98,6 @@ class MITHumanoidCfg(LeggedRobotCfg):
                    'elbow': 5.,
                    }  # [N*m*s/rad]
 
-        # * exponential average decay for action scale
-        dof_pos_decay = None  # set to None to disable
         ctrl_frequency = 100
         desired_sim_frequency = 800
 

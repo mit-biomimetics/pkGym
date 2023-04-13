@@ -104,9 +104,6 @@ class HumanoidRunningCfg(LeggedRobotCfg):
                    'shoulder_yaw': 5.,
                    'elbow': 1.,
                    }  # [N*m*s/rad]
-
-        # * exponential average decay for action scale
-        dof_pos_decay = None  # set to None to disable
         ctrl_frequency = 100
         desired_sim_frequency = 800
 
@@ -255,14 +252,6 @@ class HumanoidRunningRunnerCfg(LeggedRobotRunnerCfg):
             class termination_weight:
                 termination = 1
 
-        class PBRS:
-            gamma = 1
-
-            class weights:
-                base_height = 1.0
-                orientation = 1.0
-                joint_regularization_legs = 1.0
-
     class algorithm(LeggedRobotRunnerCfg.algorithm):
         # algorithm training hyperparameters
         value_loss_coef = 1.0
@@ -284,7 +273,7 @@ class HumanoidRunningRunnerCfg(LeggedRobotRunnerCfg):
         num_steps_per_env = 24
         max_iterations = 1000
         run_name = 'ICRA2023'
-        experiment_name = 'PBRS_HumanoidLocomotion'
+        experiment_name = 'HumanoidLocomotion'
         save_interval = 50
         plot_input_gradients = False
         plot_parameter_gradients = False

@@ -218,13 +218,6 @@ class FixedRobot(BaseTask):
         Returns:
             [torch.Tensor]: Torques sent to the simulation
         """
-        dof_pos_target = self.dof_pos_target
-        if self.cfg.control.dof_pos_decay:
-            self.dof_pos_avg = exp_avg_filter(self.dof_pos_target,
-                                              self.dof_pos_avg,
-                                              self.cfg.control.dof_pos_decay)
-            dof_pos_target = self.dof_pos_avg
-
         actuated_dof_pos = torch.zeros(self.num_envs, self.num_actuators,
                                        device=self.device)
         actuated_dof_vel = torch.zeros(self.num_envs, self.num_actuators,
@@ -237,7 +230,7 @@ class FixedRobot(BaseTask):
                 idx += 1
 
         torques = (
-            self.p_gains * (dof_pos_target + self.default_act_pos
+            self.p_gains * (self.dof_pos_target + self.default_act_pos
                             - actuated_dof_pos)
             + self.d_gains * (self.dof_vel_target - actuated_dof_vel)
             + self.tau_ff)

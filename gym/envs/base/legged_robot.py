@@ -112,11 +112,9 @@ class LeggedRobot(BaseTask):
         return None
 
     def _post_physics_step(self):
-        """ check terminations, compute observations and rewards
-        """
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_net_contact_force_tensor(self.sim)
-        self.gym.refresh_rigid_body_state_tensor(self.sim)
+        # self.gym.refresh_rigid_body_state_tensor(self.sim)  # ! this isn't here in legacy
 
         self.episode_length_buf += 1
         self.common_step_counter += 1
@@ -132,25 +130,6 @@ class LeggedRobot(BaseTask):
             self.base_quat, self.root_states[:, 10:13])
         self.projected_gravity[:] = quat_rotate_inverse(
             self.base_quat, self.gravity_vec)
-
-        # * end_effector_pos is world-frame and converted to env_origin
-        self.end_effector_pos = (
-            self._rigid_body_pos[:, self.end_effector_ids]
-            - self.env_origins.unsqueeze(dim=1).expand(
-                self.num_envs, len(self.end_effector_ids), 3))
-        self.end_effector_quat = \
-            self._rigid_body_quat[:, self.end_effector_ids]
-
-        # * end_effector vels are body-relative like body vels above
-        for index in range(len(self.end_effector_ids)):
-            self.end_effector_lin_vel[:, index, :] = quat_rotate_inverse(
-                self.base_quat,
-                self._rigid_body_lin_vel[:, self.end_effector_ids]
-                                        [:, index, :])
-            self.end_effector_ang_vel[:, index, :] = quat_rotate_inverse(
-                self.base_quat,
-                self._rigid_body_ang_vel[:, self.end_effector_ids]
-                                        [:, index, :])
 
         self.base_height = self.root_states[:, 2:3]
 
@@ -168,13 +147,6 @@ class LeggedRobot(BaseTask):
                 self._push_robots()
 
     def _reset_idx(self, env_ids):
-        """ Reset some environments.
-            Calls self._reset_dofs(env_ids), self._reset_root_states(env_ids)
-            Resets some buffers
-
-        Args:
-            env_ids (list[int]): List of environment ids which must be reset
-        """
         if len(env_ids) == 0:
             return
 
@@ -317,15 +289,7 @@ class LeggedRobot(BaseTask):
         return props
 
     def _compute_torques(self):
-        if self.cfg.control.dof_pos_decay:
-            self.dof_pos_avg = exp_avg_filter(self.dof_pos_target,
-                                              self.dof_pos_avg,
-                                              self.cfg.control.dof_pos_decay)
-            dof_pos_target = self.dof_pos_avg
-        else:
-            dof_pos_target = self.dof_pos_target
-
-        torques = (self.p_gains*(dof_pos_target
+        torques = (self.p_gains*(self.dof_pos_target
                                  + self.default_dof_pos
                                  - self.dof_pos)
                    + self.d_gains*(self.dof_vel_target - self.dof_vel)
@@ -501,54 +465,9 @@ class LeggedRobot(BaseTask):
         self.base_height = torch.zeros(self.num_envs, 1,
                                        dtype=torch.float, device=self.device)
 
-        # * get the body_name to body_index dict
-        body_dict = self.gym.get_actor_rigid_body_dict(
-            self.envs[0], self.actor_handles[0])
-        # * extract a list of body_names where the index is the id number
-        body_names = [body_tuple[0] for body_tuple in
-                      sorted(body_dict.items(),
-                             key=lambda body_tuple:body_tuple[1])]
-        # * construct a list of id numbers corresponding to end_effectors
-        self.end_effector_ids = []
-        for end_effector_name in self.cfg.asset.end_effector_names:
-            self.end_effector_ids.extend([
-                body_names.index(body_name)
-                for body_name in body_names
-                if end_effector_name in body_name])
-
-        # * end_effector_pos is world-frame and converted to env_origin
-        self.end_effector_pos = (
-            self._rigid_body_pos[:, self.end_effector_ids]
-            - self.env_origins.unsqueeze(dim=1).expand(
-                self.num_envs, len(self.end_effector_ids), 3))
-        self.end_effector_quat = \
-            self._rigid_body_quat[:, self.end_effector_ids]
-
-        self.end_effector_lin_vel = torch.zeros(
-            self.num_envs, len(self.end_effector_ids), 3,
-            dtype=torch.float, device=self.device)
-        self.end_effector_ang_vel = torch.zeros(
-            self.num_envs, len(self.end_effector_ids), 3,
-            dtype=torch.float, device=self.device)
-
-        # * end_effector vels are body-relative like body vels above
-        for index in range(len(self.end_effector_ids)):
-            self.end_effector_lin_vel[:, index, :] = quat_rotate_inverse(
-                self.base_quat,
-                self._rigid_body_lin_vel[:, self.end_effector_ids]
-                                        [:, index, :])
-            self.end_effector_ang_vel[:, index, :] = quat_rotate_inverse(
-                self.base_quat,
-                self._rigid_body_ang_vel[:, self.end_effector_ids]
-                                        [:, index, :])
-
         if self.cfg.terrain.measure_heights:
             self.height_points = self._init_height_points()
         self.measured_heights = 0
-
-        self.dof_pos_avg = torch.zeros(
-            self.num_envs, self.num_actuators,
-            dtype=torch.float, device=self.device)
 
         # * joint positions offsets and PD gains
         self.default_dof_pos = torch.zeros(
@@ -723,8 +642,6 @@ class LeggedRobot(BaseTask):
         body_names = self.gym.get_asset_rigid_body_names(robot_asset)
         self.dof_names = self.gym.get_asset_dof_names(robot_asset)
         self.num_bodies = len(body_names)
-        # * self.num_dofs = len(self.dof_names)
-        # what is this comment? # ! replaced with num_dof
         feet_names = [s for s in body_names if self.cfg.asset.foot_name in s]
         penalized_contact_names = []
         for name in self.cfg.asset.penalize_contacts_on:

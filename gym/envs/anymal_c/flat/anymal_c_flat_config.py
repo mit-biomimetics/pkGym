@@ -69,7 +69,6 @@ class AnymalCFlatCfg(LeggedRobotCfg):
         use_actuator_network = False
         actuator_net_file = "{LEGGED_GYM_ROOT_DIR}/resources/" \
                             + "actuator_nets/anydrive_v3_lstm.pt"
-        dof_pos_decay = 0.35  # set to None to disable
         ctrl_frequency = 80
         desired_sim_frequency = 400
 
@@ -196,6 +195,5 @@ class AnymalCFlatRunnerCfg(LeggedRobotRunnerCfg):
         run_name = ''
         experiment_name = 'flat_anymal_c'
         algorithm_class_name = 'PPO'
-        SE_learner = None
         max_iterations = 1000  # number of policy updates
         num_steps_per_env = 24

@@ -123,9 +123,6 @@ class LeggedRobotCfg(BaseConfig):
         # * PD Drive parameters:
         stiffness = {'joint_a': 10.0, 'joint_b': 15.}  # [N*m/rad]
         damping = {'joint_a': 1.0, 'joint_b': 1.5}     # [N*m*s/rad]
-
-        q_des_decay = None
-
         ctrl_frequency = 100
         desired_sim_frequency = 200
 
@@ -265,7 +262,6 @@ class LeggedRobotRunnerCfg(BaseConfig):
         algorithm_class_name = 'PPO'
         num_steps_per_env = 24
         max_iterations = 1500
-        SE_learner = None
         save_interval = 50
         run_name = ''
         experiment_name = 'legged_robot'

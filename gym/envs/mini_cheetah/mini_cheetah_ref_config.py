@@ -55,7 +55,6 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
         gait_freq = 2.
-        dof_pos_decay = None  # set to None to disable
         ctrl_frequency = 100
         desired_sim_frequency = 1000
 
@@ -111,6 +110,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         dof_pos_obs = dof_pos
         dof_pos_target = 0.75  # action_scale
         tau_ff = 4*[18, 18, 28]  # hip-abad, hip-pitch, knee
+        commands = [base_lin_vel, base_lin_vel, base_ang_vel]
 
 
 class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
@@ -170,18 +170,6 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
 
             class termination_weight:
                 termination = 0.15
-
-        # class PBRS:
-        #     gamma = 1
-
-        #     class weights:
-        #         lin_vel_z = 1.
-        #         reference_traj = 1.
-        #         orientation = 1.
-        #         min_base_height = 1.
-        #         swing_grf = 0.75
-        #         stance_grf = 1.5
-
     class algorithm(MiniCheetahRunnerCfg.algorithm):
         # training params
         value_loss_coef = 1.0
@@ -195,42 +183,12 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
         schedule = 'adaptive'  # can be adaptive, fixed
         discount_horizon = 1.  # [s]
         GAE_bootstrap_horizon = 1.  # [s]
-        # gamma = 0.99
-        # lam = 0.99
         desired_kl = 0.01
         max_grad_norm = 1.
-
-    class state_estimator:
-        num_learning_epochs = 10
-        # mini batch size = num_envs*nsteps / nminibatches
-        num_mini_batches = 1
-        obs = [
-            "base_ang_vel",
-            "projected_gravity",
-            "dof_pos",
-            "dof_vel"]
-
-        targets = [
-            "base_height",
-            "base_lin_vel"]
-
-        states_to_write_to = targets
-        # * neural network params
-
-        class neural_net:
-            activation = "elu"
-            hidden_dims = [256, 128]  # None will default to 256, 128
-            # dropouts: randomly zeros output of a node.
-            # specify the probability of a dropout, 0 means no dropouts.
-            # Done per layer, including initial layer
-            # (input-first, no last-output)
-            # len(dropouts) == len(hidden_dims)
-            dropouts = [0.1, 0.1, 0.1]
 
     class runner(MiniCheetahRunnerCfg.runner):
         run_name = ''
         experiment_name = 'mini_cheetah_ref'
         max_iterations = 500  # number of policy updates
-        SE_learner = 'modular_SE'
         algorithm_class_name = 'PPO'
         num_steps_per_env = 32
