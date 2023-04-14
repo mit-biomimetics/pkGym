@@ -1,7 +1,7 @@
 from gym.envs.mini_cheetah.mini_cheetah_config \
     import MiniCheetahCfg, MiniCheetahRunnerCfg
 
-BASE_HEIGHT_REF = 0.32
+BASE_HEIGHT_REF = 0.33
 
 
 class MiniCheetahRefCfg(MiniCheetahCfg):
@@ -54,7 +54,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         # * PD Drive parameters:
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
-        gait_freq = 2.
+        gait_freq = 4.
         ctrl_frequency = 100
         desired_sim_frequency = 1000
 
@@ -62,7 +62,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         resampling_time = 4.  # time before command are changed[s]
 
         class ranges:
-            lin_vel_x = [-1.0, 2.0]  # min max [m/s]
+            lin_vel_x = [0., 3.]  # min max [m/s]
             lin_vel_y = 1.  # max [m/s]
             yaw_vel = 3.14/2.    # max [rad/s]
 
@@ -151,7 +151,7 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
             class weights:
                 tracking_lin_vel = 4.0
                 tracking_ang_vel = 1.0
-                lin_vel_z = 0.6
+                lin_vel_z = 0.
                 ang_vel_xy = 0.
                 orientation = 1.75
                 torques = 5.e-7
@@ -160,13 +160,13 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                 collision = 0.25
                 action_rate = 0.01
                 action_rate2 = 0.001
-                stand_still = 0.5
+                stand_still = 0.
                 dof_pos_limits = 0.
                 feet_contact_forces = 0.
                 dof_near_home = 0.
                 reference_traj = 0.5
-                swing_grf = 0.75
-                stance_grf = 1.5
+                swing_grf = 3.
+                stance_grf = 3.
 
             class termination_weight:
                 termination = 0.15
@@ -189,6 +189,6 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
     class runner(MiniCheetahRunnerCfg.runner):
         run_name = ''
         experiment_name = 'mini_cheetah_ref'
-        max_iterations = 500  # number of policy updates
+        max_iterations = 1000  # number of policy updates
         algorithm_class_name = 'PPO'
         num_steps_per_env = 32
