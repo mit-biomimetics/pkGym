@@ -103,7 +103,6 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
     class scaling(MiniCheetahCfg.scaling):
         base_ang_vel = 3.14/(BASE_HEIGHT_REF/9.81)**0.5
         base_lin_vel = BASE_HEIGHT_REF
-        commands = 1
         dof_vel = 100.  # ought to be roughly max expected speed.
         base_height = BASE_HEIGHT_REF
         dof_pos = 4*[0.1, 1., 2]  # hip-abad, hip-pitch, knee
