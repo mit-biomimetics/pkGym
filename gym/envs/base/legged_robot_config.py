@@ -225,7 +225,6 @@ class LeggedRobotRunnerCfg(BaseConfig):
 
         class reward:
             class weights:
-                termination = .0
                 tracking_lin_vel = .0
                 tracking_ang_vel = 0.
                 lin_vel_z = 0
@@ -239,6 +238,8 @@ class LeggedRobotRunnerCfg(BaseConfig):
                 action_rate2 = 0.
                 stand_still = 0.
                 dof_pos_limits = 0.
+            class termination_weight:
+                termination = 0.01
 
     class algorithm:
         # * training params
