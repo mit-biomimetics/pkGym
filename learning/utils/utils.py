@@ -94,7 +94,7 @@ def set_discount_from_horizon(dt, horizon):
     """ Calculate a discount-factor from the desired discount horizon,
     and the time-step (dt).
     """
-
+    assert (dt > 0), "Invalid time-step"
     if horizon == 0:
         discount_factor = 0
     else:

@@ -1,6 +1,8 @@
 import isaacgym
 import torch
+import sys
 import pytest
+from unittest.mock import patch
 from gym.envs import *
 from gym.utils import get_args
 from gym.utils import task_registry as _task_registry
@@ -10,20 +12,21 @@ environment_list = []
 
 
 def pytest_sessionstart(session):
-    args = get_args()
-    args.headless = True
-    _task_registry.make_gym()
-    for env_name in _task_registry.task_classes.keys():
-        print(env_name)
-        args.task = env_name  # todo adjust make_sim args input
-        env_cfg, train_cfg = _task_registry.create_cfgs(args)
-        _task_registry.update_sim_cfg(args)
-        _task_registry.make_sim()
-        env, _ = _task_registry.make_env(name=env_name,
-                                         env_cfg=env_cfg)
-        environment_dict[env_name] = env
-        environment_list.append(environment_dict[env_name])
-        _task_registry._gym.destroy_sim(_task_registry._sim)
+    with patch.object(sys, 'argv', sys.argv[:1]):
+        args = get_args()
+        args.headless = True
+        _task_registry.make_gym()
+        for env_name in _task_registry.task_classes.keys():
+            print(env_name)
+            args.task = env_name
+            env_cfg, train_cfg = _task_registry.create_cfgs(args)
+            _task_registry.update_sim_cfg(args)
+            _task_registry.make_sim()
+            env = _task_registry.make_env(name=env_name,
+                                          env_cfg=env_cfg)
+            environment_dict[env_name] = env
+            environment_list.append(environment_dict[env_name])
+            _task_registry._gym.destroy_sim(_task_registry._sim)
     pass
 
 
@@ -43,8 +46,9 @@ def train_cfg():
 
 
 @pytest.fixture
-def args():
-    return args
+def args(monkeypatch):
+    monkeypatch.setattr(sys, 'argv', sys.argv[:1])
+    return get_args()
 
 
 @pytest.fixture

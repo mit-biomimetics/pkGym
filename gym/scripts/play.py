@@ -17,13 +17,10 @@ def setup(args):
     env_cfg.commands.resampling_time = 9999
     env_cfg.env.episode_length_s = 9999
     task_registry.make_gym_and_sim()
-    env, env_cfg = task_registry.make_env(name=args.task, env_cfg=env_cfg)
+    env = task_registry.make_env(args.task, env_cfg)
     env.cfg.init_state.reset_mode = "reset_to_basic"
     train_cfg.runner.resume = True
-    runner, train_cfg = task_registry.make_alg_runner(env=env,
-                                                      name=args.task,
-                                                      args=args,
-                                                      train_cfg=train_cfg)
+    runner = task_registry.make_alg_runner(env, train_cfg)
 
     # * switch to evaluation mode (dropout for example)
     runner.switch_to_eval()
