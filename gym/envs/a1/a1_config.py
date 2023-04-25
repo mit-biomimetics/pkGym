@@ -71,8 +71,6 @@ class A1Cfg(LeggedRobotCfg):
         stiffness = {'joint': 20.}  # [N*m/rad]
         damping = {'joint': 0.5}     # [N*m*s/rad]
 
-        dof_pos_decay = 0.35  # set to None to disable
-
         ctrl_frequency = 100
         desired_sim_frequency = 500
 
@@ -167,7 +165,6 @@ class A1RunnerCfg(LeggedRobotRunnerCfg):
             projected_gravity = 0.02
 
         class reward(LeggedRobotRunnerCfg.policy.reward):
-            make_PBRS = []
 
             class weights(LeggedRobotRunnerCfg.policy.reward.weights):
                 tracking_lin_vel = 1.0
@@ -208,7 +205,6 @@ class A1RunnerCfg(LeggedRobotRunnerCfg):
         run_name = ''
         experiment_name = 'a1'
         max_iterations = 500  # number of policy updates
-        SE_learner = None
         algorithm_class_name = 'PPO'
         # per iteration
         # (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)

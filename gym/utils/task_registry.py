@@ -125,7 +125,8 @@ class TaskRegistry():
         self.sim["graphics_device_id"] = args.graphics_device_id
         self.sim["physics_engine"] = args.physics_engine
         self.sim["headless"] = args.headless
-
+        if self.sim["headless"]:
+            self.sim["graphics_device_id"] = -1
         self.sim["params"] = gymapi.SimParams()
         self.sim["params"].physx.use_gpu = args.use_gpu
         self.sim["params"].physx.num_subscenes = args.subscenes
@@ -145,12 +146,6 @@ class TaskRegistry():
             self.sim["graphics_device_id"],
             self.sim["physics_engine"],
             self.sim["params"])
-
-    def prepare_sim(self):
-        """
-        Must be called before running simulator, after adding all environments.
-        """
-        self._gym.prepare_sim(self._sim)
 
     def make_env(self, name, env_cfg) -> VecEnv:
         if name in self.task_classes:

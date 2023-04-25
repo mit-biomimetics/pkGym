@@ -14,11 +14,11 @@ def setup(args):
     env_cfg.env.num_envs = min(env_cfg.env.num_envs, 16)
     if hasattr(env_cfg, "push_robots"):
         env_cfg.push_robots.toggle = False
+    env_cfg.commands.resampling_time = 9999
     env_cfg.env.episode_length_s = 9999
     task_registry.make_gym_and_sim()
     env = task_registry.make_env(args.task, env_cfg)
     env.cfg.init_state.reset_mode = "reset_to_basic"
-    task_registry.prepare_sim()
     train_cfg.runner.resume = True
     runner = task_registry.make_alg_runner(env, train_cfg)
 

@@ -1,9 +1,40 @@
 <?xml version="1.0" ?>
 <robot name="mini_cheetah">
+<!-- Mini Cheetah "rotor" URDF -->
+
+<!-- 
+This URDF contains information for the MIT Mini Cheetah, suitable for use in
+IsaacGym
+Rotor inertia approximations are included via the "armature" property 
+
+Rotor mass: 
+    0.055 kg 
+Rotor inertia: 
+    63e-6 kgm2 on axis of rotation 
+Gearing: 
+    Ab/ad: 6 
+    Hip:   6 
+    Knee:  9.33
+Armature inertia:
+    Ab/ad: 6*^2*63e-6 = 0.002268
+    Hip:   6^2*63e-6 = 0.002268
+    Knee:  9.33^2*63e-6 = 0.005484
+Rotor damping: 
+    0.01 Nms
+Rotor dry friction: 
+    Not used - calculated in Robot-Software as q_dot*dryFriction, but IsaacGym
+    calculated dry friction from the applied normal force on the joint
+    0.2 Nm/s
+-->
+
 <!-- Base -->
 <link name="base">
     <inertial>
-        <mass value="3.3"/>
+        <!-- Rotor mass added directly to base of robot -->
+        <!-- Rotor masses don't move much relative to base, easier bookkeeping -->
+        <!-- Base body mass -->
+        <!-- <mass value="3.3"/>  -->
+        <mass value="3.96"/>        <!-- Rotor mass: 12 motors * 0.055 kg / motor -->
         <origin xyz="0.0 0.0 0.0"/>
         <inertia ixx="0.011253" ixy="0" ixz="0" iyy="0.362030" iyz="0" izz="0.042673"/>
     </inertial>
@@ -17,6 +48,7 @@
     </collision>
 </link>
 
+
 <!-- RF Leg -->
 <!-- RF Hip and HAA -->
 <joint name="1_rf_haa" type="revolute">
@@ -24,7 +56,7 @@
     <origin rpy="0 0 0" xyz="0.14775 -0.049 0.0"/>
     <parent link="base"/>
     <child link="rf_hip"/>
-    <limit effort="18" lower="-1.5" upper="1.5" velocity="41"/>
+    <limit effort="18" lower="-1.5" upper="1.5" velocity="41" armature="0.002268" damping="0.01"/>
 </joint>
 
 <link name="rf_hip">
@@ -51,7 +83,7 @@
     <origin rpy="0.0 0.0 0.0" xyz="0.055 -0.019 0.00"/>
     <parent link="rf_hip"/>
     <child link="rf_thigh"/>
-    <limit effort="18" lower="-2.6" upper="2.6" velocity="41"/>
+    <limit effort="18" lower="-2.6" upper="2.6" velocity="41" armature="0.002268" damping="0.01"/>
 </joint>
 
 <link name="rf_thigh">
@@ -80,7 +112,7 @@
     <origin rpy="0.0 0 0.0" xyz="0.0 -0.049 -0.2085"/>
     <parent link="rf_thigh"/>
     <child link="rf_shank"/>
-    <limit effort="28" lower="-2.7" upper="2.7" velocity="26.8"/>
+    <limit effort="28" lower="-2.7" upper="2.7" velocity="26.8" armature="0.005484" damping="0.01"/>
 </joint>
 
 <link name="rf_shank">
@@ -129,7 +161,7 @@
     <origin rpy="0 0 0" xyz="0.14775 0.049 0.0"/>
     <parent link="base"/>
     <child link="lf_hip"/>
-    <limit effort="18" lower="-1.5" upper="1.5" velocity="41"/>
+    <limit effort="18" lower="-1.5" upper="1.5" velocity="41" armature="0.002268" damping="0.01"/>
 </joint>
 
 <link name="lf_hip">
@@ -154,7 +186,7 @@
     <origin rpy="0.0 0.0 0.0" xyz="0.055 0.019 0.00"/>
     <parent link="lf_hip"/>
     <child link="lf_thigh"/>
-    <limit effort="18" lower="-2.6" upper="2.6" velocity="41"/>
+    <limit effort="18" lower="-2.6" upper="2.6" velocity="41" armature="0.002268" damping="0.01"/>
 </joint>
 
 <link name="lf_thigh">
@@ -181,7 +213,7 @@
     <origin rpy="0.0 0 0.0" xyz="0.0 0.049 -0.2085"/>
     <parent link="lf_thigh"/>
     <child link="lf_shank"/>
-    <limit effort="28" lower="-2.7" upper="2.7" velocity="26.8"/>
+    <limit effort="28" lower="-2.7" upper="2.7" velocity="26.8" armature="0.005484" damping="0.01"/>
 </joint>
 
 <link name="lf_shank">
@@ -230,7 +262,7 @@
     <origin rpy="0 3.141592 0" xyz="-0.14775 -0.049 0.0"/>
     <parent link="base"/>
     <child link="rh_hip"/>
-    <limit effort="18" lower="-1.5" upper="1.5" velocity="41"/>
+    <limit effort="18" lower="-1.5" upper="1.5" velocity="41" armature="0.002268" damping="0.01"/>
 </joint>
 
 <link name="rh_hip">
@@ -257,7 +289,7 @@
     <origin rpy="0.0 3.141592 0.0" xyz="0.055 -0.019 0.00"/>
     <parent link="rh_hip"/>
     <child link="rh_thigh"/>
-    <limit effort="18" lower="-2.6" upper="2.6" velocity="41"/>
+    <limit effort="18" lower="-2.6" upper="2.6" velocity="41" armature="0.002268" damping="0.01"/>
 </joint>
 
 <link name="rh_thigh">
@@ -286,7 +318,7 @@
     <origin rpy="0.0 0 0.0" xyz="0.0 -0.049 -0.2085"/>
     <parent link="rh_thigh"/>
     <child link="rh_shank"/>
-    <limit effort="28" lower="-2.7" upper="2.7" velocity="26.8"/>
+    <limit effort="28" lower="-2.7" upper="2.7" velocity="26.8" armature="0.005484" damping="0.01"/>
 </joint>
 
 <link name="rh_shank">
@@ -335,7 +367,7 @@
     <origin rpy="0 3.141592 0" xyz="-0.14775 0.049 0.0"/>
     <parent link="base"/>
     <child link="lh_hip"/>
-    <limit effort="18" lower="-1.5" upper="1.5" velocity="41"/>
+    <limit effort="18" lower="-1.5" upper="1.5" velocity="41" armature="0.002268" damping="0.01"/>
 </joint>
 
 <link name="lh_hip">
@@ -360,7 +392,7 @@
     <origin rpy="0.0 3.141592 0.0" xyz="0.055 0.019 0.00"/>
     <parent link="lh_hip"/>
     <child link="lh_thigh"/>
-    <limit effort="18" lower="-2.6" upper="2.6" velocity="41"/>
+    <limit effort="18" lower="-2.6" upper="2.6" velocity="41" armature="0.002268" damping="0.01"/>
 </joint>
 
 <link name="lh_thigh">
@@ -389,7 +421,7 @@
     <origin rpy="0.0 0 0.0" xyz="0.0 0.049 -0.2085"/>
     <parent link="lh_thigh"/>
     <child link="lh_shank"/>
-    <limit effort="28" lower="-2.7" upper="2.7" velocity="26.8"/>
+    <limit effort="28" lower="-2.7" upper="2.7" velocity="26.8" armature="0.005484" damping="0.01"/>
 </joint>
 
 <link name="lh_shank">

@@ -55,11 +55,8 @@ class MiniCheetahCfg(LeggedRobotCfg):
         # * PD Drive parameters:
         stiffness = {'haa': 20., 'hfe': 20., 'kfe': 20.}
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
-
-        dof_pos_decay = 0.35  # set to None to disable
-
         ctrl_frequency = 100
-        desired_sim_frequency = 500
+        desired_sim_frequency = 1000
 
     class commands:
         # * time before command are changed[s]
@@ -71,7 +68,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
             yaw_vel = 1              # max [rad/s]
 
     class push_robots:
-        toggle = True
+        toggle = False
         interval_s = 1
         max_push_vel_xy = 0.5
 
@@ -106,16 +103,17 @@ class MiniCheetahCfg(LeggedRobotCfg):
         tracking_sigma = 0.25
 
     class scaling(LeggedRobotCfg.scaling):
-        base_ang_vel = 3.14*(BASE_HEIGHT_REF/9.81)**0.5
+        base_ang_vel = 1.
         base_lin_vel = 1.
         commands = 1
         dof_vel = 100.  # ought to be roughly max expected speed.
-        base_height = BASE_HEIGHT_REF
-        dof_pos = 4*[0.1, 1., 2]  # hip-abad, hip-pitch, knee
+        base_height = 1
+        dof_pos = 1
         dof_pos_obs = dof_pos
         # * Action scales
         dof_pos_target = dof_pos
-        tau_ff = 4*[18, 18, 28]  # hip-abad, hip-pitch, knee
+        # tau_ff = 4*[18, 18, 28]  # hip-abad, hip-pitch, knee
+        clip_actions = 1000.
 
 
 class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
@@ -134,8 +132,8 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
             "projected_gravity",
             "commands",
             "dof_pos_obs",
-            "dof_vel",
-            "dof_pos_history"]
+            "dof_vel"
+            ]
         critic_obs = [
             "base_height",
             "base_lin_vel",
@@ -143,11 +141,12 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
             "projected_gravity",
             "commands",
             "dof_pos_obs",
-            "dof_vel",
-            "dof_pos_history"]
+            "dof_vel"
+            ]
 
         actions = ["dof_pos_target"]
 
+        add_noise = False
         class noise:
             dof_pos_obs = 0.005  # can be made very low
             dof_vel = 0.005
@@ -156,13 +155,13 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
 
         class reward(LeggedRobotRunnerCfg.policy.reward):
             class weights(LeggedRobotRunnerCfg.policy.reward.weights):
-                tracking_lin_vel = 1.0
-                tracking_ang_vel = 1.0
+                tracking_lin_vel = 5.0
+                tracking_ang_vel = 5.0
                 lin_vel_z = 0.
                 ang_vel_xy = 0.0
                 orientation = 1.0
                 torques = 5.e-7
-                dof_vel = 0.
+                dof_vel = 1.
                 base_height = 1.
                 action_rate = 0.001
                 action_rate2 = 0.0001
@@ -172,7 +171,7 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
                 dof_near_home = 1.
 
             class termination_weight:
-                termination = 1.
+                termination = 0.01
 
     class algorithm(LeggedRobotRunnerCfg.algorithm):
         # * training params
@@ -180,13 +179,13 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
         use_clipped_value_loss = True
         clip_param = 0.2
         entropy_coef = 0.01
-        num_learning_epochs = 5
+        num_learning_epochs = 6
         # * mini batch size = num_envs*nsteps / nminibatches
-        num_mini_batches = 4
-        learning_rate = 1.e-3
+        num_mini_batches = 6
+        learning_rate = 1.e-4
         schedule = 'adaptive'  # can be adaptive or fixed
-        discount_horizon = 0.5  # [s]
-        GAE_bootstrap_horizon = 0.2  # [s]
+        discount_horizon = 1.  # [s]
+        GAE_bootstrap_horizon = 1.  # [s]
         desired_kl = 0.01
         max_grad_norm = 1.
 
@@ -195,7 +194,6 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
         experiment_name = 'mini_cheetah'
         # * number of policy updates
         max_iterations = 1000
-        SE_learner = None
         algorithm_class_name = 'PPO'
         # * per iteration
         # * (n_steps in Rudin 2021 paper - batch_size = n_steps * n_robots)

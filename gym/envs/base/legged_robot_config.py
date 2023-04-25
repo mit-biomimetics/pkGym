@@ -45,7 +45,7 @@ class LeggedRobotCfg(BaseConfig):
         horizontal_scale = 0.1  # [m]
         vertical_scale = 0.005  # [m]
         border_size = 25  # [m]
-        curriculum = True
+        curriculum = False
         static_friction = 1.0
         dynamic_friction = 1.0
         restitution = 0.
@@ -123,9 +123,6 @@ class LeggedRobotCfg(BaseConfig):
         # * PD Drive parameters:
         stiffness = {'joint_a': 10.0, 'joint_b': 15.}  # [N*m/rad]
         damping = {'joint_a': 1.0, 'joint_b': 1.5}     # [N*m*s/rad]
-
-        q_des_decay = None
-
         ctrl_frequency = 100
         desired_sim_frequency = 200
 
@@ -217,7 +214,6 @@ class LeggedRobotRunnerCfg(BaseConfig):
             "critic_obs_can_be_the_same_or_different_than_actor_obs"]
 
         actions = ["q_des"]
-        # add_noise = True
 
         class noise:
             dof_pos_obs = 0.01
@@ -229,7 +225,6 @@ class LeggedRobotRunnerCfg(BaseConfig):
 
         class reward:
             class weights:
-                termination = .0
                 tracking_lin_vel = .0
                 tracking_ang_vel = 0.
                 lin_vel_z = 0
@@ -243,6 +238,8 @@ class LeggedRobotRunnerCfg(BaseConfig):
                 action_rate2 = 0.
                 stand_still = 0.
                 dof_pos_limits = 0.
+            class termination_weight:
+                termination = 0.01
 
     class algorithm:
         # * training params
@@ -265,7 +262,6 @@ class LeggedRobotRunnerCfg(BaseConfig):
         algorithm_class_name = 'PPO'
         num_steps_per_env = 24
         max_iterations = 1500
-        SE_learner = None
         save_interval = 50
         run_name = ''
         experiment_name = 'legged_robot'

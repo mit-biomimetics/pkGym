@@ -36,9 +36,8 @@ import wandb
 import torch
 from isaacgym.torch_utils import torch_rand_float
 
-from learning.algorithms import PPO, StateEstimator
+from learning.algorithms import PPO
 from learning.modules import ActorCritic
-from learning.modules import StateEstimatorNN
 from learning.env import VecEnv
 from learning.utils import remove_zero_weighted_rewards
 from learning.utils import Logger
@@ -67,17 +66,6 @@ class OnPolicyRunner:
         self.alg: PPO = alg_class(actor_critic,
                                   device=self.device, **self.alg_cfg)
 
-        if self.cfg["SE_learner"] == "modular_SE":
-            num_SE_obs = self.get_obs_size(self.se_cfg["obs"])
-            num_SE_outputs = self.get_obs_size(self.se_cfg["targets"])
-            state_estimator_nn = StateEstimatorNN(num_SE_obs,
-                                                  num_SE_outputs,
-                                                  **self.se_cfg["neural_net"])
-            state_estimator_nn.to(self.device)
-            self.state_estimator = StateEstimator(state_estimator_nn,
-                                                  device=self.device,
-                                                  **self.se_cfg)
-
         self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
         self.tot_timesteps = 0
@@ -97,11 +85,7 @@ class OnPolicyRunner:
             list(self.policy_cfg["reward"]["weights"].keys()) \
             + list(self.policy_cfg["reward"]["termination_weight"].keys())
 
-        # * initialize PBRS logging.
-        if 'PBRS' in self.policy_cfg.keys():
-            reward_keys_to_log += [
-                "PBRS_" + x for x in self.policy_cfg['PBRS']['weights'].keys()]
-
+        reward_keys_to_log += ["Total_reward"]
         self.logger.initialize_buffers(self.env.num_envs, reward_keys_to_log)
 
     def parse_train_cfg(self, train_cfg):
@@ -110,11 +94,6 @@ class OnPolicyRunner:
 
         remove_zero_weighted_rewards(train_cfg['policy']['reward']['weights'])
         self.policy_cfg = train_cfg['policy']
-
-        if 'state_estimator' in train_cfg:
-            self.se_cfg = train_cfg['state_estimator']
-        else:
-            self.se_cfg = None
 
     def init_storage(self):
         num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
@@ -125,13 +104,6 @@ class OnPolicyRunner:
                               actor_obs_shape=[num_actor_obs],
                               critic_obs_shape=[num_critic_obs],
                               action_shape=[num_actions])
-        if self.cfg["SE_learner"] == "modular_SE":
-            num_SE_obs = self.get_obs_size(self.se_cfg["obs"])
-            num_SE_outputs = self.get_obs_size(self.se_cfg["targets"])
-            self.state_estimator.init_storage(self.env.num_envs,
-                                              self.num_steps_per_env,
-                                              [num_SE_obs],
-                                              [num_SE_outputs])
 
     def attach_to_wandb(self, wandb, log_freq=100, log_graph=True):
         wandb.watch((self.alg.actor_critic.actor,
@@ -148,7 +120,6 @@ class OnPolicyRunner:
 
         actor_obs = self.get_obs(self.policy_cfg["actor_obs"])
         critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
-
         self.alg.actor_critic.train()
         self.num_learning_iterations = num_learning_iterations
         self.tot_iter = self.it + num_learning_iterations
@@ -158,23 +129,12 @@ class OnPolicyRunner:
         reward_weights = self.policy_cfg['reward']['weights']
         termination_weight = self.policy_cfg['reward']['termination_weight']
         rewards = 0.*self.get_rewards(reward_weights)
-        if 'PBRS' in self.policy_cfg.keys():
-            PBRS_weights = self.policy_cfg['PBRS']['weights']
-            remove_zero_weighted_rewards(PBRS_weights)
-            PBRS_gamma = self.policy_cfg['PBRS']['gamma']
 
         for self.it in range(self.it+1, self.tot_iter+1):
             start = time.time()
             # * Rollout
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
-
-                    if self.cfg["SE_learner"] == "modular_SE":
-                        self.do_state_estimation()
-
-                    if 'PBRS' in self.policy_cfg.keys():
-                        PBRS_prestep = self.get_PBRS_prestep(PBRS_weights)
-
                     actions = self.alg.act(actor_obs, critic_obs)
                     self.set_actions(actions)
                     self.env.step()
@@ -193,11 +153,11 @@ class OnPolicyRunner:
                                                         mask=~terminated)
                     rewards += self.get_and_log_rewards(termination_weight,
                                                         mask=terminated)
+                    self.logger.log_current_reward('Total_reward', rewards)
 
-                    if 'PBRS' in self.policy_cfg.keys():
-                        rewards += self.get_and_log_PBRS_rewards(
-                                PBRS_weights, PBRS_prestep=PBRS_prestep,
-                                gamma=PBRS_gamma, mask=~dones)
+                    self.logger.log_current_reward('Total_reward', rewards)
+
+                    self.logger.log_current_reward('Total_reward', rewards)
 
                     self.alg.process_env_step(rewards, dones, timed_out)
                     self.logger.update_episode_buffer(dones)
@@ -210,9 +170,6 @@ class OnPolicyRunner:
                 self.alg.compute_returns(critic_obs)
 
             self.mean_value_loss, self.mean_surrogate_loss = self.alg.update()
-            if self.cfg['SE_learner'] == 'modular_SE':
-                SE_loss = self.state_estimator.update()
-                self.logger.add_log({'Loss/state_estimator': SE_loss})
             stop = time.time()
             self.learn_time = stop - start
             self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
@@ -257,17 +214,6 @@ class OnPolicyRunner:
                                  self.env.cfg.scaling.clip_actions)
         self.env.set_states(self.policy_cfg["actions"], actions)
 
-    def do_state_estimation(self, training=True):
-        SE_obs = self.get_obs(self.se_cfg['obs'])
-        if training:
-            SE_targets = self.get_obs(self.se_cfg['targets'])
-            self.state_estimator.process_env_step(SE_obs, SE_targets)
-        state_estimates = self.state_estimator.predict(SE_obs)
-        self.set_state_estimates(state_estimates)
-
-    def set_state_estimates(self, estimates):
-        self.env.set_states(self.se_cfg['states_to_write_to'], estimates)
-
     def get_timed_out(self):
         return self.env.get_states(['timed_out']).to(self.device)
 
@@ -282,7 +228,7 @@ class OnPolicyRunner:
         return self.env.get_states(action_list)[0].shape[0]
 
     def get_and_log_rewards(self, reward_weights, modifier=1,
-                            mask=True):
+                            mask=None):
         '''
         Computes each reward on the fly, sends them to logging, and returns the
         total reward.
@@ -291,31 +237,15 @@ class OnPolicyRunner:
         mask: a boolean tensor of shape (num_envs), to toggle which rewards are
               computed
         '''
+
+        if mask is None:
+            mask = 1.0
         total_rewards = torch.zeros(self.env.num_envs,
                                     device=self.device, dtype=torch.float)
         for name, weight in reward_weights.items():
             reward = mask * self.get_rewards({name: weight}, modifier)
             total_rewards += reward
             self.logger.log_current_reward(name, reward)
-        return total_rewards
-
-    def get_PBRS_prestep(self, reward_weights):
-        PBRS_prestep = {}
-        for name, weight in reward_weights.items():
-            reward = self.get_rewards({name: weight}, modifier=-1)
-            PBRS_prestep.update({name: reward})
-        return PBRS_prestep
-
-    def get_and_log_PBRS_rewards(self, reward_weights, PBRS_prestep,
-                                 gamma, mask):
-        total_rewards = torch.zeros(self.env.num_envs,
-                                    device=self.device, dtype=torch.float)
-        for name, weight in reward_weights.items():
-            reward = PBRS_prestep[name]
-            reward += self.env.compute_reward({name: weight}).to(self.device)
-            reward *= mask * gamma
-            total_rewards += reward
-            self.logger.log_current_reward('PBRS_'+name, reward)
         return total_rewards
 
     def get_rewards(self, reward_weights, modifier=1):
@@ -360,20 +290,6 @@ class OnPolicyRunner:
             'optimizer_state_dict': self.alg.optimizer.state_dict(),
             'iter': self.it},
                    path)
-        if self.cfg['SE_learner'] == 'modular_SE':
-            self.save_SE()
-
-    def save_SE(self):
-        if not os.path.exists(self.SE_path):
-            os.makedirs(self.SE_path)
-        path = os.path.join(self.SE_path, 'SE_{}.pt'.format(self.it))
-        torch.save({
-            'model_state_dict':
-                self.state_estimator.state_estimator.state_dict(),
-            'optimizer_state_dict':
-                self.state_estimator.optimizer.state_dict(),
-            'iter': self.it},
-                   path)
 
     def load(self, path, load_optimizer=True):
         loaded_dict = torch.load(path)
@@ -383,24 +299,12 @@ class OnPolicyRunner:
                 loaded_dict['optimizer_state_dict'])
         self.it = loaded_dict['iter']
 
-        if self.cfg['SE_learner'] == 'modular_SE':
-            SE_path = path.replace('/model_', '/SE/SE_')
-            SEloaded_dict = torch.load(SE_path)
-            self.state_estimator.state_estimator.load_state_dict(
-                SEloaded_dict['model_state_dict'])
-
     def switch_to_eval(self):
         self.alg.actor_critic.eval()
-        if self.cfg["SE_learner"] == "modular_SE":
-            self.state_estimator.state_estimator.eval()
 
     def get_inference_actions(self):
-        if self.cfg["SE_learner"] == "modular_SE":
-            self.do_state_estimation(training=False)
         obs = self.get_obs(self.policy_cfg["actor_obs"])
         return self.alg.actor_critic.actor.act_inference(obs)
 
     def export(self, path):
         self.alg.actor_critic.export_policy(path)
-        if self.cfg["SE_learner"] is not None:
-            self.state_estimator.export(path)
