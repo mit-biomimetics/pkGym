@@ -67,4 +67,5 @@ def start_sweeps(args):
 
 if __name__ == '__main__':
     args = get_args()
+    os.environ[wandb.env.DIR] = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs')
     start_sweeps(args)
