@@ -93,6 +93,8 @@ class MiniCheetahCfg(LeggedRobotCfg):
         disable_gravity = False
         # * set all torques set to 0
         disable_motors = False
+        joint_damping = 0.1
+        rotor_inertia = [0.002268, 0.002268, 0.005484]*4
 
     class reward_settings(LeggedRobotCfg.reward_settings):
         soft_dof_pos_limit = 0.9
@@ -145,8 +147,8 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
             ]
 
         actions = ["dof_pos_target"]
-
         add_noise = False
+
         class noise:
             dof_pos_obs = 0.005  # can be made very low
             dof_vel = 0.005

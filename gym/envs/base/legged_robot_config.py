@@ -157,6 +157,8 @@ class LeggedRobotCfg(BaseConfig):
         max_linear_velocity = 1000.
         armature = 0.
         thickness = 0.01
+        rotor_inertia = 0.
+        joint_damping = 0.
 
     class domain_rand:
         randomize_friction = False
@@ -238,6 +240,7 @@ class LeggedRobotRunnerCfg(BaseConfig):
                 action_rate2 = 0.
                 stand_still = 0.
                 dof_pos_limits = 0.
+
             class termination_weight:
                 termination = 0.01
 

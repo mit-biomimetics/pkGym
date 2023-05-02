@@ -169,6 +169,7 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
 
             class termination_weight:
                 termination = 0.15
+
     class algorithm(MiniCheetahRunnerCfg.algorithm):
         # training params
         value_loss_coef = 1.0

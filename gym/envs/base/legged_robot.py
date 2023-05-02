@@ -41,8 +41,7 @@ from isaacgym import gymtorch, gymapi
 from gym import LEGGED_GYM_ROOT_DIR
 from gym.envs.base.base_task import BaseTask
 from gym.utils.terrain import Terrain
-from gym.utils.math import (
-    random_sample, quat_apply_yaw, exp_avg_filter)
+from gym.utils.math import random_sample, quat_apply_yaw
 from gym.utils.helpers import class_to_dict
 
 
@@ -255,9 +254,11 @@ class LeggedRobot(BaseTask):
             self.dof_pos_limits = torch.zeros(self.num_dof, 2,
                                               dtype=torch.float,
                                               device=self.device)
-            self.dof_vel_limits = torch.zeros(self.num_dof, dtype=torch.float,
+            self.dof_vel_limits = torch.zeros(self.num_dof,
+                                              dtype=torch.float,
                                               device=self.device)
-            self.torque_limits = torch.zeros(self.num_dof, dtype=torch.float,
+            self.torque_limits = torch.zeros(self.num_dof,
+                                             dtype=torch.float,
                                              device=self.device)
 
             for i in range(len(props)):
@@ -601,8 +602,15 @@ class LeggedRobot(BaseTask):
         asset_root = os.path.dirname(asset_path)
         asset_file = os.path.basename(asset_path)
 
-        asset_options = \
-            gymapi.AssetOptions()
+        asset_options = gymapi.AssetOptions()
+        asset_options.fix_base_link = self.cfg.asset.fix_base_link
+        asset_options.density = self.cfg.asset.density
+        asset_options.angular_damping = self.cfg.asset.angular_damping
+        asset_options.linear_damping = self.cfg.asset.linear_damping
+        asset_options.max_linear_velocity = self.cfg.asset.max_linear_velocity
+        asset_options.armature = self.cfg.asset.armature
+        asset_options.thickness = self.cfg.asset.thickness
+        asset_options.disable_gravity = self.cfg.asset.disable_gravity
         asset_options.default_dof_drive_mode = \
             self.cfg.asset.default_dof_drive_mode
         asset_options.collapse_fixed_joints = \
@@ -611,33 +619,20 @@ class LeggedRobot(BaseTask):
             self.cfg.asset.replace_cylinder_with_capsule
         asset_options.flip_visual_attachments = \
             self.cfg.asset.flip_visual_attachments
-        asset_options.fix_base_link = \
-            self.cfg.asset.fix_base_link
-        asset_options.density = \
-            self.cfg.asset.density
-        asset_options.angular_damping = \
-            self.cfg.asset.angular_damping
-        asset_options.linear_damping = \
-            self.cfg.asset.linear_damping
         asset_options.max_angular_velocity = \
             self.cfg.asset.max_angular_velocity
-        asset_options.max_linear_velocity = \
-            self.cfg.asset.max_linear_velocity
-        asset_options.armature = \
-            self.cfg.asset.armature
-        asset_options.thickness = \
-            self.cfg.asset.thickness
-        asset_options.disable_gravity = \
-            self.cfg.asset.disable_gravity
 
         robot_asset = self.gym.load_asset(
             self.sim, asset_root, asset_file, asset_options)
         self.num_dof = self.gym.get_asset_dof_count(robot_asset)
-        # ! what is going on with this immediately getting overwritten below?
         self.num_bodies = self.gym.get_asset_rigid_body_count(robot_asset)
-        dof_props_asset = self.gym.get_asset_dof_properties(robot_asset)
 
-        # * save body names from the asset
+        dof_props_asset = self.gym.get_asset_dof_properties(robot_asset)
+        dof_props_asset['armature'] = self.cfg.asset.rotor_inertia
+        dof_props_asset['damping'] = self.cfg.asset.joint_damping
+        rigid_shape_props_asset = \
+            self.gym.get_asset_rigid_shape_properties(robot_asset)
+
         body_names = self.gym.get_asset_rigid_body_names(robot_asset)
         self.dof_names = self.gym.get_asset_dof_names(robot_asset)
         self.num_bodies = len(body_names)
@@ -665,7 +660,7 @@ class LeggedRobot(BaseTask):
         env_upper = gymapi.Vec3(0., 0., 0.)
         self.actor_handles = []
         self.envs = []
-        
+
         for i in range(self.num_envs):
             # * create env instance
             env_handle = self.gym.create_env(self.sim, env_lower, env_upper,

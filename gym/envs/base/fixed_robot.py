@@ -435,8 +435,16 @@ class FixedRobot(BaseTask):
         asset_root = os.path.dirname(asset_path)
         asset_file = os.path.basename(asset_path)
 
-        asset_options = \
-            gymapi.AssetOptions()
+        asset_options = gymapi.AssetOptions()
+        asset_options.fix_base_link = self.cfg.asset.fix_base_link
+        asset_options.density = self.cfg.asset.density
+        asset_options.angular_damping = self.cfg.asset.angular_damping
+        asset_options.linear_damping = self.cfg.asset.linear_damping
+        asset_options.max_linear_velocity = self.cfg.asset.max_linear_velocity
+        asset_options.armature = self.cfg.asset.armature
+        asset_options.thickness = self.cfg.asset.thickness
+        asset_options.disable_gravity = \
+            self.cfg.asset.disable_gravity
         asset_options.default_dof_drive_mode = \
             self.cfg.asset.default_dof_drive_mode
         asset_options.collapse_fixed_joints = \
@@ -445,34 +453,17 @@ class FixedRobot(BaseTask):
             self.cfg.asset.replace_cylinder_with_capsule
         asset_options.flip_visual_attachments = \
             self.cfg.asset.flip_visual_attachments
-        asset_options.fix_base_link = \
-            self.cfg.asset.fix_base_link
-        asset_options.density = \
-            self.cfg.asset.density
-        asset_options.angular_damping = \
-            self.cfg.asset.angular_damping
-        asset_options.linear_damping = \
-            self.cfg.asset.linear_damping
         asset_options.max_angular_velocity = \
             self.cfg.asset.max_angular_velocity
-        asset_options.max_linear_velocity = \
-            self.cfg.asset.max_linear_velocity
-        asset_options.armature = \
-            self.cfg.asset.armature
-        asset_options.thickness = \
-            self.cfg.asset.thickness
-        asset_options.disable_gravity = \
-            self.cfg.asset.disable_gravity
 
-        robot_asset = \
-            self.gym.load_asset(
-                self.sim, asset_root, asset_file, asset_options)
-        self.num_dof = \
-            self.gym.get_asset_dof_count(robot_asset)
-        self.num_bodies = \
-            self.gym.get_asset_rigid_body_count(robot_asset)
-        dof_props_asset = \
-            self.gym.get_asset_dof_properties(robot_asset)
+        robot_asset = self.gym.load_asset(
+            self.sim, asset_root, asset_file, asset_options)
+        self.num_dof = self.gym.get_asset_dof_count(robot_asset)
+        self.num_bodies = self.gym.get_asset_rigid_body_count(robot_asset)
+
+        dof_props_asset = self.gym.get_asset_dof_properties(robot_asset)
+        dof_props_asset['armature'] = self.cfg.asset.rotor_inertia
+        dof_props_asset['damping'] = self.cfg.asset.joint_damping
         rigid_shape_props_asset = \
             self.gym.get_asset_rigid_shape_properties(robot_asset)
 

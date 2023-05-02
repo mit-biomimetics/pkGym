@@ -73,6 +73,8 @@ class FixedRobotCfg(BaseConfig):
         max_linear_velocity = 1000.
         armature = 0.
         thickness = 0.01
+        rotor_inertia = 0.
+        joint_damping = 0.
 
     class reward_settings:
         tracking_sigma = 0.25  # tracking reward = exp(-error^2/sigma)
