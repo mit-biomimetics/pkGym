@@ -147,6 +147,9 @@ class FixedRobotCfgPPO(BaseConfig):
             "observation_y",
             "critic_obs_can_be_the_same_or_different_than_actor_obs"]
 
+        actions = ["tau_ff"]
+        disable_actions = False
+
         class noise:
             noise = 0.1  # implement as needed, also in your robot class
 

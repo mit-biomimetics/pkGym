@@ -39,10 +39,9 @@ def play(env, runner, train_cfg):
         # interface = GamepadInterface(env)
         interface = KeyboardInterface(env)
     for i in range(10*int(env.max_episode_length)):
-        actions = runner.get_inference_actions()
         if COMMANDS_INTERFACE:
             interface.update(env)
-        env.set_states(train_cfg.policy.actions, actions)
+        runner.set_actions(runner.get_inference_actions())
         env.step()
 
 

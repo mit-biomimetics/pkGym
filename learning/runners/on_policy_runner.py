@@ -137,6 +137,7 @@ class OnPolicyRunner:
                 for i in range(self.num_steps_per_env):
                     actions = self.alg.act(actor_obs, critic_obs)
                     self.set_actions(actions)
+
                     self.env.step()
 
                     actor_obs = self.get_noisy_obs(
@@ -203,6 +204,8 @@ class OnPolicyRunner:
         return observation
 
     def set_actions(self, actions):
+        if self.policy_cfg['disable_actions']:
+            return
         if hasattr(self.env.cfg.scaling, "clip_actions"):
             actions = torch.clip(actions,
                                  -self.env.cfg.scaling.clip_actions,
