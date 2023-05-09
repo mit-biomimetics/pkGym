@@ -44,6 +44,8 @@ class KeyboardInterface():
 
     def update(self, env):
         for evt in env.gym.query_viewer_action_events(env.viewer):
+            if evt.value == 0:
+                continue
             if evt.action == 'forward':
                 env.commands[:, 0] = torch.clamp(env.commands[:, 0]
                                                  + self.increment_x,
