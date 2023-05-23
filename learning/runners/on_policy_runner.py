@@ -186,8 +186,8 @@ class OnPolicyRunner:
         for obs in obs_list:
             obs_size = self.get_obs_size([obs])
             if obs in noise_dict.keys():
-                noise_tensor = \
-                    torch.ones(obs_size).to(self.device) * noise_dict[obs]
+                noise_tensor = torch.ones(obs_size).to(self.device) \
+                               * torch.tensor(noise_dict[obs]).to(self.device)
                 if obs in self.env.scales.keys():
                     noise_tensor /= self.env.scales[obs]
                 noise_vec[obs_index:obs_index+obs_size] = noise_tensor
@@ -301,7 +301,9 @@ class OnPolicyRunner:
         self.alg.actor_critic.eval()
 
     def get_inference_actions(self):
-        obs = self.get_obs(self.policy_cfg["actor_obs"])
+        obs = self.get_noisy_obs(
+                        self.policy_cfg['actor_obs'],
+                        self.policy_cfg['noise'])
         return self.alg.actor_critic.actor.act_inference(obs)
 
     def export(self, path):
