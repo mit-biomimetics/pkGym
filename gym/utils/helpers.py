@@ -160,6 +160,8 @@ def update_cfg_from_args(env_cfg, train_cfg, args):
     if train_cfg is not None:
         if args.seed is not None:
             train_cfg.seed = args.seed
+            # * copy seed
+            env_cfg.seed = train_cfg.seed
         # * alg runner parameters
         if args.max_iterations is not None:
             train_cfg.runner.max_iterations = args.max_iterations

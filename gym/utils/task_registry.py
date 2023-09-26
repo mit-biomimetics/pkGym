@@ -69,8 +69,6 @@ class TaskRegistry():
     def get_cfgs(self, name) -> Tuple[LeggedRobotCfg, LeggedRobotRunnerCfg]:
         env_cfg = self.env_cfgs[name]
         train_cfg = self.train_cfgs[name]
-        # * copy seed
-        env_cfg.seed = train_cfg.seed
         return env_cfg, train_cfg
 
     def create_cfgs(self, args):
