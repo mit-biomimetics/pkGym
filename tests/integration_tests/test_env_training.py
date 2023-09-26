@@ -52,7 +52,10 @@ class TestEnvTraining():
 
         # * extract the values to test from the child's return queue
         actions = return_queue.get()
-        actions_expected = torch.load('actions_expected.pt')
+        unit_test_file = os.path.dirname(__file__)
+        expected_tensor_file = "actions_expected.pt"
+        tensor_file_path = os.path.join(unit_test_file, expected_tensor_file)
+        actions_expected = torch.load(tensor_file_path)
 
         # * assert the returned values are as expected
         assert torch.all(torch.eq(actions, actions_expected))
