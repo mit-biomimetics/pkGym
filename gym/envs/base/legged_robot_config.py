@@ -34,6 +34,7 @@ from .base_config import BaseConfig
 
 
 class LeggedRobotCfg(BaseConfig):
+    seed = -1
     class env:
         num_envs = 4096
         num_actuators = 12
