@@ -192,8 +192,8 @@ class OnPolicyRunner:
                     noise_tensor /= self.env.scales[obs]
                 noise_vec[obs_index:obs_index+obs_size] = noise_tensor
             obs_index += obs_size
-        return torch_rand_float(-1., 1., (self.env.num_envs, len(noise_vec)),
-                                self.device) * noise_vec
+        return noise_vec * torch.randn(self.env.num_envs, len(noise_vec),
+                                       device=self.device)
 
     def get_noisy_obs(self, obs_list, noise_dict):
         observation = self.get_obs(obs_list)
