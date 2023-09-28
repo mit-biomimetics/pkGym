@@ -80,7 +80,6 @@ def set_seed(seed):
     if seed == -1:
         seed = np.random.randint(0, 10000)
     print("Setting seed: {}".format(seed))
-
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -160,8 +159,8 @@ def update_cfg_from_args(env_cfg, train_cfg, args):
     if train_cfg is not None:
         if args.seed is not None:
             train_cfg.seed = args.seed
-            # * copy seed
-            env_cfg.seed = train_cfg.seed
+        # * copy seed
+        env_cfg.seed = train_cfg.seed
         # * alg runner parameters
         if args.max_iterations is not None:
             train_cfg.runner.max_iterations = args.max_iterations

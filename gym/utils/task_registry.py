@@ -160,7 +160,6 @@ class TaskRegistry():
     def make_alg_runner(self, env, train_cfg):
         train_cfg_dict = class_to_dict(train_cfg)
         runner = OnPolicyRunner(env, train_cfg_dict, train_cfg.runner.device)
-
         # * save resume path before creating a new log_dir
         if train_cfg.runner.resume:
             resume_path = get_load_path(name=train_cfg.runner.experiment_name,
