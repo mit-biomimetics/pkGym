@@ -178,8 +178,9 @@ def update_cfg_from_args(env_cfg, train_cfg, args):
             train_cfg.runner.device = args.rl_device
 
 
-def get_args():
-    custom_parameters = [
+def get_args(custom_parameters=[]):
+
+    custom_parameters += [
         {"name": "--task", "type": str, "default": "cartpole", "help":
             "Resume training or start testing from a checkpoint. "
             "Overrides config file if provided."},

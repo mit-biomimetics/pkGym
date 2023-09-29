@@ -1,0 +1,32 @@
+name: GPUgym Regression Testing
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  Self-hosted-unit-testing:
+    runs-on: [self-hosted, Linux, X64]
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+
+      - name: Checkout main and run test
+        run: |
+          git checkout main
+          source ~/anaconda3/etc/profile.d/conda.sh
+          conda activate CIgym
+          python tests/regression_tests/run_fifty_iterations.py --output_tensor_file="main_output.pt"
+
+      - name: Checkout PR and run test
+        run: |
+          git checkout ${{ github.event.pull_request.head.sha }}
+          source ~/anaconda3/etc/profile.d/conda.sh
+          conda activate CIgym
+          python tests/regression_tests/run_fifty_iterations.py --output_tensor_file="pr_output.pt"
+
+      - name: Compare results
+        run: |
+          source ~/anaconda3/etc/profile.d/conda.sh
+          conda activate CIgym
+          python -m pytest tests/regression_tests/test_generated_torch_files.py
