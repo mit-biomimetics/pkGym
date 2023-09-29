@@ -1,0 +1,36 @@
+name: GPUgym Unit Testing
+run-name: PR Unit Testing
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+
+jobs:
+  Self-hosted-unit-testing:
+    runs-on: [self-hosted, Linux, X64]
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+
+      - name: Unit Testing Gym
+        run: |
+          source ~/anaconda3/etc/profile.d/conda.sh
+          conda activate CIgym
+          python -m pytest gym
+      - name: Unit Testing Learning
+        run: |
+          source ~/anaconda3/etc/profile.d/conda.sh
+          conda activate CIgym
+          python -m pytest learning
+      - name: Unit Testing gpuGym
+        run: |
+          source ~/anaconda3/etc/profile.d/conda.sh
+          conda activate CIgym
+          python -m pytest tests/unit_tests
+      - name: Integration Testing gpuGym
+        run: |
+          source ~/anaconda3/etc/profile.d/conda.sh
+          conda activate CIgym
+          python -m pytest tests/integration_tests

@@ -32,6 +32,7 @@ from .helpers import (class_to_dict, get_load_path, get_args, set_seed,
                       update_class_from_dict)
 
 from .task_registry import task_registry
-from .math import *
+from .gym_math_wrappers import *
+from .math.simple_math import *
 from .terrain import Terrain
 from .interfaces.interfaces import KeyboardInterface, GamepadInterface

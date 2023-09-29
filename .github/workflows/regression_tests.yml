@@ -1,4 +1,4 @@
-name: GPUgym Regression Testing
+name: gpuGym Regression Testing
 on:
   pull_request:
     branches: [ "main" ]
@@ -16,14 +16,15 @@ jobs:
           git checkout main
           source ~/anaconda3/etc/profile.d/conda.sh
           conda activate CIgym
-          python tests/regression_tests/run_fifty_iterations.py --output_tensor_file="main_output.pt"
+          python tests/regression_tests/run_n_iterations.py --output_tensor_file="main_output.pt"
 
       - name: Checkout PR and run test
         run: |
+          git fetch --unshallow
           git checkout ${{ github.event.pull_request.head.sha }}
           source ~/anaconda3/etc/profile.d/conda.sh
           conda activate CIgym
-          python tests/regression_tests/run_fifty_iterations.py --output_tensor_file="pr_output.pt"
+          python tests/regression_tests/run_n_iterations.py --output_tensor_file="pr_output.pt"
 
       - name: Compare results
         run: |

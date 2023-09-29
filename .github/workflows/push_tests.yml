@@ -1,0 +1,25 @@
+name: Basic Unit Testing
+run-name: Basic Unit Testing
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  Self-hosted-unit-testing:
+    runs-on: [self-hosted, Linux, X64]
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+
+      - name: Unit Testing Gym
+        run: |
+          source ~/anaconda3/etc/profile.d/conda.sh
+          conda activate CIgym
+          python -m pytest gym
+      - name: Unit Testing Learning
+        run: |
+          source ~/anaconda3/etc/profile.d/conda.sh
+          conda activate CIgym
+          python -m pytest learning

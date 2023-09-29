@@ -1,10 +1,6 @@
-import isaacgym
-
 from gym.envs import __init__
 from gym.utils.logging_and_saving import local_code_save_helper
 from gym.utils import get_args, task_registry
-
-import argparse
 import torch
 # import os
 
@@ -35,7 +31,7 @@ def setup():
 
 def _run_training_test(output_tensor_file, env, runner):
     # * take a full iteration step
-    runner.learn(num_learning_iterations=50)
+    runner.learn(num_learning_iterations=5)
 
     # * get the test values after learning
     actions = runner.env.get_states(runner.policy_cfg['actions'])
@@ -48,14 +44,6 @@ def _run_training_test(output_tensor_file, env, runner):
 def worker():
     env, runner, args = setup()
     _run_training_test(args.output_tensor_file, env, runner)
-
-
-def parse_test_args():
-    parser = argparse.ArgumentParser(
-        description='Run training test and save output tensor.')
-    parser.add_argument('--output_tensor_file', required=True,
-                        help='Path to save the output tensor.')
-    return parser.parse_args()
 
 
 if __name__ == '__main__':

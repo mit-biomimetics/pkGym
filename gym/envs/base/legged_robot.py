@@ -41,7 +41,7 @@ from isaacgym import gymtorch, gymapi
 from gym import LEGGED_GYM_ROOT_DIR
 from gym.envs.base.base_task import BaseTask
 from gym.utils.terrain import Terrain
-from gym.utils.math import random_sample, quat_apply_yaw
+from gym.utils import random_sample, quat_apply_yaw
 from gym.utils.helpers import class_to_dict
 
 
