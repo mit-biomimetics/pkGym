@@ -21,7 +21,6 @@ def pytest_sessionstart(session):
         args.headless = True
         _task_registry.make_gym()
         env_names = _task_registry.task_classes.keys()
-        env_names =[]
         for env_name in env_names:
             print(env_name)
             args.task = env_name
