@@ -101,7 +101,7 @@ https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#ubuntu-ins
  - --num_envs NUM_ENVS:  Number of environments to create.
  - --seed SEED:  Random seed.
  - --max_iterations MAX_ITERATIONS:  Maximum number of training iterations.
-
+ - --original_cfg:  Use configs stored in the saved files associated with the loaded policy instead of the current one in envs.
 
 ### Play (a trained policy) ###  
 ```python <gpuGym>/scripts/play.py --task=mini_cheetah_ref```

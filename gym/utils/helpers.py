@@ -227,7 +227,10 @@ def get_args(custom_parameters=None):
         {"name": "--wandb_sweep_config", "type": str, "help":
             "Enter the name of a JSON config file defining the WandB sweep."},
         {"name": "--disable_wandb", "action": "store_true", "default": False,
-         "help": "Disable WandB logging for debugging."}
+         "help": "Disable WandB logging for debugging."},
+
+        {"name": "--original_cfg", "action": "store_true", "default": False,
+         "help": "Use original config file for loaded policy."}
     ]
     # * parse arguments
     args = gymutil.parse_arguments(

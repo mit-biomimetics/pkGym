@@ -31,6 +31,7 @@
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
 import os
+import importlib
 from isaacgym import gymapi
 from isaacgym import gymutil
 from datetime import datetime
@@ -71,9 +72,53 @@ class TaskRegistry():
         train_cfg = self.train_cfgs[name]
         return env_cfg, train_cfg
 
+    def set_registry_to_original_cfg(self, train_cfg, args):
+        from gym.envs import task_dict, class_dict, config_dict, \
+            runner_config_dict
+        run_path = os.path.dirname(
+            get_load_path(name=train_cfg.runner.experiment_name,
+                          load_run=train_cfg.runner.load_run,
+                          checkpoint=train_cfg.runner.checkpoint))
+        original_cfg_path = os.path.join(run_path, "files", "gym", "envs")
+
+        class_name = task_dict[args.task][0]
+        class_path = original_cfg_path + class_dict[class_name]
+        spec = importlib.util.spec_from_file_location(
+            class_name,
+            class_path.replace(".", "/") + ".py")
+        class_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(class_module)
+
+        config_name = task_dict[args.task][1]
+        config_path = original_cfg_path + config_dict[config_name]
+        spec = importlib.util.spec_from_file_location(
+            config_name,
+            config_path.replace(".", "/") + ".py")
+        config_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(config_module)
+
+        runner_config_name = task_dict[args.task][2]
+        runner_config_path = original_cfg_path + \
+            runner_config_dict[runner_config_name]
+        spec = importlib.util.spec_from_file_location(
+            runner_config_name,
+            runner_config_path.replace(".", "/") + ".py")
+        runner_config_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(runner_config_module)
+
+        task_registry.register(
+            args.task,
+            getattr(class_module, task_dict[args.task][0]),
+            getattr(config_module, task_dict[args.task][1]),
+            getattr(runner_config_module, task_dict[args.task][2]))
+
     def create_cfgs(self, args):
         env_cfg, train_cfg = self.get_cfgs(name=args.task)
         self.update_and_parse_cfgs(env_cfg, train_cfg, args)
+        if (args.original_cfg):
+            self.set_registry_to_original_cfg(train_cfg, args)
+            env_cfg, train_cfg = self.get_cfgs(name=args.task)
+            self.update_and_parse_cfgs(env_cfg, train_cfg, args)
         self.set_log_dir_name(train_cfg)
         return env_cfg, train_cfg
 
