@@ -53,3 +53,9 @@ class MiniCheetah(LeggedRobot):
             self._sqrdexp(
                 (self.dof_pos - self.default_dof_pos)
                 / self.scales["dof_pos_obs"]), dim=1)
+
+    def _log_base_height(self):
+        return torch.flatten(self.base_height)
+
+    def _log_max_lin_vel_y_command(self):
+        return max(torch.abs(self.commands[:, 1]))

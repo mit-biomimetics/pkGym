@@ -148,6 +148,11 @@ class BaseTask():
     def _eval_reward(self, name):
         return eval('self._reward_'+name+'()')
 
+    def compute_log(self, extra_log):
+        ''' Compute and return a value for logging
+        '''
+        return eval('self._log_'+extra_log+'()')
+
     def _check_terminations_and_timeouts(self):
         """ Check if environments need to be reset
         """

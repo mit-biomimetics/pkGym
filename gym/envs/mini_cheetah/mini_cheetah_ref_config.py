@@ -56,7 +56,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         damping = {'haa': 0.5, 'hfe': 0.5, 'kfe': 0.5}
         gait_freq = 4.
         ctrl_frequency = 100
-        desired_sim_frequency = 1000
+        desired_sim_frequency = 500
 
     class commands:
         resampling_time = 4.  # time before command are changed[s]

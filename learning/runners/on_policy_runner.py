@@ -32,10 +32,7 @@
 
 import time
 import os
-import wandb
 import torch
-from isaacgym.torch_utils import torch_rand_float
-
 from learning.algorithms import PPO
 from learning.modules import ActorCritic
 from learning.env import VecEnv
@@ -77,16 +74,7 @@ class OnPolicyRunner:
 
         # * Log
         self.log_dir = train_cfg["log_dir"]
-        self.SE_path = os.path.join(self.log_dir, 'SE')  # log_dir for SE
-        self.logger = Logger(self.log_dir, self.env.max_episode_length_s,
-                             self.device)
-
-        reward_keys_to_log = \
-            list(self.policy_cfg["reward"]["weights"].keys()) \
-            + list(self.policy_cfg["reward"]["termination_weight"].keys())
-
-        reward_keys_to_log += ["Total_reward"]
-        self.logger.initialize_buffers(self.env.num_envs, reward_keys_to_log)
+        self.logger = Logger(train_cfg, env)
 
     def parse_train_cfg(self, train_cfg):
         self.cfg = train_cfg['runner']
@@ -128,7 +116,7 @@ class OnPolicyRunner:
 
         reward_weights = self.policy_cfg['reward']['weights']
         termination_weight = self.policy_cfg['reward']['termination_weight']
-        rewards = 0.*self.get_rewards(reward_weights)
+        rewards_dict = {}
 
         for self.it in range(self.it+1, self.tot_iter+1):
             start = time.time()
@@ -149,15 +137,17 @@ class OnPolicyRunner:
                     terminated = self.get_terminated()
                     dones = timed_out | terminated
 
-                    rewards += self.get_and_log_rewards(reward_weights,
-                                                        modifier=self.env.dt,
-                                                        mask=~terminated)
-                    rewards += self.get_and_log_rewards(termination_weight,
-                                                        mask=terminated)
-                    self.logger.log_current_reward('Total_reward', rewards)
+                    rewards_dict.update(self.get_rewards(termination_weight,
+                                                         mask=terminated))
+                    rewards_dict.update(self.get_rewards(reward_weights,
+                                                         modifier=self.env.dt,
+                                                         mask=~terminated))
+
+                    self.logger.log_step(self.env, rewards_dict, dones)
+
+                    rewards = torch.sum(torch.stack(
+                        tuple(rewards_dict.values())), dim=0)
                     self.alg.process_env_step(rewards, dones, timed_out)
-                    self.logger.update_episode_buffer(dones)
-                    rewards *= 0.
 
                 stop = time.time()
                 self.collection_time = stop - start
@@ -171,7 +161,7 @@ class OnPolicyRunner:
             self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
             self.tot_time += self.collection_time + self.learn_time
 
-            self.log()
+            self.logger.log_iteration(self)
 
             if self.it % self.save_interval == 0:
                 self.save()
@@ -225,8 +215,7 @@ class OnPolicyRunner:
     def get_action_size(self, action_list):
         return self.env.get_states(action_list)[0].shape[0]
 
-    def get_and_log_rewards(self, reward_weights, modifier=1,
-                            mask=None):
+    def get_rewards(self, reward_weights, modifier=1, mask=None):
         '''
         Computes each reward on the fly, sends them to logging, and returns the
         total reward.
@@ -235,48 +224,16 @@ class OnPolicyRunner:
         mask: a boolean tensor of shape (num_envs), to toggle which rewards are
               computed
         '''
-
+        rewards_dict = {}
         if mask is None:
             mask = 1.0
-        total_rewards = torch.zeros(self.env.num_envs,
-                                    device=self.device, dtype=torch.float)
         for name, weight in reward_weights.items():
-            reward = mask * self.get_rewards({name: weight}, modifier)
-            total_rewards += reward
-            self.logger.log_current_reward(name, reward)
-        return total_rewards
+            rewards_dict[name] = mask * self._get_reward({name: weight},
+                                                         modifier)
+        return rewards_dict
 
-    def get_rewards(self, reward_weights, modifier=1):
-        return modifier*self.env.compute_reward(reward_weights).to(self.device)
-
-    def log(self):
-        fps = int(self.num_steps_per_env * self.env.num_envs
-                  / (self.collection_time+self.learn_time))
-        mean_noise_std = self.alg.actor_critic.std.mean().item()
-        self.logger.add_log(self.logger.mean_rewards)
-        self.logger.add_log({
-            'Loss/value_function': self.mean_value_loss,
-            'Loss/surrogate': self.mean_surrogate_loss,
-            'Loss/learning_rate': self.alg.learning_rate,
-            'Policy/mean_noise_std': mean_noise_std,
-            'Perf/total_fps': fps,
-            'Perf/collection_time': self.collection_time,
-            'Perf/learning_time': self.learn_time,
-            'Train/mean_reward': self.logger.total_mean_reward,
-            'Train/mean_episode_length': self.logger.mean_episode_length,
-            'Train/total_timesteps': self.tot_timesteps,
-            'Train/iteration_time': self.collection_time+self.learn_time,
-            'Train/time': self.tot_time,
-            })
-        self.logger.update_iterations(self.it, self.tot_iter,
-                                      self.num_learning_iterations)
-
-        # TODO: iterate through the config for any extra things
-        # TODO: you might want to log
-
-        if wandb.run is not None:
-            self.logger.log_to_wandb()
-        self.logger.print_to_terminal()
+    def _get_reward(self, reward_weight, modifier=1):
+        return modifier*self.env.compute_reward(reward_weight).to(self.device)
 
     def get_infos(self):
         return self.env.extras
