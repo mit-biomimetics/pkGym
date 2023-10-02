@@ -20,6 +20,12 @@ class KeyboardInterface():
                                                 gymapi.KEY_R, "RESET")
         env.gym.subscribe_viewer_keyboard_event(env.viewer,
                                                 gymapi.KEY_ESCAPE, "QUIT")
+        env.gym.subscribe_viewer_keyboard_event(env.viewer,
+                                                gymapi.KEY_SPACE,
+                                                "space_shoot")
+        env.gym.subscribe_viewer_mouse_event(env.viewer,
+                                             gymapi.MOUSE_LEFT_BUTTON,
+                                             "mouse_shoot")
         print("______________________________________________________________")
         print("Using keyboard interface, overriding default comand settings")
         print("commands are in 1/5 increments of max.")
@@ -74,3 +80,6 @@ class KeyboardInterface():
                 exit()
             elif evt.action == "RESET":
                 env.reset()
+            elif (evt.action == "space_shoot" or
+                  evt.action == "mouse_shoot") and evt.value > 0:
+                env.shoot()

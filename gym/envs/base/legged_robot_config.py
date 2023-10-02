@@ -40,6 +40,11 @@ class LeggedRobotCfg(BaseConfig):
         env_spacing = 3.  # not used with heightfields/trimeshes
         episode_length_s = 20  # episode length in seconds
 
+        num_projectiles = None
+        projectile_density = 10  # [kg/m^3]
+        projectile_radius = 0.2  # [m]
+        projectile_speed = 25  # [m/s]
+
     class terrain:
         mesh_type = 'plane'  # none, plane, heightfield or trimesh
         horizontal_scale = 0.1  # [m]
@@ -83,6 +88,7 @@ class LeggedRobotCfg(BaseConfig):
         toggle = True
         interval_s = 15
         max_push_vel_xy = 0.05
+        push_box_dims = [0.2, 0.2, 0.2]  # x,y,z [m]
 
     class init_state:
 

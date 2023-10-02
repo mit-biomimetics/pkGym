@@ -113,6 +113,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         toggle = False
         interval_s = 15
         max_push_vel_xy = 0.05
+        push_box_dims = [0.1, 0.2, 0.3]  # x,y,z [m]
 
     class domain_rand:
         randomize_friction = False

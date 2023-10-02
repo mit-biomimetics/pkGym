@@ -124,6 +124,7 @@ class HumanoidRunningCfg(LeggedRobotCfg):
         toggle = True
         interval_s = 2.5
         max_push_vel_xy = 0.5
+        push_box_dims = [0.1, 0.2, 0.3]  # x,y,z [m]
 
     class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_friction = False

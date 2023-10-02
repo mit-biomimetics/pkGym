@@ -16,6 +16,7 @@ def setup(args):
         env_cfg.push_robots.toggle = False
     env_cfg.commands.resampling_time = 9999
     env_cfg.env.episode_length_s = 9999
+    env_cfg.env.num_projectiles = 20
     task_registry.make_gym_and_sim()
     env = task_registry.make_env(args.task, env_cfg)
     env.cfg.init_state.reset_mode = "reset_to_basic"

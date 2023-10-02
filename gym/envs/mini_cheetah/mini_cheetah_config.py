@@ -71,6 +71,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         toggle = False
         interval_s = 1
         max_push_vel_xy = 0.5
+        push_box_dims = [0.3, 0.1, 0.1]  # x,y,z [m]
 
     class domain_rand:
         randomize_friction = False

@@ -70,6 +70,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         toggle = True
         interval_s = 10
         max_push_vel_xy = 0.2
+        push_box_dims = [0.3, 0.1, 0.1]  # x,y,z [m]
 
     class domain_rand(MiniCheetahCfg.domain_rand):
         randomize_friction = True
