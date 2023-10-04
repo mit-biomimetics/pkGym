@@ -1,5 +1,3 @@
-import isaacgym
-import torch
 import sys
 import pytest
 from unittest.mock import patch

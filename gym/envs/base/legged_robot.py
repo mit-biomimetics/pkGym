@@ -452,7 +452,6 @@ class LeggedRobot(BaseTask):
 
         # * initialize some data used later on
         self.common_step_counter = 0
-        self.extras = {}
 
         self.gravity_vec = to_torch(
             get_axis_params(-1., self.up_axis_idx),

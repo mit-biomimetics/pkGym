@@ -1,4 +1,5 @@
 name: gpuGym Regression Testing
+run-name: PR Regression Testing
 on:
   pull_request:
     branches: [ "main" ]
@@ -30,4 +31,4 @@ jobs:
         run: |
           source ~/anaconda3/etc/profile.d/conda.sh
           conda activate CIgym
-          python -m pytest tests/regression_tests/test_generated_torch_files.py
+          pytest tests/regression_tests/

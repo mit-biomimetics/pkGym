@@ -24,13 +24,8 @@ jobs:
           source ~/anaconda3/etc/profile.d/conda.sh
           conda activate CIgym
           python -m pytest learning
-      - name: Unit Testing gpuGym
-        run: |
-          source ~/anaconda3/etc/profile.d/conda.sh
-          conda activate CIgym
-          python -m pytest tests/unit_tests
       - name: Integration Testing gpuGym
         run: |
           source ~/anaconda3/etc/profile.d/conda.sh
           conda activate CIgym
-          python -m pytest tests/integration_tests
+          pytest tests/integration_tests

@@ -235,9 +235,6 @@ class OnPolicyRunner:
     def _get_reward(self, reward_weight, modifier=1):
         return modifier*self.env.compute_reward(reward_weight).to(self.device)
 
-    def get_infos(self):
-        return self.env.extras
-
     def save(self):
         path = os.path.join(self.log_dir, 'model_{}.pt'.format(self.it))
         torch.save({

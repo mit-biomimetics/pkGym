@@ -17,9 +17,9 @@ jobs:
         run: |
           source ~/anaconda3/etc/profile.d/conda.sh
           conda activate CIgym
-          python -m pytest gym
+          pytest gym
       - name: Unit Testing Learning
         run: |
           source ~/anaconda3/etc/profile.d/conda.sh
           conda activate CIgym
-          python -m pytest learning
+          pytest learning
