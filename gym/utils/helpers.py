@@ -129,6 +129,8 @@ def select_run(root, load_run):
             key=lambda x: os.path.getctime(os.path.join(root, x)))
         if 'exported' in runs:
             runs.remove('exported')
+        if 'videos' in runs:
+            runs.remove('videos')
         last_run = os.path.join(root, runs[-1])
     except:  # ! no bare excepts!!!
         raise ValueError("No runs in this directory: " + root)
@@ -156,6 +158,8 @@ def update_cfg_from_args(env_cfg, train_cfg, args):
         # * num envs
         if args.num_envs is not None:
             env_cfg.env.num_envs = args.num_envs
+        if args.record is not None:
+            env_cfg.viewer.record = args.record
     if train_cfg is not None:
         if args.seed is not None:
             train_cfg.seed = args.seed
@@ -228,6 +232,8 @@ def get_args(custom_parameters=None):
             "Enter the name of a JSON config file defining the WandB sweep."},
         {"name": "--disable_wandb", "action": "store_true", "default": False,
          "help": "Disable WandB logging for debugging."},
+        {"name": "--record", "action": "store_true", "default": False,
+         "help": "Record IsaacGym simulation at real-time speed."},
 
         {"name": "--original_cfg", "action": "store_true", "default": False,
          "help": "Use original config file for loaded policy."}

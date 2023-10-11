@@ -77,9 +77,10 @@ class KeyboardInterface():
                                                  + self.increment_yaw,
                                                  max=self.max_vel_yaw)
             elif evt.action == "QUIT":
-                exit()
+                env.exit = True
             elif evt.action == "RESET":
                 env.reset()
             elif (evt.action == "space_shoot" or
                   evt.action == "mouse_shoot") and evt.value > 0:
                 env.shoot()
+        

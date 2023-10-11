@@ -96,6 +96,7 @@ class FixedRobotCfg(BaseConfig):
         ref_env = 0
         pos = [10, 0, 6]  # [m]
         lookat = [11., 5, 3.]  # [m]
+        record = False
 
     class sim:
         dt = 0.005

@@ -36,3 +36,4 @@ from .gym_math_wrappers import *
 from .math.simple_math import *
 from .terrain import Terrain
 from .interfaces.interfaces import KeyboardInterface, GamepadInterface
+from .logging_and_saving.VisualizationRecorder import VisualizationRecorder

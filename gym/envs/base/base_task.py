@@ -81,6 +81,7 @@ class BaseTask():
         # todo: read from config
         self.enable_viewer_sync = True
         self.viewer = None
+        self.exit = False
 
         # * if running with a viewer, set up keyboard shortcuts and camera
         if self.headless is False:
@@ -163,6 +164,10 @@ class BaseTask():
 
     def step(self, actions):
         raise NotImplementedError
+
+    def check_exit(self):
+        if self.exit == True:
+            sys.exit()
 
     def _render(self, sync_frame_time=True):
         if self.viewer:
