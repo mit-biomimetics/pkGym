@@ -10,6 +10,7 @@ class ActorCritic(nn.Module):
                  critic_hidden_dims=[256, 256, 256],
                  activation="elu",
                  init_noise_std=1.0,
+                 normalize_obs=True,
                  **kwargs):
 
         if kwargs:
@@ -20,14 +21,16 @@ class ActorCritic(nn.Module):
         super(ActorCritic, self).__init__()
 
         self.actor = Actor(num_actor_obs,
-                          num_actions,
-                          actor_hidden_dims,
-                          activation,
-                          init_noise_std)
+                           num_actions,
+                           actor_hidden_dims,
+                           activation,
+                           init_noise_std,
+                           normalize_obs)
 
         self.critic = Critic(num_critic_obs,
                              critic_hidden_dims,
-                             activation)
+                             activation,
+                             normalize_obs)
 
         print(f"Actor MLP: {self.actor.NN}")
         print(f"Critic MLP: {self.critic.NN}")

@@ -216,6 +216,7 @@ class LeggedRobotRunnerCfg(BaseConfig):
         critic_hidden_dims = [512, 256, 128]
         # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
         activation = 'elu'
+        normalize_obs = True  # True, False
 
         actor_obs = [
             "observation_a",

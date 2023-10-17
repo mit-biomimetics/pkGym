@@ -203,6 +203,7 @@ class HumanoidRunningRunnerCfg(LeggedRobotRunnerCfg):
         critic_hidden_dims = [256, 256, 256]
         # (elu, relu, selu, crelu, lrelu, tanh, sigmoid)
         activation = 'elu'
+        normalize_obs = True  # True, False
 
         actor_obs = ["base_height",
                      "base_lin_vel",
