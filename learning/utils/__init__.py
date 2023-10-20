@@ -32,4 +32,4 @@
 
 from .utils import (split_and_pad_trajectories, unpad_trajectories,
                     remove_zero_weighted_rewards, set_discount_from_horizon)
-from .logging import Logger
+from .logger import Logger

@@ -1,8 +1,7 @@
 from gym.envs import __init__
 from gym.utils import get_args, task_registry
-from gym.utils.logging_and_saving \
-    import local_code_save_helper, wandb_singleton
-
+from gym.utils.logging_and_saving import wandb_singleton
+from gym.utils.logging_and_saving import local_code_save_helper
 
 def setup():
     args = get_args()
@@ -16,8 +15,8 @@ def setup():
     # * then make env
     policy_runner = task_registry.make_alg_runner(env, train_cfg)
 
-    local_code_save_helper.log_and_save(
-        env, env_cfg, train_cfg, policy_runner)
+    local_code_save_helper.save_local_files_to_logs(train_cfg.log_dir)
+
     wandb_helper.attach_runner(policy_runner=policy_runner)
 
     return train_cfg, policy_runner

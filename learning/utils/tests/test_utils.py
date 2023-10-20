@@ -11,11 +11,11 @@ class TestUtils:
         assert set_discount_from_horizon(dt, horizon) == 0.9
         assert set_discount_from_horizon(dt, 0.) == 0
         with pytest.raises(AssertionError):
-            set_discount_from_horizon(dt, dt/2.)
+            set_discount_from_horizon(dt, dt / 2.)
         with pytest.raises(AssertionError):
             set_discount_from_horizon(dt, -1)
         with pytest.raises(AssertionError):
-            set_discount_from_horizon(-dt, dt/2.)
+            set_discount_from_horizon(-dt, dt / 2.)
 
     def test_remove_zero_weighted_rewards(self):
         reward_weights = {'a': 0, 'b': 1}

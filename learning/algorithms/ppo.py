@@ -128,8 +128,8 @@ class PPO:
         self.storage.compute_returns(last_values, self.gamma, self.lam)
 
     def update(self):
-        mean_value_loss = 0
-        mean_surrogate_loss = 0
+        self.mean_value_loss = 0
+        self.mean_surrogate_loss = 0
         generator = self.storage.mini_batch_generator(
             self.num_mini_batches, self.num_learning_epochs)
         for (obs_batch, critic_obs_batch, actions_batch, target_values_batch,
@@ -198,12 +198,10 @@ class PPO:
                 self.actor_critic.parameters(), self.max_grad_norm)
             self.optimizer.step()
 
-            mean_value_loss += value_loss.item()
-            mean_surrogate_loss += surrogate_loss.item()
+            self.mean_value_loss += value_loss.item()
+            self.mean_surrogate_loss += surrogate_loss.item()
 
         num_updates = self.num_learning_epochs * self.num_mini_batches
-        mean_value_loss /= num_updates
-        mean_surrogate_loss /= num_updates
+        self.mean_value_loss /= num_updates
+        self.mean_surrogate_loss /= num_updates
         self.storage.clear()
-
-        return mean_value_loss, mean_surrogate_loss

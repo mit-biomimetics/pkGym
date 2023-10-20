@@ -7,9 +7,6 @@ class MiniCheetah(LeggedRobot):
     def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
         super().__init__(gym, sim, cfg, sim_params, sim_device, headless)
 
-    def _init_buffers(self):
-        super()._init_buffers()
-
     def _reward_lin_vel_z(self):
         """Penalize z axis base linear velocity with squared exp"""
         return self._sqrdexp(self.base_lin_vel[:, 2]

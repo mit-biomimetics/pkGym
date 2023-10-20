@@ -147,11 +147,6 @@ class BaseTask():
     def _eval_reward(self, name):
         return eval('self._reward_'+name+'()')
 
-    def compute_log(self, extra_log):
-        ''' Compute and return a value for logging
-        '''
-        return eval('self._log_'+extra_log+'()')
-
     def _check_terminations_and_timeouts(self):
         """ Check if environments need to be reset
         """
@@ -159,7 +154,7 @@ class BaseTask():
             self.contact_forces[:, self.termination_contact_indices, :]
         self.terminated = \
             torch.any(torch.norm(contact_forces, dim=-1) > 1., dim=1)
-        self.timed_out = self.episode_length_buf > self.max_episode_length
+        self.timed_out = self.episode_length_buf >= self.max_episode_length
         self.to_be_reset = self.timed_out | self.terminated
 
     def step(self, actions):

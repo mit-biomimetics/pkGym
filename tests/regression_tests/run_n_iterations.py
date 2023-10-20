@@ -1,8 +1,6 @@
 from gym.envs import __init__
-from gym.utils.logging_and_saving import local_code_save_helper
 from gym.utils import get_args, task_registry
 import torch
-# import os
 
 
 def setup():
@@ -25,7 +23,6 @@ def setup():
 
     # * switch to evaluation mode (dropout for example)
     runner.switch_to_eval()
-    local_code_save_helper.log_and_save(env, env_cfg, train_cfg, runner)
     return env, runner, args
 
 

@@ -30,14 +30,16 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-import time
 import os
 import torch
 from learning.algorithms import PPO
 from learning.modules import ActorCritic
 from learning.env import VecEnv
 from learning.utils import remove_zero_weighted_rewards
+
 from learning.utils import Logger
+
+logger = Logger()
 
 
 class OnPolicyRunner:
@@ -66,20 +68,20 @@ class OnPolicyRunner:
         self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
         self.tot_timesteps = 0
-        self.tot_time = 0
         self.it = 0
 
         # * init storage and model
         self.init_storage()
-
-        # * Log
         self.log_dir = train_cfg["log_dir"]
-        self.logger = Logger(train_cfg, env)
+
+        logger.initialize(self.env.num_envs,
+                          self.env.dt,
+                          self.cfg['max_iterations'],
+                          self.device)
 
     def parse_train_cfg(self, train_cfg):
         self.cfg = train_cfg['runner']
         self.alg_cfg = train_cfg['algorithm']
-
         remove_zero_weighted_rewards(train_cfg['policy']['reward']['weights'])
         self.policy_cfg = train_cfg['policy']
 
@@ -101,6 +103,22 @@ class OnPolicyRunner:
 
     def learn(self, num_learning_iterations, init_at_random_ep_len=False):
 
+        # * unpack out of config
+        reward_weights = self.policy_cfg['reward']['weights']
+        termination_weight = self.policy_cfg['reward']['termination_weight']
+        rewards_dict = {}
+        total_rewards = torch.zeros(self.env.num_envs, device=self.device)
+
+        # * set up logger
+        logger.register_rewards(list(reward_weights.keys()))
+        logger.register_rewards(list(termination_weight.keys()))
+        logger.register_rewards(['total_rewards'])
+
+        logger.register_category('algorithm',
+                                 self.alg,
+                                 ['mean_value_loss',
+                                  'mean_surrogate_loss'])
+
         if init_at_random_ep_len:
             self.env.episode_length_buf = torch.randint_like(
                 self.env.episode_length_buf,
@@ -110,16 +128,14 @@ class OnPolicyRunner:
         critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
         self.alg.actor_critic.train()
         self.num_learning_iterations = num_learning_iterations
-        self.tot_iter = self.it + num_learning_iterations
+        tot_iter = self.it + num_learning_iterations
 
         self.save()
 
-        reward_weights = self.policy_cfg['reward']['weights']
-        termination_weight = self.policy_cfg['reward']['termination_weight']
-        rewards_dict = {}
-
-        for self.it in range(self.it+1, self.tot_iter+1):
-            start = time.time()
+        logger.tic('runtime')
+        for self.it in range(self.it + 1, tot_iter + 1):
+            logger.tic('iteration')
+            logger.tic('collection')
             # * Rollout
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
@@ -143,30 +159,31 @@ class OnPolicyRunner:
                                                          modifier=self.env.dt,
                                                          mask=~terminated))
 
-                    self.logger.log_step(self.env, rewards_dict, dones)
+                    total_rewards = torch.stack(
+                        tuple(rewards_dict.values())).sum(dim=0)
 
-                    rewards = torch.sum(torch.stack(
-                        tuple(rewards_dict.values())), dim=0)
-                    self.alg.process_env_step(rewards, dones, timed_out)
+                    logger.log_rewards(rewards_dict)
+                    logger.log_rewards({'total_rewards': total_rewards})
+                    logger.finish_step(dones)
 
-                stop = time.time()
-                self.collection_time = stop - start
-                # * Learning step
-                start = stop
+                    self.alg.process_env_step(total_rewards,
+                                              dones,
+                                              timed_out)
                 self.alg.compute_returns(critic_obs)
+            logger.toc('collection')
 
-            self.mean_value_loss, self.mean_surrogate_loss = self.alg.update()
-            stop = time.time()
-            self.learn_time = stop - start
-            self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
-            self.tot_time += self.collection_time + self.learn_time
+            logger.tic('learning')
+            self.alg.update()
+            logger.toc('learning')
+            logger.log_category()
 
-            self.logger.log_iteration(self)
+            logger.finish_iteration()
+            logger.toc('iteration')
+            logger.toc('runtime')
+            logger.print_to_terminal()
 
             if self.it % self.save_interval == 0:
                 self.save()
-
-        # * save
         self.save()
 
     def get_noise(self, obs_list, noise_dict):
@@ -180,7 +197,7 @@ class OnPolicyRunner:
                                * torch.tensor(noise_dict[obs]).to(self.device)
                 if obs in self.env.scales.keys():
                     noise_tensor /= self.env.scales[obs]
-                noise_vec[obs_index:obs_index+obs_size] = noise_tensor
+                noise_vec[obs_index:obs_index + obs_size] = noise_tensor
             obs_index += obs_size
         return noise_vec * torch.randn(self.env.num_envs, len(noise_vec),
                                        device=self.device)
@@ -216,14 +233,6 @@ class OnPolicyRunner:
         return self.env.get_states(action_list)[0].shape[0]
 
     def get_rewards(self, reward_weights, modifier=1, mask=None):
-        '''
-        Computes each reward on the fly, sends them to logging, and returns the
-        total reward.
-        reward_weights: dict with reward name, and weighting
-        modifier: an additional weighting applied to all rewards
-        mask: a boolean tensor of shape (num_envs), to toggle which rewards are
-              computed
-        '''
         rewards_dict = {}
         if mask is None:
             mask = 1.0
@@ -236,6 +245,7 @@ class OnPolicyRunner:
         return modifier*self.env.compute_reward(reward_weight).to(self.device)
 
     def save(self):
+        os.makedirs(self.log_dir, exist_ok=True)
         path = os.path.join(self.log_dir, 'model_{}.pt'.format(self.it))
         torch.save({
             'model_state_dict': self.alg.actor_critic.state_dict(),
@@ -255,9 +265,8 @@ class OnPolicyRunner:
         self.alg.actor_critic.eval()
 
     def get_inference_actions(self):
-        obs = self.get_noisy_obs(
-                        self.policy_cfg['actor_obs'],
-                        self.policy_cfg['noise'])
+        obs = self.get_noisy_obs(self.policy_cfg['actor_obs'],
+                                 self.policy_cfg['noise'])
         return self.alg.actor_critic.actor.act_inference(obs)
 
     def export(self, path):

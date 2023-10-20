@@ -206,10 +206,6 @@ class LeggedRobotRunnerCfg(BaseConfig):
     class logging():
         enable_local_saving = True
 
-    class extra_logs:
-        per_iter = []   # Must be given a scalar per iteration
-        episode_mean = []   # Must be given a tensor per step (num_envs)
-
     class policy:
         init_noise_std = 1.0
         actor_hidden_dims = [512, 256, 128]

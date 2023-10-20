@@ -1,10 +1,9 @@
 import os
-import isaacgym
 import torch
 
 from gym.envs import __init__
-from gym.utils.logging_and_saving import local_code_save_helper
 from gym.utils import task_registry
+
 
 def run_integration_test(args):
     # * do initial setup
@@ -13,8 +12,6 @@ def run_integration_test(args):
     task_registry.make_gym_and_sim()
     env = task_registry.make_env(name=args.task, env_cfg=env_cfg)
     policy_runner = task_registry.make_alg_runner(env=env, train_cfg=train_cfg)
-
-    local_code_save_helper.log_and_save(env, env_cfg, train_cfg, policy_runner)
 
     # * get the default test values before learning
     default_actions = policy_runner.env.get_states(train_cfg.policy.actions)
@@ -29,6 +26,7 @@ def run_integration_test(args):
     it = policy_runner.it
     log_dir = policy_runner.log_dir
     return actions.cpu().clone(), default_actions.cpu().clone(), it, log_dir
+
 
 class TestDefaultIntegration():
     def test_default_integration_settings(self, args):

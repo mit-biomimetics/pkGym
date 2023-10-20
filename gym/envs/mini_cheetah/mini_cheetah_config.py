@@ -122,10 +122,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
 class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
     seed = -1
 
-    class extra_logs:
-        per_iter = ["max_lin_vel_y_command"]
-        episode_mean = ["base_height"]
-
     class policy(LeggedRobotRunnerCfg.policy):
         actor_hidden_dims = [256, 256, 256]
         critic_hidden_dims = [256, 256, 256]
