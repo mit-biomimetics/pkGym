@@ -116,8 +116,8 @@ class PPO:
         self.transition.dones = dones
         # * Bootstrapping on time outs
         if timed_out is not None:
-            self.transition.rewards += self.gamma * self.transition.values \
-                                      * timed_out
+            self.transition.rewards += (self.gamma * self.transition.values
+                                        * timed_out)
 
         # * Record the transition
         self.storage.add_transitions(self.transition)

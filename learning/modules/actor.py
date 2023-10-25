@@ -37,10 +37,6 @@ class Actor(nn.Module):
         Normal.set_default_validate_args = False
 
     @property
-    def action_std(self):
-        return self.std
-
-    @property
     def action_mean(self):
         return self.distribution.mean
 
@@ -56,7 +52,7 @@ class Actor(nn.Module):
         if self._normalize_obs:
             observations = self.normalize(observations)
         mean = self.NN(observations)
-        self.distribution = Normal(mean, mean*0. + self.std)
+        self.distribution = Normal(mean, mean * 0. + self.std)
 
     def act(self, observations):
         self.update_distribution(observations)

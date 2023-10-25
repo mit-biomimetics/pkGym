@@ -6,7 +6,7 @@ from isaacgym import gymtorch, gymapi
 
 from gym import LEGGED_GYM_ROOT_DIR
 from gym.envs.base.base_task import BaseTask
-from gym.utils import random_sample, exp_avg_filter
+from gym.utils import random_sample
 from gym.utils.helpers import class_to_dict
 
 
@@ -99,10 +99,10 @@ class FixedRobot(BaseTask):
         self.episode_length_buf += 1
         self.common_step_counter += 1
 
-        nact = self.num_actuators
-        self.dof_pos_history[:, 2*nact:] = self.dof_pos_history[:, nact:2*nact]
-        self.dof_pos_history[:, nact:2*nact] = self.dof_pos_history[:, :nact]
-        self.dof_pos_history[:, :nact] = self.dof_pos_target
+        n = self.num_actuators
+        self.dof_pos_history[:, 2 * n:] = self.dof_pos_history[:, n:2 * n]
+        self.dof_pos_history[:, n:2 * n] = self.dof_pos_history[:, :n]
+        self.dof_pos_history[:, :n] = self.dof_pos_target
 
         self.dof_pos_obs = self.dof_pos - self.default_dof_pos
 
@@ -331,7 +331,7 @@ class FixedRobot(BaseTask):
         self.tau_ff = torch.zeros(self.num_envs, self.num_actuators,
                                   dtype=torch.float, device=self.device)
         self.dof_pos_history = torch.zeros(self.num_envs,
-                                           self.num_actuators*3,
+                                           self.num_actuators * 3,
                                            dtype=torch.float,
                                            device=self.device)
         # * joint positions offsets and PD gains
@@ -375,7 +375,7 @@ class FixedRobot(BaseTask):
                     if self.cfg.control.control_type in ["P", "V"]:
                         print(f"PD gain of joint {name} not defined, "
                               + "set to zero")
-                except:  # ! another crime - no bare excepts
+                except:
                     pass
 
         self.default_dof_pos = self.default_dof_pos.unsqueeze(0)
@@ -561,8 +561,8 @@ class FixedRobot(BaseTask):
     def _sqrdexp(self, x):
         """ shorthand helper for squared exponential
         """
-        return torch.exp(
-            -torch.square(x)/self.cfg.reward_settings.tracking_sigma)
+        return torch.exp(-torch.square(x)
+                         / self.cfg.reward_settings.tracking_sigma)
 
     def _reward_torques(self):
         """Penalize torques"""
@@ -575,26 +575,26 @@ class FixedRobot(BaseTask):
     def _reward_action_rate(self):
         """Penalize changes in actions"""
         nact = self.num_actuators
-        dt2 = (self.dt*self.cfg.control.decimation)**2
+        dt2 = (self.dt * self.cfg.control.decimation)**2
         error = torch.square(
             self.dof_pos_history[:, :nact]
-            - self.dof_pos_history[:, nact:2*nact])/dt2
+            - self.dof_pos_history[:, nact:2 * nact]) / dt2
         return -torch.sum(error, dim=1)
 
     def _reward_action_rate2(self):
         """Penalize changes in actions"""
         nact = self.num_actuators
-        dt2 = (self.dt*self.cfg.control.decimation)**2
+        dt2 = (self.dt * self.cfg.control.decimation)**2
         error = torch.square(
             self.dof_pos_history[:, :nact]
-            - 2*self.dof_pos_history[:, nact:2*nact]
-            + self.dof_pos_history[:, 2*nact:])/dt2
+            - 2 * self.dof_pos_history[:, nact:2 * nact]
+            + self.dof_pos_history[:, 2 * nact:]) / dt2
         return -torch.sum(error, dim=1)
 
     def _reward_collision(self):
         """Penalize collisions on selected bodies"""
         return -torch.sum(
-            1.*(torch.norm(
+            1. * (torch.norm(
                 self.contact_forces[:, self.penalised_contact_indices, :],
                 dim=-1) > 0.1), dim=1)
 
@@ -614,7 +614,6 @@ class FixedRobot(BaseTask):
     def _reward_dof_vel_limits(self):
         """Penalize dof velocities too close to the limit"""
         # * clip to max error = 1 rad/s per joint to avoid huge penalties
-        return -torch.sum(
-            (torch.abs(self.dof_vel)
-             - self.dof_vel_limits*self.cfg.reward_settings.soft_dof_vel_limit)
-            .clip(min=0., max=1.), dim=1)
+        limit = self.cfg.reward_settings.soft_dof_vel_limit
+        error = (self.dof_vel.abs() - self.dof_vel_limits * limit)
+        return -torch.sum(error.clip(min=0., max=1.), dim=1)

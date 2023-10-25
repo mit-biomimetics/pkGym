@@ -2,7 +2,7 @@ import sys
 import pytest
 from unittest.mock import patch
 
-from gym.envs import *
+from gym.envs import *  # noqa: F401, F403
 from gym.utils import get_args
 from gym.utils import task_registry as _task_registry
 

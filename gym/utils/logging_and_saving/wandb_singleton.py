@@ -42,8 +42,8 @@ class WandbSingleton(object):
            or args.disable_wandb):
             self.enabled = False
         else:
-            print(f'Setting WandB project name: {self.project_name}\n' +
-                  f'Setting WandB entitiy name: {self.entity_name}\n')
+            print(f'Setting WandB project name: {self.project_name}\n'
+                  + f'Setting WandB entitiy name: {self.entity_name}\n')
             self.enabled = True
 
     def set_wandb_sweep_cfg_values(self, env_cfg, train_cfg):

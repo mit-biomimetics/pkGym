@@ -9,6 +9,7 @@ class CartpoleCfg(FixedRobotCfg):
         num_envs = 4024
         num_actuators = 1  # 1 for the cart force
         episode_length_s = 20
+
     class terrain(FixedRobotCfg.terrain):
         pass
 
@@ -60,6 +61,7 @@ class CartpoleCfg(FixedRobotCfg):
         # * Action scales
         tau_ff = 10
 
+
 class CartpoleRunnerCfg(FixedRobotCfgPPO):
     # We need random experiments to run
     seed = -1
@@ -71,7 +73,7 @@ class CartpoleRunnerCfg(FixedRobotCfgPPO):
         num_units = 32
         actor_hidden_dims = [num_units] * num_layers
         critic_hidden_dims = [num_units] * num_layers
-        activation = 'elu'  # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
+        activation = 'elu'
 
         actor_obs = ["cart_obs",
                      "pole_trig_obs",

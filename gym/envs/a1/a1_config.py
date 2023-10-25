@@ -116,16 +116,16 @@ class A1Cfg(LeggedRobotCfg):
         tracking_sigma = 0.25
 
     class scaling(LeggedRobotCfg.scaling):
-        base_ang_vel = 3.14*(BASE_HEIGHT_REF/9.81)**0.5
+        base_ang_vel = 3.14 * (BASE_HEIGHT_REF / 9.81)**0.5
         base_lin_vel = 1.
         commands = 1
         dof_vel = 100.  # ought to be roughly max expected speed.
         base_height = BASE_HEIGHT_REF
-        dof_pos = 4*[0.1, 1., 2]  # hip-abad, hip-pitch, knee
+        dof_pos = 4 * [0.1, 1., 2]  # hip-abad, hip-pitch, knee
         dof_pos_obs = dof_pos
         # Action scales
         dof_pos_target = dof_pos
-        tau_ff = 4*[18, 18, 28]  # hip-abad, hip-pitch, knee
+        tau_ff = 4 * [18, 18, 28]  # hip-abad, hip-pitch, knee
 
 
 class A1RunnerCfg(LeggedRobotRunnerCfg):

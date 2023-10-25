@@ -20,7 +20,7 @@
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# ARE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
 # CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
 # SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 # INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
@@ -62,7 +62,7 @@ class Anymal(LeggedRobot):
             self._init_sea()
 
     def _init_sea(self):
-        num_sea_states = self.num_envs*self.num_actuators
+        num_sea_states = self.num_envs * self.num_actuators
         self.sea_input = torch.zeros(num_sea_states, 1, 2,
                                      device=self.device)
         self.sea_hidden_state = torch.zeros(2, num_sea_states, 8,
@@ -93,7 +93,7 @@ class Anymal(LeggedRobot):
     def _switch(self):
         c_vel = torch.linalg.norm(self.commands, dim=1)
         return torch.exp(-torch.square(torch.max(torch.zeros_like(c_vel),
-                                                 c_vel-0.2))/0.1)
+                                                 c_vel - 0.2)) / 0.1)
 
     def _reward_lin_vel_z(self):
         """
@@ -124,7 +124,7 @@ class Anymal(LeggedRobot):
         Squared exponential saturating at base_height target
         """
         base_height = self.root_states[:, 2].unsqueeze(1)
-        error = (base_height-self.cfg.reward_settings.base_height_target)
+        error = (base_height - self.cfg.reward_settings.base_height_target)
         error /= self.scales["base_height"]
         error = torch.clamp(error, max=0, min=None).flatten()
         return torch.exp(-torch.square(error)
@@ -137,9 +137,9 @@ class Anymal(LeggedRobot):
 
         error = self.commands[:, :2] - self.base_lin_vel[:, :2]
         # * scale by (1+|cmd|): if cmd=0, no scaling.
-        error *= 1./(1. + torch.abs(self.commands[:, :2]))
+        error *= 1. / (1. + torch.abs(self.commands[:, :2]))
         error = torch.sum(torch.square(error), dim=1)
-        return torch.exp(-error/self.cfg.reward_settings.tracking_sigma)
+        return torch.exp(-error / self.cfg.reward_settings.tracking_sigma)
 
     def _reward_dof_vel(self):
         """
@@ -155,12 +155,12 @@ class Anymal(LeggedRobot):
         """
 
         # * normalize angles so we care about being within 5 deg
-        rew_pos = torch.mean(self._sqrdexp(
-                  (self.dof_pos - self.default_dof_pos)/torch.pi*36), dim=1)
+        error = (self.dof_pos - self.default_dof_pos) / torch.pi * 36
+        rew_pos = torch.mean(self._sqrdexp(error), dim=1)
         rew_vel = torch.mean(self._sqrdexp(self.dof_vel), dim=1)
         rew_base_vel = torch.mean(torch.square(self.base_lin_vel), dim=1)
         rew_base_vel += torch.mean(torch.square(self.base_ang_vel), dim=1)
-        return (rew_vel+rew_pos-rew_base_vel)*self._switch()
+        return (rew_vel + rew_pos - rew_base_vel) * self._switch()
 
     def _reward_dof_near_home(self):
         return torch.mean(self._sqrdexp((self.dof_pos - self.default_dof_pos)

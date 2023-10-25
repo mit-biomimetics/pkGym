@@ -10,9 +10,9 @@ class A1(LeggedRobot):
     def _init_buffers(self):
         super()._init_buffers()
         self.dof_pos_obs = torch.zeros_like(self.dof_pos, requires_grad=False)
-        self.base_height = torch.zeros(
-            self.num_envs, 1,
-            dtype=torch.float, device=self.device, requires_grad=False)
+        self.base_height = torch.zeros(self.num_envs, 1,
+                                       device=self.device,
+                                       requires_grad=False)
 
     def _reward_lin_vel_z(self):
         ''' Penalize z axis base linear velocity w. squared exp '''
@@ -34,7 +34,7 @@ class A1(LeggedRobot):
     def _reward_min_base_height(self):
         ''' Squared exponential saturating at base_height target '''
         base_height = self.root_states[:, 2].unsqueeze(1)
-        error = (base_height-self.cfg.reward_settings.base_height_target)
+        error = (base_height - self.cfg.reward_settings.base_height_target)
         error /= self.scales["base_height"]
         error = torch.clamp(error, max=0, min=None).flatten()
         return torch.exp(-torch.square(error)
@@ -44,9 +44,9 @@ class A1(LeggedRobot):
         ''' Tracking of linear velocity commands (xy axes) '''
         error = self.commands[:, :2] - self.base_lin_vel[:, :2]
         # * scale by (1+|cmd|): if cmd=0, no scaling.
-        error *= 1./(1. + torch.abs(self.commands[:, :2]))
+        error *= 1 / (1 + torch.abs(self.commands[:, :2]))
         error = torch.sum(torch.square(error), dim=1)
-        return torch.exp(-error/self.cfg.reward_settings.tracking_sigma)
+        return torch.exp(-error / self.cfg.reward_settings.tracking_sigma)
 
     def _reward_dof_vel(self):
         ''' Penalize dof velocities'''

@@ -26,7 +26,8 @@ class MiniCheetah(LeggedRobot):
 
     def _reward_min_base_height(self):
         """Squared exponential saturating at base_height target"""
-        error = (self.base_height-self.cfg.reward_settings.base_height_target)
+        error = (self.base_height
+                 - self.cfg.reward_settings.base_height_target)
         error /= self.scales["base_height"]
         error = torch.clamp(error, max=0, min=None).flatten()
         return self._sqrdexp(error)
@@ -36,9 +37,9 @@ class MiniCheetah(LeggedRobot):
         # just use lin_vel?
         error = self.commands[:, :2] - self.base_lin_vel[:, :2]
         # * scale by (1+|cmd|): if cmd=0, no scaling.
-        error *= 1./(1. + torch.abs(self.commands[:, :2]))
+        error *= 1. / (1. + torch.abs(self.commands[:, :2]))
         error = torch.sum(torch.square(error), dim=1)
-        return torch.exp(-error/self.cfg.reward_settings.tracking_sigma)
+        return torch.exp(-error / self.cfg.reward_settings.tracking_sigma)
 
     def _reward_dof_vel(self):
         """Penalize dof velocities"""

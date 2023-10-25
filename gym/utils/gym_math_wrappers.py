@@ -30,11 +30,7 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-import torch
-from torch import Tensor
-import numpy as np
 from isaacgym.torch_utils import quat_apply, normalize, torch_rand_float
-from typing import Tuple
 
 
 # @ torch.jit.script
@@ -53,5 +49,5 @@ def random_sample(env_ids, low, high, device):
     rand_pos = torch_rand_float(0, 1, (len(env_ids), len(low)),
                                 device=device)
     diff_pos = (high - low).repeat(len(env_ids), 1)
-    random_dof_pos = rand_pos*diff_pos + low.repeat(len(env_ids), 1)
+    random_dof_pos = rand_pos * diff_pos + low.repeat(len(env_ids), 1)
     return random_dof_pos

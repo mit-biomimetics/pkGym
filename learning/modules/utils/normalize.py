@@ -11,9 +11,9 @@ def get_mean_var_with_masks(values, masks):
     sum_mask = masks.sum()
     masked_vals = values * masks
     values_mean = masked_vals.sum() / sum_mask
-    min_sqr = ((((masked_vals)**2)/sum_mask).sum() -
-               ((masked_vals/sum_mask).sum())**2)
-    values_var = min_sqr * sum_mask / (sum_mask-1)
+    min_sqr = ((((masked_vals)**2) / sum_mask).sum()
+               - ((masked_vals / sum_mask).sum())**2)
+    values_var = min_sqr * sum_mask / (sum_mask - 1)
     return values_mean, values_var
 
 
@@ -52,10 +52,10 @@ class RunningMeanStd(nn.Module):
         delta = batch_mean - running_mean
 
         if running_count > 1e2 and abs(running_count - batch_count) < 10:
-            new_mean = ((running_count*running_var)*(batch_count*batch_var))\
-                        / tot_count
+            new_mean = ((running_count * running_var)
+                        * (batch_count * batch_var)) / tot_count
         else:
-            new_mean = running_mean + (delta*batch_count) / tot_count
+            new_mean = running_mean + (delta * batch_count) / tot_count
         m_a = running_var * running_count
         m_b = batch_var * batch_count
         M2 = m_a + m_b + (delta**2 * running_count * batch_count) / tot_count

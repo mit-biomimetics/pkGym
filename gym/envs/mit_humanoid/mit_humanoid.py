@@ -22,7 +22,8 @@ class MIT_Humanoid(LeggedRobot):
 
     def _reward_min_base_height(self):
         """Squared exponential saturating at base_height target"""
-        error = (self.base_height-self.cfg.reward_settings.base_height_target)
+        error = (self.base_height
+                 - self.cfg.reward_settings.base_height_target)
         error = torch.clamp(error, max=0, min=None).flatten()
         return self._sqrdexp(error)
 
@@ -31,7 +32,7 @@ class MIT_Humanoid(LeggedRobot):
         # just use lin_vel?
         error = self.commands[:, :2] - self.base_lin_vel[:, :2]
         # * scale by (1+|cmd|): if cmd=0, no scaling.
-        error *= 1./(1. + torch.abs(self.commands[:, :2]))
+        error *= 1. / (1. + torch.abs(self.commands[:, :2]))
         return torch.mean(self._sqrdexp(error), dim=1)
 
     def _reward_dof_vel(self):

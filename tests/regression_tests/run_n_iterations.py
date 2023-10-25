@@ -1,4 +1,4 @@
-from gym.envs import __init__
+from gym.envs import __init__  # noqa: F401
 from gym.utils import get_args, task_registry
 import torch
 

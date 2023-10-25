@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 from .utils import create_MLP
 from .utils import export_network
@@ -14,7 +13,7 @@ class StateEstimatorNN(nn.Module):
     activation -- activation type (default 'elu')
     dropouts -- list of dropout rate for each layer (default None)
     """
-    def __init__(self,  num_inputs, num_outputs, hidden_dims=[256, 128],
+    def __init__(self, num_inputs, num_outputs, hidden_dims=[256, 128],
                  activation='elu', dropouts=None, **kwargs):
         if kwargs:
             print("StateEstimator.__init__ got unexpected arguments, "

@@ -1,6 +1,6 @@
 import os
 
-from gym.envs import __init__
+from gym.envs import __init__  # noqa: F401
 from gym import LEGGED_GYM_ROOT_DIR
 from gym.utils import get_args, task_registry
 from gym.utils import KeyboardInterface
@@ -8,6 +8,7 @@ from gym.utils import VisualizationRecorder
 
 # torch needs to be imported after isaacgym imports in local source
 import torch
+
 
 def setup(args):
     env_cfg, train_cfg = task_registry.create_cfgs(args)
@@ -47,7 +48,7 @@ def play(env, runner, train_cfg):
     if COMMANDS_INTERFACE:
         # interface = GamepadInterface(env)
         interface = KeyboardInterface(env)
-    for i in range(10*int(env.max_episode_length)):
+    for i in range(10 * int(env.max_episode_length)):
         if COMMANDS_INTERFACE:
             interface.update(env)
         if env.cfg.viewer.record:
@@ -55,7 +56,6 @@ def play(env, runner, train_cfg):
         runner.set_actions(runner.get_inference_actions())
         env.step()
         env.check_exit()
-    
 
 
 if __name__ == '__main__':

@@ -90,9 +90,9 @@ def test_logging_rewards():
                       device='cpu')
     logger.register_rewards(['first', 'second', 'third'])
 
-    reward_dict_1 = {'first': torch.tensor([5., 5., 5.])*episode_dt,
-                     'second': torch.tensor([3., 0., 2.])*episode_dt}
-    reward_dict_2 = {'third': torch.tensor([1., 2., -2.])*episode_dt}
+    reward_dict_1 = {'first': torch.tensor([5., 5., 5.]) * episode_dt,
+                     'second': torch.tensor([3., 0., 2.]) * episode_dt}
+    reward_dict_2 = {'third': torch.tensor([1., 2., -2.]) * episode_dt}
     dones = torch.tensor([False, False, False])
 
     for _ in range(9):
@@ -171,13 +171,13 @@ def test_timer():
 
     ETA = logger.estimate_ETA(['first_step'], mode='iteration')
     # print(ETA)
-    expected_ETA = a*(1000-1)
+    expected_ETA = a * (1000 - 1)
     assert abs(ETA - expected_ETA) < 1e-5, \
         f"ETA {ETA} is not close to {expected_ETA}"
 
     ETA2 = logger.estimate_ETA(['first_step'], mode='total')
-    expected_ETA2 = a*(1000-1)
+    expected_ETA2 = a * (1000 - 1)
     assert abs(ETA2 - expected_ETA2) < 1e-5, \
         f"ETA {ETA2} is not close to {expected_ETA2}"
 
-    assert (a + b) >= 2*trial_time, "Timer not working correctly."
+    assert (a + b) >= 2 * trial_time, "Timer not working correctly."

@@ -9,7 +9,7 @@ def create_MLP(num_inputs, num_outputs, hidden_dims, activation,
     activation = get_activation(activation)
 
     if dropouts is None:
-        dropouts = [0]*len(hidden_dims)
+        dropouts = [0] * len(hidden_dims)
 
     layers = []
     if not hidden_dims:  # handle no hidden layers
@@ -20,8 +20,8 @@ def create_MLP(num_inputs, num_outputs, hidden_dims, activation,
             if i == len(hidden_dims) - 1:
                 add_layer(layers, hidden_dims[i], num_outputs)
             else:
-                add_layer(layers, hidden_dims[i], hidden_dims[i+1],
-                          activation, dropouts[i+1])
+                add_layer(layers, hidden_dims[i], hidden_dims[i + 1],
+                          activation, dropouts[i + 1])
     return torch.nn.Sequential(*layers)
 
 

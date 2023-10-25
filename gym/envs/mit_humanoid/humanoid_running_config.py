@@ -43,9 +43,9 @@ class HumanoidRunningCfg(LeggedRobotCfg):
             [0., 0.],  # x
             [0., 0.],  # y
             [0.7, 0.72],  # z
-            [-torch.pi/10, torch.pi/10],  # roll
-            [-torch.pi/10, torch.pi/10],  # pitch
-            [-torch.pi/10, torch.pi/10]   # yaw
+            [-torch.pi / 10, torch.pi / 10],  # roll
+            [-torch.pi / 10, torch.pi / 10],  # pitch
+            [-torch.pi / 10, torch.pi / 10]   # yaw
         ]
 
         # ranges for [v_x, v_y, v_z, w_x, w_y, w_z]
@@ -187,7 +187,7 @@ class HumanoidRunningCfg(LeggedRobotCfg):
         base_height = 0.6565
         base_lin_vel = 1.
         base_ang_vel = 1.
-        dof_pos = 2*[0.5, 1, 3, 2, 2] + 2*[2, 1, 0.5, 2.]
+        dof_pos = 2 * [0.5, 1, 3, 2, 2] + 2 * [2, 1, 0.5, 2.]
         dof_vel = 1.
         dof_pos_target = dof_pos
         clip_actions = 1000.

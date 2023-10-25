@@ -99,7 +99,7 @@ def set_discount_from_horizon(dt, horizon):
         discount_factor = 0
     else:
         assert (horizon >= dt), "Invalid discounting horizon"
-        discrete_time_horizon = int(horizon/dt)
-        discount_factor = 1 - 1/discrete_time_horizon
+        discrete_time_horizon = int(horizon / dt)
+        discount_factor = 1 - 1 / discrete_time_horizon
 
     return discount_factor

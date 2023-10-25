@@ -91,7 +91,7 @@ class AnymalCFlatCfg(LeggedRobotCfg):
 
     class asset(LeggedRobotCfg.asset):
         file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/" \
-                + "anymal_c/urdf/anymal_c.urdf"
+               + "anymal_c/urdf/anymal_c.urdf"
         foot_name = "FOOT"
         penalize_contacts_on = ["SHANK"]
         terminate_after_contacts_on = ["BASE", "THIGH"]
@@ -106,16 +106,16 @@ class AnymalCFlatCfg(LeggedRobotCfg):
         tracking_sigma = 0.25
 
     class scaling(LeggedRobotCfg.scaling):
-        base_ang_vel = 3.14*(BASE_HEIGHT_REF/9.81)**0.5
+        base_ang_vel = 3.14 * (BASE_HEIGHT_REF / 9.81)**0.5
         base_lin_vel = 1.
         commands = 1
         dof_vel = 100.  # ought to be roughly max expected speed.
         base_height = BASE_HEIGHT_REF
-        dof_pos = 4*[0.1, 1., 2]  # hip-abad, hip-pitch, knee
+        dof_pos = 4 * [0.1, 1., 2]  # hip-abad, hip-pitch, knee
         dof_pos_obs = dof_pos
         # Action scales
         dof_pos_target = dof_pos
-        tau_ff = 4*[80, 80, 80]  # hip-abad, hip-pitch, knee
+        tau_ff = 4 * [80, 80, 80]  # hip-abad, hip-pitch, knee
 
 
 class AnymalCFlatRunnerCfg(LeggedRobotRunnerCfg):

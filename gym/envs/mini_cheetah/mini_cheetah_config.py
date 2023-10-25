@@ -95,7 +95,7 @@ class MiniCheetahCfg(LeggedRobotCfg):
         # * set all torques set to 0
         disable_motors = False
         joint_damping = 0.1
-        rotor_inertia = [0.002268, 0.002268, 0.005484]*4
+        rotor_inertia = [0.002268, 0.002268, 0.005484] * 4
 
     class reward_settings(LeggedRobotCfg.reward_settings):
         soft_dof_pos_limit = 0.9
@@ -128,24 +128,22 @@ class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):
         # * can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
         activation = 'elu'
 
-        actor_obs = [
-            "base_height",
-            "base_lin_vel",
-            "base_ang_vel",
-            "projected_gravity",
-            "commands",
-            "dof_pos_obs",
-            "dof_vel"
-            ]
-        critic_obs = [
-            "base_height",
-            "base_lin_vel",
-            "base_ang_vel",
-            "projected_gravity",
-            "commands",
-            "dof_pos_obs",
-            "dof_vel"
-            ]
+        actor_obs = ["base_height",
+                     "base_lin_vel",
+                     "base_ang_vel",
+                     "projected_gravity",
+                     "commands",
+                     "dof_pos_obs",
+                     "dof_vel"
+                     ]
+        critic_obs = ["base_height",
+                      "base_lin_vel",
+                      "base_ang_vel",
+                      "projected_gravity",
+                      "commands",
+                      "dof_pos_obs",
+                      "dof_vel"
+                      ]
 
         actions = ["dof_pos_target"]
         add_noise = False

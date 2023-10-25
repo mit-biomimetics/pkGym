@@ -5,7 +5,7 @@ from gym.envs.base.legged_robot_config \
 class MITHumanoidCfg(LeggedRobotCfg):
     class env(LeggedRobotCfg.env):
         num_envs = 4096
-        num_observations = 49+3*18  # 121
+        num_observations = 49 + 3 * 18  # 121
         num_actuators = 18
         episode_length_s = 100  # episode length in seconds
         num_privileged_obs = num_observations
@@ -20,17 +20,16 @@ class MITHumanoidCfg(LeggedRobotCfg):
         # * "reset_to_traj" = feed in a trajectory to sample from.
         reset_mode = "reset_to_range"
 
-        default_joint_angles = {  # = target angles [rad] when action = 0.0
-            'hip_yaw': 0.,
-            'hip_abad': 0.,
-            'hip_pitch': -0.4,
-            'knee': 0.9,
-            'ankle': -0.45,
-            'shoulder_pitch': 0.,
-            'shoulder_abad': 0.,
-            'shoulder_yaw': 0.,
-            'elbow': 0.
-             }
+        default_joint_angles = {'hip_yaw': 0.,
+                                'hip_abad': 0.,
+                                'hip_pitch': -0.4,
+                                'knee': 0.9,
+                                'ankle': -0.45,
+                                'shoulder_pitch': 0.,
+                                'shoulder_abad': 0.,
+                                'shoulder_yaw': 0.,
+                                'elbow': 0.
+                                }
 
         # * default COM for basic initialization
         pos = [0.0, 0.0, 0.66]      # x,y,z [m]
@@ -150,10 +149,10 @@ class MITHumanoidCfg(LeggedRobotCfg):
     class scaling(LeggedRobotCfg.scaling):
         # * dimensionless time: sqrt(L/g) or sqrt(I/[mgL]), with I=I0+mL^2
         virtual_leg_length = 0.65
-        dimensionless_time = (virtual_leg_length/9.81)**0.5
+        dimensionless_time = (virtual_leg_length / 9.81)**0.5
         base_height = virtual_leg_length
-        base_lin_vel = virtual_leg_length/dimensionless_time
-        base_ang_vel = 3.14/dimensionless_time
+        base_lin_vel = virtual_leg_length / dimensionless_time
+        base_ang_vel = 3.14 / dimensionless_time
         dof_vel = 20  # ought to be roughly max expected speed.
         height_measurements = virtual_leg_length
 

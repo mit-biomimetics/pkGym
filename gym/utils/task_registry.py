@@ -148,7 +148,7 @@ class TaskRegistry():
         env_cfg.control.ctrl_dt = 1.0 / env_cfg.control.ctrl_frequency
         env_cfg.sim_dt = env_cfg.control.ctrl_dt / env_cfg.control.decimation
         self.sim_cfg["dt"] = env_cfg.sim_dt
-        if env_cfg.sim_dt != 1.0/env_cfg.control.desired_sim_frequency:
+        if env_cfg.sim_dt != 1.0 / env_cfg.control.desired_sim_frequency:
             print(f'****** Simulation dt adjusted from '
                   f'{1.0/env_cfg.control.desired_sim_frequency}'
                   f' to {env_cfg.sim_dt}.')

@@ -25,8 +25,9 @@ class VisualizationRecorder():
             load_run)
         self.run_name = os.path.basename(os.path.normpath(load_path))
         self.target_window = self.getWindowGeometry()
-        self.env.gym.subscribe_viewer_keyboard_event(self.env.viewer, 
-                                                     gymapi.KEY_ESCAPE, "QUIT")
+        self.env.gym.subscribe_viewer_keyboard_event(self.env.viewer,
+                                                     gymapi.KEY_ESCAPE,
+                                                     "QUIT")
         self.framerate = max(50., self.framerate)
         self.frame_sampling_rate = max(1,
                                        int(self.env.cfg.control.ctrl_frequency

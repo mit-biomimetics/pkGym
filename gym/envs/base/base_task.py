@@ -1,35 +1,3 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES.
-# All rights reserved.
-# SPDX-License-Identifier: BSD-3-Clause
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#
-# 1. Redistributions of source code must retain the above copyright notice,
-# this list of conditions and the following disclaimer.
-#
-# 2. Redistributions in binary form must reproduce the above copyright notice,
-# this list of conditions and the following disclaimer in the documentation
-# and/or other materials provided with the distribution.
-#
-# 3. Neither the name of the copyright holder nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
-# THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Copyright (c) 2021 ETH Zurich, Nikita Rudin
-
 import sys
 from isaacgym import gymapi
 from isaacgym import gymutil
@@ -98,7 +66,7 @@ class BaseTask():
 
     def get_state(self, name):
         if name in self.scales.keys():
-            return getattr(self, name)/self.scales[name]
+            return getattr(self, name) / self.scales[name]
         else:
             return getattr(self, name)
 
@@ -106,14 +74,14 @@ class BaseTask():
         idx = 0
         for state in state_list:
             state_dim = getattr(self, state).shape[1]
-            self.set_state(state, values[:, idx:idx+state_dim])
+            self.set_state(state, values[:, idx:idx + state_dim])
             idx += state_dim
         assert (idx == values.shape[1]), "Actions don't equal tensor shapes"
 
     def set_state(self, name, value):
         try:
             if name in self.scales.keys():
-                setattr(self, name, value*self.scales[name])
+                setattr(self, name, value * self.scales[name])
             else:
                 setattr(self, name, value)
         except AttributeError:
@@ -141,11 +109,11 @@ class BaseTask():
         reward = torch.zeros(self.num_envs,
                              device=self.device, dtype=torch.float)
         for name, weight in reward_weights.items():
-            reward += weight*self._eval_reward(name)
+            reward += weight * self._eval_reward(name)
         return reward
 
     def _eval_reward(self, name):
-        return eval('self._reward_'+name+'()')
+        return eval('self._reward_' + name + '()')
 
     def _check_terminations_and_timeouts(self):
         """ Check if environments need to be reset
@@ -161,7 +129,7 @@ class BaseTask():
         raise NotImplementedError
 
     def check_exit(self):
-        if self.exit == True:
+        if self.exit:
             sys.exit()
 
     def _render(self, sync_frame_time=True):
@@ -189,4 +157,3 @@ class BaseTask():
                     self.gym.sync_frame_time(self.sim)
             else:
                 self.gym.poll_viewer_events(self.viewer)
-                # self.gym.draw_viewer(self.viewer, self.sim, True)

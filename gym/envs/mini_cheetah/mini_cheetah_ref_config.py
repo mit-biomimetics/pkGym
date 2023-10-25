@@ -64,7 +64,7 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         class ranges:
             lin_vel_x = [0., 3.]  # min max [m/s]
             lin_vel_y = 1.  # max [m/s]
-            yaw_vel = 3.14/2.    # max [rad/s]
+            yaw_vel = 3.14 / 2.    # max [rad/s]
 
     class push_robots:
         toggle = True
@@ -102,14 +102,14 @@ class MiniCheetahRefCfg(MiniCheetahCfg):
         tracking_sigma = 0.3
 
     class scaling(MiniCheetahCfg.scaling):
-        base_ang_vel = 3.14/(BASE_HEIGHT_REF/9.81)**0.5
+        base_ang_vel = 3.14 / (BASE_HEIGHT_REF / 9.81)**0.5
         base_lin_vel = BASE_HEIGHT_REF
         dof_vel = 100.  # ought to be roughly max expected speed.
         base_height = BASE_HEIGHT_REF
-        dof_pos = 4*[0.1, 1., 2]  # hip-abad, hip-pitch, knee
+        dof_pos = 4 * [0.1, 1., 2]  # hip-abad, hip-pitch, knee
         dof_pos_obs = dof_pos
         dof_pos_target = 0.75  # action_scale
-        tau_ff = 4*[18, 18, 28]  # hip-abad, hip-pitch, knee
+        tau_ff = 4 * [18, 18, 28]  # hip-abad, hip-pitch, knee
         commands = [base_lin_vel, base_lin_vel, base_ang_vel]
 
 

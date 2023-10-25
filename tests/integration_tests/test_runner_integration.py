@@ -1,7 +1,7 @@
 import os
 import torch
 
-from gym.envs import __init__
+from gym.envs import __init__  # noqa: F401
 from gym.utils import task_registry
 
 
@@ -56,7 +56,8 @@ class TestDefaultIntegration():
         model_7_path = os.path.join(log_dir, 'model_7.pt')
         model_8_path = os.path.join(log_dir, 'model_8.pt')
 
-        assert os.path.exists(model_0_path), f'{model_0_path} (pre-iteration) was not saved'
+        assert os.path.exists(model_0_path), f'{model_0_path} ' \
+            '(pre-iteration) was not saved'
         assert not os.path.exists(model_1_path), f'{model_1_path} was saved'
         assert not os.path.exists(model_2_path), f'{model_2_path} was saved'
         assert os.path.exists(model_3_path), f'{model_3_path} was not saved'
@@ -64,4 +65,5 @@ class TestDefaultIntegration():
         assert not os.path.exists(model_5_path), f'{model_5_path} was saved'
         assert os.path.exists(model_6_path), f'{model_6_path} was not saved'
         assert not os.path.exists(model_7_path), f'{model_7_path} was saved'
-        assert os.path.exists(model_8_path), f'{model_5_path} (last iteration) was not saved'
+        assert os.path.exists(model_8_path), f'{model_5_path}' \
+            '(last iteration) was not saved'

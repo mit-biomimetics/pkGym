@@ -1,11 +1,12 @@
-# SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES.
+# All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
-# 1. Redistributions of source code must retain the above copyright notice, this
-# list of conditions and the following disclaimer.
+# 1. Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
 #
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 # this list of conditions and the following disclaimer in the documentation
@@ -17,21 +18,24 @@
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# ARE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+# THE POSSIBILITY OF SUCH DAMAGE.
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
+
 from gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
 
-class CassieRoughCfg( LeggedRobotCfg ):
-    class env( LeggedRobotCfg.env):
+
+class CassieRoughCfg(LeggedRobotCfg):
+    class env(LeggedRobotCfg.env):
         num_envs = 4096
         num_observations = 48  # 169
         num_actions = 12
@@ -40,13 +44,9 @@ class CassieRoughCfg( LeggedRobotCfg ):
         mesh_type = 'plane'
         measure_heights = False
 
-    # class terrain( LeggedRobotCfg.terrain):
-    #     measured_points_x = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5] # 1mx1m rectangle (without center line)
-    #     measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
-
-    class init_state( LeggedRobotCfg.init_state ):
-        pos = [0.0, 0.0, 1.5] # x,y,z [m]
-        default_joint_angles = { # = target angles [rad] when action = 0.0
+    class init_state(LeggedRobotCfg.init_state):
+        pos = [0.0, 0.0, 1.5]  # x,y,z [m]
+        default_joint_angles = {  # = target angles [rad] when action = 0.0
             'hip_abduction_left': 0.2,  # -0.3927 : 0.2618
             'hip_rotation_left': 0.3,  # -0.3927 : 0.3927"
             'hip_flexion_left': 1.,  # -0.8727 : 1.3963
@@ -62,33 +62,36 @@ class CassieRoughCfg( LeggedRobotCfg ):
             'toe_joint_right': -2.17
         }
 
-    class control( LeggedRobotCfg.control ):
+    class control(LeggedRobotCfg.control):
         # PD Drive parameters:
-        stiffness = {   'hip_abduction': 100.0, 'hip_rotation': 100.0,
-                        'hip_flexion': 200., 'thigh_joint': 200., 'ankle_joint': 200.,
-                        'toe_joint': 40.}  # [N*m/rad]
-        damping = { 'hip_abduction': 3.0, 'hip_rotation': 3.0,
-                    'hip_flexion': 6., 'thigh_joint': 6., 'ankle_joint': 6.,
-                    'toe_joint': 1.}  # [N*m*s/rad]     # [N*m*s/rad]
-        # action scale: target angle = actionScale * action + defaultAngle
-        action_scale = 0.5
-        # decimation: Number of control action updates @ sim DT per policy DT
-        decimation = 4
-        
-    class asset( LeggedRobotCfg.asset ):
+        stiffness = {'hip_abduction': 100.0,
+                     'hip_rotation': 100.0,
+                     'hip_flexion': 200.,
+                     'thigh_joint': 200.,
+                     'ankle_joint': 200.,
+                     'toe_joint': 40.}  # [N*m/rad]
+        damping = {'hip_abduction': 3.0,
+                   'hip_rotation': 3.0,
+                   'hip_flexion': 6.,
+                   'thigh_joint': 6.,
+                   'ankle_joint': 6.,
+                   'toe_joint': 1.}  # [N*m*s/rad]     # [N*m*s/rad]
+
+    class asset(LeggedRobotCfg.asset):
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/cassie/urdf/cassie.urdf'
         foot_name = 'toe'
         terminate_after_contacts_on = ['pelvis']
         flip_visual_attachments = False
         disable_gravity = True
-        self_collisions = 1 # 1 to disable, 0 to enable...bitwise filter
-  
-    class rewards( LeggedRobotCfg.rewards ):
+        self_collisions = 1
+
+    class rewards(LeggedRobotCfg.rewards):
         soft_dof_pos_limit = 0.95
         soft_dof_vel_limit = 0.9
         soft_torque_limit = 0.9
         max_contact_force = 300.
-        class weights( LeggedRobotCfg.rewards.weights ):
+
+        class weights(LeggedRobotCfg.rewards.weights):
             termination = -200.
             tracking_ang_vel = 1.0
             torques = -5.e-6
@@ -100,11 +103,12 @@ class CassieRoughCfg( LeggedRobotCfg ):
             ang_vel_xy = -0.0
             feet_contact_forces = -0.
 
-class CassieRoughCfgPPO( LeggedRobotCfgPPO ):
 
-    class runner( LeggedRobotCfgPPO.runner ):
+class CassieRoughCfgPPO(LeggedRobotCfgPPO):
+
+    class runner(LeggedRobotCfgPPO.runner):
         run_name = ''
         experiment_name = 'rough_cassie'
 
-    class algorithm( LeggedRobotCfgPPO.algorithm):
+    class algorithm(LeggedRobotCfgPPO.algorithm):
         entropy_coef = 0.01

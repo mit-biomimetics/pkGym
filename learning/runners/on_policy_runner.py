@@ -194,7 +194,7 @@ class OnPolicyRunner:
             obs_size = self.get_obs_size([obs])
             if obs in noise_dict.keys():
                 noise_tensor = torch.ones(obs_size).to(self.device) \
-                               * torch.tensor(noise_dict[obs]).to(self.device)
+                    * torch.tensor(noise_dict[obs]).to(self.device)
                 if obs in self.env.scales.keys():
                     noise_tensor /= self.env.scales[obs]
                 noise_vec[obs_index:obs_index + obs_size] = noise_tensor
@@ -241,17 +241,15 @@ class OnPolicyRunner:
                                                          modifier)
         return rewards_dict
 
-    def _get_reward(self, reward_weight, modifier=1):
-        return modifier*self.env.compute_reward(reward_weight).to(self.device)
+    def _get_reward(self, name_weight, modifier=1):
+        return modifier * self.env.compute_reward(name_weight).to(self.device)
 
     def save(self):
         os.makedirs(self.log_dir, exist_ok=True)
         path = os.path.join(self.log_dir, 'model_{}.pt'.format(self.it))
-        torch.save({
-            'model_state_dict': self.alg.actor_critic.state_dict(),
-            'optimizer_state_dict': self.alg.optimizer.state_dict(),
-            'iter': self.it},
-                   path)
+        torch.save({'model_state_dict': self.alg.actor_critic.state_dict(),
+                    'optimizer_state_dict': self.alg.optimizer.state_dict(),
+                    'iter': self.it}, path)
 
     def load(self, path, load_optimizer=True):
         loaded_dict = torch.load(path)

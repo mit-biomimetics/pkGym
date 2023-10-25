@@ -40,13 +40,13 @@ class KeyboardInterface():
         env.cfg.commands.resampling_time = env.max_episode_length_s + 1
         self.max_vel_backward = -1.
         self.max_vel_forward = 4.
-        self.increment_x = (self.max_vel_forward-self.max_vel_backward)*0.1
+        self.increment_x = (self.max_vel_forward - self.max_vel_backward) * 0.1
 
         self.max_vel_sideways = 1.0
-        self.increment_y = self.max_vel_sideways*0.2
+        self.increment_y = self.max_vel_sideways * 0.2
 
         self.max_vel_yaw = 2.0
-        self.increment_yaw = self.max_vel_yaw*0.2
+        self.increment_yaw = self.max_vel_yaw * 0.2
 
     def update(self, env):
         for evt in env.gym.query_viewer_action_events(env.viewer):
@@ -80,7 +80,6 @@ class KeyboardInterface():
                 env.exit = True
             elif evt.action == "RESET":
                 env.reset()
-            elif (evt.action == "space_shoot" or
-                  evt.action == "mouse_shoot") and evt.value > 0:
+            elif ((evt.action == "space_shoot" or evt.action == "mouse_shoot")
+                  and evt.value > 0):
                 env.shoot()
-        
