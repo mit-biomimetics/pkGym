@@ -104,11 +104,6 @@ class WandbSingleton(object):
         self.parameters_dict = wandb.config
         self.set_wandb_sweep_cfg_values(env_cfg=env_cfg, train_cfg=train_cfg)
 
-    def attach_runner(self, policy_runner):
-        if not self.is_wandb_enabled():
-            return
-        policy_runner.attach_to_wandb(wandb)
-
     def close_wandb(self):
         if self.enabled:
             wandb.finish()

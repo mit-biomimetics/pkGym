@@ -137,3 +137,13 @@ class Logger:
 
     def get_time(self, category='default'):
         return self.timer.get_time(category)
+
+    def attach_torch_obj_to_wandb(self,
+                                  obj_tuple,
+                                  log_freq=100,
+                                  log_graph=True):
+        if wandb.run is None:
+            return
+        if type(obj_tuple) is not tuple:
+            obj_tuple = (obj_tuple,)
+        wandb.watch(obj_tuple, log_freq=log_freq, log_graph=log_graph)

@@ -18,8 +18,6 @@ def setup():
 
     local_code_save_helper.save_local_files_to_logs(train_cfg.log_dir)
 
-    wandb_helper.attach_runner(policy_runner=policy_runner)
-
     return train_cfg, policy_runner
 
 

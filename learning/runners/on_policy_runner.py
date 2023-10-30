@@ -95,12 +95,6 @@ class OnPolicyRunner:
                               critic_obs_shape=[num_critic_obs],
                               action_shape=[num_actions])
 
-    def attach_to_wandb(self, wandb, log_freq=100, log_graph=True):
-        wandb.watch((self.alg.actor_critic.actor,
-                    self.alg.actor_critic.critic),
-                    log_freq=log_freq,
-                    log_graph=log_graph)
-
     def learn(self, num_learning_iterations, init_at_random_ep_len=False):
 
         # * unpack out of config
@@ -118,6 +112,9 @@ class OnPolicyRunner:
                                  self.alg,
                                  ['mean_value_loss',
                                   'mean_surrogate_loss'])
+
+        logger.attach_torch_obj_to_wandb((self.alg.actor_critic.actor,
+                                          self.alg.actor_critic.critic))
 
         if init_at_random_ep_len:
             self.env.episode_length_buf = torch.randint_like(
