@@ -32,21 +32,21 @@
 
 from gym.envs import AnymalCRoughCfg, AnymalCRoughCfgPPO
 
-PATH_TO_URDFS = '/resources/robots/anymal_b/urdf'
+PATH_TO_URDFS = "/resources/robots/anymal_b/urdf"
 
 
 class AnymalBRoughCfg(AnymalCRoughCfg):
     class asset(AnymalCRoughCfg.asset):
-        file = '{LEGGED_GYM_ROOT_DIR}{PATH_TO_URDFS}/anymal_b.urdf'
-        foot_name = 'FOOT'
+        file = "{LEGGED_GYM_ROOT_DIR}{PATH_TO_URDFS}/anymal_b.urdf"
+        foot_name = "FOOT"
 
     class rewards(AnymalCRoughCfg.rewards):
-        class weights (AnymalCRoughCfg.rewards.weights):
+        class weights(AnymalCRoughCfg.rewards.weights):
             pass
 
 
 class AnymalBRoughCfgPPO(AnymalCRoughCfgPPO):
-    class runner (AnymalCRoughCfgPPO.runner):
-        run_name = ''
-        experiment_name = 'rough_anymal_b'
+    class runner(AnymalCRoughCfgPPO.runner):
+        run_name = ""
+        experiment_name = "rough_anymal_b"
         load_run = -1

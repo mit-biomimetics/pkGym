@@ -26,11 +26,12 @@ def train(train_cfg, policy_runner):
 
     policy_runner.learn(
         num_learning_iterations=train_cfg.runner.max_iterations,
-        init_at_random_ep_len=True)
+        init_at_random_ep_len=True,
+    )
 
     wandb_helper.close_wandb()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     train_cfg, policy_runner = setup()
     train(train_cfg=train_cfg, policy_runner=policy_runner)

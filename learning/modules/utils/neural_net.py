@@ -3,9 +3,7 @@ import os
 import copy
 
 
-def create_MLP(num_inputs, num_outputs, hidden_dims, activation,
-               dropouts=None):
-
+def create_MLP(num_inputs, num_outputs, hidden_dims, activation, dropouts=None):
     activation = get_activation(activation)
 
     if dropouts is None:
@@ -20,8 +18,13 @@ def create_MLP(num_inputs, num_outputs, hidden_dims, activation,
             if i == len(hidden_dims) - 1:
                 add_layer(layers, hidden_dims[i], num_outputs)
             else:
-                add_layer(layers, hidden_dims[i], hidden_dims[i + 1],
-                          activation, dropouts[i + 1])
+                add_layer(
+                    layers,
+                    hidden_dims[i],
+                    hidden_dims[i + 1],
+                    activation,
+                    dropouts[i + 1],
+                )
     return torch.nn.Sequential(*layers)
 
 
@@ -66,12 +69,14 @@ def export_network(network, network_name, path, num_inputs):
     """
 
     os.makedirs(path, exist_ok=True)
-    path_TS = os.path.join(path, network_name + '.pt')   # TorchScript path
-    path_onnx = os.path.join(path, network_name + '.onnx')   # ONNX path
-    model = copy.deepcopy(network).to('cpu')
+    path_TS = os.path.join(path, network_name + ".pt")  # TorchScript path
+    path_onnx = os.path.join(path, network_name + ".onnx")  # ONNX path
+    model = copy.deepcopy(network).to("cpu")
     # To trace model, must be evaluated once with arbitrary input
     model.eval()
-    dummy_input = torch.rand(num_inputs,)
+    dummy_input = torch.rand(
+        num_inputs,
+    )
     model_traced = torch.jit.trace(model, dummy_input)
     torch.jit.save(model_traced, path_TS)
     torch.onnx.export(model_traced, dummy_input, path_onnx)

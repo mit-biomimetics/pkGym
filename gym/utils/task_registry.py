@@ -42,15 +42,21 @@ from learning.runners import OnPolicyRunner
 from learning.utils import set_discount_from_horizon
 
 from gym import LEGGED_GYM_ROOT_DIR
-from .helpers import \
-    update_cfg_from_args, class_to_dict, get_load_path, set_seed
+from .helpers import (
+    update_cfg_from_args,
+    class_to_dict,
+    get_load_path,
+    set_seed,
+)
 from gym.envs.base.legged_robot_config import (
-    LeggedRobotCfg, LeggedRobotRunnerCfg)
+    LeggedRobotCfg,
+    LeggedRobotRunnerCfg,
+)
 from gym.envs.base.base_config import BaseConfig
 from gym.envs.base.sim_config import SimCfg
 
 
-class TaskRegistry():
+class TaskRegistry:
     def __init__(self):
         self.task_classes = {}
         self.env_cfgs = {}
@@ -58,8 +64,13 @@ class TaskRegistry():
         self.sim_cfg = class_to_dict(SimCfg)
         self.sim = {}
 
-    def register(self, name: str, task_class: VecEnv,
-                 env_cfg: BaseConfig, train_cfg: LeggedRobotRunnerCfg):
+    def register(
+        self,
+        name: str,
+        task_class: VecEnv,
+        env_cfg: BaseConfig,
+        train_cfg: LeggedRobotRunnerCfg,
+    ):
         self.task_classes[name] = task_class
         self.env_cfgs[name] = env_cfg
         self.train_cfgs[name] = train_cfg
@@ -73,36 +84,43 @@ class TaskRegistry():
         return env_cfg, train_cfg
 
     def set_registry_to_original_cfg(self, train_cfg, args):
-        from gym.envs import task_dict, class_dict, config_dict, \
-            runner_config_dict
+        from gym.envs import (
+            task_dict,
+            class_dict,
+            config_dict,
+            runner_config_dict,
+        )
+
         run_path = os.path.dirname(
-            get_load_path(name=train_cfg.runner.experiment_name,
-                          load_run=train_cfg.runner.load_run,
-                          checkpoint=train_cfg.runner.checkpoint))
+            get_load_path(
+                name=train_cfg.runner.experiment_name,
+                load_run=train_cfg.runner.load_run,
+                checkpoint=train_cfg.runner.checkpoint,
+            )
+        )
         original_cfg_path = os.path.join(run_path, "files", "gym", "envs")
 
         class_name = task_dict[args.task][0]
         class_path = original_cfg_path + class_dict[class_name]
         spec = importlib.util.spec_from_file_location(
-            class_name,
-            class_path.replace(".", "/") + ".py")
+            class_name, class_path.replace(".", "/") + ".py"
+        )
         class_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(class_module)
 
         config_name = task_dict[args.task][1]
         config_path = original_cfg_path + config_dict[config_name]
         spec = importlib.util.spec_from_file_location(
-            config_name,
-            config_path.replace(".", "/") + ".py")
+            config_name, config_path.replace(".", "/") + ".py"
+        )
         config_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(config_module)
 
         runner_config_name = task_dict[args.task][2]
-        runner_config_path = original_cfg_path + \
-            runner_config_dict[runner_config_name]
+        runner_config_path = original_cfg_path + runner_config_dict[runner_config_name]
         spec = importlib.util.spec_from_file_location(
-            runner_config_name,
-            runner_config_path.replace(".", "/") + ".py")
+            runner_config_name, runner_config_path.replace(".", "/") + ".py"
+        )
         runner_config_module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(runner_config_module)
 
@@ -110,12 +128,13 @@ class TaskRegistry():
             args.task,
             getattr(class_module, task_dict[args.task][0]),
             getattr(config_module, task_dict[args.task][1]),
-            getattr(runner_config_module, task_dict[args.task][2]))
+            getattr(runner_config_module, task_dict[args.task][2]),
+        )
 
     def create_cfgs(self, args):
         env_cfg, train_cfg = self.get_cfgs(name=args.task)
         self.update_and_parse_cfgs(env_cfg, train_cfg, args)
-        if (args.original_cfg):
+        if args.original_cfg:
             self.set_registry_to_original_cfg(train_cfg, args)
             env_cfg, train_cfg = self.get_cfgs(name=args.task)
             self.update_and_parse_cfgs(env_cfg, train_cfg, args)
@@ -125,10 +144,14 @@ class TaskRegistry():
     def set_log_dir_name(self, train_cfg, log_root="default"):
         if log_root == "default":
             log_root = os.path.join(
-                LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name)
+                LEGGED_GYM_ROOT_DIR, "logs", train_cfg.runner.experiment_name
+            )
             log_dir = os.path.join(
-                log_root, datetime.now().strftime('%b%d_%H-%M-%S')
-                + '_' + train_cfg.runner.run_name)
+                log_root,
+                datetime.now().strftime("%b%d_%H-%M-%S")
+                + "_"
+                + train_cfg.runner.run_name,
+            )
         elif log_root is None:
             log_dir = None
         train_cfg.log_dir = log_dir
@@ -143,22 +166,25 @@ class TaskRegistry():
         self.set_discount_rates(train_cfg, env_cfg.control.ctrl_dt)
 
     def set_control_and_sim_dt(self, env_cfg, train_cfg):
-        env_cfg.control.decimation = int(env_cfg.control.desired_sim_frequency
-                                         / env_cfg.control.ctrl_frequency)
+        env_cfg.control.decimation = int(
+            env_cfg.control.desired_sim_frequency / env_cfg.control.ctrl_frequency
+        )
         env_cfg.control.ctrl_dt = 1.0 / env_cfg.control.ctrl_frequency
         env_cfg.sim_dt = env_cfg.control.ctrl_dt / env_cfg.control.decimation
         self.sim_cfg["dt"] = env_cfg.sim_dt
         if env_cfg.sim_dt != 1.0 / env_cfg.control.desired_sim_frequency:
-            print(f'****** Simulation dt adjusted from '
-                  f'{1.0/env_cfg.control.desired_sim_frequency}'
-                  f' to {env_cfg.sim_dt}.')
+            print(
+                f"****** Simulation dt adjusted from "
+                f"{1.0/env_cfg.control.desired_sim_frequency}"
+                f" to {env_cfg.sim_dt}."
+            )
 
     def set_discount_rates(self, train_cfg, dt):
-        if hasattr(train_cfg.algorithm, 'discount_horizon'):
+        if hasattr(train_cfg.algorithm, "discount_horizon"):
             hrzn = train_cfg.algorithm.discount_horizon
             train_cfg.algorithm.gamma = set_discount_from_horizon(dt, hrzn)
 
-        if hasattr(train_cfg.algorithm, 'GAE_bootstrap_horizon'):
+        if hasattr(train_cfg.algorithm, "GAE_bootstrap_horizon"):
             hrzn = train_cfg.algorithm.GAE_bootstrap_horizon
             train_cfg.algorithm.lam = set_discount_from_horizon(dt, hrzn)
 
@@ -188,7 +214,8 @@ class TaskRegistry():
             self.sim["sim_device_id"],
             self.sim["graphics_device_id"],
             self.sim["physics_engine"],
-            self.sim["params"])
+            self.sim["params"],
+        )
 
     def make_env(self, name, env_cfg) -> VecEnv:
         if name in self.task_classes:
@@ -196,10 +223,14 @@ class TaskRegistry():
         else:
             raise ValueError(f"Task with name: {name} was not registered")
         set_seed(env_cfg.seed)
-        env = task_class(gym=self._gym, sim=self._sim, cfg=env_cfg,
-                         sim_params=self.sim["params"],
-                         sim_device=self.sim["sim_device"],
-                         headless=self.sim["headless"])
+        env = task_class(
+            gym=self._gym,
+            sim=self._sim,
+            cfg=env_cfg,
+            sim_params=self.sim["params"],
+            sim_device=self.sim["sim_device"],
+            headless=self.sim["headless"],
+        )
         return env
 
     def make_alg_runner(self, env, train_cfg):
@@ -207,9 +238,11 @@ class TaskRegistry():
         runner = OnPolicyRunner(env, train_cfg_dict, train_cfg.runner.device)
         # * save resume path before creating a new log_dir
         if train_cfg.runner.resume:
-            resume_path = get_load_path(name=train_cfg.runner.experiment_name,
-                                        load_run=train_cfg.runner.load_run,
-                                        checkpoint=train_cfg.runner.checkpoint)
+            resume_path = get_load_path(
+                name=train_cfg.runner.experiment_name,
+                load_run=train_cfg.runner.load_run,
+                checkpoint=train_cfg.runner.checkpoint,
+            )
             print(f"Loading model from: {resume_path}")
             runner.load(resume_path)
         return runner

@@ -5,17 +5,19 @@ from .utils import RunningMeanStd
 
 
 class Critic(nn.Module):
-    def __init__(self,
-                 num_obs,
-                 hidden_dims,
-                 activation="elu",
-                 normalize_obs=True,
-                 **kwargs):
-
+    def __init__(
+        self,
+        num_obs,
+        hidden_dims,
+        activation="elu",
+        normalize_obs=True,
+        **kwargs,
+    ):
         if kwargs:
-            print("Critic.__init__ got unexpected arguments, "
-                  "which will be ignored: "
-                  + str([key for key in kwargs.keys()]))
+            print(
+                "Critic.__init__ got unexpected arguments, "
+                "which will be ignored: " + str([key for key in kwargs.keys()])
+            )
         super().__init__()
 
         self.NN = create_MLP(num_obs, 1, hidden_dims, activation)

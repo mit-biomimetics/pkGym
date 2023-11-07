@@ -13,7 +13,7 @@ def test_torch_rand_sqrt_float():
     lower = -1.0
     upper = 1.0
     shape = (10,)
-    device = torch.device('cpu')
+    device = torch.device("cpu")
     samples = torch_rand_sqrt_float(lower, upper, shape, device)
     assert samples.shape == shape
     assert torch.all(samples >= lower)

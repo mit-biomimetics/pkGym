@@ -7,19 +7,21 @@ from .utils import RunningMeanStd
 
 
 class Actor(nn.Module):
-    def __init__(self,
-                 num_obs,
-                 num_actions,
-                 hidden_dims,
-                 activation="elu",
-                 init_noise_std=1.0,
-                 normalize_obs=True,
-                 **kwargs):
-
+    def __init__(
+        self,
+        num_obs,
+        num_actions,
+        hidden_dims,
+        activation="elu",
+        init_noise_std=1.0,
+        normalize_obs=True,
+        **kwargs,
+    ):
         if kwargs:
-            print("Actor.__init__ got unexpected arguments, "
-                  "which will be ignored: "
-                  + str([key for key in kwargs.keys()]))
+            print(
+                "Actor.__init__ got unexpected arguments, "
+                "which will be ignored: " + str([key for key in kwargs.keys()])
+            )
         super().__init__()
 
         self._normalize_obs = normalize_obs
@@ -52,7 +54,7 @@ class Actor(nn.Module):
         if self._normalize_obs:
             observations = self.normalize(observations)
         mean = self.NN(observations)
-        self.distribution = Normal(mean, mean * 0. + self.std)
+        self.distribution = Normal(mean, mean * 0.0 + self.std)
 
     def act(self, observations):
         self.update_distribution(observations)

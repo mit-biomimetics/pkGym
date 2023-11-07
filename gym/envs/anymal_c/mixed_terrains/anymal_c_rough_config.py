@@ -38,7 +38,7 @@ class AnymalCRoughCfg(AnymalCFlatCfg):
         num_observations = 48
 
     class terrain(AnymalCFlatCfg.terrain):
-        mesh_type = 'trimesh'
+        mesh_type = "trimesh"
         measure_heights = False
 
     class asset(AnymalCFlatCfg.asset):
@@ -46,13 +46,13 @@ class AnymalCRoughCfg(AnymalCFlatCfg):
         self_collisions = 1
 
     class commands(AnymalCFlatCfg.commands):
-        resampling_time = 4.
+        resampling_time = 4.0
 
         class ranges(AnymalCFlatCfg.commands.ranges):
             yaw_vel = 1.5
 
     class domain_rand(AnymalCFlatCfg.domain_rand):
-        friction_range = [0., 1.5]
+        friction_range = [0.0, 1.5]
 
 
 class AnymalCRoughCCfgPPO(AnymalCFlatCfgPPO):
@@ -60,13 +60,13 @@ class AnymalCRoughCCfgPPO(AnymalCFlatCfgPPO):
         actor_hidden_dims = [128, 64, 32]
         critic_hidden_dims = [128, 64, 32]
         # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
-        activation = 'elu'
+        activation = "elu"
 
     class algorithm(AnymalCFlatCfgPPO.algorithm):
         entropy_coef = 0.01
 
-    class runner (AnymalCFlatCfgPPO.runner):
-        run_name = ''
-        experiment_name = 'rough_anymal_c'
+    class runner(AnymalCFlatCfgPPO.runner):
+        run_name = ""
+        experiment_name = "rough_anymal_c"
         load_run = -1
         max_iterations = 300

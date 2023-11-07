@@ -6,11 +6,11 @@ from gym import LEGGED_GYM_ROOT_DIR
 
 class WandbSingleton(object):
     def __new__(self):
-        if not hasattr(self, 'instance'):
+        if not hasattr(self, "instance"):
             self.instance = super(WandbSingleton, self).__new__(self)
             self.entity_name = None
             self.project_name = None
-            self.experiment_name = ''
+            self.experiment_name = ""
             self.enabled = False
             self.parameters_dict = None
 
@@ -19,31 +19,33 @@ class WandbSingleton(object):
     def set_wandb_values(self, args, train_cfg=None):
         # build the path for the wandb_config.json file
         wandb_config_path = os.path.join(
-            LEGGED_GYM_ROOT_DIR, 'user', 'wandb_config.json')
+            LEGGED_GYM_ROOT_DIR, "user", "wandb_config.json"
+        )
 
         # load entity and project name from JSON if it exists
         if os.path.exists(wandb_config_path):
             json_data = json.load(open(wandb_config_path))
-            print('Loaded WandB entity and project from JSON.')
-            self.entity_name = json_data['entity']
-            self.project_name = json_data['project']
+            print("Loaded WandB entity and project from JSON.")
+            self.entity_name = json_data["entity"]
+            self.project_name = json_data["project"]
         # override entity and project by commandline args if provided
         if args.wandb_entity is not None:
-            print('Received WandB entity from arguments.')
+            print("Received WandB entity from arguments.")
             self.entity_name = args.wandb_entity
         if args.wandb_project is not None:
-            print('Received WandB project from arguments.')
+            print("Received WandB project from arguments.")
             self.project_name = args.wandb_project
         # assume WandB is off if entity or project is None and short-circuit
         if train_cfg is not None:
-            self.experiment_name = train_cfg.log_dir.split('/')[-1]
+            self.experiment_name = train_cfg.log_dir.split("/")[-1]
 
-        if (self.entity_name is None or self.project_name is None
-           or args.disable_wandb):
+        if self.entity_name is None or self.project_name is None or args.disable_wandb:
             self.enabled = False
         else:
-            print(f'Setting WandB project name: {self.project_name}\n'
-                  + f'Setting WandB entitiy name: {self.entity_name}\n')
+            print(
+                f"Setting WandB project name: {self.project_name}\n"
+                + f"Setting WandB entitiy name: {self.entity_name}\n"
+            )
             self.enabled = True
 
     def set_wandb_sweep_cfg_values(self, env_cfg, train_cfg):
@@ -52,15 +54,15 @@ class WandbSingleton(object):
 
         # * update the config settings based off the sweep_dict
         for key, value in self.parameters_dict.items():
-            print('Setting: ' + key + ' = ' + str(value))
-            locs = key.split('.')
+            print("Setting: " + key + " = " + str(value))
+            locs = key.split(".")
 
-            if locs[0] == 'train_cfg':
+            if locs[0] == "train_cfg":
                 attr = train_cfg
-            elif locs[0] == 'env_cfg':
+            elif locs[0] == "env_cfg":
                 attr = env_cfg
             else:
-                print('Unrecognized cfg: ' + locs[0])
+                print("Unrecognized cfg: " + locs[0])
                 break
 
             for loc in locs[1:-1]:
@@ -82,24 +84,27 @@ class WandbSingleton(object):
 
         # short-circuit if the values say WandB is turned off
         if not self.is_wandb_enabled():
-            print('WARNING: WandB is disabled and will not save or log.')
+            print("WARNING: WandB is disabled and will not save or log.")
             return
 
         wandb.config = {}
 
         if is_sweep:
-            wandb.init(dir=os.path.join(LEGGED_GYM_ROOT_DIR, 'logs'),
-                       config=wandb.config,
-                       name=self.experiment_name)
+            wandb.init(
+                dir=os.path.join(LEGGED_GYM_ROOT_DIR, "logs"),
+                config=wandb.config,
+                name=self.experiment_name,
+            )
         else:
-            wandb.init(project=self.project_name,
-                       entity=self.entity_name,
-                       dir=os.path.join(LEGGED_GYM_ROOT_DIR, 'logs'),
-                       config=wandb.config,
-                       name=self.experiment_name)
+            wandb.init(
+                project=self.project_name,
+                entity=self.entity_name,
+                dir=os.path.join(LEGGED_GYM_ROOT_DIR, "logs"),
+                config=wandb.config,
+                name=self.experiment_name,
+            )
 
-        wandb.run.log_code(
-            os.path.join(LEGGED_GYM_ROOT_DIR, 'gym'))
+        wandb.run.log_code(os.path.join(LEGGED_GYM_ROOT_DIR, "gym"))
 
         self.parameters_dict = wandb.config
         self.set_wandb_sweep_cfg_values(env_cfg=env_cfg, train_cfg=train_cfg)

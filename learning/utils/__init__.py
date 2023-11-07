@@ -30,6 +30,10 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from .utils import (split_and_pad_trajectories, unpad_trajectories,
-                    remove_zero_weighted_rewards, set_discount_from_horizon)
+from .utils import (
+    split_and_pad_trajectories,
+    unpad_trajectories,
+    remove_zero_weighted_rewards,
+    set_discount_from_horizon,
+)
 from .logger import Logger

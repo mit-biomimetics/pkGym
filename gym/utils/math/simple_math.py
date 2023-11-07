@@ -12,8 +12,8 @@ def wrap_to_pi(angles):
 # @ torch.jit.script
 def torch_rand_sqrt_float(lower, upper, shape, device):
     r = 2 * torch.rand(*shape, device=device) - 1
-    r = torch.where(r < 0., -torch.sqrt(-r), torch.sqrt(r))
-    r = (r + 1.) / 2.
+    r = torch.where(r < 0.0, -torch.sqrt(-r), torch.sqrt(r))
+    r = (r + 1.0) / 2.0
     return (upper - lower) * r + lower
 
 

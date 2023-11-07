@@ -8,7 +8,7 @@ Project website: https://leggedrobotics.github.io/legged_gym/
 Paper: https://arxiv.org/abs/2109.11978
 
 ### Installation ###
-1. Create a new python virtual env with python 3.6, 3.7 or 3.8 (3.8 recommended)
+1. Create a new python virtual env with python 3.8
 2. Clone and initialize this repo
    - clone `gpu_gym`
 3. Install GPU Gym Requirements:
@@ -24,16 +24,21 @@ pip install -r requirements.txt
    cd <issacgym_location>/python
    pip install -e .
    ```
-5. Run an example to validate
-    - Run the following command from within isaacgym
+   - Fix a deprecation bug: go to the file _torch_utils.py_, and change `np.float` to `np.float64`
+   - Run the following command from within isaacgym
    ```bash
    cd <issacgym_location>/python/examples
    python 1080_balls_of_solitude.py
    ```
    - For troubleshooting check docs `isaacgym/docs/index.html`
-6. Install gpuGym
+5. Install gpuGym
+    - go back to the gpuGym repo, and install it.
     ```bash
     pip install -e .
+    ```
+6. Set up pre-commit hook:
+    ```bash
+    pre-commit install
     ```
 7. Use WandB for experiment tracking - follow [this guide](https://docs.wandb.ai/quickstart)
 

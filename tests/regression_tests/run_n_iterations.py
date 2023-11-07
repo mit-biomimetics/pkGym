@@ -4,11 +4,15 @@ import torch
 
 
 def setup():
-    custom_parameter = [{"name": "--output_tensor_file",
-                         "type": str,
-                         "help": "Path to save the output tensor."}]
+    custom_parameter = [
+        {
+            "name": "--output_tensor_file",
+            "type": str,
+            "help": "Path to save the output tensor.",
+        }
+    ]
     args = get_args(custom_parameter)
-    args.task = 'mini_cheetah'
+    args.task = "mini_cheetah"
     args.seed = 0
     # args.max_iterations = 50
     # args.save_interval = 50
@@ -31,7 +35,7 @@ def _run_training_test(output_tensor_file, env, runner):
     runner.learn(num_learning_iterations=5)
 
     # * get the test values after learning
-    actions = runner.env.get_states(runner.policy_cfg['actions'])
+    actions = runner.env.get_states(runner.policy_cfg["actions"])
 
     # * return the values to the parent for assertion
     actions.detach().cpu()
@@ -43,5 +47,5 @@ def worker():
     _run_training_test(args.output_tensor_file, env, runner)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     worker()

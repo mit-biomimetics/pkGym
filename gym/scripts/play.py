@@ -29,19 +29,22 @@ def setup(args):
     # * switch to evaluation mode (dropout for example)
     runner.switch_to_eval()
     if EXPORT_POLICY:
-        path = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs',
-                            train_cfg.runner.experiment_name, 'exported')
+        path = os.path.join(
+            LEGGED_GYM_ROOT_DIR,
+            "logs",
+            train_cfg.runner.experiment_name,
+            "exported",
+        )
         runner.export(path)
     return env, runner, train_cfg
 
 
 def play(env, runner, train_cfg):
-
     # * set up recording
     if env.cfg.viewer.record:
-        recorder = VisualizationRecorder(env,
-                                         train_cfg.runner.experiment_name,
-                                         train_cfg.runner.load_run)
+        recorder = VisualizationRecorder(
+            env, train_cfg.runner.experiment_name, train_cfg.runner.load_run
+        )
 
     # * set up interface: GamepadInterface(env) or KeyboardInterface(env)
     COMMANDS_INTERFACE = hasattr(env, "commands")
@@ -58,7 +61,7 @@ def play(env, runner, train_cfg):
         env.check_exit()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     EXPORT_POLICY = True
     args = get_args()
     with torch.no_grad():

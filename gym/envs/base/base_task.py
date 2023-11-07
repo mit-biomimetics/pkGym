@@ -5,22 +5,21 @@ import torch
 
 
 # * Base class for RL tasks
-class BaseTask():
+class BaseTask:
     def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
         self.gym = gym
         self.sim = sim
         self.sim_params = sim_params
         self.sim_device = sim_device
-        sim_device_type, self.sim_device_id = \
-            gymutil.parse_device_str(self.sim_device)
+        sim_device_type, self.sim_device_id = gymutil.parse_device_str(self.sim_device)
         self.headless = headless
 
         # * env device is GPU only if sim is on GPU and use_gpu_pipeline=True,
         # * otherwise returned tensors are copied to CPU by physX.
-        if sim_device_type == 'cuda' and sim_params.use_gpu_pipeline:
+        if sim_device_type == "cuda" and sim_params.use_gpu_pipeline:
             self.device = self.sim_device
         else:
-            self.device = 'cpu'
+            self.device = "cpu"
 
         # * graphics device for rendering, -1 for no rendering
         self.graphics_device_id = self.sim_device_id
@@ -33,18 +32,18 @@ class BaseTask():
         torch._C._jit_set_profiling_executor(False)
 
         # allocate buffers
-        self.to_be_reset = torch.ones(self.num_envs,
-                                      device=self.device,
-                                      dtype=torch.bool)
-        self.terminated = torch.ones(self.num_envs,
-                                     device=self.device,
-                                     dtype=torch.bool)
-        self.episode_length_buf = torch.zeros(self.num_envs,
-                                              device=self.device,
-                                              dtype=torch.long)
-        self.timed_out = torch.zeros(self.num_envs,
-                                     device=self.device,
-                                     dtype=torch.bool)
+        self.to_be_reset = torch.ones(
+            self.num_envs, device=self.device, dtype=torch.bool
+        )
+        self.terminated = torch.ones(
+            self.num_envs, device=self.device, dtype=torch.bool
+        )
+        self.episode_length_buf = torch.zeros(
+            self.num_envs, device=self.device, dtype=torch.long
+        )
+        self.timed_out = torch.zeros(
+            self.num_envs, device=self.device, dtype=torch.bool
+        )
 
         # todo: read from config
         self.enable_viewer_sync = True
@@ -54,12 +53,13 @@ class BaseTask():
         # * if running with a viewer, set up keyboard shortcuts and camera
         if self.headless is False:
             # * subscribe to keyboard shortcuts
-            self.viewer = self.gym.create_viewer(
-                self.sim, gymapi.CameraProperties())
+            self.viewer = self.gym.create_viewer(self.sim, gymapi.CameraProperties())
             self.gym.subscribe_viewer_keyboard_event(
-                self.viewer, gymapi.KEY_ESCAPE, "QUIT")
+                self.viewer, gymapi.KEY_ESCAPE, "QUIT"
+            )
             self.gym.subscribe_viewer_keyboard_event(
-                self.viewer, gymapi.KEY_V, "toggle_viewer_sync")
+                self.viewer, gymapi.KEY_V, "toggle_viewer_sync"
+            )
 
     def get_states(self, obs_list):
         return torch.cat([self.get_state(obs) for obs in obs_list], dim=-1)
@@ -74,9 +74,9 @@ class BaseTask():
         idx = 0
         for state in state_list:
             state_dim = getattr(self, state).shape[1]
-            self.set_state(state, values[:, idx:idx + state_dim])
+            self.set_state(state, values[:, idx : idx + state_dim])
             idx += state_dim
-        assert (idx == values.shape[1]), "Actions don't equal tensor shapes"
+        assert idx == values.shape[1], "Actions don't equal tensor shapes"
 
     def set_state(self, name, value):
         try:
@@ -92,7 +92,7 @@ class BaseTask():
         raise NotImplementedError
 
     def reset(self):
-        """ Reset all robots"""
+        """Reset all robots"""
         self._reset_idx(torch.arange(self.num_envs, device=self.device))
         self.step()
 
@@ -102,26 +102,22 @@ class BaseTask():
         self.timed_out[:] = False
 
     def compute_reward(self, reward_weights):
-        ''' Compute and return a torch tensor of rewards
+        """Compute and return a torch tensor of rewards
         reward_weights: dict with keys matching reward names, and values
             matching weights
-        '''
-        reward = torch.zeros(self.num_envs,
-                             device=self.device, dtype=torch.float)
+        """
+        reward = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
         for name, weight in reward_weights.items():
             reward += weight * self._eval_reward(name)
         return reward
 
     def _eval_reward(self, name):
-        return eval('self._reward_' + name + '()')
+        return eval("self._reward_" + name + "()")
 
     def _check_terminations_and_timeouts(self):
-        """ Check if environments need to be reset
-        """
-        contact_forces = \
-            self.contact_forces[:, self.termination_contact_indices, :]
-        self.terminated = \
-            torch.any(torch.norm(contact_forces, dim=-1) > 1., dim=1)
+        """Check if environments need to be reset"""
+        contact_forces = self.contact_forces[:, self.termination_contact_indices, :]
+        self.terminated = torch.any(torch.norm(contact_forces, dim=-1) > 1.0, dim=1)
         self.timed_out = self.episode_length_buf >= self.max_episode_length
         self.to_be_reset = self.timed_out | self.terminated
 
@@ -146,7 +142,7 @@ class BaseTask():
                     self.enable_viewer_sync = not self.enable_viewer_sync
 
             # * fetch results
-            if self.device != 'cpu':
+            if self.device != "cpu":
                 self.gym.fetch_results(self.sim, True)
 
             # * step graphics

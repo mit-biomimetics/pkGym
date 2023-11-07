@@ -8,21 +8,21 @@ Longterm stores needed data from transition, and probably also generate batches
 
 
 class BaseStorage:
-    """ This class is a skeleton for an arbitrary storage type. """
+    """This class is a skeleton for an arbitrary storage type."""
 
     class Transition:
-        """ Transition storage class.
+        """Transition storage class.
         i.e. store data for each STEP of ALL agents
         """
+
         def __init__(self):
-            """ Define all the data you need to store in __init__
-            """
+            """Define all the data you need to store in __init__"""
             raise NotImplementedError
 
         def clear(self):
             self.__init__()
 
-    def __init__(self, max_storage, device='cpu'):
+    def __init__(self, max_storage, device="cpu"):
         self.device = device
         self.max_storage = max_storage
         # fill_count keeps track of how much storage is filled with actual data
@@ -30,7 +30,7 @@ class BaseStorage:
         self.fill_count = 0
 
     def add_transitions(self, transition: Transition):
-        """ Add current transition to LT storage
+        """Add current transition to LT storage
         Store variables according to the __init__
         """
         self.fill_count += 1
@@ -40,6 +40,5 @@ class BaseStorage:
         self.fill_count = 0
 
     def mini_batch_generator(self):
-        """ Generate mini batch for learning
-        """
+        """Generate mini batch for learning"""
         raise NotImplementedError

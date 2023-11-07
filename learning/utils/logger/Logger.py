@@ -9,12 +9,9 @@ class Logger:
     def __init__(self):
         self.initialized = False
 
-    def initialize(self,
-                   num_envs=1,
-                   episode_dt=0.1,
-                   total_iterations=100,
-                   device='cpu'):
-
+    def initialize(
+        self, num_envs=1, episode_dt=0.1, total_iterations=100, device="cpu"
+    ):
         self.device = device
 
         self.reward_logs = EpisodicLogs(num_envs, episode_dt, device=device)
@@ -49,20 +46,21 @@ class Logger:
             self.log_to_wandb()
         return None
 
-    def estimate_ETA(self, times=['runtime'], mode='total'):
-        if mode == 'total':
+    def estimate_ETA(self, times=["runtime"], mode="total"):
+        if mode == "total":
             total_time = sum(self.timer.get_time(part) for part in times)
             iter_time = total_time / self.iteration_counter
-        elif mode == 'iteration':
+        elif mode == "iteration":
             # sum all the times in times
             iter_time = sum(self.timer.get_time(part) for part in times)
         else:
-            iter_time = 0.
+            iter_time = 0.0
         return iter_time * (self.tot_iter - self.iteration_counter)
 
     def estimate_steps_per_second(self):
-        return ((self.step_counter * self.num_envs / self.iteration_counter)
-                / (self.timer.get_time('collection')))
+        return (self.step_counter * self.num_envs / self.iteration_counter) / (
+            self.timer.get_time("collection")
+        )
 
     def print_to_terminal(self):
         width = 80
@@ -70,12 +68,12 @@ class Logger:
 
         log_string = ""
 
-        def format_log_entry(key, val, append=''):
+        def format_log_entry(key, val, append=""):
             """Helper function to format a single log entry."""
             nonlocal log_string
             log_string += f"""{key:>{pad}}: {val:.2f} {append}\n"""
 
-        def separator(subtitle="", marker='-'):
+        def separator(subtitle="", marker="-"):
             nonlocal log_string
             subtitle_length = len(subtitle)
             if subtitle_length > 0:
@@ -83,65 +81,61 @@ class Logger:
 
             dashes_each_side = (width - subtitle_length) // 2
             log_string += "\n"
-            log_string += (f"{marker * dashes_each_side} {subtitle} "
-                           f"{marker * dashes_each_side}\n")
+            log_string += (
+                f"{marker * dashes_each_side} {subtitle} "
+                f"{marker * dashes_each_side}\n"
+            )
 
-        separator(f"Iteration {self.iteration_counter}/{self.tot_iter}", '#')
+        separator(f"Iteration {self.iteration_counter}/{self.tot_iter}", "#")
 
-        separator('Rewards')
+        separator("Rewards")
         averages = self.reward_logs.get_average_rewards()
 
         for key, val in averages.items():
             format_log_entry(key, val)
 
-        separator('Other Agent Metrics')
-        format_log_entry('average episode time',
-                         self.reward_logs.get_average_time())
+        separator("Other Agent Metrics")
+        format_log_entry("average episode time", self.reward_logs.get_average_time())
 
-        separator('Algorithm Performance')
-        for key, val in self.iteration_logs.get_all_logs('algorithm').items():
+        separator("Algorithm Performance")
+        for key, val in self.iteration_logs.get_all_logs("algorithm").items():
             format_log_entry(key, val)
 
-        separator('Timings')
-        format_log_entry('steps/s', self.estimate_steps_per_second())
-        tot_t = self.timer.get_time('iteration')
-        col_time = self.timer.get_time('collection')
-        learn_time = self.timer.get_time('learning')
-        time_string = f"(sim: {col_time:.2f}" \
-                      f", learn:{learn_time:.2f})"
-        format_log_entry('total time', tot_t, time_string)
+        separator("Timings")
+        format_log_entry("steps/s", self.estimate_steps_per_second())
+        tot_t = self.timer.get_time("iteration")
+        col_time = self.timer.get_time("collection")
+        learn_time = self.timer.get_time("learning")
+        time_string = f"(sim: {col_time:.2f}" f", learn:{learn_time:.2f})"
+        format_log_entry("total time", tot_t, time_string)
 
-        format_log_entry('ETA', self.estimate_ETA(['runtime']))
+        format_log_entry("ETA", self.estimate_ETA(["runtime"]))
         print(log_string)
 
-    def log_category(self, category='algorithm'):
+    def log_category(self, category="algorithm"):
         self.iteration_logs.log(category)
 
     def log_to_wandb(self):
         def prepend_to_keys(section, dictionary):
-            return {section + '/' + key: val
-                    for key, val in dictionary.items()}
+            return {section + "/" + key: val for key, val in dictionary.items()}
 
-        averages = prepend_to_keys('rewards',
-                                   self.reward_logs.get_average_rewards())
+        averages = prepend_to_keys("rewards", self.reward_logs.get_average_rewards())
 
         algorithm_logs = prepend_to_keys(
-            'algorithm', self.iteration_logs.get_all_logs('algorithm'))
+            "algorithm", self.iteration_logs.get_all_logs("algorithm")
+        )
         wandb.log({**averages, **algorithm_logs})
 
-    def tic(self, category='default'):
+    def tic(self, category="default"):
         self.timer.tic(category)
 
-    def toc(self, category='default'):
+    def toc(self, category="default"):
         self.timer.toc(category)
 
-    def get_time(self, category='default'):
+    def get_time(self, category="default"):
         return self.timer.get_time(category)
 
-    def attach_torch_obj_to_wandb(self,
-                                  obj_tuple,
-                                  log_freq=100,
-                                  log_graph=True):
+    def attach_torch_obj_to_wandb(self, obj_tuple, log_freq=100, log_graph=True):
         if wandb.run is None:
             return
         if type(obj_tuple) is not tuple:

@@ -4,7 +4,7 @@ from .utils import export_network
 
 
 class StateEstimatorNN(nn.Module):
-    """ Set up a neural network for state-estimation
+    """Set up a neural network for state-estimation
 
     Keyword arguments:
     num_inputs -- the number of observations used
@@ -13,18 +13,26 @@ class StateEstimatorNN(nn.Module):
     activation -- activation type (default 'elu')
     dropouts -- list of dropout rate for each layer (default None)
     """
-    def __init__(self, num_inputs, num_outputs, hidden_dims=[256, 128],
-                 activation='elu', dropouts=None, **kwargs):
+
+    def __init__(
+        self,
+        num_inputs,
+        num_outputs,
+        hidden_dims=[256, 128],
+        activation="elu",
+        dropouts=None,
+        **kwargs,
+    ):
         if kwargs:
-            print("StateEstimator.__init__ got unexpected arguments, "
-                  "which will be ignored: "
-                  + str([key for key in kwargs.keys()]))
+            print(
+                "StateEstimator.__init__ got unexpected arguments, "
+                "which will be ignored: " + str([key for key in kwargs.keys()])
+            )
         super().__init__()
 
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
-        self.NN = create_MLP(num_inputs, num_outputs, hidden_dims,
-                             activation, dropouts)
+        self.NN = create_MLP(num_inputs, num_outputs, hidden_dims, activation, dropouts)
         print(f"State Estimator MLP: {self.NN}")
 
     def evaluate(self, observations):

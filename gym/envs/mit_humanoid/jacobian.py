@@ -22,22 +22,22 @@ def _apply_coupling(q, qd, q_des, qd_des, kp, kd, tau_ff):
     # Compute kp and kd terms
     kp = torch.diagonal(
         torch.matmul(
-            torch.matmul(J_inv_T, torch.diag_embed(kp, dim1=-2, dim2=-1)),
-            J_inv_T.T
+            torch.matmul(J_inv_T, torch.diag_embed(kp, dim1=-2, dim2=-1)), J_inv_T.T
         ),
-        dim1=-2, dim2=-1
+        dim1=-2,
+        dim2=-1,
     )
 
     kd = torch.diagonal(
         torch.matmul(
-            torch.matmul(J_inv_T, torch.diag_embed(kd, dim1=-2, dim2=-1)),
-            J_inv_T.T
+            torch.matmul(J_inv_T, torch.diag_embed(kd, dim1=-2, dim2=-1)), J_inv_T.T
         ),
-        dim1=-2, dim2=-1
+        dim1=-2,
+        dim2=-1,
     )
 
     # Compute torques
-    torques = kp*(q_des - q) + kd*(qd_des - qd) + tau_ff
+    torques = kp * (q_des - q) + kd * (qd_des - qd) + tau_ff
     torques = torch.matmul(torques, J)
 
     return torques

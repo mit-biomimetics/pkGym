@@ -11,9 +11,8 @@ from gym.utils.helpers import class_to_dict
 
 
 class FixedRobot(BaseTask):
-
     def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
-        """ Parses the provided config file,
+        """Parses the provided config file,
             calls create_sim() (which creates, simulation, terrain
             and environments), initilizes pytorch buffers used during training
 
@@ -30,8 +29,7 @@ class FixedRobot(BaseTask):
         self.init_done = False
         self.device = sim_device
         self._parse_cfg(self.cfg)
-        super().__init__(gym, sim, self.cfg, sim_params,
-                         sim_device, headless)
+        super().__init__(gym, sim, self.cfg, sim_params, sim_device, headless)
 
         if not self.headless:
             self.set_camera(self.cfg.viewer.pos, self.cfg.viewer.lookat)
@@ -42,7 +40,7 @@ class FixedRobot(BaseTask):
         self.reset()
 
     def step(self):
-        """ Apply actions, simulate, call self.post_physics_step()
+        """Apply actions, simulate, call self.post_physics_step()
             and pre_physics_step()
 
         Args:
@@ -58,25 +56,29 @@ class FixedRobot(BaseTask):
             self.torques = self._compute_torques()
 
             if self.cfg.asset.disable_motors:
-                self.torques[:] = 0.
-            torques_to_gym_tensor = torch.zeros(self.num_envs, self.num_dof,
-                                                device=self.device)
+                self.torques[:] = 0.0
+            torques_to_gym_tensor = torch.zeros(
+                self.num_envs, self.num_dof, device=self.device
+            )
 
             # todo encapsulate
             next_torques_idx = 0
             for dof_idx in range(self.num_dof):
                 if self.cfg.control.actuated_joints_mask[dof_idx]:
-                    torques_to_gym_tensor[:, dof_idx] = \
-                        self.torques[:, next_torques_idx]
+                    torques_to_gym_tensor[:, dof_idx] = self.torques[
+                        :, next_torques_idx
+                    ]
                     next_torques_idx += 1
                 else:
                     torques_to_gym_tensor[:, dof_idx] = torch.zeros(
-                        self.num_envs, device=self.device)
+                        self.num_envs, device=self.device
+                    )
 
             self.gym.set_dof_actuation_force_tensor(
-                self.sim, gymtorch.unwrap_tensor(torques_to_gym_tensor))
+                self.sim, gymtorch.unwrap_tensor(torques_to_gym_tensor)
+            )
             self.gym.simulate(self.sim)
-            if self.device == 'cpu':
+            if self.device == "cpu":
                 self.gym.fetch_results(self.sim, True)
             self.gym.refresh_dof_state_tensor(self.sim)
 
@@ -100,14 +102,14 @@ class FixedRobot(BaseTask):
         self.common_step_counter += 1
 
         n = self.num_actuators
-        self.dof_pos_history[:, 2 * n:] = self.dof_pos_history[:, n:2 * n]
-        self.dof_pos_history[:, n:2 * n] = self.dof_pos_history[:, :n]
+        self.dof_pos_history[:, 2 * n :] = self.dof_pos_history[:, n : 2 * n]
+        self.dof_pos_history[:, n : 2 * n] = self.dof_pos_history[:, :n]
         self.dof_pos_history[:, :n] = self.dof_pos_target
 
         self.dof_pos_obs = self.dof_pos - self.default_dof_pos
 
     def _reset_idx(self, env_ids):
-        """ Reset some environments.
+        """Reset some environments.
             Calls self._reset_dofs(env_ids), self._reset_root_states(env_ids),
             and self._resample_commands(env_ids)
             Logs episode info
@@ -122,12 +124,11 @@ class FixedRobot(BaseTask):
         # * reset robot states
         self._reset_system(env_ids)
         # * reset buffers
-        self.dof_pos_history[env_ids] = 0.
+        self.dof_pos_history[env_ids] = 0.0
         self.episode_length_buf[env_ids] = 0
 
     def _initialize_sim(self):
-        """ Creates simulation, terrain and evironments
-        """
+        """Creates simulation, terrain and evironments"""
         self.up_axis_idx = 2  # 2 for z, 1 for y -> adapt gravity accordingly
         self._create_ground_plane()
         self._create_envs()
@@ -142,7 +143,7 @@ class FixedRobot(BaseTask):
 
     # ------------- Callbacks --------------
     def _process_rigid_shape_props(self, props, env_id):
-        """ Callback allowing to store/change/randomize the rigid shape
+        """Callback allowing to store/change/randomize the rigid shape
             properties of each environment. Called During environment creation.
             Base behavior: randomizes the friction of each environment
 
@@ -158,7 +159,7 @@ class FixedRobot(BaseTask):
         return props
 
     def _process_dof_props(self, props, env_id):
-        """ Callback allowing to store/change/randomize the DOF properties of
+        """Callback allowing to store/change/randomize the DOF properties of
             each environment. Called During environment creation.
             Base behavior: stores position, velocity and torques limits
                 defined in the URDF
@@ -171,14 +172,15 @@ class FixedRobot(BaseTask):
             [numpy.array]: Modified DOF properties
         """
         if env_id == 0:  # ? why only for env_id == 0?
-            self.dof_pos_limits = torch.zeros(self.num_dof, 2,
-                                              dtype=torch.float,
-                                              device=self.device)
-            self.dof_vel_limits = torch.zeros(self.num_dof, dtype=torch.float,
-                                              device=self.device)
-            self.torque_limits = torch.zeros(self.num_actuators,
-                                             dtype=torch.float,
-                                             device=self.device)
+            self.dof_pos_limits = torch.zeros(
+                self.num_dof, 2, dtype=torch.float, device=self.device
+            )
+            self.dof_vel_limits = torch.zeros(
+                self.num_dof, dtype=torch.float, device=self.device
+            )
+            self.torque_limits = torch.zeros(
+                self.num_actuators, dtype=torch.float, device=self.device
+            )
             for i in range(len(props)):
                 self.dof_pos_limits[i, 0] = props["lower"][i].item()
                 self.dof_pos_limits[i, 1] = props["upper"][i].item()
@@ -186,15 +188,19 @@ class FixedRobot(BaseTask):
                 try:  # ! this seems like a crime...
                     self.torque_limits[i] = props["effort"][i].item()
                 except:
-                    print("WARNING: passive joints need to be listed after "
-                          + "active joints in the URDF.")
+                    print(
+                        "WARNING: passive joints need to be listed after "
+                        + "active joints in the URDF."
+                    )
                 # * soft limits
                 m = (self.dof_pos_limits[i, 0] + self.dof_pos_limits[i, 1]) / 2
                 r = self.dof_pos_limits[i, 1] - self.dof_pos_limits[i, 0]
-                self.dof_pos_limits[i, 0] = \
+                self.dof_pos_limits[i, 0] = (
                     m - 0.5 * r * self.cfg.reward_settings.soft_dof_pos_limit
-                self.dof_pos_limits[i, 1] = \
+                )
+                self.dof_pos_limits[i, 1] = (
                     m + 0.5 * r * self.cfg.reward_settings.soft_dof_pos_limit
+                )
         return props
 
     def _process_rigid_body_props(self, props, env_id):
@@ -206,7 +212,7 @@ class FixedRobot(BaseTask):
         return props
 
     def _compute_torques(self):
-        """ Compute torques from actions.
+        """Compute torques from actions.
             Actions can be interpreted as position or velocity targets given
             to a PD controller, or directly as scaled torques.
             [NOTE]: torques must have the same dimension as the number of DOFs,
@@ -218,10 +224,12 @@ class FixedRobot(BaseTask):
         Returns:
             [torch.Tensor]: Torques sent to the simulation
         """
-        actuated_dof_pos = torch.zeros(self.num_envs, self.num_actuators,
-                                       device=self.device)
-        actuated_dof_vel = torch.zeros(self.num_envs, self.num_actuators,
-                                       device=self.device)
+        actuated_dof_pos = torch.zeros(
+            self.num_envs, self.num_actuators, device=self.device
+        )
+        actuated_dof_vel = torch.zeros(
+            self.num_envs, self.num_actuators, device=self.device
+        )
         for dof_idx in range(self.num_dof):
             idx = 0
             if self.cfg.control.actuated_joints_mask[dof_idx]:
@@ -230,10 +238,11 @@ class FixedRobot(BaseTask):
                 idx += 1
 
         torques = (
-            self.p_gains * (self.dof_pos_target + self.default_act_pos
-                            - actuated_dof_pos)
+            self.p_gains
+            * (self.dof_pos_target + self.default_act_pos - actuated_dof_pos)
             + self.d_gains * (self.dof_vel_target - actuated_dof_vel)
-            + self.tau_ff)
+            + self.tau_ff
+        )
         torques = torch.clip(torques, -self.torque_limits, self.torque_limits)
         return torques.view(self.torques.shape)
 
@@ -245,15 +254,17 @@ class FixedRobot(BaseTask):
         if hasattr(self, self.cfg.init_state.reset_mode):
             eval(f"self.{self.cfg.init_state.reset_mode}(env_ids)")
         else:
-            raise NameError(
-                f"Unknown default setup: {self.cfg.init_state.reset_mode}")
+            raise NameError(f"Unknown default setup: {self.cfg.init_state.reset_mode}")
 
         # self.root_states[env_ids] = self.base_init_state
         # self.root_states[env_ids, 7:13] = 0.0
         env_ids_int32 = env_ids.to(dtype=torch.int32)
         self.gym.set_dof_state_tensor_indexed(
-            self.sim, gymtorch.unwrap_tensor(self.dof_state),
-            gymtorch.unwrap_tensor(env_ids_int32), len(env_ids_int32))
+            self.sim,
+            gymtorch.unwrap_tensor(self.dof_state),
+            gymtorch.unwrap_tensor(env_ids_int32),
+            len(env_ids_int32),
+        )
 
     # * implement reset methods
     def reset_to_basic(self, env_ids):
@@ -271,25 +282,28 @@ class FixedRobot(BaseTask):
         """
         # dof states
         self.dof_pos[env_ids] = random_sample(
-            env_ids, self.dof_pos_range[:, 0],
-            self.dof_pos_range[:, 1], device=self.device)
+            env_ids,
+            self.dof_pos_range[:, 0],
+            self.dof_pos_range[:, 1],
+            device=self.device,
+        )
         self.dof_vel[env_ids] = random_sample(
-            env_ids, self.dof_vel_range[:, 0],
-            self.dof_vel_range[:, 1], device=self.device)
+            env_ids,
+            self.dof_vel_range[:, 0],
+            self.dof_vel_range[:, 1],
+            device=self.device,
+        )
 
     # ----------------------------------------
     def _init_buffers(self):
-        """ Initialize torch tensors which will contain simulation states and
+        """Initialize torch tensors which will contain simulation states and
         processed quantities
         """
         n_envs = self.num_envs
         # * get gym GPU state tensors
-        actor_root_state = \
-            self.gym.acquire_actor_root_state_tensor(self.sim)
-        dof_state_tensor = \
-            self.gym.acquire_dof_state_tensor(self.sim)
-        net_contact_forces = \
-            self.gym.acquire_net_contact_force_tensor(self.sim)
+        actor_root_state = self.gym.acquire_actor_root_state_tensor(self.sim)
+        dof_state_tensor = self.gym.acquire_dof_state_tensor(self.sim)
+        net_contact_forces = self.gym.acquire_net_contact_force_tensor(self.sim)
         self.gym.refresh_dof_state_tensor(self.sim)
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_net_contact_force_tensor(self.sim)
@@ -304,44 +318,62 @@ class FixedRobot(BaseTask):
         self.base_quat = self.root_states[:, 3:7]
 
         # * shape: num_envs, num_bodies, xyz axis
-        self.contact_forces = \
-            gymtorch.wrap_tensor(net_contact_forces).view(n_envs, -1, 3)
+        self.contact_forces = gymtorch.wrap_tensor(net_contact_forces).view(
+            n_envs, -1, 3
+        )
 
         # * initialize some data used later on
         self.common_step_counter = 0
-        self.gravity_vec = to_torch(get_axis_params(-1., self.up_axis_idx),
-                                    device=self.device).repeat((n_envs, 1))
-        self.forward_vec = to_torch([1., 0., 0.],
-                                    device=self.device).repeat((n_envs, 1))
-        self.torques = torch.zeros(n_envs, self.num_actuators,
-                                   dtype=torch.float, device=self.device)
-        self.p_gains = torch.zeros(self.num_actuators,
-                                   dtype=torch.float, device=self.device)
-        self.d_gains = torch.zeros(self.num_actuators,
-                                   dtype=torch.float, device=self.device)
-        self.actions = torch.zeros(n_envs, self.num_actuators,
-                                   dtype=torch.float, device=self.device)
-        self.dof_pos_target = torch.zeros(self.num_envs, self.num_actuators,
-                                          dtype=torch.float,
-                                          device=self.device)
-        self.dof_vel_target = torch.zeros(self.num_envs,
-                                          self.num_actuators,
-                                          dtype=torch.float,
-                                          device=self.device)
-        self.tau_ff = torch.zeros(self.num_envs, self.num_actuators,
-                                  dtype=torch.float, device=self.device)
-        self.dof_pos_history = torch.zeros(self.num_envs,
-                                           self.num_actuators * 3,
-                                           dtype=torch.float,
-                                           device=self.device)
+        self.gravity_vec = to_torch(
+            get_axis_params(-1.0, self.up_axis_idx), device=self.device
+        ).repeat((n_envs, 1))
+        self.forward_vec = to_torch([1.0, 0.0, 0.0], device=self.device).repeat(
+            (n_envs, 1)
+        )
+        self.torques = torch.zeros(
+            n_envs, self.num_actuators, dtype=torch.float, device=self.device
+        )
+        self.p_gains = torch.zeros(
+            self.num_actuators, dtype=torch.float, device=self.device
+        )
+        self.d_gains = torch.zeros(
+            self.num_actuators, dtype=torch.float, device=self.device
+        )
+        self.actions = torch.zeros(
+            n_envs, self.num_actuators, dtype=torch.float, device=self.device
+        )
+        self.dof_pos_target = torch.zeros(
+            self.num_envs,
+            self.num_actuators,
+            dtype=torch.float,
+            device=self.device,
+        )
+        self.dof_vel_target = torch.zeros(
+            self.num_envs,
+            self.num_actuators,
+            dtype=torch.float,
+            device=self.device,
+        )
+        self.tau_ff = torch.zeros(
+            self.num_envs,
+            self.num_actuators,
+            dtype=torch.float,
+            device=self.device,
+        )
+        self.dof_pos_history = torch.zeros(
+            self.num_envs,
+            self.num_actuators * 3,
+            dtype=torch.float,
+            device=self.device,
+        )
         # * joint positions offsets and PD gains
         # * added: default_act_pos, to differentiate from passive joints
-        self.default_dof_pos = torch.zeros(self.num_dof,
-                                           dtype=torch.float,
-                                           device=self.device)
-        self.default_act_pos = torch.zeros(self.num_actuators,
-                                           dtype=torch.float,
-                                           device=self.device)
+        self.default_dof_pos = torch.zeros(
+            self.num_dof, dtype=torch.float, device=self.device
+        )
+        self.default_act_pos = torch.zeros(
+            self.num_actuators, dtype=torch.float, device=self.device
+        )
         actuated_idx = []  # temp
         for i in range(self.num_dof):
             name = self.dof_names[i]
@@ -354,9 +386,11 @@ class FixedRobot(BaseTask):
                     self.default_dof_pos[i] = angles[dof_name]
                     found = True
             if not found:
-                self.default_dof_pos[i] = 0.
-                print(f"Default dof pos of joint {name} was not defined, "
-                      + "setting to zero")
+                self.default_dof_pos[i] = 0.0
+                print(
+                    f"Default dof pos of joint {name} was not defined, "
+                    + "setting to zero"
+                )
 
             found = False
             for dof_name in self.cfg.control.stiffness.keys():
@@ -368,21 +402,19 @@ class FixedRobot(BaseTask):
                     actuated_idx.append(i)
             if not found:
                 try:
-                    self.p_gains[i] = 0.
-                    self.d_gains[i] = 0.
+                    self.p_gains[i] = 0.0
+                    self.d_gains[i] = 0.0
                     # todo remove if unnecessary
                     print("This should not happen anymore")
                     if self.cfg.control.control_type in ["P", "V"]:
-                        print(f"PD gain of joint {name} not defined, "
-                              + "set to zero")
+                        print(f"PD gain of joint {name} not defined, " + "set to zero")
                 except:
                     pass
 
         self.default_dof_pos = self.default_dof_pos.unsqueeze(0)
         self.default_act_pos = self.default_act_pos.unsqueeze(0)
         # * store indices of actuated joints
-        self.act_idx = to_torch(actuated_idx, dtype=torch.long,
-                                device=self.device)
+        self.act_idx = to_torch(actuated_idx, dtype=torch.long, device=self.device)
         # * check that init range highs and lows are consistent
         # * and repopulate to match
         if self.cfg.init_state.reset_mode == "reset_to_range":
@@ -390,27 +422,25 @@ class FixedRobot(BaseTask):
 
     def initialize_ranges_for_initial_conditions(self):
         self.dof_pos_range = torch.zeros(
-            self.num_dof, 2,
-            dtype=torch.float, device=self.device)
+            self.num_dof, 2, dtype=torch.float, device=self.device
+        )
         self.dof_vel_range = torch.zeros(
-            self.num_dof, 2,
-            dtype=torch.float, device=self.device)
+            self.num_dof, 2, dtype=torch.float, device=self.device
+        )
 
         for joint, vals in self.cfg.init_state.dof_pos_range.items():
             for i in range(self.num_dof):
                 if joint in self.dof_names[i]:
-                    self.dof_pos_range[i, :] = to_torch(vals,
-                                                        device=self.device)
+                    self.dof_pos_range[i, :] = to_torch(vals, device=self.device)
 
         for joint, vals in self.cfg.init_state.dof_vel_range.items():
             for i in range(self.num_dof):
                 if joint in self.dof_names[i]:
-                    self.dof_vel_range[i, :] = to_torch(vals,
-                                                        device=self.device)
+                    self.dof_vel_range[i, :] = to_torch(vals, device=self.device)
 
     def _create_ground_plane(self):
-        """ Adds a ground plane to the simulation, sets friction and
-            restitution based on the cfg.
+        """Adds a ground plane to the simulation, sets friction and
+        restitution based on the cfg.
         """
         plane_params = gymapi.PlaneParams()
         plane_params.normal = gymapi.Vec3(0.0, 0.0, 1.0)
@@ -421,16 +451,15 @@ class FixedRobot(BaseTask):
         self.gym.add_ground(self.sim, plane_params)
 
     def _create_envs(self):
-        """ Creates environments:
-             1. loads the robot URDF/MJCF asset,
-             2. For each environment
-                2.1 creates the environment,
-                2.2 calls DOF and Rigid shape properties callbacks,
-                2.3 create actor with these properties and add them to the env
-             3. Store indices of different bodies of the robot
+        """Creates environments:
+        1. loads the robot URDF/MJCF asset,
+        2. For each environment
+           2.1 creates the environment,
+           2.2 calls DOF and Rigid shape properties callbacks,
+           2.3 create actor with these properties and add them to the env
+        3. Store indices of different bodies of the robot
         """
-        asset_path = self.cfg.asset.file.format(
-            LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
+        asset_path = self.cfg.asset.file.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
         asset_root = os.path.dirname(asset_path)
         asset_file = os.path.basename(asset_path)
 
@@ -442,29 +471,25 @@ class FixedRobot(BaseTask):
         asset_options.max_linear_velocity = self.cfg.asset.max_linear_velocity
         asset_options.armature = self.cfg.asset.armature
         asset_options.thickness = self.cfg.asset.thickness
-        asset_options.disable_gravity = \
-            self.cfg.asset.disable_gravity
-        asset_options.default_dof_drive_mode = \
-            self.cfg.asset.default_dof_drive_mode
-        asset_options.collapse_fixed_joints = \
-            self.cfg.asset.collapse_fixed_joints
-        asset_options.replace_cylinder_with_capsule = \
+        asset_options.disable_gravity = self.cfg.asset.disable_gravity
+        asset_options.default_dof_drive_mode = self.cfg.asset.default_dof_drive_mode
+        asset_options.collapse_fixed_joints = self.cfg.asset.collapse_fixed_joints
+        asset_options.replace_cylinder_with_capsule = (
             self.cfg.asset.replace_cylinder_with_capsule
-        asset_options.flip_visual_attachments = \
-            self.cfg.asset.flip_visual_attachments
-        asset_options.max_angular_velocity = \
-            self.cfg.asset.max_angular_velocity
+        )
+        asset_options.flip_visual_attachments = self.cfg.asset.flip_visual_attachments
+        asset_options.max_angular_velocity = self.cfg.asset.max_angular_velocity
 
         robot_asset = self.gym.load_asset(
-            self.sim, asset_root, asset_file, asset_options)
+            self.sim, asset_root, asset_file, asset_options
+        )
         self.num_dof = self.gym.get_asset_dof_count(robot_asset)
         self.num_bodies = self.gym.get_asset_rigid_body_count(robot_asset)
 
         dof_props_asset = self.gym.get_asset_dof_properties(robot_asset)
-        dof_props_asset['armature'] = self.cfg.asset.rotor_inertia
-        dof_props_asset['damping'] = self.cfg.asset.joint_damping
-        rigid_shape_props_asset = \
-            self.gym.get_asset_rigid_shape_properties(robot_asset)
+        dof_props_asset["armature"] = self.cfg.asset.rotor_inertia
+        dof_props_asset["damping"] = self.cfg.asset.joint_damping
+        rigid_shape_props_asset = self.gym.get_asset_rigid_shape_properties(robot_asset)
 
         # * save body names from the asset
         body_names = self.gym.get_asset_rigid_body_names(robot_asset)
@@ -472,81 +497,87 @@ class FixedRobot(BaseTask):
         self.num_bodies = len(body_names)
         penalized_contact_names = []
         for name in self.cfg.asset.penalize_contacts_on:
-            penalized_contact_names.extend(
-                [s for s in body_names if name in s])
+            penalized_contact_names.extend([s for s in body_names if name in s])
         termination_contact_names = []
         for name in self.cfg.asset.terminate_after_contacts_on:
-            termination_contact_names.extend(
-                [s for s in body_names if name in s])
+            termination_contact_names.extend([s for s in body_names if name in s])
 
         start_pose = gymapi.Transform()
 
         self._get_env_origins()
-        env_lower = gymapi.Vec3(0., 0., 0.)  # ? what's this?
-        env_upper = gymapi.Vec3(0., 0., 0.)
+        env_lower = gymapi.Vec3(0.0, 0.0, 0.0)  # ? what's this?
+        env_upper = gymapi.Vec3(0.0, 0.0, 0.0)
         self.actor_handles = []
         self.envs = []
         for i in range(self.num_envs):
             # create env instance
             env_handle = self.gym.create_env(
-                self.sim, env_lower, env_upper, int(np.sqrt(self.num_envs)))
+                self.sim, env_lower, env_upper, int(np.sqrt(self.num_envs))
+            )
             pos = self.env_origins[i].clone()
             start_pose.p = gymapi.Vec3(*pos)
 
             rigid_shape_props = self._process_rigid_shape_props(
-                rigid_shape_props_asset, i)
-            self.gym.set_asset_rigid_shape_properties(
-                robot_asset, rigid_shape_props)
+                rigid_shape_props_asset, i
+            )
+            self.gym.set_asset_rigid_shape_properties(robot_asset, rigid_shape_props)
             name = self.cfg.asset.file
             name = name.format(LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR)
             robot_handle = self.gym.create_actor(
-                env_handle, robot_asset, start_pose, name, i,
-                self.cfg.asset.self_collisions, 0)
+                env_handle,
+                robot_asset,
+                start_pose,
+                name,
+                i,
+                self.cfg.asset.self_collisions,
+                0,
+            )
             dof_props = self._process_dof_props(dof_props_asset, i)
-            self.gym.set_actor_dof_properties(
-                env_handle, robot_handle, dof_props)
+            self.gym.set_actor_dof_properties(env_handle, robot_handle, dof_props)
             body_props = self.gym.get_actor_rigid_body_properties(
-                env_handle, robot_handle)
+                env_handle, robot_handle
+            )
             body_props = self._process_rigid_body_props(body_props, i)
             self.gym.set_actor_rigid_body_properties(
-                env_handle, robot_handle, body_props, recomputeInertia=True)
+                env_handle, robot_handle, body_props, recomputeInertia=True
+            )
             self.envs.append(env_handle)
             self.actor_handles.append(robot_handle)
 
         self.penalised_contact_indices = torch.zeros(
-            len(penalized_contact_names),
-            dtype=torch.long, device=self.device)
+            len(penalized_contact_names), dtype=torch.long, device=self.device
+        )
         for i in range(len(penalized_contact_names)):
-            self.penalised_contact_indices[i] = \
-                self.gym.find_actor_rigid_body_handle(
-                    self.envs[0], self.actor_handles[0],
-                    penalized_contact_names[i])
+            self.penalised_contact_indices[i] = self.gym.find_actor_rigid_body_handle(
+                self.envs[0], self.actor_handles[0], penalized_contact_names[i]
+            )
 
         self.termination_contact_indices = torch.zeros(
             len(termination_contact_names),
-            dtype=torch.long, device=self.device)
+            dtype=torch.long,
+            device=self.device,
+        )
         for i in range(len(termination_contact_names)):
-            self.termination_contact_indices[i] = \
-                self.gym.find_actor_rigid_body_handle(
-                    self.envs[0], self.actor_handles[0],
-                    termination_contact_names[i])
+            self.termination_contact_indices[i] = self.gym.find_actor_rigid_body_handle(
+                self.envs[0],
+                self.actor_handles[0],
+                termination_contact_names[i],
+            )
 
     def _get_env_origins(self):  # TODO: do without terrain
-        """ Sets environment origins. On rough terrain the origins are defined
-            by the terrain platforms. Otherwise create a grid.
+        """Sets environment origins. On rough terrain the origins are defined
+        by the terrain platforms. Otherwise create a grid.
         """
         # * removed terrain options
         self.custom_origins = False
-        self.env_origins = torch.zeros(
-            self.num_envs, 3,
-            device=self.device)
+        self.env_origins = torch.zeros(self.num_envs, 3, device=self.device)
         # * create a grid of robots
         num_cols = np.floor(np.sqrt(self.num_envs))
         num_rows = np.ceil(self.num_envs / num_cols)
         xx, yy = torch.meshgrid(torch.arange(num_rows), torch.arange(num_cols))
         spacing = self.cfg.env.env_spacing
-        self.env_origins[:, 0] = spacing * xx.flatten()[:self.num_envs]
-        self.env_origins[:, 1] = spacing * yy.flatten()[:self.num_envs]
+        self.env_origins[:, 0] = spacing * xx.flatten()[: self.num_envs]
+        self.env_origins[:, 1] = spacing * yy.flatten()[: self.num_envs]
         self.env_origins[:, 2] = self.cfg.env.root_height
 
     def _parse_cfg(self, cfg):
@@ -559,10 +590,8 @@ class FixedRobot(BaseTask):
     # ------------ reward functions----------------
 
     def _sqrdexp(self, x):
-        """ shorthand helper for squared exponential
-        """
-        return torch.exp(-torch.square(x)
-                         / self.cfg.reward_settings.tracking_sigma)
+        """shorthand helper for squared exponential"""
+        return torch.exp(-torch.square(x) / self.cfg.reward_settings.tracking_sigma)
 
     def _reward_torques(self):
         """Penalize torques"""
@@ -575,28 +604,43 @@ class FixedRobot(BaseTask):
     def _reward_action_rate(self):
         """Penalize changes in actions"""
         nact = self.num_actuators
-        dt2 = (self.dt * self.cfg.control.decimation)**2
-        error = torch.square(
-            self.dof_pos_history[:, :nact]
-            - self.dof_pos_history[:, nact:2 * nact]) / dt2
+        dt2 = (self.dt * self.cfg.control.decimation) ** 2
+        error = (
+            torch.square(
+                self.dof_pos_history[:, :nact]
+                - self.dof_pos_history[:, nact : 2 * nact]
+            )
+            / dt2
+        )
         return -torch.sum(error, dim=1)
 
     def _reward_action_rate2(self):
         """Penalize changes in actions"""
         nact = self.num_actuators
-        dt2 = (self.dt * self.cfg.control.decimation)**2
-        error = torch.square(
-            self.dof_pos_history[:, :nact]
-            - 2 * self.dof_pos_history[:, nact:2 * nact]
-            + self.dof_pos_history[:, 2 * nact:]) / dt2
+        dt2 = (self.dt * self.cfg.control.decimation) ** 2
+        error = (
+            torch.square(
+                self.dof_pos_history[:, :nact]
+                - 2 * self.dof_pos_history[:, nact : 2 * nact]
+                + self.dof_pos_history[:, 2 * nact :]
+            )
+            / dt2
+        )
         return -torch.sum(error, dim=1)
 
     def _reward_collision(self):
         """Penalize collisions on selected bodies"""
         return -torch.sum(
-            1. * (torch.norm(
-                self.contact_forces[:, self.penalised_contact_indices, :],
-                dim=-1) > 0.1), dim=1)
+            1.0
+            * (
+                torch.norm(
+                    self.contact_forces[:, self.penalised_contact_indices, :],
+                    dim=-1,
+                )
+                > 0.1
+            ),
+            dim=1,
+        )
 
     def _reward_termination(self):
         # Terminal reward / penalty
@@ -604,16 +648,15 @@ class FixedRobot(BaseTask):
 
     def _reward_dof_pos_limits(self):
         """Penalize dof positions too close to the limit"""
-        out_of_limits = (
-            -(self.dof_pos - self.dof_pos_limits[:, 0])
-            .clip(max=0.))  # lower limit
-        out_of_limits += (
-            self.dof_pos - self.dof_pos_limits[:, 1]).clip(min=0.)
+        out_of_limits = -(self.dof_pos - self.dof_pos_limits[:, 0]).clip(
+            max=0.0
+        )  # lower limit
+        out_of_limits += (self.dof_pos - self.dof_pos_limits[:, 1]).clip(min=0.0)
         return -torch.sum(out_of_limits, dim=1)
 
     def _reward_dof_vel_limits(self):
         """Penalize dof velocities too close to the limit"""
         # * clip to max error = 1 rad/s per joint to avoid huge penalties
         limit = self.cfg.reward_settings.soft_dof_vel_limit
-        error = (self.dof_vel.abs() - self.dof_vel_limits * limit)
-        return -torch.sum(error.clip(min=0., max=1.), dim=1)
+        error = self.dof_vel.abs() - self.dof_vel_limits * limit
+        return -torch.sum(error.clip(min=0.0, max=1.0), dim=1)

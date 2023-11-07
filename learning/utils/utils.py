@@ -62,26 +62,33 @@ def split_and_pad_trajectories(tensor, dones):
     # * Get length of trajectory by counting the number of
     # * successive not done elements
     done_indices = torch.cat(
-        (flat_dones.new_tensor(
-            [-1], dtype=torch.int64), flat_dones.nonzero()[:, 0]))
+        (
+            flat_dones.new_tensor([-1], dtype=torch.int64),
+            flat_dones.nonzero()[:, 0],
+        )
+    )
     trajectory_lengths = done_indices[1:] - done_indices[:-1]
     trajectory_lengths_list = trajectory_lengths.tolist()
     # * Extract the individual trajectories
     trajectories = torch.split(
-        tensor.transpose(1, 0).flatten(0, 1), trajectory_lengths_list)
+        tensor.transpose(1, 0).flatten(0, 1), trajectory_lengths_list
+    )
     padded_trajectories = torch.nn.utils.rnn.pad_sequence(trajectories)
 
     trajectory_masks = trajectory_lengths > torch.arange(
-        0, tensor.shape[0], device=tensor.device).unsqueeze(1)
+        0, tensor.shape[0], device=tensor.device
+    ).unsqueeze(1)
     return padded_trajectories, trajectory_masks
 
 
 def unpad_trajectories(trajectories, masks):
-    """ Does the inverse operation of  split_and_pad_trajectories()
-    """
+    """Does the inverse operation of  split_and_pad_trajectories()"""
     # * Need to transpose before and after the masking to have proper reshaping
-    return trajectories.transpose(1, 0)[masks.transpose(1, 0)].view(
-        -1, trajectories.shape[0], trajectories.shape[-1]).transpose(1, 0)
+    return (
+        trajectories.transpose(1, 0)[masks.transpose(1, 0)]
+        .view(-1, trajectories.shape[0], trajectories.shape[-1])
+        .transpose(1, 0)
+    )
 
 
 def remove_zero_weighted_rewards(reward_weights):
@@ -91,14 +98,14 @@ def remove_zero_weighted_rewards(reward_weights):
 
 
 def set_discount_from_horizon(dt, horizon):
-    """ Calculate a discount-factor from the desired discount horizon,
+    """Calculate a discount-factor from the desired discount horizon,
     and the time-step (dt).
     """
-    assert (dt > 0), "Invalid time-step"
+    assert dt > 0, "Invalid time-step"
     if horizon == 0:
         discount_factor = 0
     else:
-        assert (horizon >= dt), "Invalid discounting horizon"
+        assert horizon >= dt, "Invalid discounting horizon"
         discrete_time_horizon = int(horizon / dt)
         discount_factor = 1 - 1 / discrete_time_horizon
 

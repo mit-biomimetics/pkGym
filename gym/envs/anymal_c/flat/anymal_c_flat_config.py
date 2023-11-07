@@ -30,8 +30,10 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from gym.envs.base.legged_robot_config \
-    import LeggedRobotCfg, LeggedRobotRunnerCfg
+from gym.envs.base.legged_robot_config import (
+    LeggedRobotCfg,
+    LeggedRobotRunnerCfg,
+)
 
 BASE_HEIGHT_REF = 0.5
 
@@ -42,7 +44,7 @@ class AnymalCFlatCfg(LeggedRobotCfg):
         num_actions = 12
 
     class terrain(LeggedRobotCfg.terrain):
-        mesh_type = 'plane'
+        mesh_type = "plane"
 
     class init_state(LeggedRobotCfg.init_state):
         pos = [0.0, 0.0, 0.6]  # x,y,z [m]
@@ -51,12 +53,10 @@ class AnymalCFlatCfg(LeggedRobotCfg):
             "LH_HAA": 0.0,
             "RF_HAA": -0.0,
             "RH_HAA": -0.0,
-
             "LF_HFE": 0.4,
             "LH_HFE": -0.4,
             "RF_HFE": 0.4,
             "RH_HFE": -0.4,
-
             "LF_KFE": -0.8,
             "LH_KFE": 0.8,
             "RF_KFE": -0.8,
@@ -64,21 +64,22 @@ class AnymalCFlatCfg(LeggedRobotCfg):
         }
 
     class control(LeggedRobotCfg.control):
-        stiffness = {'HAA': 80., 'HFE': 80., 'KFE': 80.}  # [N*m/rad]
-        damping = {'HAA': 2., 'HFE': 2., 'KFE': 2.}     # [N*m*s/rad]
+        stiffness = {"HAA": 80.0, "HFE": 80.0, "KFE": 80.0}  # [N*m/rad]
+        damping = {"HAA": 2.0, "HFE": 2.0, "KFE": 2.0}  # [N*m*s/rad]
         use_actuator_network = False
-        actuator_net_file = "{LEGGED_GYM_ROOT_DIR}/resources/" \
-                            + "actuator_nets/anydrive_v3_lstm.pt"
+        actuator_net_file = (
+            "{LEGGED_GYM_ROOT_DIR}/resources/" + "actuator_nets/anydrive_v3_lstm.pt"
+        )
         ctrl_frequency = 80
         desired_sim_frequency = 400
 
     class commands:
-        resampling_time = 10.  # time before command are changed[s]
+        resampling_time = 10.0  # time before command are changed[s]
 
         class ranges:
             lin_vel_x = [-1.0, 3.0]  # min max [m/s]
-            lin_vel_y = 1.  # max [m/s]
-            yaw_vel = 2    # max [rad/s]
+            lin_vel_y = 1.0  # max [m/s]
+            yaw_vel = 2  # max [rad/s]
 
     class push_robots:
         toggle = True
@@ -87,11 +88,10 @@ class AnymalCFlatCfg(LeggedRobotCfg):
 
     class domain_rand(LeggedRobotCfg.domain_rand):
         randomize_base_mass = True
-        added_mass_range = [-2., 2.]
+        added_mass_range = [-2.0, 2.0]
 
     class asset(LeggedRobotCfg.asset):
-        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/" \
-               + "anymal_c/urdf/anymal_c.urdf"
+        file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/" + "anymal_c/urdf/anymal_c.urdf"
         foot_name = "FOOT"
         penalize_contacts_on = ["SHANK"]
         terminate_after_contacts_on = ["BASE", "THIGH"]
@@ -101,17 +101,17 @@ class AnymalCFlatCfg(LeggedRobotCfg):
         soft_dof_pos_limit = 0.9
         soft_dof_vel_limit = 0.9
         soft_torque_limit = 0.9
-        max_contact_force = 600.
+        max_contact_force = 600.0
         base_height_target = BASE_HEIGHT_REF
         tracking_sigma = 0.25
 
     class scaling(LeggedRobotCfg.scaling):
-        base_ang_vel = 3.14 * (BASE_HEIGHT_REF / 9.81)**0.5
-        base_lin_vel = 1.
+        base_ang_vel = 3.14 * (BASE_HEIGHT_REF / 9.81) ** 0.5
+        base_lin_vel = 1.0
         commands = 1
-        dof_vel = 100.  # ought to be roughly max expected speed.
+        dof_vel = 100.0  # ought to be roughly max expected speed.
         base_height = BASE_HEIGHT_REF
-        dof_pos = 4 * [0.1, 1., 2]  # hip-abad, hip-pitch, knee
+        dof_pos = 4 * [0.1, 1.0, 2]  # hip-abad, hip-pitch, knee
         dof_pos_obs = dof_pos
         # Action scales
         dof_pos_target = dof_pos
@@ -125,27 +125,29 @@ class AnymalCFlatRunnerCfg(LeggedRobotRunnerCfg):
         actor_hidden_dims = [256, 256, 256]
         critic_hidden_dims = [256, 256, 256]
         # can be elu, relu, selu, crelu, lrelu, tanh, sigmoid
-        activation = 'elu'
+        activation = "elu"
 
-        actor_obs = ["base_height",
-                     "base_lin_vel",
-                     "base_ang_vel",
-                     "projected_gravity",
-                     "commands",
-                     "dof_pos_obs",
-                     "dof_vel",
-                     "dof_pos_history",
-                     ]
+        actor_obs = [
+            "base_height",
+            "base_lin_vel",
+            "base_ang_vel",
+            "projected_gravity",
+            "commands",
+            "dof_pos_obs",
+            "dof_vel",
+            "dof_pos_history",
+        ]
 
-        critic_obs = ["base_height",
-                      "base_lin_vel",
-                      "base_ang_vel",
-                      "projected_gravity",
-                      "commands",
-                      "dof_pos_obs",
-                      "dof_vel",
-                      "dof_pos_history",
-                      ]
+        critic_obs = [
+            "base_height",
+            "base_lin_vel",
+            "base_ang_vel",
+            "projected_gravity",
+            "commands",
+            "dof_pos_obs",
+            "dof_vel",
+            "dof_pos_history",
+        ]
 
         actions = ["dof_pos_target"]
 
@@ -159,21 +161,21 @@ class AnymalCFlatRunnerCfg(LeggedRobotRunnerCfg):
             class weights(LeggedRobotRunnerCfg.policy.reward.weights):
                 tracking_lin_vel = 3.0
                 tracking_ang_vel = 1.0
-                lin_vel_z = 0.
+                lin_vel_z = 0.0
                 ang_vel_xy = 0.0
                 orientation = 1.0
-                torques = 5.e-6
-                dof_vel = 1.
+                torques = 5.0e-6
+                dof_vel = 1.0
                 base_height = 0.2
                 action_rate = 0.001  # -0.01
                 action_rate2 = 0.0001  # -0.001
                 stand_still = 0.5
-                dof_pos_limits = 0.
-                feet_contact_forces = 0.
+                dof_pos_limits = 0.0
+                feet_contact_forces = 0.0
                 dof_near_home = 0.1
 
             class termination_weight:
-                termination = 1.
+                termination = 1.0
 
     class algorithm(LeggedRobotRunnerCfg.algorithm):
         # training params, set to be same as mini_cheetah for right now
@@ -184,16 +186,16 @@ class AnymalCFlatRunnerCfg(LeggedRobotRunnerCfg):
         num_learning_epochs = 5
         # mini batch size = num_envs*nsteps / nminibatches
         num_mini_batches = 4
-        learning_rate = 1.e-3  # 5.e-4
-        schedule = 'adaptive'  # could be adaptive, fixed
-        discount_horizon = 2.  # [s]
+        learning_rate = 1.0e-3  # 5.e-4
+        schedule = "adaptive"  # could be adaptive, fixed
+        discount_horizon = 2.0  # [s]
         GAE_bootstrap_horizon = 0.5  # [s]
         desired_kl = 0.01
-        max_grad_norm = 1.
+        max_grad_norm = 1.0
 
     class runner(LeggedRobotRunnerCfg.runner):
-        run_name = ''
-        experiment_name = 'flat_anymal_c'
-        algorithm_class_name = 'PPO'
+        run_name = ""
+        experiment_name = "flat_anymal_c"
+        algorithm_class_name = "PPO"
         max_iterations = 1000  # number of policy updates
         num_steps_per_env = 24
