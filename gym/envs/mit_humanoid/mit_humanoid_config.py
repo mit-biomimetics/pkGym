@@ -136,6 +136,7 @@ class MITHumanoidCfg(LeggedRobotCfg):
         default_dof_drive_mode = 3
         disable_gravity = False
         disable_motors = False
+        apply_humanoid_jacobian = False
 
     class reward_settings(LeggedRobotCfg.reward_settings):
         soft_dof_pos_limit = 0.9

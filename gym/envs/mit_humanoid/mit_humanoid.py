@@ -1,7 +1,7 @@
 import torch
 
 from gym.envs.base.legged_robot import LeggedRobot
-
+from .jacobian import _apply_coupling
 
 class MIT_Humanoid(LeggedRobot):
     def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
@@ -9,6 +9,26 @@ class MIT_Humanoid(LeggedRobot):
 
     def _init_buffers(self):
         super()._init_buffers()
+
+    def _compute_torques(self):
+        self.desired_pos_target = self.dof_pos_target + self.default_dof_pos
+        q = self.dof_pos.clone()
+        qd = self.dof_vel.clone()
+        q_des = self.desired_pos_target.clone()
+        qd_des = self.dof_vel_target.clone()
+        tau_ff = self.tau_ff.clone()
+        kp = self.p_gains.clone()
+        kd = self.d_gains.clone()
+
+        if (self.cfg.asset.apply_humanoid_jacobian):
+            torques = _apply_coupling(q, qd, q_des, qd_des, kp,
+                                      kd, tau_ff)
+        else:
+            torques = kp*(q_des - q) + kd*(qd_des - qd) + tau_ff
+
+        torques = torch.clip(torques, -self.torque_limits, self.torque_limits)
+
+        return torques.view(self.torques.shape)
 
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity w. squared exp
