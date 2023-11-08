@@ -978,9 +978,11 @@ class LeggedRobot(BaseTask):
 
         return heights.view(self.num_envs, -1) * self.terrain.cfg.vertical_scale
 
-    def _sqrdexp(self, x):
+    def _sqrdexp(self, x, scale=1.0):
         """shorthand helper for squared exponential"""
-        return torch.exp(-torch.square(x) / self.cfg.reward_settings.tracking_sigma)
+        return torch.exp(
+            -torch.square(x / scale) / self.cfg.reward_settings.tracking_sigma
+        )
 
     # ------------ reward functions----------------
 
