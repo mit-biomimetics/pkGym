@@ -6,7 +6,5 @@ class TestTaskRegistry:
         env_cfg, train_cfg = task_registry.create_cfgs(args)
         wandb_helper = wandb_singleton.WandbSingleton()
         task_registry.set_log_dir_name(train_cfg)
-        wandb_helper.setup_wandb(env_cfg=env_cfg,
-                                 train_cfg=train_cfg,
-                                 args=args)
-        assert wandb_helper.experiment_name == train_cfg.log_dir.split('/')[-1]
+        wandb_helper.setup_wandb(env_cfg=env_cfg, train_cfg=train_cfg, args=args)
+        assert wandb_helper.experiment_name == train_cfg.log_dir.split("/")[-1]

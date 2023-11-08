@@ -6,24 +6,25 @@ from learning.storage import SERolloutStorage
 
 
 class StateEstimator:
-    """ This class provides a learned state estimator.
+    """This class provides a learned state estimator.
     This is trained with supervised learning, using only on-policy data
     collected in a rollout storage.
     predict() function provides state estimation for RL given the observation
     update() function optimizes for the nn params
     process_env_step() function stores values in a rollout storage
     """
+
     state_estimator: StateEstimatorNN
 
-    def __init__(self,
-                 state_estimator,    # nn module
-                 learning_rate=1e-3,
-                 num_mini_batches=1,
-                 num_learning_epochs=1,
-                 device='cpu',
-                 **kwargs
-                 ):
-
+    def __init__(
+        self,
+        state_estimator,  # nn module
+        learning_rate=1e-3,
+        num_mini_batches=1,
+        num_learning_epochs=1,
+        device="cpu",
+        **kwargs,
+    ):
         # general parameters
         self.device = device
         self.learning_rate = learning_rate
@@ -37,15 +38,17 @@ class StateEstimator:
         # SE network and optimizer
         self.state_estimator = state_estimator
         self.state_estimator.to(self.device)
-        self.optimizer = optim.Adam(self.state_estimator.parameters(),
-                                    lr=learning_rate)
+        self.optimizer = optim.Adam(self.state_estimator.parameters(), lr=learning_rate)
         self.SE_loss_fn = nn.MSELoss()
 
-    def init_storage(self, num_envs, num_transitions_per_env,
-                     obs_shape, se_shape):
-        self.storage = SERolloutStorage(num_envs, num_transitions_per_env,
-                                        obs_shape, se_shape,
-                                        device=self.device)
+    def init_storage(self, num_envs, num_transitions_per_env, obs_shape, se_shape):
+        self.storage = SERolloutStorage(
+            num_envs,
+            num_transitions_per_env,
+            obs_shape,
+            se_shape,
+            device=self.device,
+        )
 
     def predict(self, obs):
         return self.state_estimator.evaluate(obs)
@@ -58,12 +61,12 @@ class StateEstimator:
         self.transition.clear()
 
     def update(self):
-        """ Update the SE neural network weights via supervised learning """
-        generator = self.storage.mini_batch_generator(self.num_mini_batches,
-                                                      self.num_learning_epochs)
+        """Update the SE neural network weights via supervised learning"""
+        generator = self.storage.mini_batch_generator(
+            self.num_mini_batches, self.num_learning_epochs
+        )
         mean_loss = 0
         for obs_batch, SE_target_batch in generator:
-
             SE_estimate_batch = self.state_estimator.evaluate(obs_batch)
 
             SE_loss = self.SE_loss_fn(SE_estimate_batch, SE_target_batch)

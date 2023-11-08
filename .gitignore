@@ -1,3 +1,4 @@
+*.pt
 isaacgym/*
 *venv*
 logs/
@@ -12,6 +13,7 @@ wandb/
 gym/wandb
 *.DS_Store
 *.zip
+*.npz
 user/wandb_config.json
 *trajectories/
 

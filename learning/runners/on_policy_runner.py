@@ -30,26 +30,20 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-import time
 import os
-import wandb
 import torch
-from isaacgym.torch_utils import torch_rand_float
-
 from learning.algorithms import PPO
 from learning.modules import ActorCritic
 from learning.env import VecEnv
 from learning.utils import remove_zero_weighted_rewards
+
 from learning.utils import Logger
+
+logger = Logger()
 
 
 class OnPolicyRunner:
-
-    def __init__(self,
-                 env: VecEnv,
-                 train_cfg,
-                 device='cpu'):
-
+    def __init__(self, env: VecEnv, train_cfg, device="cpu"):
         self.device = device
         self.env = env
         self.parse_train_cfg(train_cfg)
@@ -57,81 +51,85 @@ class OnPolicyRunner:
         num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
         num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
         num_actions = self.get_action_size(self.policy_cfg["actions"])
-        actor_critic = ActorCritic(num_actor_obs,
-                                   num_critic_obs,
-                                   num_actions,
-                                   **self.policy_cfg).to(self.device)
+        actor_critic = ActorCritic(
+            num_actor_obs, num_critic_obs, num_actions, **self.policy_cfg
+        ).to(self.device)
 
         alg_class = eval(self.cfg["algorithm_class_name"])
-        self.alg: PPO = alg_class(actor_critic,
-                                  device=self.device, **self.alg_cfg)
+        self.alg: PPO = alg_class(actor_critic, device=self.device, **self.alg_cfg)
 
         self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
         self.tot_timesteps = 0
-        self.tot_time = 0
         self.it = 0
 
         # * init storage and model
         self.init_storage()
-
-        # * Log
         self.log_dir = train_cfg["log_dir"]
-        self.SE_path = os.path.join(self.log_dir, 'SE')  # log_dir for SE
-        self.logger = Logger(self.log_dir, self.env.max_episode_length_s,
-                             self.device)
 
-        reward_keys_to_log = \
-            list(self.policy_cfg["reward"]["weights"].keys()) \
-            + list(self.policy_cfg["reward"]["termination_weight"].keys())
-
-        reward_keys_to_log += ["Total_reward"]
-        self.logger.initialize_buffers(self.env.num_envs, reward_keys_to_log)
+        logger.initialize(
+            self.env.num_envs,
+            self.env.dt,
+            self.cfg["max_iterations"],
+            self.device,
+        )
 
     def parse_train_cfg(self, train_cfg):
-        self.cfg = train_cfg['runner']
-        self.alg_cfg = train_cfg['algorithm']
-
-        remove_zero_weighted_rewards(train_cfg['policy']['reward']['weights'])
-        self.policy_cfg = train_cfg['policy']
+        self.cfg = train_cfg["runner"]
+        self.alg_cfg = train_cfg["algorithm"]
+        remove_zero_weighted_rewards(train_cfg["policy"]["reward"]["weights"])
+        self.policy_cfg = train_cfg["policy"]
 
     def init_storage(self):
         num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
         num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
         num_actions = self.get_action_size(self.policy_cfg["actions"])
-        self.alg.init_storage(self.env.num_envs,
-                              self.num_steps_per_env,
-                              actor_obs_shape=[num_actor_obs],
-                              critic_obs_shape=[num_critic_obs],
-                              action_shape=[num_actions])
-
-    def attach_to_wandb(self, wandb, log_freq=100, log_graph=True):
-        wandb.watch((self.alg.actor_critic.actor,
-                    self.alg.actor_critic.critic),
-                    log_freq=log_freq,
-                    log_graph=log_graph)
+        self.alg.init_storage(
+            self.env.num_envs,
+            self.num_steps_per_env,
+            actor_obs_shape=[num_actor_obs],
+            critic_obs_shape=[num_critic_obs],
+            action_shape=[num_actions],
+        )
 
     def learn(self, num_learning_iterations, init_at_random_ep_len=False):
+        # * unpack out of config
+        reward_weights = self.policy_cfg["reward"]["weights"]
+        termination_weight = self.policy_cfg["reward"]["termination_weight"]
+        rewards_dict = {}
+        total_rewards = torch.zeros(self.env.num_envs, device=self.device)
+
+        # * set up logger
+        logger.register_rewards(list(reward_weights.keys()))
+        logger.register_rewards(list(termination_weight.keys()))
+        logger.register_rewards(["total_rewards"])
+
+        logger.register_category(
+            "algorithm", self.alg, ["mean_value_loss", "mean_surrogate_loss"]
+        )
+
+        logger.attach_torch_obj_to_wandb(
+            (self.alg.actor_critic.actor, self.alg.actor_critic.critic)
+        )
 
         if init_at_random_ep_len:
             self.env.episode_length_buf = torch.randint_like(
                 self.env.episode_length_buf,
-                high=int(self.env.max_episode_length))
+                high=int(self.env.max_episode_length),
+            )
 
         actor_obs = self.get_obs(self.policy_cfg["actor_obs"])
         critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
         self.alg.actor_critic.train()
         self.num_learning_iterations = num_learning_iterations
-        self.tot_iter = self.it + num_learning_iterations
+        tot_iter = self.it + num_learning_iterations
 
         self.save()
 
-        reward_weights = self.policy_cfg['reward']['weights']
-        termination_weight = self.policy_cfg['reward']['termination_weight']
-        rewards = 0.*self.get_rewards(reward_weights)
-
-        for self.it in range(self.it+1, self.tot_iter+1):
-            start = time.time()
+        logger.tic("runtime")
+        for self.it in range(self.it + 1, tot_iter + 1):
+            logger.tic("iteration")
+            logger.tic("collection")
             # * Rollout
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
@@ -141,59 +139,65 @@ class OnPolicyRunner:
                     self.env.step()
 
                     actor_obs = self.get_noisy_obs(
-                        self.policy_cfg['actor_obs'],
-                        self.policy_cfg['noise'])
-                    critic_obs = self.get_obs(self.policy_cfg['critic_obs'])
+                        self.policy_cfg["actor_obs"], self.policy_cfg["noise"]
+                    )
+                    critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
                     # * get time_outs
                     timed_out = self.get_timed_out()
                     terminated = self.get_terminated()
                     dones = timed_out | terminated
 
-                    rewards += self.get_and_log_rewards(reward_weights,
-                                                        modifier=self.env.dt,
-                                                        mask=~terminated)
-                    rewards += self.get_and_log_rewards(termination_weight,
-                                                        mask=terminated)
-                    self.logger.log_current_reward('Total_reward', rewards)
-                    self.alg.process_env_step(rewards, dones, timed_out)
-                    self.logger.update_episode_buffer(dones)
-                    rewards *= 0.
+                    rewards_dict.update(
+                        self.get_rewards(termination_weight, mask=terminated)
+                    )
+                    rewards_dict.update(
+                        self.get_rewards(
+                            reward_weights,
+                            modifier=self.env.dt,
+                            mask=~terminated,
+                        )
+                    )
 
-                stop = time.time()
-                self.collection_time = stop - start
-                # * Learning step
-                start = stop
+                    total_rewards = torch.stack(tuple(rewards_dict.values())).sum(dim=0)
+
+                    logger.log_rewards(rewards_dict)
+                    logger.log_rewards({"total_rewards": total_rewards})
+                    logger.finish_step(dones)
+
+                    self.alg.process_env_step(total_rewards, dones, timed_out)
                 self.alg.compute_returns(critic_obs)
+            logger.toc("collection")
 
-            self.mean_value_loss, self.mean_surrogate_loss = self.alg.update()
-            stop = time.time()
-            self.learn_time = stop - start
-            self.tot_timesteps += self.num_steps_per_env * self.env.num_envs
-            self.tot_time += self.collection_time + self.learn_time
+            logger.tic("learning")
+            self.alg.update()
+            logger.toc("learning")
+            logger.log_category()
 
-            self.log()
+            logger.finish_iteration()
+            logger.toc("iteration")
+            logger.toc("runtime")
+            logger.print_to_terminal()
 
             if self.it % self.save_interval == 0:
                 self.save()
-
-        # * save
         self.save()
 
     def get_noise(self, obs_list, noise_dict):
-        noise_vec = torch.zeros(self.get_obs_size(obs_list),
-                                device=self.device)
+        noise_vec = torch.zeros(self.get_obs_size(obs_list), device=self.device)
         obs_index = 0
         for obs in obs_list:
             obs_size = self.get_obs_size([obs])
             if obs in noise_dict.keys():
-                noise_tensor = torch.ones(obs_size).to(self.device) \
-                               * torch.tensor(noise_dict[obs]).to(self.device)
+                noise_tensor = torch.ones(obs_size).to(self.device) * torch.tensor(
+                    noise_dict[obs]
+                ).to(self.device)
                 if obs in self.env.scales.keys():
                     noise_tensor /= self.env.scales[obs]
-                noise_vec[obs_index:obs_index+obs_size] = noise_tensor
+                noise_vec[obs_index : obs_index + obs_size] = noise_tensor
             obs_index += obs_size
-        return torch_rand_float(-1., 1., (self.env.num_envs, len(noise_vec)),
-                                self.device) * noise_vec
+        return noise_vec * torch.randn(
+            self.env.num_envs, len(noise_vec), device=self.device
+        )
 
     def get_noisy_obs(self, obs_list, noise_dict):
         observation = self.get_obs(obs_list)
@@ -204,19 +208,21 @@ class OnPolicyRunner:
         return observation
 
     def set_actions(self, actions):
-        if self.policy_cfg['disable_actions']:
+        if self.policy_cfg["disable_actions"]:
             return
         if hasattr(self.env.cfg.scaling, "clip_actions"):
-            actions = torch.clip(actions,
-                                 -self.env.cfg.scaling.clip_actions,
-                                 self.env.cfg.scaling.clip_actions)
+            actions = torch.clip(
+                actions,
+                -self.env.cfg.scaling.clip_actions,
+                self.env.cfg.scaling.clip_actions,
+            )
         self.env.set_states(self.policy_cfg["actions"], actions)
 
     def get_timed_out(self):
-        return self.env.get_states(['timed_out']).to(self.device)
+        return self.env.get_states(["timed_out"]).to(self.device)
 
     def get_terminated(self):
-        return self.env.get_states(['terminated']).to(self.device)
+        return self.env.get_states(["terminated"]).to(self.device)
 
     def get_obs_size(self, obs_list):
         # todo make unit-test to assert len(shape)==1 always
@@ -225,85 +231,41 @@ class OnPolicyRunner:
     def get_action_size(self, action_list):
         return self.env.get_states(action_list)[0].shape[0]
 
-    def get_and_log_rewards(self, reward_weights, modifier=1,
-                            mask=None):
-        '''
-        Computes each reward on the fly, sends them to logging, and returns the
-        total reward.
-        reward_weights: dict with reward name, and weighting
-        modifier: an additional weighting applied to all rewards
-        mask: a boolean tensor of shape (num_envs), to toggle which rewards are
-              computed
-        '''
-
+    def get_rewards(self, reward_weights, modifier=1, mask=None):
+        rewards_dict = {}
         if mask is None:
             mask = 1.0
-        total_rewards = torch.zeros(self.env.num_envs,
-                                    device=self.device, dtype=torch.float)
         for name, weight in reward_weights.items():
-            reward = mask * self.get_rewards({name: weight}, modifier)
-            total_rewards += reward
-            self.logger.log_current_reward(name, reward)
-        return total_rewards
+            rewards_dict[name] = mask * self._get_reward({name: weight}, modifier)
+        return rewards_dict
 
-    def get_rewards(self, reward_weights, modifier=1):
-        return modifier*self.env.compute_reward(reward_weights).to(self.device)
-
-    def log(self):
-        fps = int(self.num_steps_per_env * self.env.num_envs
-                  / (self.collection_time+self.learn_time))
-        mean_noise_std = self.alg.actor_critic.std.mean().item()
-        self.logger.add_log(self.logger.mean_rewards)
-        self.logger.add_log({
-            'Loss/value_function': self.mean_value_loss,
-            'Loss/surrogate': self.mean_surrogate_loss,
-            'Loss/learning_rate': self.alg.learning_rate,
-            'Policy/mean_noise_std': mean_noise_std,
-            'Perf/total_fps': fps,
-            'Perf/collection_time': self.collection_time,
-            'Perf/learning_time': self.learn_time,
-            'Train/mean_reward': self.logger.total_mean_reward,
-            'Train/mean_episode_length': self.logger.mean_episode_length,
-            'Train/total_timesteps': self.tot_timesteps,
-            'Train/iteration_time': self.collection_time+self.learn_time,
-            'Train/time': self.tot_time,
-            })
-        self.logger.update_iterations(self.it, self.tot_iter,
-                                      self.num_learning_iterations)
-
-        # TODO: iterate through the config for any extra things
-        # TODO: you might want to log
-
-        if wandb.run is not None:
-            self.logger.log_to_wandb()
-        self.logger.print_to_terminal()
-
-    def get_infos(self):
-        return self.env.extras
+    def _get_reward(self, name_weight, modifier=1):
+        return modifier * self.env.compute_reward(name_weight).to(self.device)
 
     def save(self):
-        path = os.path.join(self.log_dir, 'model_{}.pt'.format(self.it))
-        torch.save({
-            'model_state_dict': self.alg.actor_critic.state_dict(),
-            'optimizer_state_dict': self.alg.optimizer.state_dict(),
-            'iter': self.it},
-                   path)
+        os.makedirs(self.log_dir, exist_ok=True)
+        path = os.path.join(self.log_dir, "model_{}.pt".format(self.it))
+        torch.save(
+            {
+                "model_state_dict": self.alg.actor_critic.state_dict(),
+                "optimizer_state_dict": self.alg.optimizer.state_dict(),
+                "iter": self.it,
+            },
+            path,
+        )
 
     def load(self, path, load_optimizer=True):
         loaded_dict = torch.load(path)
-        self.alg.actor_critic.load_state_dict(loaded_dict['model_state_dict'])
+        self.alg.actor_critic.load_state_dict(loaded_dict["model_state_dict"])
         if load_optimizer:
-            self.alg.optimizer.load_state_dict(
-                loaded_dict['optimizer_state_dict'])
-        self.it = loaded_dict['iter']
+            self.alg.optimizer.load_state_dict(loaded_dict["optimizer_state_dict"])
+        self.it = loaded_dict["iter"]
 
     def switch_to_eval(self):
         self.alg.actor_critic.eval()
 
     def get_inference_actions(self):
-        obs = self.get_noisy_obs(
-                        self.policy_cfg['actor_obs'],
-                        self.policy_cfg['noise'])
+        obs = self.get_noisy_obs(self.policy_cfg["actor_obs"], self.policy_cfg["noise"])
         return self.alg.actor_critic.actor.act_inference(obs)
 
     def export(self, path):

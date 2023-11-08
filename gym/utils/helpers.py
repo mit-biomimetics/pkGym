@@ -80,11 +80,10 @@ def set_seed(seed):
     if seed == -1:
         seed = np.random.randint(0, 10000)
     print("Setting seed: {}".format(seed))
-
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
@@ -116,7 +115,7 @@ def parse_sim_params(args, cfg):
 
 
 def get_load_path(name, load_run=-1, checkpoint=-1):
-    root = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', name)
+    root = os.path.join(LEGGED_GYM_ROOT_DIR, "logs", name)
     run_path = select_run(root, load_run)
     model_name = select_model(run_path, checkpoint)
     load_path = os.path.join(run_path, model_name)
@@ -127,9 +126,12 @@ def select_run(root, load_run):
     try:
         runs = sorted(
             os.listdir(root),
-            key=lambda x: os.path.getctime(os.path.join(root, x)))
-        if 'exported' in runs:
-            runs.remove('exported')
+            key=lambda x: os.path.getctime(os.path.join(root, x)),
+        )
+        if "exported" in runs:
+            runs.remove("exported")
+        if "videos" in runs:
+            runs.remove("videos")
         last_run = os.path.join(root, runs[-1])
     except:  # ! no bare excepts!!!
         raise ValueError("No runs in this directory: " + root)
@@ -143,8 +145,8 @@ def select_run(root, load_run):
 
 def select_model(load_run, checkpoint):
     if checkpoint == -1:
-        models = [file for file in os.listdir(load_run) if 'model' in file]
-        models.sort(key=lambda m: '{0:0>15}'.format(m))
+        models = [file for file in os.listdir(load_run) if "model" in file]
+        models.sort(key=lambda m: "{0:0>15}".format(m))
         model = models[-1]
     else:
         model = "model_{}.pt".format(checkpoint)
@@ -157,9 +159,13 @@ def update_cfg_from_args(env_cfg, train_cfg, args):
         # * num envs
         if args.num_envs is not None:
             env_cfg.env.num_envs = args.num_envs
+        if args.record is not None:
+            env_cfg.viewer.record = args.record
     if train_cfg is not None:
         if args.seed is not None:
             train_cfg.seed = args.seed
+        # * copy seed
+        env_cfg.seed = train_cfg.seed
         # * alg runner parameters
         if args.max_iterations is not None:
             train_cfg.runner.max_iterations = args.max_iterations
@@ -177,62 +183,133 @@ def update_cfg_from_args(env_cfg, train_cfg, args):
             train_cfg.runner.device = args.rl_device
 
 
-def get_args():
-    custom_parameters = [
-        {"name": "--task", "type": str, "default": "cartpole", "help":
-            "Resume training or start testing from a checkpoint. "
-            "Overrides config file if provided."},
-        {"name": "--resume", "action": "store_true", "default": False, "help":
-            "Resume training from a checkpoint"},
-        {"name": "--experiment_name", "type": str,  "help":
-            "Name of the experiment to run or load. "
-            "Overrides config file if provided."},
-        {"name": "--run_name", "type": str,  "help":
-            "Name of the run. Overrides config file if provided."},
-        {"name": "--load_run", "type": str,  "help":
-            "Name of the run to load when resume=True. "
-            "If -1: will load the last run. "
-            "Overrides config file if provided."},
-        {"name": "--checkpoint", "type": int,  "help":
-            "Saved model checkpoint number. "
-            "If -1: will load the last checkpoint. "
-            "Overrides config file if provided."},
+def get_args(custom_parameters=None):
+    if custom_parameters is None:
+        custom_parameters = []
 
-        {"name": "--headless", "action": "store_true", "default": False,
-         "help": "Force display off at all times"},
-        {"name": "--horovod", "action": "store_true", "default": False, "help":
-            "Use horovod for multi-gpu training"},
-        {"name": "--rl_device", "type": str, "default": "cuda:0", "help":
-            'Device used by the RL algorithm, '
-            '(cpu, gpu, cuda:0, cuda:1 etc..)'},
-        {"name": "--num_envs", "type": int, "help":
-            "Number of environments to create. "
-            "Overrides config file if provided."},
-        {"name": "--seed", "type": int, "help":
-            "Random seed. Overrides config file if provided."},
-        {"name": "--max_iterations", "type": int, "help":
-            "Maximum number of training iterations. "
-            "Overrides config file if provided."},
-        {"name": "--wandb_project", "type": str, "help":
-            "Enter the name of your project for better WandB tracking."},
-        {"name": "--wandb_entity", "type": str, "help":
-            "Enter your wandb entity username to track your "
-            "experiment on your account."},
-        {"name": "--wandb_sweep_id", "type": str, "help":
-            "Enter a WandB sweep ID to continue an existing sweep."},
-        {"name": "--wandb_sweep_config", "type": str, "help":
-            "Enter the name of a JSON config file defining the WandB sweep."},
-        {"name": "--disable_wandb", "action": "store_true", "default": False,
-         "help": "Disable WandB logging for debugging."}
+    custom_parameters += [
+        {
+            "name": "--task",
+            "type": str,
+            "default": "cartpole",
+            "help": "Resume training or start testing from a checkpoint. "
+            "Overrides config file if provided.",
+        },
+        {
+            "name": "--resume",
+            "action": "store_true",
+            "default": False,
+            "help": "Resume training from a checkpoint",
+        },
+        {
+            "name": "--experiment_name",
+            "type": str,
+            "help": "Name of the experiment to run or load. "
+            "Overrides config file if provided.",
+        },
+        {
+            "name": "--run_name",
+            "type": str,
+            "help": "Name of the run. Overrides config file if provided.",
+        },
+        {
+            "name": "--load_run",
+            "type": str,
+            "help": "Name of the run to load when resume=True. "
+            "If -1: will load the last run. "
+            "Overrides config file if provided.",
+        },
+        {
+            "name": "--checkpoint",
+            "type": int,
+            "help": "Saved model checkpoint number. "
+            "If -1: will load the last checkpoint. "
+            "Overrides config file if provided.",
+        },
+        {
+            "name": "--headless",
+            "action": "store_true",
+            "default": False,
+            "help": "Force display off at all times",
+        },
+        {
+            "name": "--horovod",
+            "action": "store_true",
+            "default": False,
+            "help": "Use horovod for multi-gpu training",
+        },
+        {
+            "name": "--rl_device",
+            "type": str,
+            "default": "cuda:0",
+            "help": "Device used by the RL algorithm, "
+            "(cpu, gpu, cuda:0, cuda:1 etc..)",
+        },
+        {
+            "name": "--num_envs",
+            "type": int,
+            "help": "Number of environments to create. "
+            "Overrides config file if provided.",
+        },
+        {
+            "name": "--seed",
+            "type": int,
+            "help": "Random seed. Overrides config file if provided.",
+        },
+        {
+            "name": "--max_iterations",
+            "type": int,
+            "help": "Maximum number of training iterations. "
+            "Overrides config file if provided.",
+        },
+        {
+            "name": "--wandb_project",
+            "type": str,
+            "help": "Enter the name of your project for WandB tracking.",
+        },
+        {
+            "name": "--wandb_entity",
+            "type": str,
+            "help": "Enter your wandb entity username to track your "
+            "experiment on your account.",
+        },
+        {
+            "name": "--wandb_sweep_id",
+            "type": str,
+            "help": "Enter a WandB sweep ID to continue an existing sweep.",
+        },
+        {
+            "name": "--wandb_sweep_config",
+            "type": str,
+            "help": "Enter the name of a JSON config for the WandB sweep.",
+        },
+        {
+            "name": "--disable_wandb",
+            "action": "store_true",
+            "default": False,
+            "help": "Disable WandB logging for debugging.",
+        },
+        {
+            "name": "--record",
+            "action": "store_true",
+            "default": False,
+            "help": "Record IsaacGym simulation at real-time speed.",
+        },
+        {
+            "name": "--original_cfg",
+            "action": "store_true",
+            "default": False,
+            "help": "Use original config file for loaded policy.",
+        },
     ]
     # * parse arguments
     args = gymutil.parse_arguments(
-        description="RL Policy",
-        custom_parameters=custom_parameters)
+        description="RL Policy", custom_parameters=custom_parameters
+    )
 
     # * name allignment
     args.sim_device_id = args.compute_device_id
     args.sim_device = args.sim_device_type
-    if args.sim_device == 'cuda':
+    if args.sim_device == "cuda":
         args.sim_device += f":{args.sim_device_id}"
     return args

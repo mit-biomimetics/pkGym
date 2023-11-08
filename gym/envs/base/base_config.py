@@ -35,7 +35,7 @@ import inspect
 
 class BaseConfig:
     def __init__(self) -> None:
-        """ Initializes all member classes recursively.
+        """Initializes all member classes recursively.
         Ignores all namse starting with '__' (buit-in methods)."""
         self.init_member_classes(self)
 

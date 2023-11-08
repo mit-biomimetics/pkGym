@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: Copyright (c) 2021 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-3-Clause
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
 #
@@ -28,10 +28,17 @@
 #
 # Copyright (c) 2021 ETH Zurich, Nikita Rudin
 
-from .helpers import (class_to_dict, get_load_path, get_args, set_seed,
-                      update_class_from_dict)
+from .helpers import (
+    class_to_dict,
+    get_load_path,
+    get_args,
+    set_seed,
+    update_class_from_dict,
+)
 
 from .task_registry import task_registry
-from .math import *
+from .gym_math_wrappers import *
 from .terrain import Terrain
-from .interfaces.interfaces import KeyboardInterface, GamepadInterface
+from .interfaces import KeyboardInterface, GamepadInterface
+from .logging_and_saving.VisualizationRecorder import VisualizationRecorder
+from .math.simple_math import *
