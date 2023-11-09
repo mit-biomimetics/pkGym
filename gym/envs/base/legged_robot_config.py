@@ -253,7 +253,7 @@ class LeggedRobotRunnerCfg(BaseConfig):
         ]
 
         actions = ["q_des"]
-        disable_actions = True
+        disable_actions = False
 
         class noise:
             dof_pos_obs = 0.01

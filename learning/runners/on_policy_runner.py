@@ -19,37 +19,17 @@ class OnPolicyRunner(BaseRunner):
             self.device,
         )
 
-    def learn(self, num_learning_iterations, init_at_random_ep_len=False):
-        # * unpack out of config
+    def learn(self):
+        self.set_up_logger()
+
         reward_weights = self.policy_cfg["reward"]["weights"]
         termination_weight = self.policy_cfg["reward"]["termination_weight"]
         rewards_dict = {}
-        total_rewards = torch.zeros(self.env.num_envs, device=self.device)
 
-        # * set up logger
-        logger.register_rewards(list(reward_weights.keys()))
-        logger.register_rewards(list(termination_weight.keys()))
-        logger.register_rewards(["total_rewards"])
-
-        logger.register_category(
-            "algorithm", self.alg, ["mean_value_loss", "mean_surrogate_loss"]
-        )
-
-        logger.attach_torch_obj_to_wandb(
-            (self.alg.actor_critic.actor, self.alg.actor_critic.critic)
-        )
-
-        if init_at_random_ep_len:
-            self.env.episode_length_buf = torch.randint_like(
-                self.env.episode_length_buf,
-                high=int(self.env.max_episode_length),
-            )
-
+        self.alg.actor_critic.train()
         actor_obs = self.get_obs(self.policy_cfg["actor_obs"])
         critic_obs = self.get_obs(self.policy_cfg["critic_obs"])
-        self.alg.actor_critic.train()
-        self.num_learning_iterations = num_learning_iterations
-        tot_iter = self.it + num_learning_iterations
+        tot_iter = self.it + self.num_learning_iterations
 
         self.save()
 
@@ -88,7 +68,6 @@ class OnPolicyRunner(BaseRunner):
                             mask=~terminated,
                         )
                     )
-
                     total_rewards = torch.stack(tuple(rewards_dict.values())).sum(dim=0)
 
                     logger.log_rewards(rewards_dict)
@@ -112,6 +91,23 @@ class OnPolicyRunner(BaseRunner):
             if self.it % self.save_interval == 0:
                 self.save()
         self.save()
+
+    def set_up_logger(self):
+        reward_weights = self.policy_cfg["reward"]["weights"]
+        termination_weight = self.policy_cfg["reward"]["termination_weight"]
+
+        logger.register_rewards(list(self.policy_cfg["reward"]["weights"].keys()))
+        logger.register_rewards(
+            list(self.policy_cfg["reward"]["termination_weight"].keys())
+        )
+        logger.register_rewards(["total_rewards"])
+        logger.register_category(
+            "algorithm", self.alg, ["mean_value_loss", "mean_surrogate_loss"]
+        )
+
+        logger.attach_torch_obj_to_wandb(
+            (self.alg.actor_critic.actor, self.alg.actor_critic.critic)
+        )
 
     def save(self):
         os.makedirs(self.log_dir, exist_ok=True)

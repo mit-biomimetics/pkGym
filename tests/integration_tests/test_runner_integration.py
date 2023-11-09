@@ -17,7 +17,7 @@ def run_integration_test(args):
     default_actions = policy_runner.env.get_states(train_cfg.policy.actions)
 
     # * take a full iteration step
-    policy_runner.learn(num_learning_iterations=args.max_iterations)
+    policy_runner.learn()
 
     # * get the test values after learning
     actions = policy_runner.env.get_states(train_cfg.policy.actions)

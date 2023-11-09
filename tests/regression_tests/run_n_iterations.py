@@ -23,6 +23,7 @@ def setup():
     env_cfg, train_cfg = task_registry.create_cfgs(args)
     task_registry.make_gym_and_sim()
     env = task_registry.make_env(args.task, env_cfg)
+    train_cfg.runner.max_iterations = 5
     runner = task_registry.make_alg_runner(env, train_cfg)
 
     # * switch to evaluation mode (dropout for example)
@@ -32,7 +33,7 @@ def setup():
 
 def _run_training_test(output_tensor_file, env, runner):
     # * take a full iteration step
-    runner.learn(num_learning_iterations=5)
+    runner.learn()
 
     # * get the test values after learning
     actions = runner.env.get_states(runner.policy_cfg["actions"])

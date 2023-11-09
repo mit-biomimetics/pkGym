@@ -34,6 +34,7 @@ from .helpers import (
     get_args,
     set_seed,
     update_class_from_dict,
+    randomize_episode_counters
 )
 
 from .task_registry import task_registry

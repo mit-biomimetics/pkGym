@@ -23,6 +23,7 @@ class BaseRunner:
 
         self.num_steps_per_env = self.cfg["num_steps_per_env"]
         self.save_interval = self.cfg["save_interval"]
+        self.num_learning_iterations = self.cfg["max_iterations"]
         self.tot_timesteps = 0
         self.it = 0
 
@@ -48,7 +49,7 @@ class BaseRunner:
             action_shape=[num_actions],
         )
 
-    def learn(self, num_learning_iterations, init_at_random_ep_len=False):
+    def learn(self):
         raise NotImplementedError
 
     def get_noise(self, obs_list, noise_dict):
