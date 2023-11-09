@@ -61,7 +61,11 @@ class OnPolicyRunner(BaseRunner):
             with torch.inference_mode():
                 for i in range(self.num_steps_per_env):
                     actions = self.alg.act(actor_obs, critic_obs)
-                    self.set_actions(actions)
+                    self.set_actions(
+                        self.policy_cfg["actions"],
+                        actions,
+                        self.policy_cfg["disable_actions"],
+                    )
 
                     self.env.step()
 

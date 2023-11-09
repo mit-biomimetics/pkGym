@@ -128,7 +128,6 @@ class MiniCheetahCfg(LeggedRobotCfg):
         # * Action scales
         dof_pos_target = dof_pos
         # tau_ff = 4*[18, 18, 28]  # hip-abad, hip-pitch, knee
-        clip_actions = 1000.0
 
 
 class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):

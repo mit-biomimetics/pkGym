@@ -195,7 +195,6 @@ class HumanoidRunningCfg(LeggedRobotCfg):
         dof_pos = 2 * [0.5, 1, 3, 2, 2] + 2 * [2, 1, 0.5, 2.0]
         dof_vel = 1.0
         dof_pos_target = dof_pos
-        clip_actions = 1000.0
 
 
 class HumanoidRunningRunnerCfg(LeggedRobotRunnerCfg):

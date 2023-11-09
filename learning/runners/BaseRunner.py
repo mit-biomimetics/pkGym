@@ -76,16 +76,10 @@ class BaseRunner:
         observation = self.env.get_states(obs_list).to(self.device)
         return observation
 
-    def set_actions(self, actions):
-        if self.policy_cfg["disable_actions"]:
+    def set_actions(self, actions_list, actions, disable_actions=False):
+        if disable_actions:
             return
-        if hasattr(self.env.cfg.scaling, "clip_actions"):
-            actions = torch.clip(
-                actions,
-                -self.env.cfg.scaling.clip_actions,
-                self.env.cfg.scaling.clip_actions,
-            )
-        self.env.set_states(self.policy_cfg["actions"], actions)
+        self.env.set_states(actions_list, actions)
 
     def get_timed_out(self):
         return self.env.get_states(["timed_out"]).to(self.device)
