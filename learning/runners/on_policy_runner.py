@@ -93,9 +93,6 @@ class OnPolicyRunner(BaseRunner):
         self.save()
 
     def set_up_logger(self):
-        reward_weights = self.policy_cfg["reward"]["weights"]
-        termination_weight = self.policy_cfg["reward"]["termination_weight"]
-
         logger.register_rewards(list(self.policy_cfg["reward"]["weights"].keys()))
         logger.register_rewards(
             list(self.policy_cfg["reward"]["termination_weight"].keys())
