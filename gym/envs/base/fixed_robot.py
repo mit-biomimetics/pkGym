@@ -574,7 +574,9 @@ class FixedRobot(BaseTask):
         # * create a grid of robots
         num_cols = np.floor(np.sqrt(self.num_envs))
         num_rows = np.ceil(self.num_envs / num_cols)
-        xx, yy = torch.meshgrid(torch.arange(num_rows), torch.arange(num_cols))
+        xx, yy = torch.meshgrid(
+            torch.arange(num_rows), torch.arange(num_cols), indexing="ij"
+        )
         spacing = self.cfg.env.env_spacing
         self.env_origins[:, 0] = spacing * xx.flatten()[: self.num_envs]
         self.env_origins[:, 1] = spacing * yy.flatten()[: self.num_envs]
