@@ -95,8 +95,8 @@ class MiniCheetahOsc(MiniCheetah):
             return
         super()._reset_system(env_ids)
 
-    def _pre_physics_step(self):
-        super()._pre_physics_step()
+    def _pre_decimation_step(self):
+        super()._pre_decimation_step()
         # self.grf = self._compute_grf()
         if not self.cfg.osc.randomize_osc_params:
             self.compute_osc_slope()
@@ -154,14 +154,14 @@ class MiniCheetahOsc(MiniCheetah):
             self.com[env_id, 0] = props[0].com.x
         return props
 
-    def _post_physics_step(self):
+    def _post_decimation_step(self):
         """Update all states that are not handled in PhysX"""
-        super()._post_physics_step()
+        super()._post_decimation_step()
         self.grf = self._compute_grf()
         # self._step_oscillators()
 
-    def _post_torque_step(self):
-        super()._post_torque_step()
+    def _post_physx_step(self):
+        super()._post_physx_step()
         self._step_oscillators(self.dt / self.cfg.control.decimation)
         return None
 

@@ -6,6 +6,7 @@ from gym.envs import LeggedRobot
 
 class HumanoidRunning(LeggedRobot):
     def __init__(self, gym, sim, cfg, sim_params, sim_device, headless):
+        self.omega = 2 * torch.pi * cfg.control.gait_freq
         super().__init__(gym, sim, cfg, sim_params, sim_device, headless)
 
     def _init_buffers(self):
@@ -92,10 +93,12 @@ class HumanoidRunning(LeggedRobot):
         self.phase = torch.zeros(
             self.num_envs, 1, dtype=torch.float, device=self.device
         )
-        self.phase_freq = 1.0
+        self.phase_obs = torch.zeros(
+            self.num_envs, 2, dtype=torch.float, device=self.device
+        )
 
-    def _pre_physics_step(self):
-        super()._pre_physics_step()
+    def _pre_decimation_step(self):
+        super()._pre_decimation_step()
         self.dof_pos_target[:, :10] += self.dof_pos_target_legs
         self.dof_pos_target[:, 10:] += self.dof_pos_target_arms
 
@@ -107,13 +110,18 @@ class HumanoidRunning(LeggedRobot):
             (torch.numel(env_ids),), requires_grad=False, device=self.device
         )
 
-    def _post_physics_step(self):
-        super()._post_physics_step()
-        self.phase_sin = torch.sin(2 * torch.pi * self.phase)
-        self.phase_cos = torch.cos(2 * torch.pi * self.phase)
+    def _post_physx_step(self):
+        """Update all states that are not handled in PhysX"""
+        super()._post_physx_step()
+        self.phase = (self.phase + self.dt * self.omega).fmod(2 * torch.pi)
+
+    def _post_decimation_step(self):
+        super()._post_decimation_step()
+        self.phase_obs = torch.cat(
+            (torch.sin(self.phase), torch.cos(self.phase)), dim=1
+        )
 
         self.in_contact = self.contact_forces[:, self.end_effector_ids, 2].gt(0.0)
-        self.phase = torch.fmod(self.phase + self.dt, 1.0)
 
         self.dof_pos_legs = self.dof_pos[:, :10]
         self.dof_pos_arms = self.dof_pos[:, 10:]

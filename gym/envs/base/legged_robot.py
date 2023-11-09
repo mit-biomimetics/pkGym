@@ -50,50 +50,40 @@ class LeggedRobot(BaseTask):
         self.reset()
 
     def step(self):
-        """Apply actions, simulate, call self._post_physics_step()
-
-        Args:
-            actions (torch.Tensor): Tensor of shape (num_envs,
-            num_actions_per_env)
-        """
         self._reset_buffers()
-        self._pre_physics_step()
+        self._pre_decimation_step()
         # * step physics and render each frame
         self._render()
         for _ in range(self.cfg.control.decimation):
+            self._pre_torque_step()
             self.torques = self._compute_torques()
+            self._step_physx_sim()
+            self._post_physx_step()
 
-            if self.cfg.asset.disable_motors:
-                self.torques[:] = 0.0
-
-            self.gym.set_dof_actuation_force_tensor(
-                self.sim, gymtorch.unwrap_tensor(self.torques)
-            )
-            self.gym.simulate(self.sim)
-            if self.device == "cpu":
-                self.gym.fetch_results(self.sim, True)
-            self.gym.refresh_dof_state_tensor(self.sim)
-
-        self._post_physics_step()
+        self._post_decimation_step()
         self._check_terminations_and_timeouts()
 
         env_ids = self.to_be_reset.nonzero(as_tuple=False).flatten()
         self._reset_idx(env_ids)
 
-    def _pre_physics_step(self):
+    def _pre_decimation_step(self):
         return None
 
-    def _post_physics_step(self):
+    def _pre_torque_step(self):
+        return None
+
+    def _step_physx_sim(self):
+        self.gym.set_dof_actuation_force_tensor(
+            self.sim, gymtorch.unwrap_tensor(self.torques)
+        )
+        self.gym.simulate(self.sim)
+        if self.device == "cpu":
+            self.gym.fetch_results(self.sim, True)
+        self.gym.refresh_dof_state_tensor(self.sim)
+
+    def _post_physx_step(self):
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.gym.refresh_net_contact_force_tensor(self.sim)
-
-        self.episode_length_buf += 1
-        self.common_step_counter += 1
-
-        if self.cfg.terrain.measure_heights:
-            self.measured_heights = self._get_heights()
-
-        # prepare quantities
         self.base_quat[:] = self.root_states[:, 3:7]
         self.base_lin_vel[:] = quat_rotate_inverse(
             self.base_quat, self.root_states[:, 7:10]
@@ -101,6 +91,14 @@ class LeggedRobot(BaseTask):
         self.base_ang_vel[:] = quat_rotate_inverse(
             self.base_quat, self.root_states[:, 10:13]
         )
+
+    def _post_decimation_step(self):
+        self.episode_length_buf += 1
+        self.common_step_counter += 1
+
+        if self.cfg.terrain.measure_heights:
+            self.measured_heights = self._get_heights()
+
         self.projected_gravity[:] = quat_rotate_inverse(
             self.base_quat, self.gravity_vec
         )

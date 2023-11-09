@@ -30,10 +30,13 @@ class MiniCheetahRef(MiniCheetah):
             0, torch.pi, shape=self.phase[env_ids].shape, device=self.device
         )
 
-    def _post_physics_step(self):
+    def _post_physx_step(self):
         """Update all states that are not handled in PhysX"""
-        super()._post_physics_step()
+        super()._post_physx_step()
         self.phase = (self.phase + self.dt * self.omega).fmod(2 * torch.pi)
+
+    def _post_decimation_step(self):
+        super()._post_decimation_step()
         self.phase_obs = torch.cat(
             (torch.sin(self.phase), torch.cos(self.phase)), dim=1
         )

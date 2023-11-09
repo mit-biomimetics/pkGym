@@ -12,8 +12,8 @@ class MiniCheetahOscIK(MiniCheetahOsc):
             self.num_envs, 12, dtype=torch.float, device=self.device
         )
 
-    def _pre_physics_step(self):
-        super()._pre_physics_step()
+    def _pre_torque_step(self):
+        super()._pre_torque_step()
         ik_defaults_L = torch.tensor([0.0, -0.019, -0.5]).to(self.device)
         ik_defaults_R = torch.tensor([0.0, 0.019, -0.5]).to(self.device)
         joints_ik_fr = self.IK_leg_3DOF(

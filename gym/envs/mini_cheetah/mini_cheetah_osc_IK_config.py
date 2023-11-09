@@ -32,10 +32,8 @@ class MiniCheetahOscIKCfg(MiniCheetahOscCfg):
             lin_vel_y = 1.0  # max [m/s]
             yaw_vel = 3.14  # max [rad/s]
 
-    class push_robots:
-        toggle = False
-        interval_s = 10
-        max_push_vel_xy = 0.2
+    class push_robots(MiniCheetahOscCfg.push_robots):
+        pass
 
     class domain_rand(MiniCheetahOscCfg.domain_rand):
         pass
@@ -93,8 +91,10 @@ class MiniCheetahOscIKRunnerCfg(MiniCheetahOscRunnerCfg):
             class weights(MiniCheetahOscRunnerCfg.policy.reward.weights):
                 pass
 
-            class termination_weight:
-                termination = 15.0 / 100.0
+            class termination_weight(
+                MiniCheetahOscRunnerCfg.policy.reward.termination_weight
+            ):
+                pass
 
     class algorithm(MiniCheetahOscRunnerCfg.algorithm):
         pass
