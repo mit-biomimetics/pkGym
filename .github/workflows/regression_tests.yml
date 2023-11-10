@@ -16,7 +16,9 @@ jobs:
         run: |
           git checkout main
           source ~/anaconda3/etc/profile.d/conda.sh
-          conda activate CIgym
+          conda activate CI
+          pip install -r requirements.txt
+          pip install -e .
           python tests/regression_tests/run_n_iterations.py --output_tensor_file="main_output.pt"
 
       - name: Checkout PR and run test
@@ -24,11 +26,15 @@ jobs:
           git fetch --unshallow
           git checkout ${{ github.event.pull_request.head.sha }}
           source ~/anaconda3/etc/profile.d/conda.sh
-          conda activate CIgym
+          conda activate CI
+          pip install -r requirements.txt
+          pip install -e .
           python tests/regression_tests/run_n_iterations.py --output_tensor_file="pr_output.pt"
 
       - name: Compare results
         run: |
           source ~/anaconda3/etc/profile.d/conda.sh
-          conda activate CIgym
+          conda activate CI
+          pip install -r requirements.txt
+          pip install -e .
           pytest tests/regression_tests/

@@ -6,6 +6,7 @@ on:
       - '*'
 
 jobs:
+
   Self-hosted-unit-testing:
     runs-on: [self-hosted, Linux, X64]
 
@@ -16,12 +17,10 @@ jobs:
       - name: Unit Testing Gym
         run: |
           source ~/anaconda3/etc/profile.d/conda.sh
-          conda activate CIgym
+          conda activate CI
+          pip install -r requirements.txt
+          pip install -e .
           pytest gym
-      - name: Unit Testing Learning
-        run: |
-          source ~/anaconda3/etc/profile.d/conda.sh
-          conda activate CIgym
           pytest learning
 
   ruff-linting:
@@ -29,10 +28,10 @@ jobs:
 
     steps:
       - name: Check out repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Lint with ruff
         run: |
           source ~/anaconda3/etc/profile.d/conda.sh
-          conda activate CIgym
+          conda activate CI
           ruff check .
