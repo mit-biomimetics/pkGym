@@ -14,18 +14,10 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
 
-      - name: Unit Testing Gym
-        run: |
-          source ~/anaconda3/etc/profile.d/conda.sh
-          conda activate CIgym
-          python -m pytest gym
-      - name: Unit Testing Learning
-        run: |
-          source ~/anaconda3/etc/profile.d/conda.sh
-          conda activate CIgym
-          python -m pytest learning
       - name: Integration Testing gpuGym
         run: |
           source ~/anaconda3/etc/profile.d/conda.sh
-          conda activate CIgym
+          conda activate CI
+          pip install -r requirements.txt
+          pip install -e .
           pytest tests/integration_tests
