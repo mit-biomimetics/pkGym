@@ -22,8 +22,6 @@ class OnPolicyRunner(BaseRunner):
     def learn(self):
         self.set_up_logger()
 
-        reward_weights = self.policy_cfg["reward"]["weights"]
-        termination_weight = self.policy_cfg["reward"]["termination_weight"]
         rewards_dict = {}
 
         self.alg.actor_critic.train()
@@ -58,16 +56,7 @@ class OnPolicyRunner(BaseRunner):
                     terminated = self.get_terminated()
                     dones = timed_out | terminated
 
-                    rewards_dict.update(
-                        self.get_rewards(termination_weight, mask=terminated)
-                    )
-                    rewards_dict.update(
-                        self.get_rewards(
-                            reward_weights,
-                            modifier=self.env.dt,
-                            mask=~terminated,
-                        )
-                    )
+                    self.update_rewards(rewards_dict, terminated)
                     total_rewards = torch.stack(tuple(rewards_dict.values())).sum(dim=0)
 
                     logger.log_rewards(rewards_dict)
@@ -91,6 +80,20 @@ class OnPolicyRunner(BaseRunner):
             if self.it % self.save_interval == 0:
                 self.save()
         self.save()
+
+    def update_rewards(self, rewards_dict, terminated):
+        rewards_dict.update(
+            self.get_rewards(
+                self.policy_cfg["reward"]["termination_weight"], mask=terminated
+            )
+        )
+        rewards_dict.update(
+            self.get_rewards(
+                self.policy_cfg["reward"]["weights"],
+                modifier=self.env.dt,
+                mask=~terminated,
+            )
+        )
 
     def set_up_logger(self):
         logger.register_rewards(list(self.policy_cfg["reward"]["weights"].keys()))
