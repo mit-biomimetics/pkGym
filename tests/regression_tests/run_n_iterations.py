@@ -14,9 +14,6 @@ def setup():
     args = get_args(custom_parameter)
     args.task = "mini_cheetah"
     args.seed = 0
-    # args.max_iterations = 50
-    # args.save_interval = 50
-    args.num_envs = 1000
     args.headless = True
     args.disable_wandb = True
 
