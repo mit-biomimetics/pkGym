@@ -163,10 +163,10 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                 tracking_ang_vel = 2.0
                 lin_vel_z = 0.0
                 ang_vel_xy = 0.01
-                orientation = 1.0
+                orientation = 0.0
                 torques = 5.0e-6
                 dof_vel = 0.0
-                min_base_height = 1.5
+                min_base_height = 0.0  # 1.5
                 collision = 0.0
                 action_rate = 0.01
                 action_rate2 = 0.001
@@ -174,9 +174,16 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
                 dof_pos_limits = 0.0
                 feet_contact_forces = 0.0
                 dof_near_home = 0.0
-                reference_traj = 1.5
-                swing_grf = 0.5
-                stance_grf = 0.5
+                reference_traj = 0.0  # 1.5
+                swing_grf = 0.0  # 0.5
+                stance_grf = 0.0  # 0.5
+
+            class pbrs_weights:
+                reference_traj = 1.0
+                swing_grf = 1.0
+                stance_grf = 1.0
+                min_base_height = 1.0
+                orientation = 1.0
 
             class termination_weight:
                 termination = 0.15
@@ -200,6 +207,6 @@ class MiniCheetahRefRunnerCfg(MiniCheetahRunnerCfg):
     class runner(MiniCheetahRunnerCfg.runner):
         run_name = ""
         experiment_name = "mini_cheetah_ref"
-        max_iterations = 1000  # number of policy updates
+        max_iterations = 500  # number of policy updates
         algorithm_class_name = "PPO"
         num_steps_per_env = 32

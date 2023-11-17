@@ -3,6 +3,7 @@ import torch
 from learning.env import VecEnv
 
 from learning.utils import Logger
+from learning.utils import PotentialBasedRewardShaping
 
 from .BaseRunner import BaseRunner
 
@@ -21,6 +22,11 @@ class OnPolicyRunner(BaseRunner):
 
     def learn(self):
         self.set_up_logger()
+
+        PBRS = PotentialBasedRewardShaping(
+            self.policy_cfg["reward"]["pbrs_weights"], self.device
+        )
+        logger.register_rewards(PBRS.get_reward_keys())
 
         rewards_dict = {}
 
@@ -45,6 +51,7 @@ class OnPolicyRunner(BaseRunner):
                         self.policy_cfg["disable_actions"],
                     )
 
+                    PBRS.pre_step(self.env)
                     self.env.step()
 
                     actor_obs = self.get_noisy_obs(
@@ -57,6 +64,7 @@ class OnPolicyRunner(BaseRunner):
                     dones = timed_out | terminated
 
                     self.update_rewards(rewards_dict, terminated)
+                    rewards_dict.update(PBRS.post_step(self.env, dones))
                     total_rewards = torch.stack(tuple(rewards_dict.values())).sum(dim=0)
 
                     logger.log_rewards(rewards_dict)
