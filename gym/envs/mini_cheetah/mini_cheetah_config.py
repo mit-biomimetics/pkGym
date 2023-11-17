@@ -118,16 +118,15 @@ class MiniCheetahCfg(LeggedRobotCfg):
         tracking_sigma = 0.25
 
     class scaling(LeggedRobotCfg.scaling):
-        base_ang_vel = 1.0
-        base_lin_vel = 1.0
-        commands = 1
-        dof_vel = 100.0  # ought to be roughly max expected speed.
-        base_height = 1
-        dof_pos = 1
+        base_ang_vel = 0.3
+        base_lin_vel = BASE_HEIGHT_REF
+        dof_vel = 4 * [2.0, 2.0, 4.0]
+        base_height = 0.3
+        dof_pos = 4 * [0.2, 0.3, 0.3]  # hip-abad, hip-pitch, knee
         dof_pos_obs = dof_pos
-        # * Action scales
-        dof_pos_target = dof_pos
-        # tau_ff = 4*[18, 18, 28]  # hip-abad, hip-pitch, knee
+        dof_pos_target = 4 * [0.2, 0.3, 0.3]
+        tau_ff = 4 * [18, 18, 28]  # hip-abad, hip-pitch, knee
+        commands = [3, 1, 3]  # [base_lin_vel, base_lin_vel, base_ang_vel]
 
 
 class MiniCheetahRunnerCfg(LeggedRobotRunnerCfg):

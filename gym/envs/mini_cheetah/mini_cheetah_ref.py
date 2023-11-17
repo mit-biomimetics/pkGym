@@ -11,7 +11,7 @@ class MiniCheetahRef(MiniCheetah):
         csv_path = cfg.init_state.ref_traj.format(
             LEGGED_GYM_ROOT_DIR=LEGGED_GYM_ROOT_DIR
         )
-        self.leg_ref = to_torch(pd.read_csv(csv_path).to_numpy(), device=sim_device)
+        self.leg_ref = 3 * to_torch(pd.read_csv(csv_path).to_numpy(), device=sim_device)
         self.omega = 2 * torch.pi * cfg.control.gait_freq
         super().__init__(gym, sim, cfg, sim_params, sim_device, headless)
 
@@ -33,7 +33,9 @@ class MiniCheetahRef(MiniCheetah):
     def _post_physx_step(self):
         """Update all states that are not handled in PhysX"""
         super()._post_physx_step()
-        self.phase = (self.phase + self.dt * self.omega).fmod(2 * torch.pi)
+        self.phase = (
+            self.phase + self.dt * self.omega / self.cfg.control.decimation
+        ).fmod(2 * torch.pi)
 
     def _post_decimation_step(self):
         super()._post_decimation_step()
