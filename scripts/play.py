@@ -56,7 +56,11 @@ def play(env, runner, train_cfg):
             interface.update(env)
         if env.cfg.viewer.record:
             recorder.update(i)
-        runner.set_actions(runner.get_inference_actions())
+        runner.set_actions(
+            runner.policy_cfg["actions"],
+            runner.get_inference_actions(),
+            runner.policy_cfg["disable_actions"],
+        )
         env.step()
         env.check_exit()
 

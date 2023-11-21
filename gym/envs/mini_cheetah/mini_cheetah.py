@@ -51,9 +51,3 @@ class MiniCheetah(LeggedRobot):
             ),
             dim=1,
         )
-
-    def _log_base_height(self):
-        return torch.flatten(self.base_height)
-
-    def _log_max_lin_vel_y_command(self):
-        return max(torch.abs(self.commands[:, 1]))

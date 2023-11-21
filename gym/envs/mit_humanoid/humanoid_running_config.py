@@ -85,7 +85,7 @@ class HumanoidRunningCfg(LeggedRobotCfg):
         }
 
     class control(LeggedRobotCfg.control):
-        # stiffness and damping for joints
+        gait_freq = 2.0
         stiffness = {
             "hip_yaw": 30.0,
             "hip_abad": 30.0,
@@ -195,7 +195,6 @@ class HumanoidRunningCfg(LeggedRobotCfg):
         dof_pos = 2 * [0.5, 1, 3, 2, 2] + 2 * [2, 1, 0.5, 2.0]
         dof_vel = 1.0
         dof_pos_target = dof_pos
-        clip_actions = 1000.0
 
 
 class HumanoidRunningRunnerCfg(LeggedRobotRunnerCfg):
@@ -216,8 +215,7 @@ class HumanoidRunningRunnerCfg(LeggedRobotRunnerCfg):
             "base_ang_vel",
             "projected_gravity",
             "commands",
-            "phase_sin",
-            "phase_cos",
+            "phase_obs",
             "dof_pos_legs",
             "dof_vel_legs",
             "in_contact",

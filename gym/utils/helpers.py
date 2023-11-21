@@ -313,3 +313,10 @@ def get_args(custom_parameters=None):
     if args.sim_device == "cuda":
         args.sim_device += f":{args.sim_device_id}"
     return args
+
+
+def randomize_episode_counters(env):
+    env.episode_length_buf = torch.randint_like(
+        env.episode_length_buf,
+        high=int(env.max_episode_length),
+    )

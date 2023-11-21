@@ -76,6 +76,7 @@ class KeyboardInterface:
             elif evt.action == "QUIT":
                 env.exit = True
             elif evt.action == "RESET":
+                env.timed_out[:] = True
                 env.reset()
             elif (
                 evt.action == "space_shoot" or evt.action == "mouse_shoot"
