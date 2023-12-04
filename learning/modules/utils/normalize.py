@@ -69,7 +69,7 @@ class RunningMeanStd(nn.Module):
         Returns the normalized version of the input.
         """
         assert (
-            input.size()[1] == self.num_items
+            input.size()[-1] == self.num_items
         ), f"input doesn't match expected size {self.num_items}"
         if self.training:
             if mask is not None:
