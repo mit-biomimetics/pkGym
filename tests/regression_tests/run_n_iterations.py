@@ -1,5 +1,7 @@
 from gym.envs import __init__  # noqa: F401
 from gym.utils import get_args, task_registry
+from gym import LEGGED_GYM_ROOT_DIR
+import os
 import torch
 
 
@@ -38,6 +40,10 @@ def _run_training_test(output_tensor_file, env, runner):
     # * return the values to the parent for assertion
     actions.detach().cpu()
     torch.save(actions, output_tensor_file)
+
+    # export policy
+    path = os.path.join(LEGGED_GYM_ROOT_DIR, "tests/regression_tests")
+    runner.export(path)
 
 
 def worker():

@@ -68,7 +68,7 @@ class Actor(nn.Module):
             observations = self.normalize(observations)
         actions_mean = self.NN(observations)
         return actions_mean
-    
+
     def forward(self, observations):
         return self.act_inference(observations)
 

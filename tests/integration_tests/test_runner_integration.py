@@ -11,21 +11,27 @@ def run_integration_test(args):
     train_cfg.runner.save_interval = args.save_interval
     task_registry.make_gym_and_sim()
     env = task_registry.make_env(name=args.task, env_cfg=env_cfg)
-    policy_runner = task_registry.make_alg_runner(env=env, train_cfg=train_cfg)
+    runner = task_registry.make_alg_runner(env=env, train_cfg=train_cfg)
 
     # * get the default test values before learning
-    default_actions = policy_runner.env.get_states(train_cfg.policy.actions)
+    default_actions = runner.env.get_states(train_cfg.policy.actions)
 
     # * take a full iteration step
-    policy_runner.learn()
+    runner.learn()
 
     # * get the test values after learning
-    actions = policy_runner.env.get_states(train_cfg.policy.actions)
+    actions = runner.env.get_states(train_cfg.policy.actions)
 
     # * return the values for assertion
-    it = policy_runner.it
-    log_dir = policy_runner.log_dir
-    return actions.cpu().clone(), default_actions.cpu().clone(), it, log_dir
+    it = runner.it
+    log_dir = runner.log_dir
+    return (
+        runner,
+        actions.cpu().clone(),
+        default_actions.cpu().clone(),
+        it,
+        log_dir,
+    )
 
 
 class TestDefaultIntegration:
@@ -38,7 +44,7 @@ class TestDefaultIntegration:
         args.headless = True
         args.disable_wandb = True
 
-        actions, default_actions, it, log_dir = run_integration_test(args)
+        runner, actions, default_actions, it, log_dir = run_integration_test(args)
 
         assert (
             torch.equal(actions, default_actions) is False
@@ -70,3 +76,10 @@ class TestDefaultIntegration:
         assert os.path.exists(model_8_path), (
             f"{model_5_path}" "(last iteration) was not saved"
         )
+
+        obs = torch.randn_like(runner.get_obs(runner.policy_cfg["actor_obs"]))
+        actions_first = runner.alg.actor_critic.act_inference(obs)
+        runner.load(model_8_path)
+        actions_loaded = runner.alg.actor_critic.act_inference(obs)
+
+        assert torch.equal(actions_first, actions_loaded), "Model loading failed"
