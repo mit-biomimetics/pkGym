@@ -78,8 +78,8 @@ class TestDefaultIntegration:
         )
 
         obs = torch.randn_like(runner.get_obs(runner.policy_cfg["actor_obs"]))
-        actions_first = runner.alg.actor_critic.act_inference(obs)
+        actions_first = runner.alg.actor_critic.act_inference(obs).cpu().clone()
         runner.load(model_8_path)
-        actions_loaded = runner.alg.actor_critic.act_inference(obs)
+        actions_loaded = runner.alg.actor_critic.act_inference(obs).cpu().clone()
 
         assert torch.equal(actions_first, actions_loaded), "Model loading failed"
