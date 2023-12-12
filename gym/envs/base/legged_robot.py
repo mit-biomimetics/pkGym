@@ -55,8 +55,9 @@ class LeggedRobot(BaseTask):
         # * step physics and render each frame
         self._render()
         for _ in range(self.cfg.control.decimation):
-            self._pre_torque_step()
+            self._pre_compute_torques()
             self.torques = self._compute_torques()
+            self._post_compute_torques()
             self._step_physx_sim()
             self._post_physx_step()
 
@@ -69,8 +70,12 @@ class LeggedRobot(BaseTask):
     def _pre_decimation_step(self):
         return None
 
-    def _pre_torque_step(self):
+    def _pre_compute_torques(self):
         return None
+
+    def _post_compute_torques(self):
+        if self.cfg.asset.disable_motors:
+            self.torques[:] = 0.0
 
     def _step_physx_sim(self):
         self.gym.set_dof_actuation_force_tensor(

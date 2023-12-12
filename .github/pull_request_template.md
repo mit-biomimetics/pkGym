@@ -9,6 +9,7 @@ Indicate steps to actually test code, including CLI instructions if different th
 Point out the desired behavior, and not just the "check that this appears" (otherwise the code reviewer will be lazy and just verify what you've already verified).
 
 ## Checklist before requesting a review
+- [ ] This is expected to break regression tests.
 - [ ] I have assigned a reviewer
 - [ ] I have added the PR to the project, and tagged with with priority
 - [ ] If it is a core feature, I have added tests.

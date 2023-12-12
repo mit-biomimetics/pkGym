@@ -191,7 +191,7 @@ class HumanoidRunningCfg(LeggedRobotCfg):
     class scaling(LeggedRobotCfg.scaling):
         base_height = 0.6565
         base_lin_vel = 1.0
-        base_ang_vel = 1.0
+        base_ang_vel = torch.pi
         dof_pos = 2 * [0.5, 1, 3, 2, 2] + 2 * [2, 1, 0.5, 2.0]
         dof_vel = 1.0
         dof_pos_target = dof_pos
