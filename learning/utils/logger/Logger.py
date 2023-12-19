@@ -57,6 +57,11 @@ class Logger:
             iter_time = 0.0
         return iter_time * (self.tot_iter - self.iteration_counter)
 
+    def format_seconds_to_hms(self, secs):
+        minutes, seconds = divmod(int(secs), 60)
+        hours, minutes = divmod(minutes, 60)
+        return f"{hours:d}:{minutes:02d}:{seconds:02d}"
+
     def estimate_steps_per_second(self):
         return (self.step_counter * self.num_envs / self.iteration_counter) / (
             self.timer.get_time("collection")
@@ -68,10 +73,13 @@ class Logger:
 
         log_string = ""
 
-        def format_log_entry(key, val, append=""):
+        def format_log_entry(key, v=None, append=""):
             """Helper function to format a single log entry."""
             nonlocal log_string
-            log_string += f"""{key:>{pad}}: {val:.2f} {append}\n"""
+            if v is None:
+                log_string += f"{key:>{pad}}: {append}\n"
+            else:
+                log_string += f"{key:>{pad}}: {v:.2f} {append}\n"
 
         def separator(subtitle="", marker="-"):
             nonlocal log_string
@@ -109,7 +117,9 @@ class Logger:
         time_string = f"(sim: {col_time:.2f}" f", learn:{learn_time:.2f})"
         format_log_entry("total time", tot_t, time_string)
 
-        format_log_entry("ETA", self.estimate_ETA(["runtime"]))
+        format_log_entry(
+            "ETA", append=self.format_seconds_to_hms(self.estimate_ETA(["runtime"]))
+        )
         print(log_string)
 
     def log_category(self, category="algorithm"):
