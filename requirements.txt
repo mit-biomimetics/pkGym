@@ -12,3 +12,4 @@ mss
 ruff
 pre-commit
 onnx
+onnxruntime
