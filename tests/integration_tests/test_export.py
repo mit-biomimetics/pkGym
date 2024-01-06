@@ -7,6 +7,8 @@ from gym.utils import task_registry
 from learning.modules import ActorCritic
 from gym.utils.helpers import get_load_path
 
+from gym import LEGGED_GYM_ROOT_DIR
+
 import torch
 
 
@@ -62,7 +64,9 @@ class TestONNX:
         loaded_actor_critic = load_saved_policy(runner)
 
         # eport the saved policy
-        export_path = "exported_policy"
+        export_path = os.path.join(
+            LEGGED_GYM_ROOT_DIR, "tests", "integration_tests", "exported_policy"
+        )
         loaded_actor_critic.export_policy(export_path)
 
         # load the exported onnx

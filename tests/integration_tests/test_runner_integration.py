@@ -5,7 +5,7 @@ from gym.envs import __init__  # noqa: F401
 from gym.utils import task_registry
 
 
-def run_integration_test(args):
+def learn_policy(args):
     # * do initial setup
     env_cfg, train_cfg = task_registry.create_cfgs(args)
     train_cfg.runner.save_interval = args.save_interval
@@ -13,25 +13,10 @@ def run_integration_test(args):
     env = task_registry.make_env(name=args.task, env_cfg=env_cfg)
     runner = task_registry.make_alg_runner(env=env, train_cfg=train_cfg)
 
-    # * get the default test values before learning
-    default_actions = runner.env.get_states(train_cfg.policy.actions)
-
     # * take a full iteration step
     runner.learn()
 
-    # * get the test values after learning
-    actions = runner.env.get_states(train_cfg.policy.actions)
-
-    # * return the values for assertion
-    it = runner.it
-    log_dir = runner.log_dir
-    return (
-        runner,
-        actions.cpu().clone(),
-        default_actions.cpu().clone(),
-        it,
-        log_dir,
-    )
+    return runner
 
 
 class TestDefaultIntegration:
@@ -44,24 +29,32 @@ class TestDefaultIntegration:
         args.headless = True
         args.disable_wandb = True
 
-        runner, actions, default_actions, it, log_dir = run_integration_test(args)
+        # runner, actions, default_actions, it, log_dir = run_integration_test(args)
+        runner = learn_policy(args)
+        runner.switch_to_eval()
 
+        with torch.no_grad():
+            actions = runner.get_inference_actions()
+            deployed_actions = runner.env.get_states(runner.policy_cfg["actions"])
         assert (
-            torch.equal(actions, default_actions) is False
-        ), "Actions were not updated from default"
+            torch.equal(actions, torch.zeros_like(actions)) is False
+        ), "Policy returning all zeros"
+        assert (
+            torch.equal(deployed_actions, torch.zeros_like(deployed_actions)) is False
+        ), "Actions not written to environment"
 
-        assert it == args.max_iterations, "Iteration update incorrect"
+        assert runner.it == args.max_iterations, "Iteration update incorrect"
 
         # * check correct saving
-        model_0_path = os.path.join(log_dir, "model_0.pt")
-        model_1_path = os.path.join(log_dir, "model_1.pt")
-        model_2_path = os.path.join(log_dir, "model_2.pt")
-        model_3_path = os.path.join(log_dir, "model_3.pt")
-        model_4_path = os.path.join(log_dir, "model_4.pt")
-        model_5_path = os.path.join(log_dir, "model_5.pt")
-        model_6_path = os.path.join(log_dir, "model_6.pt")
-        model_7_path = os.path.join(log_dir, "model_7.pt")
-        model_8_path = os.path.join(log_dir, "model_8.pt")
+        model_0_path = os.path.join(runner.log_dir, "model_0.pt")
+        model_1_path = os.path.join(runner.log_dir, "model_1.pt")
+        model_2_path = os.path.join(runner.log_dir, "model_2.pt")
+        model_3_path = os.path.join(runner.log_dir, "model_3.pt")
+        model_4_path = os.path.join(runner.log_dir, "model_4.pt")
+        model_5_path = os.path.join(runner.log_dir, "model_5.pt")
+        model_6_path = os.path.join(runner.log_dir, "model_6.pt")
+        model_7_path = os.path.join(runner.log_dir, "model_7.pt")
+        model_8_path = os.path.join(runner.log_dir, "model_8.pt")
 
         assert os.path.exists(model_0_path), (
             f"{model_0_path} " "(pre-iteration) was not saved"
