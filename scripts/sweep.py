@@ -3,7 +3,7 @@ import json
 import wandb
 
 from gym import LEGGED_GYM_ROOT_DIR
-from gym.scripts.train import train, setup
+from train import train, setup
 from gym.utils import get_args
 from gym.utils.logging_and_saving import wandb_singleton
 
@@ -17,7 +17,6 @@ def load_sweep_config(file_name):
         open(
             os.path.join(
                 LEGGED_GYM_ROOT_DIR,
-                "gym",
                 "scripts",
                 "sweep_configs",
                 file_name,
