@@ -145,3 +145,15 @@ class OnPolicyRunner(BaseRunner):
 
     def export(self, path):
         self.alg.actor_critic.export_policy(path)
+
+    def init_storage(self):
+        num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
+        num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
+        num_actions = self.get_action_size(self.policy_cfg["actions"])
+        self.alg.init_storage(
+            self.env.num_envs,
+            self.num_steps_per_env,
+            actor_obs_shape=[num_actor_obs],
+            critic_obs_shape=[num_critic_obs],
+            action_shape=[num_actions],
+        )

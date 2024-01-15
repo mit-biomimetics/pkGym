@@ -1,5 +1,5 @@
 from gym.envs import __init__  # noqa: F401
-from gym.utils import get_args, task_registry, randomize_episode_counters
+from gym.utils import get_args, task_registry
 from gym.utils.logging_and_saving import wandb_singleton
 from gym.utils.logging_and_saving import local_code_save_helper
 
@@ -12,8 +12,6 @@ def setup():
     task_registry.make_gym_and_sim()
     wandb_helper.setup_wandb(env_cfg=env_cfg, train_cfg=train_cfg, args=args)
     env = task_registry.make_env(name=args.task, env_cfg=env_cfg)
-    if RANDOMIZE_EPISODE_START:
-        randomize_episode_counters(env)
 
     policy_runner = task_registry.make_alg_runner(env, train_cfg)
 

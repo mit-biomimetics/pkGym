@@ -38,16 +38,7 @@ class BaseRunner:
         self.policy_cfg = train_cfg["policy"]
 
     def init_storage(self):
-        num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
-        num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
-        num_actions = self.get_action_size(self.policy_cfg["actions"])
-        self.alg.init_storage(
-            self.env.num_envs,
-            self.num_steps_per_env,
-            actor_obs_shape=[num_actor_obs],
-            critic_obs_shape=[num_critic_obs],
-            action_shape=[num_actions],
-        )
+        raise NotImplementedError
 
     def learn(self):
         raise NotImplementedError
@@ -89,7 +80,6 @@ class BaseRunner:
         return self.env.get_states(["terminated"]).to(self.device)
 
     def get_obs_size(self, obs_list):
-        # todo make unit-test to assert len(shape)==1 always
         return self.get_obs(obs_list)[0].shape[0]
 
     def get_action_size(self, action_list):
