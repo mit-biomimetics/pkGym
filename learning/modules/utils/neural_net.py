@@ -74,9 +74,7 @@ def export_network(network, network_name, path, num_inputs):
     model = copy.deepcopy(network).to("cpu")
     # To trace model, must be evaluated once with arbitrary input
     model.eval()
-    dummy_input = torch.rand(
-        num_inputs,
-    )
+    dummy_input = torch.rand((1, num_inputs))
     model_traced = torch.jit.trace(model, dummy_input)
     torch.jit.save(model_traced, path_TS)
     torch.onnx.export(model_traced, dummy_input, path_onnx)

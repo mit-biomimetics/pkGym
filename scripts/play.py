@@ -1,7 +1,4 @@
-import os
-
 from gym.envs import __init__  # noqa: F401
-from gym import LEGGED_GYM_ROOT_DIR
 from gym.utils import get_args, task_registry
 from gym.utils import KeyboardInterface
 from gym.utils import VisualizationRecorder
@@ -28,14 +25,6 @@ def setup(args):
 
     # * switch to evaluation mode (dropout for example)
     runner.switch_to_eval()
-    if EXPORT_POLICY:
-        path = os.path.join(
-            LEGGED_GYM_ROOT_DIR,
-            "logs",
-            train_cfg.runner.experiment_name,
-            "exported",
-        )
-        runner.export(path)
     return env, runner, train_cfg
 
 
@@ -66,7 +55,6 @@ def play(env, runner, train_cfg):
 
 
 if __name__ == "__main__":
-    EXPORT_POLICY = True
     args = get_args()
     with torch.no_grad():
         env, runner, train_cfg = setup(args)

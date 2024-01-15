@@ -69,9 +69,12 @@ class Actor(nn.Module):
         actions_mean = self.NN(observations)
         return actions_mean
 
+    def forward(self, observations):
+        return self.act_inference(observations)
+
     def normalize(self, observation):
         with torch.no_grad():
             return self.obs_rms(observation)
 
     def export(self, path):
-        export_network(self.NN, "policy", path, self.num_obs)
+        export_network(self, "policy", path, self.num_obs)
