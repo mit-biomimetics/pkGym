@@ -111,8 +111,8 @@ class MiniCheetahOscCfg(MiniCheetahCfg):
 
     class push_robots(MiniCheetahCfg.push_robots):
         toggle = True
-        interval_s = 15
-        max_push_vel_xy = 0.05
+        interval_s = 10
+        max_push_vel_xy = 0.2
         push_box_dims = [0.2, 0.2, 0.2]  # x,y,z [m]
 
     class domain_rand(MiniCheetahCfg.domain_rand):
@@ -155,7 +155,7 @@ class MiniCheetahOscCfg(MiniCheetahCfg):
         switch_scale = 0.5  # 0.1
 
     class scaling(MiniCheetahCfg.scaling):
-        base_ang_vel = 0.3
+        base_ang_vel = [0.3, 0.3, 0.1]
         base_lin_vel = BASE_HEIGHT_REF
         # dof_vel = 100.
         # dof_vel = 4*[41, 41, 27]  # ought to be roughly max expected speed.
@@ -235,7 +235,7 @@ class MiniCheetahOscRunnerCfg(MiniCheetahRunnerCfg):
                 collision = 0
                 action_rate = 0.01  # -0.01
                 action_rate2 = 0.001  # -0.001
-                stand_still = 0.0
+                stand_still = 0.01
                 dof_pos_limits = 0.0
                 feet_contact_forces = 0.0
                 dof_near_home = 0.0

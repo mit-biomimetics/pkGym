@@ -13,7 +13,9 @@ class MiniCheetah(LeggedRobot):
 
     def _reward_ang_vel_xy(self):
         """Penalize xy axes base angular velocity"""
-        error = self._sqrdexp(self.base_ang_vel[:, :2] / self.scales["base_ang_vel"])
+        error = self._sqrdexp(
+            self.base_ang_vel[:, :2] / self.scales["base_ang_vel"][:2]
+        )
         return torch.sum(error, dim=1)
 
     def _reward_orientation(self):
