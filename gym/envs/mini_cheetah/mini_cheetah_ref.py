@@ -31,7 +31,6 @@ class MiniCheetahRef(MiniCheetah):
         )
 
     def _post_physx_step(self):
-        """Update all states that are not handled in PhysX"""
         super()._post_physx_step()
         self.phase = (
             self.phase + self.dt * self.omega / self.cfg.control.decimation

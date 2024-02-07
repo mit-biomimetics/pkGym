@@ -37,4 +37,4 @@ from .utils import (
     set_discount_from_horizon,
 )
 from .logger import Logger
-from .PotentialBasedRewardShaping import PotentialBasedRewardShaping
+from .PBRS.PotentialBasedRewardShaping import PotentialBasedRewardShaping

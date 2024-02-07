@@ -38,7 +38,7 @@ from datetime import datetime
 from typing import Tuple
 
 from learning.env import VecEnv
-from learning.runners import OnPolicyRunner
+from learning.runners import *  # noqa: F403
 from learning.utils import set_discount_from_horizon
 
 from gym import LEGGED_GYM_ROOT_DIR
@@ -235,7 +235,8 @@ class TaskRegistry:
 
     def make_alg_runner(self, env, train_cfg):
         train_cfg_dict = class_to_dict(train_cfg)
-        runner = OnPolicyRunner(env, train_cfg_dict, train_cfg.runner.device)
+        runner_class = eval(train_cfg.runner_class_name)
+        runner = runner_class(env, train_cfg_dict, train_cfg.runner.device)
         # * save resume path before creating a new log_dir
         if train_cfg.runner.resume:
             resume_path = get_load_path(

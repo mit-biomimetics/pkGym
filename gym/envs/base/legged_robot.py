@@ -906,12 +906,9 @@ class LeggedRobot(BaseTask):
             self.env_origins[:, 2] = 0.0
 
     def _parse_cfg(self, cfg):
-        self.dt = self.cfg.control.ctrl_dt
+        super()._parse_cfg(cfg)
         self.num_projs = self.cfg.env.num_projectiles
-        self.scales = class_to_dict(self.cfg.scaling, self.device)
         self.command_ranges = class_to_dict(self.cfg.commands.ranges)
-        self.max_episode_length_s = self.cfg.env.episode_length_s
-        self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
         self.cfg.push_interval = np.ceil(self.cfg.push_robots.interval_s / self.dt)
 
     def _init_height_points(self):

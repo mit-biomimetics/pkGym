@@ -1,15 +1,15 @@
-import os
 import torch
 from learning.env import VecEnv
 
 from learning.utils import Logger
+from learning.utils import PotentialBasedRewardShaping
 
-from .BaseRunner import BaseRunner
+from .on_policy_runner import OnPolicyRunner
 
 logger = Logger()
 
 
-class OnPolicyRunner(BaseRunner):
+class MyRunner(OnPolicyRunner):
     def __init__(self, env: VecEnv, train_cfg, device="cpu"):
         super().__init__(env, train_cfg, device)
         logger.initialize(
@@ -21,6 +21,11 @@ class OnPolicyRunner(BaseRunner):
 
     def learn(self):
         self.set_up_logger()
+
+        PBRS = PotentialBasedRewardShaping(
+            self.policy_cfg["reward"]["pbrs_weights"], self.device
+        )
+        logger.register_rewards(PBRS.get_reward_keys())
 
         rewards_dict = {}
 
@@ -45,6 +50,7 @@ class OnPolicyRunner(BaseRunner):
                         self.policy_cfg["disable_actions"],
                     )
 
+                    PBRS.pre_step(self.env)
                     self.env.step()
 
                     actor_obs = self.get_noisy_obs(
@@ -57,6 +63,7 @@ class OnPolicyRunner(BaseRunner):
                     dones = timed_out | terminated
 
                     self.update_rewards(rewards_dict, terminated)
+                    rewards_dict.update(PBRS.post_step(self.env, dones))
                     total_rewards = torch.stack(tuple(rewards_dict.values())).sum(dim=0)
 
                     logger.log_rewards(rewards_dict)
@@ -107,45 +114,4 @@ class OnPolicyRunner(BaseRunner):
 
         logger.attach_torch_obj_to_wandb(
             (self.alg.actor_critic.actor, self.alg.actor_critic.critic)
-        )
-
-    def save(self):
-        os.makedirs(self.log_dir, exist_ok=True)
-        path = os.path.join(self.log_dir, "model_{}.pt".format(self.it))
-        torch.save(
-            {
-                "model_state_dict": self.alg.actor_critic.state_dict(),
-                "optimizer_state_dict": self.alg.optimizer.state_dict(),
-                "iter": self.it,
-            },
-            path,
-        )
-
-    def load(self, path, load_optimizer=True):
-        loaded_dict = torch.load(path)
-        self.alg.actor_critic.load_state_dict(loaded_dict["model_state_dict"])
-        if load_optimizer:
-            self.alg.optimizer.load_state_dict(loaded_dict["optimizer_state_dict"])
-        self.it = loaded_dict["iter"]
-
-    def switch_to_eval(self):
-        self.alg.actor_critic.eval()
-
-    def get_inference_actions(self):
-        obs = self.get_noisy_obs(self.policy_cfg["actor_obs"], self.policy_cfg["noise"])
-        return self.alg.actor_critic.actor.act_inference(obs)
-
-    def export(self, path):
-        self.alg.actor_critic.export_policy(path)
-
-    def init_storage(self):
-        num_actor_obs = self.get_obs_size(self.policy_cfg["actor_obs"])
-        num_critic_obs = self.get_obs_size(self.policy_cfg["critic_obs"])
-        num_actions = self.get_action_size(self.policy_cfg["actions"])
-        self.alg.init_storage(
-            self.env.num_envs,
-            self.num_steps_per_env,
-            actor_obs_shape=[num_actor_obs],
-            critic_obs_shape=[num_critic_obs],
-            action_shape=[num_actions],
         )

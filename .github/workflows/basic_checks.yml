@@ -1,0 +1,51 @@
+name: Check Added/Modified File Sizes
+
+on: [push]
+
+jobs:
+  file-size-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        # Fetch the full history for all branches and tags to correctly compare diffs
+        fetch-depth: 0
+
+    - name: Check for large added/modified files
+      run: |
+        # Set the file size limit
+        FILE_SIZE_LIMIT=102400 # 100KB in bytes
+
+        # Get the list of added/modified files in commits for push events,
+        # or compare PR branch with the base for pull request events
+        if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+          BASE_SHA=$(jq -r .pull_request.base.sha "$GITHUB_EVENT_PATH")
+          HEAD_SHA=$(jq -r .pull_request.head.sha "$GITHUB_EVENT_PATH")
+          MODIFIED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+        else
+          MODIFIED_FILES=$(git diff --name-only HEAD~ HEAD)
+        fi
+
+        echo "Checking added/modified files:"
+        echo "$MODIFIED_FILES"
+
+        # Initialize a flag to track large files
+        LARGE_FILES_FOUND=0
+
+        # Loop through the list of modified files and check their sizes
+        for FILE in $MODIFIED_FILES; do
+          if [ -f "$FILE" ]; then # Ensure it's a file, not a directory
+            FILE_SIZE=$(stat -c %s "$FILE")
+            if [ "$FILE_SIZE" -gt "$FILE_SIZE_LIMIT" ]; then
+              echo "$FILE exceeds the size limit of $((FILE_SIZE_LIMIT / 1024))KB with a size of $((FILE_SIZE / 1024))KB."
+              LARGE_FILES_FOUND=1
+            fi
+          fi
+        done
+
+        # Fail the job if any large files were found
+        if [ "$LARGE_FILES_FOUND" -eq 1 ]; then
+          exit 1
+        fi

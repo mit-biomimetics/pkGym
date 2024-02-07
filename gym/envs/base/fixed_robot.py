@@ -1,5 +1,6 @@
 import os
 import torch
+
 import numpy as np
 from isaacgym.torch_utils import to_torch, get_axis_params
 from isaacgym import gymtorch, gymapi
@@ -7,7 +8,6 @@ from isaacgym import gymtorch, gymapi
 from gym import LEGGED_GYM_ROOT_DIR
 from gym.envs.base.base_task import BaseTask
 from gym.utils import random_sample
-from gym.utils.helpers import class_to_dict
 
 
 class FixedRobot(BaseTask):
@@ -582,18 +582,13 @@ class FixedRobot(BaseTask):
         self.env_origins[:, 1] = spacing * yy.flatten()[: self.num_envs]
         self.env_origins[:, 2] = self.cfg.env.root_height
 
-    def _parse_cfg(self, cfg):
-        self.dt = self.cfg.control.ctrl_dt
-        self.scales = class_to_dict(self.cfg.scaling, self.device)
-        # self.command_ranges = class_to_dict(self.cfg.commands.ranges)
-        self.max_episode_length_s = self.cfg.env.episode_length_s
-        self.max_episode_length = np.ceil(self.max_episode_length_s / self.dt)
-
     # ------------ reward functions----------------
 
-    def _sqrdexp(self, x):
+    def _sqrdexp(self, x, scale=1.0):
         """shorthand helper for squared exponential"""
-        return torch.exp(-torch.square(x) / self.cfg.reward_settings.tracking_sigma)
+        return torch.exp(
+            -torch.square(x / scale) / self.cfg.reward_settings.tracking_sigma
+        )
 
     def _reward_torques(self):
         """Penalize torques"""
