@@ -3,6 +3,7 @@ from learning.env import VecEnv
 
 from learning.utils import Logger
 from learning.utils import PotentialBasedRewardShaping
+from learning.utils import remove_zero_weighted_rewards
 
 from .on_policy_runner import OnPolicyRunner
 
@@ -21,7 +22,7 @@ class MyRunner(OnPolicyRunner):
 
     def learn(self):
         self.set_up_logger()
-
+        remove_zero_weighted_rewards(self.policy_cfg["reward"]["pbrs_weights"])
         PBRS = PotentialBasedRewardShaping(
             self.policy_cfg["reward"]["pbrs_weights"], self.device
         )

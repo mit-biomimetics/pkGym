@@ -8,13 +8,14 @@ from gym.utils.task_registry import task_registry
 # * 3. add the runner confg name and location to the runner config dict
 # * 3. register the task experiment name to the env/config/ppo classes
 
-# * from y import x where {y:x}
 class_dict = {
     "LeggedRobot": ".base.legged_robot",
     "FixedRobot": ".base.fixed_robot",
     "Cartpole": ".cartpole.cartpole",
     "MiniCheetah": ".mini_cheetah.mini_cheetah",
     "MiniCheetahRef": ".mini_cheetah.mini_cheetah_ref",
+    "MiniCheetahOsc": ".mini_cheetah.mini_cheetah_osc",
+    "MiniCheetahOscIK": ".mini_cheetah.mini_cheetah_osc_IK",
     "MIT_Humanoid": ".mit_humanoid.mit_humanoid",
     "Anymal": ".anymal_c.anymal",
     "A1": ".a1.a1",
@@ -25,6 +26,8 @@ config_dict = {
     "CartpoleCfg": ".cartpole.cartpole_config",
     "MiniCheetahCfg": ".mini_cheetah.mini_cheetah_config",
     "MiniCheetahRefCfg": ".mini_cheetah.mini_cheetah_ref_config",
+    "MiniCheetahOscCfg": ".mini_cheetah.mini_cheetah_osc_config",
+    "MiniCheetahOscIKCfg": ".mini_cheetah.mini_cheetah_osc_IK_config",
     "MITHumanoidCfg": ".mit_humanoid.mit_humanoid_config",
     "A1Cfg": ".a1.a1_config",
     "AnymalCFlatCfg": ".anymal_c.flat.anymal_c_flat_config",
@@ -35,6 +38,8 @@ runner_config_dict = {
     "CartpoleRunnerCfg": ".cartpole.cartpole_config",
     "MiniCheetahRunnerCfg": ".mini_cheetah.mini_cheetah_config",
     "MiniCheetahRefRunnerCfg": ".mini_cheetah.mini_cheetah_ref_config",
+    "MiniCheetahOscRunnerCfg": ".mini_cheetah.mini_cheetah_osc_config",
+    "MiniCheetahOscIKRunnerCfg": ".mini_cheetah.mini_cheetah_osc_IK_config",
     "MITHumanoidRunnerCfg": ".mit_humanoid.mit_humanoid_config",
     "A1RunnerCfg": ".a1.a1_config",
     "AnymalCFlatRunnerCfg": ".anymal_c.flat.anymal_c_flat_config",
@@ -48,6 +53,16 @@ task_dict = {
         "MiniCheetahRef",
         "MiniCheetahRefCfg",
         "MiniCheetahRefRunnerCfg",
+    ],
+    "mini_cheetah_osc": [
+        "MiniCheetahOsc",
+        "MiniCheetahOscCfg",
+        "MiniCheetahOscRunnerCfg",
+    ],
+    "mini_cheetah_osc_IK": [
+        "MiniCheetahOscIK",
+        "MiniCheetahOscIKCfg",
+        "MiniCheetahOscIKRunnerCfg",
     ],
     "humanoid": ["MIT_Humanoid", "MITHumanoidCfg", "MITHumanoidRunnerCfg"],
     "humanoid_running": [
