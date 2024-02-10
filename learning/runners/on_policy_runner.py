@@ -114,7 +114,8 @@ class OnPolicyRunner(BaseRunner):
         path = os.path.join(self.log_dir, "model_{}.pt".format(self.it))
         torch.save(
             {
-                "model_state_dict": self.alg.actor_critic.state_dict(),
+                "actor_state_dict": self.alg.actor_critic.actor.state_dict(),
+                "critic_state_dict": self.alg.actor_critic.critic.state_dict(),
                 "optimizer_state_dict": self.alg.optimizer.state_dict(),
                 "iter": self.it,
             },
@@ -123,7 +124,8 @@ class OnPolicyRunner(BaseRunner):
 
     def load(self, path, load_optimizer=True):
         loaded_dict = torch.load(path)
-        self.alg.actor_critic.load_state_dict(loaded_dict["model_state_dict"])
+        self.alg.actor_critic.actor.load_state_dict(loaded_dict["actor_state_dict"])
+        self.alg.actor_critic.critic.load_state_dict(loaded_dict["critic_state_dict"])
         if load_optimizer:
             self.alg.optimizer.load_state_dict(loaded_dict["optimizer_state_dict"])
         self.it = loaded_dict["iter"]
