@@ -354,7 +354,6 @@ class MiniCheetahOsc(MiniCheetah):
             rew = ph_bool * velocity
         else:
             rew = ph_sin * velocity
-        # return torch.mean(self._sqrdexp(rew), dim=1)  # TODO: Higher reward if rew close to zero (how to decouple so that ignore if not in stance??)
         return -torch.mean(rew, dim=1)
 
     def _reward_dof_vel(self):
