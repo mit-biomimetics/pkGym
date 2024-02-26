@@ -37,7 +37,6 @@ from isaacgym import gymutil
 from datetime import datetime
 from typing import Tuple
 
-from learning.env import VecEnv
 from learning.runners import *  # noqa: F403
 from learning.utils import set_discount_from_horizon
 
@@ -67,7 +66,7 @@ class TaskRegistry:
     def register(
         self,
         name: str,
-        task_class: VecEnv,
+        task_class,
         env_cfg: BaseConfig,
         train_cfg: LeggedRobotRunnerCfg,
     ):
@@ -75,7 +74,7 @@ class TaskRegistry:
         self.env_cfgs[name] = env_cfg
         self.train_cfgs[name] = train_cfg
 
-    def get_task_class(self, name: str) -> VecEnv:
+    def get_task_class(self, name: str):
         return self.task_classes[name]
 
     def get_cfgs(self, name) -> Tuple[LeggedRobotCfg, LeggedRobotRunnerCfg]:
@@ -217,7 +216,7 @@ class TaskRegistry:
             self.sim["params"],
         )
 
-    def make_env(self, name, env_cfg) -> VecEnv:
+    def make_env(self, name, env_cfg):
         if name in self.task_classes:
             task_class = self.get_task_class(name)
         else:

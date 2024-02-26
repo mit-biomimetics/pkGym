@@ -1,5 +1,4 @@
 import torch
-from learning.env import VecEnv
 
 from learning.utils import Logger
 from learning.utils import PotentialBasedRewardShaping
@@ -11,7 +10,7 @@ logger = Logger()
 
 
 class MyRunner(OnPolicyRunner):
-    def __init__(self, env: VecEnv, train_cfg, device="cpu"):
+    def __init__(self, env, train_cfg, device="cpu"):
         super().__init__(env, train_cfg, device)
         logger.initialize(
             self.env.num_envs,

@@ -1,12 +1,11 @@
 import torch
 from learning.algorithms import PPO
 from learning.modules import ActorCritic
-from learning.env import VecEnv
 from learning.utils import remove_zero_weighted_rewards
 
 
 class BaseRunner:
-    def __init__(self, env: VecEnv, train_cfg, device="cpu"):
+    def __init__(self, env, train_cfg, device="cpu"):
         self.device = device
         self.env = env
         self.parse_train_cfg(train_cfg)
